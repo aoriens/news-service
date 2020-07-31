@@ -6,6 +6,7 @@ module Main
   ) where
 
 import qualified Data.Aeson as A
+import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
@@ -23,10 +24,23 @@ main = do
   Warp.run 4000 application
 
 application :: Wai.Application
-application _request respond =
-  respond $
-  Wai.responseLBS Http.ok200 [(Http.hContentType, "application/json")] $
-  A.encode stubNews
+application request respond
+  | Wai.pathInfo request == ["news"] =
+    respond $
+    Wai.responseLBS
+      Http.ok200
+      [(Http.hContentType, "application/json")]
+      (A.encode stubNews)
+application _ respond = respond (stubErrorResponse Http.notFound404)
+
+stubErrorResponse :: Http.Status -> Wai.Response
+stubErrorResponse status =
+  Wai.responseLBS status [(Http.hContentType, "text/html")] body
+  where
+    body =
+      "<!DOCTYPE html><html><body><h1>" <>
+      LBS.pack (show (Http.statusCode status)) <>
+      " " <> LBS.fromStrict (Http.statusMessage status) <> "</h1></body></html>"
 
 data News =
   News
