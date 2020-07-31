@@ -21,8 +21,6 @@ source-repository head
 library
   exposed-modules:
       Lib
-  other-modules:
-      Paths_news_service
   hs-source-dirs:
       src
   build-depends:
@@ -32,23 +30,24 @@ library
 executable news-service-exe
   main-is: Main.hs
   other-modules:
-      Paths_news_service
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , bytestring
+    , http-types
     , news-service
+    , wai
+    , warp
   default-language: Haskell2010
 
 test-suite news-service-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
-  other-modules:
-      Paths_news_service
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -rtsopts
   build-depends:
       base >=4.7 && <5
     , news-service
