@@ -6,15 +6,17 @@ module Main
   ) where
 
 import qualified Data.Aeson as A
+import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Lazy.Char8 as LBS
+import qualified Data.HashMap.Strict as HM
+import Data.HashMap.Strict (HashMap)
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
 import Data.Time.Calendar
 import Data.Time.Clock
 import GHC.Generics
-import qualified Network.HTTP.Types.Header as Http
-import qualified Network.HTTP.Types.Status as Http
+import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 
@@ -24,23 +26,46 @@ main = do
   Warp.run 4000 application
 
 application :: Wai.Application
-application request respond
-  | Wai.pathInfo request == ["news"] =
-    respond $
-    Wai.responseLBS
-      Http.ok200
-      [(Http.hContentType, "application/json")]
-      (A.encode stubNews)
-application _ respond = respond (stubErrorResponse Http.notFound404)
+application request respond =
+  case HM.lookup (Wai.pathInfo request) handlersTable of
+    Nothing -> respond $ stubErrorResponse Http.notFound404 []
+    Just subtable ->
+      case HM.lookup (Wai.requestMethod request) subtable of
+        Just handler -> handler request respond
+        Nothing ->
+          respond $
+          stubErrorResponse
+            Http.methodNotAllowed405
+            [makeAllowHeader (HM.keys subtable)]
+  where
+    makeAllowHeader methods = ("Allow", SBS.intercalate ", " (sort methods))
 
-stubErrorResponse :: Http.Status -> Wai.Response
-stubErrorResponse status =
-  Wai.responseLBS status [(Http.hContentType, "text/html")] body
+type UrlPath = [Text]
+
+handlersTable :: HashMap UrlPath (HashMap Http.Method Wai.Application)
+handlersTable =
+  HM.fromList [(["news"], HM.fromList [(Http.methodGet, handlerGetNews)])]
+
+handlerGetNews :: Wai.Application
+handlerGetNews _ respond =
+  respond $
+  Wai.responseLBS
+    Http.ok200
+    [(Http.hContentType, "application/json")]
+    (A.encode stubNews)
+
+stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
+stubErrorResponse status additionalHeaders =
+  Wai.responseLBS
+    status
+    ((Http.hContentType, "text/html") : additionalHeaders)
+    body
   where
     body =
       "<!DOCTYPE html><html><body><h1>" <>
       LBS.pack (show (Http.statusCode status)) <>
-      " " <> LBS.fromStrict (Http.statusMessage status) <> "</h1></body></html>"
+      " " <>
+      LBS.fromStrict (Http.statusMessage status) <> "</h1></body></html>\n"
 
 data News =
   News
