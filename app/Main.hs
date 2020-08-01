@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main
   ( main
   ) where
 
 import qualified Data.Aeson as A
+import qualified Data.Aeson.TH as A
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified Data.HashMap.Strict as HM
@@ -15,7 +16,6 @@ import Data.Maybe
 import Data.Text (Text)
 import Data.Time.Calendar
 import Data.Time.Clock
-import GHC.Generics
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -74,24 +74,6 @@ data News =
     , newsText :: Text
     , newsImage :: String
     }
-  deriving (Generic)
-
-instance A.ToJSON News where
-  toJSON = A.genericToJSON (toJSONOptionsWithFieldPrefix "news")
-  toEncoding = A.genericToEncoding (toJSONOptionsWithFieldPrefix "news")
-
-toJSONOptionsWithFieldPrefix :: String -> A.Options
-toJSONOptionsWithFieldPrefix prefix =
-  A.defaultOptions {A.fieldLabelModifier = formatField}
-  where
-    formatField fieldName =
-      A.camelTo2 '_' .
-      fromMaybe
-        (error
-           ("The field '" ++
-            fieldName ++ "' must be prefixed with '" ++ prefix ++ "'")) .
-      stripPrefix prefix $
-      fieldName
 
 stubNews :: [News]
 stubNews =
@@ -110,3 +92,8 @@ stubNews =
   ]
   where
     utcMidnight year month day = UTCTime (fromGregorian year month day) 0
+
+$(A.deriveToJSON
+    A.defaultOptions
+      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "news"}
+    ''News)
