@@ -3,7 +3,7 @@ module Main
   ) where
 
 import qualified Data.ByteString as SBS
-import qualified Data.ByteString.Lazy.Char8 as LBS
+import qualified Data.ByteString.Builder as LBS
 import qualified Handler.News
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -32,13 +32,13 @@ router = R.new $ R.ifPath ["news"] $ R.ifMethod Http.methodGet Handler.News.run
 
 stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
 stubErrorResponse status additionalHeaders =
-  Wai.responseLBS
+  Wai.responseBuilder
     status
     ((Http.hContentType, "text/html") : additionalHeaders)
     body
   where
     body =
       "<!DOCTYPE html><html><body><h1>" <>
-      LBS.pack (show (Http.statusCode status)) <>
+      LBS.stringUtf8 (show (Http.statusCode status)) <>
       " " <>
-      LBS.fromStrict (Http.statusMessage status) <> "</h1></body></html>\n"
+      LBS.byteString (Http.statusMessage status) <> "</h1></body></html>\n"

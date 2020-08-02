@@ -17,10 +17,10 @@ import qualified Network.Wai as Wai
 run :: Wai.Application
 run _ respond =
   respond $
-  Wai.responseLBS
+  Wai.responseBuilder
     Http.ok200
     [(Http.hContentType, "application/json")]
-    (A.encode stubNews)
+    (A.fromEncoding $ A.toEncoding stubNews)
 
 data News =
   News
