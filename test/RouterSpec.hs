@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module RouterSpec
   ( spec
   ) where
