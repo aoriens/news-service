@@ -1,19 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Main
   ( main
   ) where
 
-import qualified Data.Aeson as A
-import qualified Data.Aeson.TH as A
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Lazy.Char8 as LBS
-import Data.List
-import Data.Maybe
-import Data.Text (Text)
-import Data.Time.Calendar
-import Data.Time.Clock
+import qualified Handler.News
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -37,15 +30,7 @@ routerApplication request =
     makeAllowHeader methods = ("Allow", SBS.intercalate ", " methods)
 
 router :: R.Router
-router = R.new $ R.ifPath ["news"] $ R.ifMethod Http.methodGet handlerGetNews
-
-handlerGetNews :: Wai.Application
-handlerGetNews _ respond =
-  respond $
-  Wai.responseLBS
-    Http.ok200
-    [(Http.hContentType, "application/json")]
-    (A.encode stubNews)
+router = R.new $ R.ifPath ["news"] $ R.ifMethod Http.methodGet Handler.News.run
 
 stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
 stubErrorResponse status additionalHeaders =
@@ -59,34 +44,3 @@ stubErrorResponse status additionalHeaders =
       LBS.pack (show (Http.statusCode status)) <>
       " " <>
       LBS.fromStrict (Http.statusMessage status) <> "</h1></body></html>\n"
-
-data News =
-  News
-    { newsTitle :: Text
-    , newsDate :: UTCTime
-    , newsText :: Text
-    , newsImage :: String
-    }
-
-stubNews :: [News]
-stubNews =
-  [ News
-      { newsTitle = "Title1"
-      , newsDate = utcMidnight 2020 07 27
-      , newsText = "A news text"
-      , newsImage = "http://example.com/image1.png"
-      }
-  , News
-      { newsTitle = "Title2"
-      , newsDate = utcMidnight 2020 01 01
-      , newsText = "A news text"
-      , newsImage = "http://example.com/image1.png"
-      }
-  ]
-  where
-    utcMidnight year month day = UTCTime (fromGregorian year month day) 0
-
-$(A.deriveToJSON
-    A.defaultOptions
-      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "news"}
-    ''News)
