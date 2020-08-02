@@ -9,8 +9,6 @@ import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Lazy.Char8 as LBS
-import qualified Data.HashMap.Strict as HM
-import Data.HashMap.Strict (HashMap)
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
@@ -19,32 +17,27 @@ import Data.Time.Clock
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Router as R
 
 main :: IO ()
 main = do
   putStrLn "Server started"
-  Warp.run 4000 application
+  Warp.run 4000 routerApplication
 
-application :: Wai.Application
-application request respond =
-  case HM.lookup (Wai.pathInfo request) handlersTable of
-    Nothing -> respond $ stubErrorResponse Http.notFound404 []
-    Just subtable ->
-      case HM.lookup (Wai.requestMethod request) subtable of
-        Just handler -> handler request respond
-        Nothing ->
-          respond $
-          stubErrorResponse
-            Http.methodNotAllowed405
-            [makeAllowHeader (HM.keys subtable)]
+routerApplication :: Wai.Application
+routerApplication request =
+  case R.route router request of
+    R.HandlerResult handler -> handler request
+    R.ResourceNotFoundResult -> ($ stubErrorResponse Http.notFound404 [])
+    R.MethodNotSupportedResult knownMethods ->
+      ($ stubErrorResponse
+           Http.methodNotAllowed405
+           [makeAllowHeader knownMethods])
   where
-    makeAllowHeader methods = ("Allow", SBS.intercalate ", " (sort methods))
+    makeAllowHeader methods = ("Allow", SBS.intercalate ", " methods)
 
-type UrlPath = [Text]
-
-handlersTable :: HashMap UrlPath (HashMap Http.Method Wai.Application)
-handlersTable =
-  HM.fromList [(["news"], HM.fromList [(Http.methodGet, handlerGetNews)])]
+router :: R.Router
+router = R.new $ R.ifPath ["news"] $ R.ifMethod Http.methodGet handlerGetNews
 
 handlerGetNews :: Wai.Application
 handlerGetNews _ respond =

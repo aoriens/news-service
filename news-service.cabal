@@ -20,11 +20,17 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Router
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , bytestring
+    , http-types
+    , mtl
+    , text
+    , unordered-containers
+    , wai
   default-language: Haskell2010
 
 executable news-service-exe
@@ -49,10 +55,16 @@ executable news-service-exe
 test-suite news-service-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
+  other-modules:
+      RouterSpec
   hs-source-dirs:
       test
   ghc-options: -rtsopts
   build-depends:
       base >=4.7 && <5
+    , bytestring
+    , hspec
+    , http-types
     , news-service
+    , wai
   default-language: Haskell2010
