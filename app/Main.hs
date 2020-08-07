@@ -4,7 +4,9 @@ module Main
 
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as LBS
+import qualified Gateway.News
 import qualified Handler.News
+import qualified Interactor.GetNews
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -28,7 +30,12 @@ routerApplication request =
     makeAllowHeader methods = ("Allow", SBS.intercalate ", " methods)
 
 router :: R.Router
-router = R.new $ R.ifPath ["news"] $ R.ifMethod Http.methodGet Handler.News.run
+router =
+  R.new $ do
+    R.ifPath ["news"] $ do
+      R.ifMethod Http.methodGet $
+        Handler.News.run
+          (Handler.News.Handle (Interactor.GetNews.Handle Gateway.News.getNews))
 
 stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
 stubErrorResponse status additionalHeaders =

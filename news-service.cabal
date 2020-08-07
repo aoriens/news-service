@@ -20,7 +20,8 @@ source-repository head
 
 library
   exposed-modules:
-      Router
+      Interactor.GetNews
+    , Router
   hs-source-dirs:
       src
   build-depends:
@@ -29,6 +30,7 @@ library
     , http-types
     , mtl
     , text
+    , time
     , unordered-containers
     , wai
   default-language: Haskell2010
@@ -37,7 +39,9 @@ library
 executable news-service-exe
   main-is: Main.hs
   other-modules:
-      Handler.News
+      Gateway.News
+    , Handler.News
+    , WaiUtil
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
