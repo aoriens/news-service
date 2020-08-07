@@ -26,7 +26,6 @@ data News =
     { newsTitle :: Text
     , newsDate :: Day
     , newsText :: Text
-    , newsImage :: String
     }
 
 stubNews :: [News]
@@ -35,13 +34,11 @@ stubNews =
       { newsTitle = "Title1"
       , newsDate = fromGregorian 2020 07 27
       , newsText = "A news text"
-      , newsImage = "http://example.com/image1.png"
       }
   , News
       { newsTitle = "Title2"
       , newsDate = fromGregorian 2020 01 01
       , newsText = "A news text"
-      , newsImage = "http://example.com/image1.png"
       }
   ]
 
