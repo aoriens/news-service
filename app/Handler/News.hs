@@ -10,7 +10,6 @@ import Data.List
 import Data.Maybe
 import Data.Text (Text)
 import Data.Time.Calendar
-import Data.Time.Clock
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
@@ -25,7 +24,7 @@ run _ respond =
 data News =
   News
     { newsTitle :: Text
-    , newsDate :: UTCTime
+    , newsDate :: Day
     , newsText :: Text
     , newsImage :: String
     }
@@ -34,19 +33,17 @@ stubNews :: [News]
 stubNews =
   [ News
       { newsTitle = "Title1"
-      , newsDate = utcMidnight 2020 07 27
+      , newsDate = fromGregorian 2020 07 27
       , newsText = "A news text"
       , newsImage = "http://example.com/image1.png"
       }
   , News
       { newsTitle = "Title2"
-      , newsDate = utcMidnight 2020 01 01
+      , newsDate = fromGregorian 2020 01 01
       , newsText = "A news text"
       , newsImage = "http://example.com/image1.png"
       }
   ]
-  where
-    utcMidnight year month day = UTCTime (fromGregorian year month day) 0
 
 $(A.deriveToJSON
     A.defaultOptions
