@@ -4,6 +4,7 @@ module Main
 
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as LBS
+import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
 import qualified Handler.News
 import qualified Interactor.GetNews
@@ -29,14 +30,6 @@ routerApplication request =
   where
     makeAllowHeader methods = ("Allow", SBS.intercalate ", " methods)
 
-router :: R.Router
-router =
-  R.new $ do
-    R.ifPath ["news"] $ do
-      R.ifMethod Http.methodGet $
-        Handler.News.run
-          (Handler.News.Handle (Interactor.GetNews.Handle Gateway.News.getNews))
-
 stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
 stubErrorResponse status additionalHeaders =
   Wai.responseBuilder
@@ -49,3 +42,24 @@ stubErrorResponse status additionalHeaders =
       LBS.stringUtf8 (show (Http.statusCode status)) <>
       " " <>
       LBS.byteString (Http.statusMessage status) <> "</h1></body></html>\n"
+
+router :: R.Router
+router =
+  R.new $ do
+    R.ifPath ["news"] $ do
+      R.ifMethod Http.methodGet $ Handler.News.run newsHandlerHandle
+
+newsHandlerHandle :: Handler.News.Handle
+newsHandlerHandle =
+  Handler.News.Handle
+    (Interactor.GetNews.Handle
+       (Gateway.News.getNews
+          Gateway.News.Handle
+            { Gateway.News.hWithConnection =
+                DBConnManager.withConnection dbConnectionConfig
+            }))
+
+dbConnectionConfig :: DBConnManager.Config
+dbConnectionConfig =
+  DBConnManager.makeConfig
+    (DBConnManager.connectionSettingsWithDatabaseName "news")

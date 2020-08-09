@@ -1,22 +1,28 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Gateway.News
   ( getNews
+  , Handle(..)
   ) where
 
-import Control.Exception
 import Data.Foldable
 import Data.Profunctor
 import Data.Vector (Vector)
-import qualified Hasql.Connection as Connection
+import qualified Hasql.Connection as C
 import qualified Hasql.Session as Session
 import qualified Hasql.Statement as Statement
 import qualified Hasql.TH as TH
 import qualified Interactor.GetNews as GetNews
 
-getNews :: IO [GetNews.News]
-getNews = do
-  r <- runStatement () selectNewsStatement
+newtype Handle =
+  Handle
+    { hWithConnection :: forall a. (C.Connection -> IO a) -> IO a
+    }
+
+getNews :: Handle -> IO [GetNews.News]
+getNews h = do
+  r <- runStatement h () selectNewsStatement
   either (error . show) (pure . toList) r
 
 selectNewsStatement :: Statement.Statement () (Vector GetNews.News)
@@ -35,20 +41,12 @@ selectNewsStatement =
         , GetNews.newsText = body
         }
 
-withConnection :: (Connection.Connection -> IO a) -> IO a
-withConnection = bracket getConnection Connection.release
-  where
-    getConnection = do
-      r <- Connection.acquire "dbname=news"
-      case r of
-        Left e -> error ("Hasql error: " ++ show e)
-        Right conn -> pure conn
-
-runSession :: Session.Session a -> IO (Either Session.QueryError a)
-runSession = withConnection . Session.run
+runSession :: Handle -> Session.Session a -> IO (Either Session.QueryError a)
+runSession h = hWithConnection h . Session.run
 
 runStatement ::
-     params
+     Handle
+  -> params
   -> Statement.Statement params result
   -> IO (Either Session.QueryError result)
-runStatement params = runSession . Session.statement params
+runStatement h params = runSession h . Session.statement params
