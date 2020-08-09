@@ -49,11 +49,15 @@ executable news-service-exe
       aeson
     , base >=4.7 && <5
     , bytestring
+    , hasql
+    , hasql-th
     , http-types
     , news-service
+    , profunctors
     , text
     , time
     , unordered-containers
+    , vector
     , wai
     , warp
   default-language: Haskell2010
