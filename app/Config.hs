@@ -9,6 +9,7 @@ module Config
   , Config(..)
   ) where
 
+import Control.Exception
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import qualified Data.Configurator as C
@@ -38,16 +39,23 @@ data Config =
 getConfig :: IO Config
 getConfig = do
   conf <- loadConfigFile
-  (`runReaderT` conf) $ do
-    cfServerPort <- lookupOpt "server.port"
-    cfServerHostPreference <- lookupOpt "server.host"
-    cfServerName <- lookupOpt "server.name"
-    cfDatabaseName <- require "postgresql.databaseName"
-    cfDatabaseHost <- lookupOpt "postgresql.host"
-    cfDatabasePort <- fmap getStricterIntegral <$> lookupOpt "postgresql.port"
-    cfDatabaseUser <- lookupOpt "postgresql.user"
-    cfDatabasePassword <- lookupOpt "postgresql.password"
-    pure Config {..}
+  r <- try (runReaderT parseConfig conf)
+  case r of
+    Right c -> pure c
+    Left (C.KeyError key) ->
+      error $ printf "Configuration option '%v' is missing" key
+
+parseConfig :: ReaderT C.Config IO Config
+parseConfig = do
+  cfServerPort <- lookupOpt "server.port"
+  cfServerHostPreference <- lookupOpt "server.host"
+  cfServerName <- lookupOpt "server.name"
+  cfDatabaseName <- require "postgresql.databaseName"
+  cfDatabaseHost <- lookupOpt "postgresql.host"
+  cfDatabasePort <- fmap getStricterIntegral <$> lookupOpt "postgresql.port"
+  cfDatabaseUser <- lookupOpt "postgresql.user"
+  cfDatabasePassword <- lookupOpt "postgresql.password"
+  pure Config {..}
 
 loadConfigFile :: IO C.Config
 loadConfigFile = do
@@ -85,7 +93,7 @@ require key = do
 
 -- | An integral type wrapper with a stricter decoding policy. It
 -- tries to decode a value without loss of precision. Normally, trying
--- to represent @9999999@ as Word16 results in something like 16959
+-- to represent 9999999 as 'Word16' results in something like 16959,
 -- which is unsafe when dealing with configuration files.
 newtype StricterIntegral a =
   StricterIntegral
