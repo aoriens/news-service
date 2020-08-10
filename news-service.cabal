@@ -39,7 +39,8 @@ library
 executable news-service-exe
   main-is: Main.hs
   other-modules:
-      Database
+      Config
+    , Database
     , Database.ConnectionManager
     , Gateway.News
     , Handler.News
@@ -51,6 +52,7 @@ executable news-service-exe
       aeson
     , base >=4.7 && <5
     , bytestring
+    , configurator
     , hasql
     , hasql-th
     , http-types
@@ -58,6 +60,7 @@ executable news-service-exe
     , profunctors
     , text
     , time
+    , transformers
     , unordered-containers
     , vector
     , wai

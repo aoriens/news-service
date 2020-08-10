@@ -1,6 +1,6 @@
 # A shell library file to be included into all test scripts.
 
-: ${DOMAIN=localhost:4000}
+: ${DOMAIN=localhost:3000}
 
 # The function may be used in test scripts. It uses HTTP method $1 and
 # URL $2 without the scheme and domain part:

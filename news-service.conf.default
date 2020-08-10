@@ -1,0 +1,24 @@
+# This is a sample configuration file for news-service
+#
+# The configuration format is documented at
+# https://hackage.haskell.org/package/configurator/docs/Data-Configurator.html
+
+server {
+  # An optional hostname to bind the server or the host preference:
+  # 
+  # - "*"  means HostAny - "any IPv4 or IPv6 hostname"
+  # - "*4" means HostIPv4 - "any IPv4 or IPv6 hostname, IPv4 preferred"
+  # - "!4" means HostIPv4Only - "any IPv4 hostname"
+  # - "*6" means HostIPv6@ - "any IPv4 or IPv6 hostname, IPv6 preferred"
+  # - "!6" means HostIPv6Only - "any IPv6 hostname"
+  #
+  # Any other value is treated as a hostname. As an example, to bind
+  # to the IPv4 local host only, use "127.0.0.1". Default is localhost.
+  host = "localhost"
+  
+  # An optional server port. Default is 3000.
+  # port = 8080
+
+  # An optional server name. It will be sent in the Server header.
+  # name = "MyHTTPServer/1.0.0"
+}

@@ -1,12 +1,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main
   ( main
   ) where
 
+import qualified Config as Cf
 import Control.Exception
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as LBS
+import Data.String
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
 import qualified Handler.News
@@ -19,9 +22,21 @@ import System.IO
 
 main :: IO ()
 main = do
+  settings <- getWarpSettings
   putStrLn "Server started"
-  Warp.run 4000 . convertExceptionsToStatus500 . logUncaughtExceptions $
-    routerApplication
+  Warp.runSettings settings application
+  where
+    application =
+      convertExceptionsToStatus500 $ logUncaughtExceptions routerApplication
+
+getWarpSettings :: IO Warp.Settings
+getWarpSettings = do
+  Cf.Config {..} <- Cf.getConfig
+  pure $
+    maybe id (Warp.setServerName . fromString) cfServerName .
+    maybe id (Warp.setHost . fromString) cfServerHostPreference .
+    maybe id Warp.setPort cfServerPort $
+    Warp.setHost "localhost" Warp.defaultSettings
 
 convertExceptionsToStatus500 :: Wai.Middleware
 convertExceptionsToStatus500 app request respond =

@@ -6,5 +6,11 @@ users, authentication etc. It uses warp and PostgreSQL.
 
 # Building
 
-`stack build` is only needed.
+Run `stack build`.
 
+## Running
+
+    news-service [--config PATH_TO_CONFIG]
+
+If no configuration file is provided, default values will be used. A sample
+configuration file is available in `news-service.config.default`.
