@@ -15,7 +15,7 @@ import Data.Time.Calendar
 import qualified Interactor.GetNews as GetNews
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified WaiUtil as Wai
+import qualified Network.Wai.Util as Wai
 
 newtype Handle =
   Handle

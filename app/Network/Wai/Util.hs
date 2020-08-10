@@ -1,4 +1,4 @@
-module WaiUtil
+module Network.Wai.Util
   ( simpleResponseStream
   ) where
 
