@@ -39,7 +39,8 @@ library
 executable news-service-exe
   main-is: Main.hs
   other-modules:
-      Database.ConnectionManager
+      Database
+    , Database.ConnectionManager
     , Gateway.News
     , Handler.News
     , WaiUtil

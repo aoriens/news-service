@@ -9,8 +9,8 @@ module Gateway.News
 import Data.Foldable
 import Data.Profunctor
 import Data.Vector (Vector)
+import qualified Database as DB
 import qualified Hasql.Connection as C
-import qualified Hasql.Session as Session
 import qualified Hasql.Statement as Statement
 import qualified Hasql.TH as TH
 import qualified Interactor.GetNews as GetNews
@@ -21,9 +21,8 @@ newtype Handle =
     }
 
 getNews :: Handle -> IO [GetNews.News]
-getNews h = do
-  r <- runStatement h () selectNewsStatement
-  either (error . show) (pure . toList) r
+getNews h =
+  toList <$> DB.runStatement (hWithConnection h) () selectNewsStatement
 
 selectNewsStatement :: Statement.Statement () (Vector GetNews.News)
 selectNewsStatement =
@@ -40,13 +39,3 @@ selectNewsStatement =
         , GetNews.newsDate = date
         , GetNews.newsText = body
         }
-
-runSession :: Handle -> Session.Session a -> IO (Either Session.QueryError a)
-runSession h = hWithConnection h . Session.run
-
-runStatement ::
-     Handle
-  -> params
-  -> Statement.Statement params result
-  -> IO (Either Session.QueryError result)
-runStatement h params = runSession h . Session.statement params
