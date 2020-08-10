@@ -5,7 +5,7 @@ module Database.ConnectionManager
   ( withConnection
   , Config
   , makeConfig
-  , ConnectionSettings
+  , ConnectionSettings(..)
   , connectionSettingsWithDatabaseName
   , ConnectionException
   ) where

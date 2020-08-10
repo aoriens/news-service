@@ -22,3 +22,20 @@ server {
   # An optional server name. It will be sent in the Server header.
   # name = "MyHTTPServer/1.0.0"
 }
+
+postgresql {
+  # A database name. This is required.
+  databaseName = "news"
+
+  # The server host. This is localhost by default.
+  # host = "localhost"
+
+  # The optional server port.
+  # port = 50000
+
+  # An optional user name. Defaults to the current user.
+  # user = "dbuser"
+
+  # The user's password. It is unnecessary when no user is specified.
+  # password = "12345678"
+}

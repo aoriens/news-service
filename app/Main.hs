@@ -20,23 +20,45 @@ import qualified Network.Wai.Handler.Warp as Warp
 import qualified Router as R
 import System.IO
 
+-- The local environment containing configuration loaded from IO and
+-- maybe some dependencies. It's purpose to be passed to pure
+-- functions **in this module**, keeping extensibility in the number
+-- of fields and avoiding to add excess parameters to 100500 function
+-- signatures.
+newtype Env =
+  Env DBConnManager.Config
+
 main :: IO ()
 main = do
-  settings <- getWarpSettings
+  config <- Cf.getConfig
+  let settings = warpSettings config
+      env = makeEnv config
   putStrLn "Server started"
-  Warp.runSettings settings application
+  Warp.runSettings settings (application env)
   where
-    application =
-      convertExceptionsToStatus500 $ logUncaughtExceptions routerApplication
+    application env =
+      convertExceptionsToStatus500 $
+      logUncaughtExceptions $ routerApplication env
 
-getWarpSettings :: IO Warp.Settings
-getWarpSettings = do
-  Cf.Config {..} <- Cf.getConfig
-  pure $
-    maybe id (Warp.setServerName . fromString) cfServerName .
-    maybe id (Warp.setHost . fromString) cfServerHostPreference .
-    maybe id Warp.setPort cfServerPort $
-    Warp.setHost "localhost" Warp.defaultSettings
+warpSettings :: Cf.Config -> Warp.Settings
+warpSettings Cf.Config {..} =
+  maybe id (Warp.setServerName . fromString) cfServerName .
+  maybe id (Warp.setHost . fromString) cfServerHostPreference .
+  maybe id Warp.setPort cfServerPort $
+  Warp.setHost "localhost" Warp.defaultSettings
+
+makeEnv :: Cf.Config -> Env
+makeEnv = Env . makeDBConnectionConfig
+
+makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
+makeDBConnectionConfig Cf.Config {..} =
+  DBConnManager.makeConfig $
+  (DBConnManager.connectionSettingsWithDatabaseName $ fromString cfDatabaseName)
+    { DBConnManager.settingsHost = fromString <$> cfDatabaseHost
+    , DBConnManager.settingsPort = cfDatabasePort
+    , DBConnManager.settingsUser = fromString <$> cfDatabaseUser
+    , DBConnManager.settingsPassword = fromString <$> cfDatabasePassword
+    }
 
 convertExceptionsToStatus500 :: Wai.Middleware
 convertExceptionsToStatus500 app request respond =
@@ -58,9 +80,9 @@ logUncaughtExceptions app request respond =
       hPutStrLn stderr (displayException e)
       throwIO e
 
-routerApplication :: Wai.Application
-routerApplication request =
-  case R.route router request of
+routerApplication :: Env -> Wai.Application
+routerApplication env request =
+  case R.route (router env) request of
     R.HandlerResult handler -> handler request
     R.ResourceNotFoundResult -> ($ stubErrorResponse Http.notFound404 [])
     R.MethodNotSupportedResult knownMethods ->
@@ -85,14 +107,14 @@ stubErrorResponse status additionalHeaders =
         , LBS.byteString (Http.statusMessage status) <> "</h1></body></html>\n"
         ]
 
-router :: R.Router
-router =
+router :: Env -> R.Router
+router env =
   R.new $ do
     R.ifPath ["news"] $ do
-      R.ifMethod Http.methodGet $ Handler.News.run newsHandlerHandle
+      R.ifMethod Http.methodGet $ Handler.News.run (newsHandlerHandle env)
 
-newsHandlerHandle :: Handler.News.Handle
-newsHandlerHandle =
+newsHandlerHandle :: Env -> Handler.News.Handle
+newsHandlerHandle (Env dbConnectionConfig) =
   Handler.News.Handle
     (Interactor.GetNews.Handle
        (Gateway.News.getNews
@@ -100,8 +122,3 @@ newsHandlerHandle =
             { Gateway.News.hWithConnection =
                 DBConnManager.withConnection dbConnectionConfig
             }))
-
-dbConnectionConfig :: DBConnManager.Config
-dbConnectionConfig =
-  DBConnManager.makeConfig
-    (DBConnManager.connectionSettingsWithDatabaseName "news")

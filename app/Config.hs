@@ -13,6 +13,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
+import Data.Word
 import System.Environment
 
 -- | Whole configuration data.
@@ -21,6 +22,11 @@ data Config =
     { cfServerPort :: Maybe Int
     , cfServerHostPreference :: Maybe String
     , cfServerName :: Maybe String
+    , cfDatabaseName :: String
+    , cfDatabaseHost :: Maybe String
+    , cfDatabasePort :: Maybe Word16
+    , cfDatabaseUser :: Maybe String
+    , cfDatabasePassword :: Maybe String
     }
   deriving (Show)
 
@@ -33,6 +39,11 @@ getConfig = do
     cfServerPort <- lookupOpt "server.port"
     cfServerHostPreference <- lookupOpt "server.host"
     cfServerName <- lookupOpt "server.name"
+    cfDatabaseName <- require "postgresql.databaseName"
+    cfDatabaseHost <- lookupOpt "postgresql.host"
+    cfDatabasePort <- lookupOpt "postgresql.port"
+    cfDatabaseUser <- lookupOpt "postgresql.user"
+    cfDatabasePassword <- lookupOpt "postgresql.password"
     pure Config {..}
 
 loadConfigFile :: IO C.Config
@@ -51,3 +62,8 @@ lookupOpt :: (C.Configured a) => C.Name -> ReaderT C.Config IO (Maybe a)
 lookupOpt key = do
   conf <- ask
   lift $ C.lookup conf key
+
+require :: (C.Configured a) => C.Name -> ReaderT C.Config IO a
+require key = do
+  conf <- ask
+  lift $ C.require conf key
