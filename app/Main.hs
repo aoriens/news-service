@@ -38,10 +38,12 @@ stubErrorResponse status additionalHeaders =
     body
   where
     body =
-      "<!DOCTYPE html><html><body><h1>" <>
-      LBS.stringUtf8 (show (Http.statusCode status)) <>
-      " " <>
-      LBS.byteString (Http.statusMessage status) <> "</h1></body></html>\n"
+      mconcat
+        [ "<!DOCTYPE html><html><body><h1>"
+        , LBS.stringUtf8 (show (Http.statusCode status))
+        , " "
+        , LBS.byteString (Http.statusMessage status) <> "</h1></body></html>\n"
+        ]
 
 router :: R.Router
 router =
