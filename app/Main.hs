@@ -69,6 +69,7 @@ makeDBConnectionConfig Cf.Config {..} =
 getWebHandle :: Deps -> IO Web.Handle
 getWebHandle deps = do
   hLoggerHandle <- getLoggerHandle (dConfig deps)
+  hState <- Web.makeState
   let hRouter = router deps
   pure Web.Handle {..}
 

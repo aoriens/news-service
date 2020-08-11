@@ -6,6 +6,8 @@
 module Web
   ( application
   , Handle(..)
+  , State
+  , makeState
   ) where
 
 import Control.Exception
@@ -13,6 +15,7 @@ import Control.Exception.Sync
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
+import Data.Int
 import Data.List
 import qualified Data.Text as T
 import Data.Text.Encoding as T
@@ -29,7 +32,25 @@ data Handle =
   Handle
     { hLoggerHandle :: Logger.Handle IO
     , hRouter :: R.Router
+    , hState :: State
     }
+
+-- | A mutable state of the module. Use 'makeState' to create it and
+-- store it into a 'Handle'.
+newtype State =
+  State
+    { stSessionIdRef :: IORef SessionId
+    }
+
+newtype SessionId =
+  SessionId Int64
+  deriving (Eq)
+
+-- | Creates an initial state for the module.
+makeState :: IO State
+makeState = do
+  stSessionIdRef <- newIORef (SessionId 0)
+  pure State {..}
 
 application :: Handle -> Wai.Application
 application h =
@@ -38,25 +59,28 @@ application h =
 
 logEnterAndExit :: Handle -> Wai.Middleware
 logEnterAndExit h app req respond = do
-  Logger.info h enterMessage
+  sid <- generateSessionId h
+  Logger.info h (enterMessage sid)
   (r, status) <- runApplicationAndGetStatus app req respond
-  Logger.info h (exitMessage status)
+  Logger.info h (exitMessage status sid)
   pure r
   where
-    enterMessage =
+    enterMessage sid =
       T.intercalate
         " "
         [ "Request"
+        , T.pack (show sid)
         , T.pack (formatPeerAddr (Wai.remoteHost req))
         , T.decodeLatin1 (Wai.requestMethod req)
         , T.decodeLatin1 (Wai.rawPathInfo req)
         ]
-    exitMessage status =
+    exitMessage status sid =
       T.intercalate
         " "
         [ "Respond"
+        , T.pack (show sid)
         , T.pack (show (Http.statusCode status))
-        , T.pack (formatPeerAddr (Wai.remoteHost req))
+        , T.decodeLatin1 (Http.statusMessage status)
         ]
 
 runApplicationAndGetStatus ::
@@ -85,6 +109,12 @@ formatPeerAddr (Socket.SockAddrInet6 _ _ ip6 _) =
   where
     (b1, b2, b3, b4, b5, b6, b7, b8) = Socket.hostAddress6ToTuple ip6
 formatPeerAddr (Socket.SockAddrUnix s) = s
+
+generateSessionId :: Handle -> IO SessionId
+generateSessionId Handle {..} =
+  atomicModifyIORef' (stSessionIdRef hState) $ \(SessionId n) ->
+    let new = SessionId (succ n)
+     in (new, new)
 
 convertExceptionsToStatus500 :: Wai.Middleware
 convertExceptionsToStatus500 app request respond =
@@ -138,3 +168,6 @@ stubErrorResponse status additionalHeaders =
 
 instance Logger.Logger Handle IO where
   lowLevelLog = Logger.hLowLevelLog . hLoggerHandle
+
+instance Show SessionId where
+  showsPrec _ (SessionId n) = showString "SID=" . shows n
