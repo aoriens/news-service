@@ -2,14 +2,14 @@
 
 -- | High-level interface to dynamic configuration data (configuration
 -- files, command line parameters etc). It should only allow getting
--- and parsing settings as-is to simple data types, neither providing
--- default values nor parsing to library-specific types.
+-- and parsing settings to simple data types as they are, neither
+-- providing default values nor parsing to library-specific types.
 module Config
   ( getConfig
   , Config(..)
   ) where
 
-import Control.Exception
+import Control.Exception.Sync
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import qualified Data.Configurator as C
@@ -39,11 +39,8 @@ data Config =
 getConfig :: IO Config
 getConfig = do
   conf <- loadConfigFile
-  r <- try (runReaderT parseConfig conf)
-  case r of
-    Right c -> pure c
-    Left (C.KeyError key) ->
-      error $ printf "Configuration option '%v' is missing" key
+  runReaderT parseConfig conf `catchS` \(C.KeyError key) ->
+    error $ printf "Configuration option '%v' is missing" key
 
 parseConfig :: ReaderT C.Config IO Config
 parseConfig = do

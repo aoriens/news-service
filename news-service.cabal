@@ -20,7 +20,8 @@ source-repository head
 
 library
   exposed-modules:
-      Interactor.GetNews
+      Control.Exception.Sync
+    , Interactor.GetNews
     , Router
   hs-source-dirs:
       src

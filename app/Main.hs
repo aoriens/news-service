@@ -7,6 +7,7 @@ module Main
 
 import qualified Config as Cf
 import Control.Exception
+import Control.Exception.Sync
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as LBS
 import Data.String
@@ -62,8 +63,10 @@ makeDBConnectionConfig Cf.Config {..} =
 
 convertExceptionsToStatus500 :: Wai.Middleware
 convertExceptionsToStatus500 app request respond =
-  tryJust testException (app request respond) >>=
-  either (respond . Warp.defaultOnExceptionResponse) pure
+  catchJustS
+    testException
+    (app request respond)
+    (respond . Warp.defaultOnExceptionResponse)
   where
     testException e
       | Just (_ :: SomeAsyncException) <- fromException e = Nothing
@@ -71,7 +74,7 @@ convertExceptionsToStatus500 app request respond =
 
 logUncaughtExceptions :: Wai.Middleware
 logUncaughtExceptions app request respond =
-  tryJust testException (app request respond) >>= either logAndRethrow pure
+  catchJustS testException (app request respond) logAndRethrow
   where
     testException e
       | Warp.defaultShouldDisplayException e = Just e
