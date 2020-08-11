@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main
   ( main
@@ -10,6 +11,7 @@ import Control.Exception.Sync
 import Data.String
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
+import qualified Hasql.Connection
 import qualified Interactor.GetNews
 import qualified Logger
 import qualified Logger.Impl
@@ -27,7 +29,7 @@ import qualified Web.Handler.News as HNews
 -- signatures.
 data Deps =
   Deps
-    { dDBConnectionConfig :: DBConnManager.Config
+    { dWithDBConnection :: forall a. (Hasql.Connection.Connection -> IO a) -> IO a
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     }
@@ -50,7 +52,8 @@ getDeps :: IO Deps
 getDeps = do
   dConfig <- Cf.getConfig
   dLoggerHandle <- getLoggerHandle dConfig
-  let dDBConnectionConfig = makeDBConnectionConfig dConfig
+  let dWithDBConnection =
+        DBConnManager.withConnection (makeDBConnectionConfig dConfig)
   pure Deps {..}
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
@@ -80,10 +83,7 @@ newsHandlerHandle Deps {..} =
   HNews.Handle
     (Interactor.GetNews.Handle
        (Gateway.News.getNews
-          Gateway.News.Handle
-            { Gateway.News.hWithConnection =
-                DBConnManager.withConnection dDBConnectionConfig
-            }))
+          Gateway.News.Handle {Gateway.News.hWithConnection = dWithDBConnection}))
 
 getLoggerHandle :: Cf.Config -> IO (Logger.Handle IO)
 getLoggerHandle Cf.Config {..} = do
