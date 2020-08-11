@@ -18,6 +18,7 @@ import qualified Data.HashMap.Lazy as LHM
 import Data.Ratio
 import Data.Word
 import System.Environment
+import System.Exit
 import Text.Printf
 
 -- | Whole configuration data.
@@ -42,7 +43,7 @@ getConfig :: IO Config
 getConfig = do
   conf <- loadConfigFile
   runReaderT parseConfig conf `catchS` \(C.KeyError key) ->
-    error $ printf "Configuration option '%v' is missing" key
+    die $ printf "Configuration option '%v' is missing" key
 
 parseConfig :: ReaderT C.Config IO Config
 parseConfig = do
@@ -77,11 +78,11 @@ lookupOpt key = do
     Nothing -> pure Nothing
     Just rawValue ->
       case C.convert rawValue of
-        Nothing -> rejectValue rawValue
+        Nothing -> lift $ rejectValue rawValue
         Just v -> pure $ Just v
   where
     rejectValue value =
-      error $
+      die $
       printf
         "Configuration option '%v' is assigned an incorrect value: '%v'"
         key
