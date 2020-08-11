@@ -5,13 +5,18 @@ module Main
   ) where
 
 import qualified Config as Cf
+import Control.Exception
+import Control.Exception.Sync
 import Data.String
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
 import qualified Interactor.GetNews
+import qualified Logger
+import qualified Logger.Impl
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Router as R
+import System.IO hiding (Handle)
 import qualified Web
 import qualified Web.Handler.News as HNews
 
@@ -20,16 +25,19 @@ import qualified Web.Handler.News as HNews
 -- functions **in this module**, keeping extensibility in the number
 -- of fields and avoiding to add excess parameters to 100500 function
 -- signatures.
-newtype Env =
-  Env DBConnManager.Config
+data Env =
+  Env
+    { eDBConnectionConfig :: DBConnManager.Config
+    , eConfig :: Cf.Config
+    }
 
 main :: IO ()
 main = do
   config <- Cf.getConfig
-  let settings = warpSettings config
-      env = makeEnv config
+  let env = makeEnv config
+  webHandle <- getWebHandle env
   putStrLn "Server started"
-  Warp.runSettings settings (Web.application (router env))
+  Warp.runSettings (warpSettings config) (Web.application webHandle)
 
 warpSettings :: Cf.Config -> Warp.Settings
 warpSettings Cf.Config {..} =
@@ -39,7 +47,9 @@ warpSettings Cf.Config {..} =
   Warp.setHost "localhost" Warp.defaultSettings
 
 makeEnv :: Cf.Config -> Env
-makeEnv = Env . makeDBConnectionConfig
+makeEnv eConfig =
+  let eDBConnectionConfig = makeDBConnectionConfig eConfig
+   in Env {..}
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
 makeDBConnectionConfig Cf.Config {..} =
@@ -51,6 +61,12 @@ makeDBConnectionConfig Cf.Config {..} =
     , DBConnManager.settingsPassword = fromString <$> cfDatabasePassword
     }
 
+getWebHandle :: Env -> IO Web.Handle
+getWebHandle env = do
+  hLoggerHandle <- getLoggerHandle (eConfig env)
+  let hRouter = router env
+  pure Web.Handle {..}
+
 router :: Env -> R.Router
 router env =
   R.new $ do
@@ -58,11 +74,30 @@ router env =
       R.ifMethod Http.methodGet $ HNews.run (newsHandlerHandle env)
 
 newsHandlerHandle :: Env -> HNews.Handle
-newsHandlerHandle (Env dbConnectionConfig) =
+newsHandlerHandle Env {..} =
   HNews.Handle
     (Interactor.GetNews.Handle
        (Gateway.News.getNews
           Gateway.News.Handle
             { Gateway.News.hWithConnection =
-                DBConnManager.withConnection dbConnectionConfig
+                DBConnManager.withConnection eDBConnectionConfig
             }))
+
+getLoggerHandle :: Cf.Config -> IO (Logger.Handle IO)
+getLoggerHandle Cf.Config {..} = do
+  hFileHandle <- getFileHandle cfLogFilePath
+  let hMinLevel = parseVerbosity cfLoggerVerbosity
+  pure $ Logger.Impl.new Logger.Impl.Handle {..}
+  where
+    getFileHandle (Just path@(_:_)) =
+      openFile path AppendMode `catchS` \e ->
+        error $
+        "While opening log file: " ++ displayException (e :: IOException)
+    getFileHandle _ = pure stderr
+    parseVerbosity s
+      | Nothing <- s = Logger.Info
+      | Just "debug" <- s = Logger.Debug
+      | Just "info" <- s = Logger.Info
+      | Just "warning" <- s = Logger.Warning
+      | Just "error" <- s = Logger.Error
+      | otherwise = error $ "Logger verbosity is set incorrectly: " ++ show s

@@ -39,3 +39,13 @@ postgresql {
   # The user's password. It is unnecessary when no user is specified.
   # password = "12345678"
 }
+
+log {
+  # The minimum level of messages to output. Available values are:
+  # debug, info, warning, error. Info is a default.
+  verbosity = "info"
+
+  # The log file path. An empty or missing path means the standard
+  # error output, which is default.
+  # path = ""
+}

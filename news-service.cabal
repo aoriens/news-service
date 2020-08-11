@@ -22,6 +22,7 @@ library
   exposed-modules:
       Control.Exception.Sync
     , Interactor.GetNews
+    , Logger
     , Router
   hs-source-dirs:
       src
@@ -44,6 +45,7 @@ executable news-service-exe
     , Database
     , Database.ConnectionManager
     , Gateway.News
+    , Logger.Impl
     , Network.Wai.Util
     , Web
     , Web.Handler.News

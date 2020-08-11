@@ -31,6 +31,8 @@ data Config =
     , cfDatabasePort :: Maybe Word16
     , cfDatabaseUser :: Maybe String
     , cfDatabasePassword :: Maybe String
+    , cfLoggerVerbosity :: Maybe String
+    , cfLogFilePath :: Maybe String
     }
   deriving (Show)
 
@@ -52,6 +54,8 @@ parseConfig = do
   cfDatabasePort <- fmap getStricterIntegral <$> lookupOpt "postgresql.port"
   cfDatabaseUser <- lookupOpt "postgresql.user"
   cfDatabasePassword <- lookupOpt "postgresql.password"
+  cfLoggerVerbosity <- lookupOpt "log.verbosity"
+  cfLogFilePath <- lookupOpt "log.path"
   pure Config {..}
 
 loadConfigFile :: IO C.Config
