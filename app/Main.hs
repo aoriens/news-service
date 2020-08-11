@@ -30,15 +30,15 @@ data Env =
   Env
     { eDBConnectionConfig :: DBConnManager.Config
     , eConfig :: Cf.Config
+    , eLoggerHandle :: Logger.Handle IO
     }
 
 main :: IO ()
 main = do
-  config <- Cf.getConfig
-  let env = makeEnv config
+  env@Env {..} <- getEnv
   webHandle <- getWebHandle env
-  putStrLn "Server started"
-  Warp.runSettings (warpSettings config) (Web.application webHandle)
+  Logger.info eLoggerHandle "Starting Warp"
+  Warp.runSettings (warpSettings eConfig) (Web.application webHandle)
 
 warpSettings :: Cf.Config -> Warp.Settings
 warpSettings Cf.Config {..} =
@@ -47,10 +47,12 @@ warpSettings Cf.Config {..} =
   maybe id Warp.setPort cfServerPort $
   Warp.setHost "localhost" Warp.defaultSettings
 
-makeEnv :: Cf.Config -> Env
-makeEnv eConfig =
+getEnv :: IO Env
+getEnv = do
+  eConfig <- Cf.getConfig
+  eLoggerHandle <- getLoggerHandle eConfig
   let eDBConnectionConfig = makeDBConnectionConfig eConfig
-   in Env {..}
+  pure Env {..}
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
 makeDBConnectionConfig Cf.Config {..} =
