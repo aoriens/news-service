@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Handler.News
+module Web.Handler.News
   ( Handle(..)
   , run
   ) where

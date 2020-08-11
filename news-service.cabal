@@ -44,8 +44,8 @@ executable news-service-exe
     , Database
     , Database.ConnectionManager
     , Gateway.News
-    , Handler.News
     , Network.Wai.Util
+    , Web.Handler.News
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N

@@ -13,13 +13,13 @@ import qualified Data.ByteString.Builder as LBS
 import Data.String
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
-import qualified Handler.News
 import qualified Interactor.GetNews
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Router as R
 import System.IO
+import qualified Web.Handler.News as HNews
 
 -- The local environment containing configuration loaded from IO and
 -- maybe some dependencies. It's purpose to be passed to pure
@@ -114,11 +114,11 @@ router :: Env -> R.Router
 router env =
   R.new $ do
     R.ifPath ["news"] $ do
-      R.ifMethod Http.methodGet $ Handler.News.run (newsHandlerHandle env)
+      R.ifMethod Http.methodGet $ HNews.run (newsHandlerHandle env)
 
-newsHandlerHandle :: Env -> Handler.News.Handle
+newsHandlerHandle :: Env -> HNews.Handle
 newsHandlerHandle (Env dbConnectionConfig) =
-  Handler.News.Handle
+  HNews.Handle
     (Interactor.GetNews.Handle
        (Gateway.News.getNews
           Gateway.News.Handle
