@@ -45,6 +45,7 @@ executable news-service-exe
     , Database.ConnectionManager
     , Gateway.News
     , Network.Wai.Util
+    , Web
     , Web.Handler.News
   hs-source-dirs:
       app
