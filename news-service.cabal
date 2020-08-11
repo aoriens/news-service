@@ -61,6 +61,7 @@ executable news-service-exe
     , hasql-th
     , http-types
     , news-service
+    , network
     , profunctors
     , text
     , time
