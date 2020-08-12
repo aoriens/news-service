@@ -23,6 +23,8 @@ library
       Control.Exception.Sync
     , Interactor.GetNews
     , Logger
+    , Web.Types
+    , Web.Types.Internal.SessionId
     , Web.Router
   hs-source-dirs:
       src

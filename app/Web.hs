@@ -15,7 +15,6 @@ import Control.Exception.Sync
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
-import Data.Int
 import Data.List
 import qualified Data.Text as T
 import Data.Text.Encoding as T
@@ -27,6 +26,8 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import Text.Printf
 import qualified Web.Router as R
+import Web.Types
+import Web.Types.Internal.SessionId
 
 data Handle =
   Handle
@@ -40,19 +41,6 @@ data Handle =
 newtype State =
   State
     { stSessionIdRef :: IORef SessionId
-    }
-
-newtype SessionId =
-  SessionId Int64
-  deriving (Eq)
-
-type EApplication = Session -> Wai.Application
-
-type EMiddleware = EApplication -> EApplication
-
-newtype Session =
-  Session
-    { sessionId :: SessionId
     }
 
 -- | Creates an initial state for the module.
@@ -182,6 +170,3 @@ stubErrorResponse status additionalHeaders =
 
 instance Logger.Logger Handle IO where
   lowLevelLog = Logger.hLowLevelLog . hLoggerHandle
-
-instance Show SessionId where
-  show (SessionId n) = show n
