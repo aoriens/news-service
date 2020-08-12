@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Gateway.News
   ( getNews
@@ -27,15 +28,8 @@ getNews h =
 selectNewsStatement :: Statement.Statement () (Vector GetNews.News)
 selectNewsStatement =
   rmap
-    (fmap toNews)
+    (fmap $ \(newsTitle, newsDate, newsText) -> GetNews.News {..})
     [TH.vectorStatement|
     select title :: text, date :: date, body :: text
     from news
   |]
-  where
-    toNews (title, date, body) =
-      GetNews.News
-        { GetNews.newsTitle = title
-        , GetNews.newsDate = date
-        , GetNews.newsText = body
-        }

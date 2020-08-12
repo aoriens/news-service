@@ -32,8 +32,7 @@ run h _ respond =
      GetNews.getNews (hGetNewsHandle h))
 
 presentNews :: GetNews.News -> News
-presentNews GetNews.News {..} =
-  News {newsTitle = newsTitle, newsDate = newsDate, newsText = newsText}
+presentNews GetNews.News {..} = News {..}
 
 data News =
   News
