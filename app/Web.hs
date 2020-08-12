@@ -78,7 +78,7 @@ logEnterAndExit h app req respond = do
       T.intercalate
         " "
         [ "Respond"
-        , T.pack (show sid)
+        , T.pack ("SID=" ++ show sid)
         , T.pack (show (Http.statusCode status))
         , T.decodeLatin1 (Http.statusMessage status)
         ]
@@ -170,4 +170,4 @@ instance Logger.Logger Handle IO where
   lowLevelLog = Logger.hLowLevelLog . hLoggerHandle
 
 instance Show SessionId where
-  showsPrec _ (SessionId n) = showString "SID=" . shows n
+  show (SessionId n) = show n
