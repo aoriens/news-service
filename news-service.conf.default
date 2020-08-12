@@ -43,7 +43,7 @@ postgresql {
 log {
   # The minimum level of messages to output. Available values are:
   # debug, info, warning, error. Info is a default.
-  verbosity = "info"
+  # verbosity = "debug"
 
   # The log file path. An empty or missing path means the standard
   # error output, which is default.
