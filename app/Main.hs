@@ -9,9 +9,9 @@ import qualified Config as Cf
 import Control.Exception
 import Control.Exception.Sync
 import Data.String
+import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
-import qualified Hasql.Connection
 import qualified Interactor.GetNews
 import qualified Logger
 import qualified Logger.Impl
@@ -29,7 +29,7 @@ import qualified Web.Router as R
 -- signatures.
 data Deps =
   Deps
-    { dWithDBConnection :: forall a. (Hasql.Connection.Connection -> IO a) -> IO a
+    { dWithDBConnection :: forall a. Database.WithConnection a
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     }
