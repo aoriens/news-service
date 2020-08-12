@@ -46,6 +46,15 @@ newtype SessionId =
   SessionId Int64
   deriving (Eq)
 
+type EApplication = Session -> Wai.Application
+
+type EMiddleware = EApplication -> EApplication
+
+newtype Session =
+  Session
+    { sessionId :: SessionId
+    }
+
 -- | Creates an initial state for the module.
 makeState :: IO State
 makeState = do
@@ -54,31 +63,36 @@ makeState = do
 
 application :: Handle -> Wai.Application
 application h =
+  createSessionMiddleware h .
   logEnterAndExit h . convertExceptionsToStatus500 . logUncaughtExceptions h $
   routerApplication h
 
-logEnterAndExit :: Handle -> Wai.Middleware
-logEnterAndExit h app req respond = do
-  sid <- generateSessionId h
-  Logger.info h (enterMessage sid)
-  (r, status) <- runApplicationAndGetStatus app req respond
-  Logger.info h (exitMessage status sid)
+createSessionMiddleware :: Handle -> EApplication -> Wai.Application
+createSessionMiddleware h eapp request respond = do
+  session <- Session <$> generateSessionId h
+  eapp session request respond
+
+logEnterAndExit :: Handle -> EMiddleware
+logEnterAndExit h eapp session@Session {..} req respond = do
+  Logger.info h enterMessage
+  (r, status) <- runApplicationAndGetStatus (eapp session) req respond
+  Logger.info h (exitMessage status)
   pure r
   where
-    enterMessage sid =
+    enterMessage =
       T.intercalate
         " "
         [ "Request"
-        , T.pack (show sid)
+        , T.pack (show sessionId)
         , T.pack (formatPeerAddr (Wai.remoteHost req))
         , T.decodeLatin1 (Wai.requestMethod req)
         , T.decodeLatin1 (Wai.rawPathInfo req)
         ]
-    exitMessage status sid =
+    exitMessage status =
       T.intercalate
         " "
         [ "Respond"
-        , T.pack ("SID=" ++ show sid)
+        , T.pack ("SID=" ++ show sessionId)
         , T.pack (show (Http.statusCode status))
         , T.decodeLatin1 (Http.statusMessage status)
         ]
@@ -116,20 +130,20 @@ generateSessionId Handle {..} =
     let new = SessionId (succ n)
      in (new, new)
 
-convertExceptionsToStatus500 :: Wai.Middleware
-convertExceptionsToStatus500 app request respond =
+convertExceptionsToStatus500 :: EMiddleware
+convertExceptionsToStatus500 eapp session request respond =
   catchJustS
     testException
-    (app request respond)
+    (eapp session request respond)
     (respond . Warp.defaultOnExceptionResponse)
   where
     testException e
       | Just (_ :: SomeAsyncException) <- fromException e = Nothing
       | otherwise = Just e
 
-logUncaughtExceptions :: Handle -> Wai.Middleware
-logUncaughtExceptions h app request respond =
-  catchJustS testException (app request respond) logAndRethrow
+logUncaughtExceptions :: Handle -> EMiddleware
+logUncaughtExceptions h eapp session request respond =
+  catchJustS testException (eapp session request respond) logAndRethrow
   where
     testException e
       | Warp.defaultShouldDisplayException e = Just e
@@ -138,8 +152,8 @@ logUncaughtExceptions h app request respond =
       Logger.error h $ T.pack (displayException e)
       throwIO e
 
-routerApplication :: Handle -> Wai.Application
-routerApplication Handle {..} request =
+routerApplication :: Handle -> EApplication
+routerApplication Handle {..} _ request =
   case R.route hRouter request of
     R.HandlerResult handler -> handler request
     R.ResourceNotFoundResult -> ($ stubErrorResponse Http.notFound404 [])
