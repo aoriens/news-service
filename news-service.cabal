@@ -23,7 +23,7 @@ library
       Control.Exception.Sync
     , Interactor.GetNews
     , Logger
-    , Router
+    , Web.Router
   hs-source-dirs:
       src
   build-depends:
@@ -78,7 +78,7 @@ test-suite news-service-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      RouterSpec
+      Web.RouterSpec
   hs-source-dirs:
       test
   ghc-options: -rtsopts

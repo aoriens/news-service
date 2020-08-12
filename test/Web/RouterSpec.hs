@@ -1,4 +1,4 @@
-module RouterSpec
+module Web.RouterSpec
   ( spec
   ) where
 
@@ -7,8 +7,8 @@ import Data.List
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Internal as Wai
-import qualified Router as R
 import Test.Hspec
+import qualified Web.Router as R
 
 spec :: Spec
 spec =

@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- | The module describes a path-driven routing machinery of the web server.
-module Router
+module Web.Router
   ( Router
   , new
   , UrlPath

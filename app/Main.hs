@@ -17,11 +17,11 @@ import qualified Logger
 import qualified Logger.Impl
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Router as R
 import System.Exit
 import System.IO hiding (Handle)
 import qualified Web
 import qualified Web.Handler.News as HNews
+import qualified Web.Router as R
 
 -- Some common module dependencies. Its purpose is to be passed to
 -- functions **in this module**, keeping extensibility in the number

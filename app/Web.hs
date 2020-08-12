@@ -25,8 +25,8 @@ import Network.HTTP.Types.Status as Http
 import qualified Network.Socket as Socket
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Router as R
 import Text.Printf
+import qualified Web.Router as R
 
 data Handle =
   Handle
