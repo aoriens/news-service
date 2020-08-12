@@ -9,6 +9,8 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Internal as Wai
 import Test.Hspec
 import qualified Web.Router as R
+import Web.Types as Web
+import Web.Types.Internal.SessionId as Web
 
 spec :: Spec
 spec =
@@ -17,12 +19,13 @@ spec =
       let path = ["my_path"]
           method = Http.methodPost
           expectedHeader = ("X-My-Header", "")
-          expectedHandler _ = ($ Wai.responseLBS Http.ok200 [expectedHeader] "")
+          expectedHandler _ _ =
+            ($ Wai.responseLBS Http.ok200 [expectedHeader] "")
           router = R.new $ R.ifPath path $ R.ifMethod method expectedHandler
           request =
             Wai.defaultRequest {Wai.pathInfo = path, Wai.requestMethod = method}
           (R.HandlerResult handler) = R.route router request
-      (_, headers) <- getResponse handler request
+      (_, headers) <- getResponse (handler stubSession) request
       headers `shouldContain` [expectedHeader]
     it "should return ResourceNotFoundRequest for unknown URL path" $ do
       let router = R.new $ pure ()
@@ -57,5 +60,8 @@ getResponse app request = do
       pure Wai.ResponseReceived
   readIORef result
 
-noOpHandler :: Wai.Application
-noOpHandler _ = ($ Wai.responseLBS Http.ok200 [] "")
+noOpHandler :: Web.EApplication
+noOpHandler _ _ = ($ Wai.responseLBS Http.ok200 [] "")
+
+stubSession :: Web.Session
+stubSession = Web.Session {sessionId = Web.SessionId 0}

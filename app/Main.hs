@@ -9,6 +9,7 @@ import qualified Config as Cf
 import Control.Exception
 import Control.Exception.Sync
 import Data.String
+import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
@@ -22,6 +23,7 @@ import System.IO hiding (Handle)
 import qualified Web
 import qualified Web.Handler.News as HNews
 import qualified Web.Router as R
+import qualified Web.Types as Web
 
 -- Some common module dependencies. Its purpose is to be passed to
 -- functions **in this module**, keeping extensibility in the number
@@ -67,8 +69,8 @@ makeDBConnectionConfig Cf.Config {..} =
     }
 
 getWebHandle :: Deps -> IO Web.Handle
-getWebHandle deps = do
-  hLoggerHandle <- getLoggerHandle (dConfig deps)
+getWebHandle deps@Deps {..} = do
+  let hLogger = (`sessionLoggerHandle` dLoggerHandle)
   hState <- Web.makeState
   let hRouter = router deps
   pure Web.Handle {..}
@@ -77,16 +79,17 @@ router :: Deps -> R.Router
 router deps =
   R.new $ do
     R.ifPath ["news"] $ do
-      R.ifMethod Http.methodGet $ HNews.run (newsHandlerHandle deps)
+      R.ifMethod Http.methodGet $ HNews.run . newsHandlerHandle deps
 
-newsHandlerHandle :: Deps -> HNews.Handle
-newsHandlerHandle Deps {..} =
+newsHandlerHandle :: Deps -> Web.Session -> HNews.Handle
+newsHandlerHandle Deps {..} session =
   HNews.Handle
     (Interactor.GetNews.Handle
        (Gateway.News.getNews
           Gateway.News.Handle
             { Gateway.News.hWithConnection = dWithDBConnection
-            , Gateway.News.hLoggerHandle = dLoggerHandle
+            , Gateway.News.hLoggerHandle =
+                sessionLoggerHandle session dLoggerHandle
             }))
 
 getLoggerHandle :: Cf.Config -> IO (Logger.Handle IO)
@@ -106,3 +109,8 @@ getLoggerHandle Cf.Config {..} = do
       | v == Just "warning" = Right Logger.Warning
       | v == Just "error" = Right Logger.Error
       | Just s <- v = Left $ "Logger verbosity is set incorrectly: " ++ show s
+
+sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
+sessionLoggerHandle Web.Session {..} =
+  Logger.mapMessage $ \text ->
+    "SID-" <> T.pack (show sessionId) <> " " <> text

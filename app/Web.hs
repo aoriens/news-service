@@ -31,7 +31,7 @@ import Web.Types.Internal.SessionId
 
 data Handle =
   Handle
-    { hLoggerHandle :: Logger.Handle IO
+    { hLogger :: Session -> Logger.Handle IO
     , hRouter :: R.Router
     , hState :: State
     }
@@ -62,16 +62,16 @@ createSessionMiddleware h eapp request respond = do
 
 logEnterAndExit :: Handle -> EMiddleware
 logEnterAndExit h eapp session@Session {..} req respond = do
-  Logger.info h enterMessage
+  Logger.info loggerH enterMessage
   (r, status) <- runApplicationAndGetStatus (eapp session) req respond
-  Logger.info h (exitMessage status)
+  Logger.info loggerH (exitMessage status)
   pure r
   where
+    loggerH = hLogger h session
     enterMessage =
       T.intercalate
         " "
         [ "Request"
-        , T.pack (show sessionId)
         , T.pack (formatPeerAddr (Wai.remoteHost req))
         , T.decodeLatin1 (Wai.requestMethod req)
         , T.decodeLatin1 (Wai.rawPathInfo req)
@@ -80,7 +80,6 @@ logEnterAndExit h eapp session@Session {..} req respond = do
       T.intercalate
         " "
         [ "Respond"
-        , T.pack ("SID=" ++ show sessionId)
         , T.pack (show (Http.statusCode status))
         , T.decodeLatin1 (Http.statusMessage status)
         ]
@@ -137,13 +136,13 @@ logUncaughtExceptions h eapp session request respond =
       | Warp.defaultShouldDisplayException e = Just e
       | otherwise = Nothing
     logAndRethrow e = do
-      Logger.error h $ T.pack (displayException e)
+      Logger.error (hLogger h session) $ T.pack (displayException e)
       throwIO e
 
 routerApplication :: Handle -> EApplication
-routerApplication Handle {..} _ request =
+routerApplication Handle {..} session request =
   case R.route hRouter request of
-    R.HandlerResult handler -> handler request
+    R.HandlerResult handler -> handler session request
     R.ResourceNotFoundResult -> ($ stubErrorResponse Http.notFound404 [])
     R.MethodNotSupportedResult knownMethods ->
       ($ stubErrorResponse
@@ -167,6 +166,3 @@ stubErrorResponse status additionalHeaders =
         , BB.byteString (Http.statusMessage status)
         , "</h1></body></html>\n"
         ]
-
-instance Logger.Logger Handle IO where
-  lowLevelLog = Logger.hLowLevelLog . hLoggerHandle

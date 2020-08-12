@@ -21,6 +21,7 @@ import Data.List
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
+import Web.Types
 
 type UrlPath = [T.Text]
 
@@ -31,7 +32,7 @@ newtype Router =
 
 type Table = HM.HashMap UrlPath MethodsToHandlers
 
-type MethodsToHandlers = HM.HashMap Http.Method Wai.Application
+type MethodsToHandlers = HM.HashMap Http.Method EApplication
 
 -- | A monad type to make it easier to specify route configuration.
 newtype Spec a =
@@ -71,7 +72,7 @@ ifPath path (MethodsSpec methodsSpec) =
   where
     methodsToHandlers = execState methodsSpec HM.empty
 
-ifMethod :: Http.Method -> Wai.Application -> MethodsSpec ()
+ifMethod :: Http.Method -> EApplication -> MethodsSpec ()
 ifMethod method handler =
   MethodsSpec . modify' $
   HM.insertWith
@@ -82,7 +83,7 @@ ifMethod method handler =
 -- | The result of finding a route.
 data Result
   -- | A handler is found for the specified request.
-  = HandlerResult Wai.Application
+  = HandlerResult EApplication
   -- | No handler is found. This is typically output as HTTP 404.
   | ResourceNotFoundResult
   -- | The requested resource does not support a specified method. The

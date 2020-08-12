@@ -15,6 +15,7 @@ module Logger
   , error
   , log
   , (.<)
+  , mapMessage
   ) where
 
 import Data.Maybe
@@ -78,3 +79,12 @@ captureTopCallSite = fmap makeCallSite . listToMaybe . getCallStack
 text .< a = text <> T.pack (show a)
 
 infixr 7 .<
+
+-- | Creates a logger handle which transforms the message and passes
+-- it to another handle.
+mapMessage :: (T.Text -> T.Text) -> Handle m -> Handle m
+mapMessage f h =
+  Handle
+    { hLowLevelLog =
+        \level callsite text -> hLowLevelLog h level callsite (f text)
+    }
