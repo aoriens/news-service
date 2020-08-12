@@ -15,15 +15,18 @@ import qualified Hasql.Connection as C
 import qualified Hasql.Statement as Statement
 import qualified Hasql.TH as TH
 import qualified Interactor.GetNews as GetNews
+import qualified Logger
 
-newtype Handle =
+data Handle =
   Handle
     { hWithConnection :: forall a. (C.Connection -> IO a) -> IO a
+    , hLoggerHandle :: Logger.Handle IO
     }
 
 getNews :: Handle -> IO [GetNews.News]
-getNews h =
-  toList <$> DB.runStatement (hWithConnection h) () selectNewsStatement
+getNews Handle {..} =
+  toList <$>
+  DB.runStatement hWithConnection hLoggerHandle () selectNewsStatement
 
 selectNewsStatement :: Statement.Statement () (Vector GetNews.News)
 selectNewsStatement =

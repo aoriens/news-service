@@ -84,7 +84,10 @@ newsHandlerHandle Deps {..} =
   HNews.Handle
     (Interactor.GetNews.Handle
        (Gateway.News.getNews
-          Gateway.News.Handle {Gateway.News.hWithConnection = dWithDBConnection}))
+          Gateway.News.Handle
+            { Gateway.News.hWithConnection = dWithDBConnection
+            , Gateway.News.hLoggerHandle = dLoggerHandle
+            }))
 
 getLoggerHandle :: Cf.Config -> IO (Logger.Handle IO)
 getLoggerHandle Cf.Config {..} = do

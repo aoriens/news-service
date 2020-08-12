@@ -60,6 +60,7 @@ executable news-service-exe
     , hasql
     , hasql-th
     , http-types
+    , mtl
     , news-service
     , network
     , profunctors

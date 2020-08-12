@@ -1,33 +1,62 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 -- | Database-related basic definitions. They may only be imported
 -- from gateways.
 module Database
-  ( runSession
+  ( Session
+  , WithConnection
+  , runSession
+  , statement
   , runStatement
   , QueryException(..)
-  , WithConnection
   ) where
 
 import Control.Exception
 import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import qualified Data.Text.Encoding as T
 import qualified Hasql.Connection as C
 import qualified Hasql.Session as S
 import qualified Hasql.Statement as St
+import qualified Logger
+
+-- | An SQL session - a monad containing SQL statements and optional
+-- IO actions. It supersedes 'S.Session' to perform additional
+-- processing when producing sessions from statements.
+newtype Session a =
+  Session (ReaderT (Logger.Handle IO) S.Session a)
+  deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | A type of a computation provided with a database connection. See
 -- 'Database.ConnectionManager'.
 type WithConnection a = (C.Connection -> IO a) -> IO a
 
--- | Runs a Hasql session. It can throw 'QueryException'.
-runSession :: WithConnection a -> S.Session a -> IO a
-runSession withConnection session =
-  withConnection $ S.run session >=> either (throwIO . QueryException) pure
+-- | Runs a session. It can throw 'QueryException'.
+runSession :: WithConnection a -> Logger.Handle IO -> Session a -> IO a
+runSession withConnection loggerH (Session session) =
+  withConnection $ S.run hasqlSession >=> either (throwIO . QueryException) pure
+  where
+    hasqlSession = runReaderT session loggerH
 
--- | Runs a single Hasql statement as a session. It can throw
+-- | Creates a session from a statement.
+statement :: params -> St.Statement params result -> Session result
+statement params st@(St.Statement sql _ _ _) =
+  Session $ do
+    loggerH <- ask
+    liftIO $ Logger.debug loggerH ("Run SQL: " <> T.decodeLatin1 sql)
+    lift $ S.statement params st
+
+-- | A shortcut to run a single statement as a session. It can throw
 -- 'QueryException'.
 runStatement ::
-     WithConnection out -> params -> St.Statement params out -> IO out
-runStatement withConnection params =
-  runSession withConnection . S.statement params
+     WithConnection out
+  -> Logger.Handle IO
+  -> params
+  -> St.Statement params out
+  -> IO out
+runStatement withConnection loggerH params =
+  runSession withConnection loggerH . statement params
 
 newtype QueryException =
   QueryException S.QueryError
