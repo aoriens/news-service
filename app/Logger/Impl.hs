@@ -15,6 +15,7 @@ import qualified Data.Text.IO as T
 import Data.Time
 import qualified Logger
 import Prelude hiding (log)
+import System.IO hiding (Handle)
 import qualified System.IO
 
 data Handle =
@@ -28,6 +29,7 @@ data Handle =
 new :: Handle -> IO (IO (), Logger.Handle IO)
 new Handle {..} = do
   queue <- newTQueueIO
+  hSetBuffering hFileHandle (BlockBuffering Nothing)
   pure
     ( loggerWorker hFileHandle queue
     , Logger.Handle {Logger.hLowLevelLog = log hMinLevel queue})
@@ -56,7 +58,7 @@ loggerWorker :: System.IO.Handle -> TQueue Message -> IO ()
 loggerWorker fileH messageQueue =
   forever $ do
     messages <- atomically $ mfilter (not . null) $ flushTQueue messageQueue
-    T.hPutStrLn fileH $ T.intercalate "\n" $ map formatMessage messages
+    forM_ messages $ T.hPutStrLn fileH . formatMessage
     System.IO.hFlush fileH
 
 formatMessage :: Message -> T.Text
