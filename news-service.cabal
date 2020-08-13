@@ -56,6 +56,7 @@ executable news-service-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , configurator
@@ -66,6 +67,7 @@ executable news-service-exe
     , news-service
     , network
     , profunctors
+    , stm
     , text
     , time
     , transformers

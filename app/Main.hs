@@ -6,6 +6,7 @@ module Main
   ) where
 
 import qualified Config as Cf
+import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import Data.String
@@ -38,10 +39,11 @@ data Deps =
 
 main :: IO ()
 main = do
-  deps@Deps {..} <- getDeps
+  (loggerWorker, deps@Deps {..}) <- getDeps
   webHandle <- getWebHandle deps
-  Logger.info dLoggerHandle "Starting Warp"
-  Warp.runSettings (warpSettings dConfig) (Web.application webHandle)
+  race_ loggerWorker $ do
+    Logger.info dLoggerHandle "Starting Warp"
+    Warp.runSettings (warpSettings dConfig) (Web.application webHandle)
 
 warpSettings :: Cf.Config -> Warp.Settings
 warpSettings Cf.Config {..} =
@@ -50,13 +52,13 @@ warpSettings Cf.Config {..} =
   maybe id Warp.setPort cfServerPort $
   Warp.setHost "localhost" Warp.defaultSettings
 
-getDeps :: IO Deps
+getDeps :: IO (IO (), Deps)
 getDeps = do
   dConfig <- Cf.getConfig
-  dLoggerHandle <- getLoggerHandle dConfig
+  (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   let dWithDBConnection =
         DBConnManager.withConnection (makeDBConnectionConfig dConfig)
-  pure Deps {..}
+  pure (loggerWorker, Deps {..})
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
 makeDBConnectionConfig Cf.Config {..} =
@@ -92,11 +94,13 @@ newsHandlerHandle Deps {..} session =
                 sessionLoggerHandle session dLoggerHandle
             }))
 
-getLoggerHandle :: Cf.Config -> IO (Logger.Handle IO)
+-- | Creates an IO action and a logger handle. The IO action must be
+-- forked in order for logging to work.
+getLoggerHandle :: Cf.Config -> IO (IO (), Logger.Handle IO)
 getLoggerHandle Cf.Config {..} = do
   hFileHandle <- getFileHandle cfLogFilePath
   hMinLevel <- either die pure (parseVerbosity cfLoggerVerbosity)
-  pure $ Logger.Impl.new Logger.Impl.Handle {..}
+  Logger.Impl.new Logger.Impl.Handle {..}
   where
     getFileHandle (Just path@(_:_)) =
       openFile path AppendMode `catchS` \e ->
@@ -112,5 +116,4 @@ getLoggerHandle Cf.Config {..} = do
 
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =
-  Logger.mapMessage $ \text ->
-    "SID-" <> T.pack (show sessionId) <> " " <> text
+  Logger.mapMessage $ \text -> "SID-" <> T.pack (show sessionId) <> " " <> text
