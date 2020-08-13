@@ -49,7 +49,7 @@ executable news-service-exe
     , Gateway.News
     , Logger.Impl
     , Network.Wai.Util
-    , Web
+    , Web.Application
     , Web.Handler.News
   hs-source-dirs:
       app

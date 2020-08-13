@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | The web application entry point and top-level definitions.
-module Web
+module Web.Application
   ( application
   , Handle(..)
   , State

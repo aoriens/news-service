@@ -21,7 +21,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
-import qualified Web
+import qualified Web.Application
 import qualified Web.Handler.News as HNews
 import qualified Web.Router as R
 import qualified Web.Types as Web
@@ -40,10 +40,12 @@ data Deps =
 main :: IO ()
 main = do
   (loggerWorker, deps@Deps {..}) <- getDeps
-  webHandle <- getWebHandle deps
+  webHandle <- getWebAppHandle deps
   race_ loggerWorker $ do
     Logger.info dLoggerHandle "Starting Warp"
-    Warp.runSettings (warpSettings dConfig) (Web.application webHandle)
+    Warp.runSettings
+      (warpSettings dConfig)
+      (Web.Application.application webHandle)
 
 warpSettings :: Cf.Config -> Warp.Settings
 warpSettings Cf.Config {..} =
@@ -70,12 +72,12 @@ makeDBConnectionConfig Cf.Config {..} =
     , DBConnManager.settingsPassword = fromString <$> cfDatabasePassword
     }
 
-getWebHandle :: Deps -> IO Web.Handle
-getWebHandle deps@Deps {..} = do
+getWebAppHandle :: Deps -> IO Web.Application.Handle
+getWebAppHandle deps@Deps {..} = do
   let hLogger = (`sessionLoggerHandle` dLoggerHandle)
-  hState <- Web.makeState
+  hState <- Web.Application.makeState
   let hRouter = router deps
-  pure Web.Handle {..}
+  pure Web.Application.Handle {..}
 
 router :: Deps -> R.Router
 router deps =
