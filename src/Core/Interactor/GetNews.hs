@@ -1,12 +1,12 @@
-module Interactor.GetNews
+module Core.Interactor.GetNews
   ( Handle(..)
   , getNews
   , News(..)
   ) where
 
+import Data.Int
 import Data.Text (Text)
 import Data.Time.Calendar
-import Data.Int
 
 newtype Handle m =
   Handle

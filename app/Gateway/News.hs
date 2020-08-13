@@ -7,6 +7,7 @@ module Gateway.News
   , Handle(..)
   ) where
 
+import qualified Core.Interactor.GetNews as GetNews
 import Data.Foldable
 import Data.Profunctor
 import Data.Vector (Vector)
@@ -14,7 +15,6 @@ import qualified Database as DB
 import qualified Hasql.Connection as C
 import qualified Hasql.Statement as Statement
 import qualified Hasql.TH as TH
-import qualified Interactor.GetNews as GetNews
 import qualified Logger
 
 data Handle =

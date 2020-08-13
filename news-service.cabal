@@ -21,7 +21,7 @@ source-repository head
 library
   exposed-modules:
       Control.Exception.Sync
-    , Interactor.GetNews
+    , Core.Interactor.GetNews
     , Logger
     , Web.Types
     , Web.Types.Internal.SessionId

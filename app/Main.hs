@@ -9,12 +9,12 @@ import qualified Config as Cf
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
+import qualified Core.Interactor.GetNews
 import Data.String
 import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
-import qualified Interactor.GetNews
 import qualified Logger
 import qualified Logger.Impl
 import qualified Network.HTTP.Types as Http
@@ -86,7 +86,7 @@ router deps =
 newsHandlerHandle :: Deps -> Web.Session -> HNews.Handle
 newsHandlerHandle Deps {..} session =
   HNews.Handle
-    (Interactor.GetNews.Handle
+    (Core.Interactor.GetNews.Handle
        (Gateway.News.getNews
           Gateway.News.Handle
             { Gateway.News.hWithConnection = dWithDBConnection

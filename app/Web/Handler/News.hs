@@ -6,17 +6,17 @@ module Web.Handler.News
   , run
   ) where
 
+import qualified Core.Interactor.GetNews as GetNews
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
+import Data.Int
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
 import Data.Time.Calendar
-import qualified Interactor.GetNews as GetNews
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Util as Wai
-import Data.Int
 
 newtype Handle =
   Handle
@@ -47,4 +47,3 @@ $(A.deriveToJSON
     A.defaultOptions
       {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "news"}
     ''News)
-
