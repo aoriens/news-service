@@ -33,6 +33,6 @@ selectNewsStatement =
   rmap
     (fmap $ \(newsTitle, newsDate, newsText) -> GetNews.News {..})
     [TH.vectorStatement|
-    select title :: text, date :: date, body :: text
+    select title :: varchar, date :: date, body :: varchar
     from news
   |]
