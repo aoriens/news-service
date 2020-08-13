@@ -4,6 +4,7 @@
 module Logger.Impl
   ( new
   , Handle(..)
+  , Worker
   ) where
 
 import Control.Concurrent.STM.TQueue
@@ -24,9 +25,11 @@ data Handle =
     , hMinLevel :: Logger.Level
     }
 
+type Worker = IO ()
+
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
-new :: Handle -> IO (IO (), Logger.Handle IO)
+new :: Handle -> IO (Worker, Logger.Handle IO)
 new Handle {..} = do
   queue <- newTQueueIO
   hSetBuffering hFileHandle (BlockBuffering Nothing)

@@ -54,7 +54,7 @@ warpSettings Cf.Config {..} =
   maybe id Warp.setPort cfServerPort $
   Warp.setHost "localhost" Warp.defaultSettings
 
-getDeps :: IO (IO (), Deps)
+getDeps :: IO (Logger.Impl.Worker, Deps)
 getDeps = do
   dConfig <- Cf.getConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
@@ -98,7 +98,7 @@ newsHandlerHandle Deps {..} session =
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
-getLoggerHandle :: Cf.Config -> IO (IO (), Logger.Handle IO)
+getLoggerHandle :: Cf.Config -> IO (Logger.Impl.Worker, Logger.Handle IO)
 getLoggerHandle Cf.Config {..} = do
   hFileHandle <- getFileHandle cfLogFilePath
   hMinLevel <- either die pure (parseVerbosity cfLoggerVerbosity)
