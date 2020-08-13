@@ -8,6 +8,7 @@ module Gateway.News
   ) where
 
 import qualified Core.Interactor.GetNews as GetNews
+import Core.Pagination
 import Data.Foldable
 import Data.Profunctor
 import Data.Vector (Vector)
@@ -23,16 +24,18 @@ data Handle =
     , hLoggerHandle :: Logger.Handle IO
     }
 
-getNews :: Handle -> IO [GetNews.News]
-getNews Handle {..} =
+getNews :: Handle -> PageLimit -> IO [GetNews.News]
+getNews Handle {..} pageLimit =
   toList <$>
-  DB.runStatement hWithConnection hLoggerHandle () selectNewsStatement
+  DB.runStatement hWithConnection hLoggerHandle pageLimit selectNewsStatement
 
-selectNewsStatement :: Statement.Statement () (Vector GetNews.News)
+selectNewsStatement :: Statement.Statement PageLimit (Vector GetNews.News)
 selectNewsStatement =
-  rmap
+  dimap
+    getPageLimit
     (fmap $ \(newsId, newsTitle, newsDate, newsText) -> GetNews.News {..})
     [TH.vectorStatement|
     select id :: integer, title :: varchar, date :: date, body :: varchar
     from news
+    limit $1 :: integer
   |]

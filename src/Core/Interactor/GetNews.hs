@@ -1,20 +1,24 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Core.Interactor.GetNews
   ( Handle(..)
   , getNews
   , News(..)
   ) where
 
+import Core.Pagination
 import Data.Int
 import Data.Text (Text)
 import Data.Time.Calendar
 
-newtype Handle m =
+data Handle m =
   Handle
-    { hGetNews :: m [News]
+    { hGetNews :: PageLimit -> m [News]
+    , hMaxPageLimit :: PageLimit
     }
 
 getNews :: Handle m -> m [News]
-getNews = hGetNews
+getNews Handle {..} = hGetNews hMaxPageLimit
 
 data News =
   News

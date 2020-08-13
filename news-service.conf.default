@@ -3,9 +3,16 @@
 # The configuration format is documented at
 # https://hackage.haskell.org/package/configurator/docs/Data-Configurator.html
 
+core {
+  # Maximum amount of entities in a list response. It is used when the
+  # user sends no limit parameter or a too large one. Default is 100.
+  #
+  # max_page_limit = 100
+}
+
 server {
   # An optional hostname to bind the server or the host preference:
-  # 
+  #
   # - "*"  means HostAny - "any IPv4 or IPv6 hostname"
   # - "*4" means HostIPv4 - "any IPv4 or IPv6 hostname, IPv4 preferred"
   # - "!4" means HostIPv4Only - "any IPv4 hostname"
@@ -15,11 +22,13 @@ server {
   # Any other value is treated as a hostname. As an example, to bind
   # to the IPv4 local host only, use "127.0.0.1". Default is localhost.
   host = "localhost"
-  
+
   # An optional server port. Default is 3000.
+  #
   # port = 8080
 
   # An optional server name. It will be sent in the Server header.
+  #
   # name = "MyHTTPServer/1.0.0"
 }
 
@@ -28,24 +37,30 @@ postgresql {
   databaseName = "news"
 
   # The server host. This is localhost by default.
+  #
   # host = "localhost"
 
   # The optional server port.
+  #
   # port = 50000
 
   # An optional user name. Defaults to the current user.
+  #
   # user = "dbuser"
 
   # The user's password. It is unnecessary when no user is specified.
+  #
   # password = "12345678"
 }
 
 log {
   # The minimum level of messages to output. Available values are:
   # debug, info, warning, error. Info is a default.
+  #
   # verbosity = "debug"
 
   # The log file path. An empty or missing path means the standard
   # error output, which is default.
+  #
   # path = ""
 }

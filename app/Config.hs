@@ -15,6 +15,7 @@ import Control.Monad.Trans.Reader
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
 import qualified Data.HashMap.Lazy as LHM
+import Data.Int
 import Data.Ratio
 import Data.Word
 import System.Environment
@@ -34,6 +35,7 @@ data Config =
     , cfDatabasePassword :: Maybe String
     , cfLoggerVerbosity :: Maybe String
     , cfLogFilePath :: Maybe String
+    , cfCoreMaxPageLimit :: Maybe Int32
     }
   deriving (Show)
 
@@ -57,6 +59,7 @@ parseConfig = do
   cfDatabasePassword <- lookupOpt "postgresql.password"
   cfLoggerVerbosity <- lookupOpt "log.verbosity"
   cfLogFilePath <- lookupOpt "log.path"
+  cfCoreMaxPageLimit <- lookupOpt "core.max_page_limit"
   pure Config {..}
 
 loadConfigFile :: IO C.Config

@@ -10,6 +10,8 @@ import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import qualified Core.Interactor.GetNews
+import Core.Pagination
+import Data.Maybe
 import Data.String
 import qualified Data.Text as T
 import qualified Database
@@ -35,6 +37,7 @@ data Deps =
     { dWithDBConnection :: forall a. Database.WithConnection a
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
+    , dMaxPageLimit :: PageLimit
     }
 
 main :: IO ()
@@ -60,6 +63,7 @@ getDeps = do
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   let dWithDBConnection =
         DBConnManager.withConnection (makeDBConnectionConfig dConfig)
+      dMaxPageLimit = PageLimit $ fromMaybe 100 (Cf.cfCoreMaxPageLimit dConfig)
   pure (loggerWorker, Deps {..})
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
@@ -86,15 +90,16 @@ router deps =
       R.ifMethod Http.methodGet $ HNews.run . newsHandlerHandle deps
 
 newsHandlerHandle :: Deps -> Web.Session -> HNews.Handle
-newsHandlerHandle Deps {..} session =
-  HNews.Handle
-    (Core.Interactor.GetNews.Handle
-       (Gateway.News.getNews
-          Gateway.News.Handle
-            { Gateway.News.hWithConnection = dWithDBConnection
-            , Gateway.News.hLoggerHandle =
-                sessionLoggerHandle session dLoggerHandle
-            }))
+newsHandlerHandle Deps {..} session = HNews.Handle interactorHandle
+  where
+    interactorHandle =
+      let hGetNews = Gateway.News.getNews gatewayHandle
+          hMaxPageLimit = dMaxPageLimit
+       in Core.Interactor.GetNews.Handle {..}
+    gatewayHandle =
+      let hWithConnection = dWithDBConnection
+          hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+       in Gateway.News.Handle {..}
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
