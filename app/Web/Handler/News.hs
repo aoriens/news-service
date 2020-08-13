@@ -16,6 +16,7 @@ import qualified Interactor.GetNews as GetNews
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Util as Wai
+import Data.Int
 
 newtype Handle =
   Handle
@@ -36,7 +37,8 @@ presentNews GetNews.News {..} = News {..}
 
 data News =
   News
-    { newsTitle :: Text
+    { newsId :: Int32
+    , newsTitle :: Text
     , newsDate :: Day
     , newsText :: Text
     }
@@ -45,3 +47,4 @@ $(A.deriveToJSON
     A.defaultOptions
       {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "news"}
     ''News)
+

@@ -6,6 +6,7 @@ module Interactor.GetNews
 
 import Data.Text (Text)
 import Data.Time.Calendar
+import Data.Int
 
 newtype Handle m =
   Handle
@@ -17,7 +18,8 @@ getNews = hGetNews
 
 data News =
   News
-    { newsTitle :: Text
+    { newsId :: Int32
+    , newsTitle :: Text
     , newsDate :: Day
     , newsText :: Text
     }

@@ -31,8 +31,8 @@ getNews Handle {..} =
 selectNewsStatement :: Statement.Statement () (Vector GetNews.News)
 selectNewsStatement =
   rmap
-    (fmap $ \(newsTitle, newsDate, newsText) -> GetNews.News {..})
+    (fmap $ \(newsId, newsTitle, newsDate, newsText) -> GetNews.News {..})
     [TH.vectorStatement|
-    select title :: varchar, date :: date, body :: varchar
+    select id :: integer, title :: varchar, date :: date, body :: varchar
     from news
   |]
