@@ -9,4 +9,4 @@ newtype PageLimit =
   PageLimit
     { getPageLimit :: Int32
     }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
