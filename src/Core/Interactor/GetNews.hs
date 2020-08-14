@@ -18,8 +18,7 @@ data Handle m =
     }
 
 getNews :: Handle m -> PageQuery -> m [News]
-getNews Handle {..} pageQuery =
-  hGetNews (restrictPageLimit hMaxPageLimit $ fromPageQuery pageQuery)
+getNews Handle {..} pageQuery = hGetNews (fromPageQuery hMaxPageLimit pageQuery)
 
 data News =
   News

@@ -5,7 +5,6 @@ module Core.Pagination
   , PageQuery(..)
   , PageLimit(..)
   , PageOffset(..)
-  , restrictPageLimit
   , fromPageQuery
   ) where
 
@@ -44,12 +43,11 @@ newtype PageLimit =
     }
   deriving (Eq, Ord, Show)
 
-restrictPageLimit :: PageLimit -> Page -> Page
-restrictPageLimit newLimit p = p {pageLimit = min newLimit (pageLimit p)}
-
-fromPageQuery :: PageQuery -> Page
-fromPageQuery PageQuery {..} =
+-- | Convert a page query to a page using maximum limit in the first
+-- parameter.
+fromPageQuery :: PageLimit -> PageQuery -> Page
+fromPageQuery maxLimit PageQuery {..} =
   Page
-    { pageLimit = fromMaybe (PageLimit maxBound) pageQueryLimit
+    { pageLimit = maybe maxLimit (min maxLimit) pageQueryLimit
     , pageOffset = fromMaybe (PageOffset 0) pageQueryOffset
     }
