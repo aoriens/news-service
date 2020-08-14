@@ -13,12 +13,13 @@ import Data.Time.Calendar
 
 data Handle m =
   Handle
-    { hGetNews :: PageLimit -> m [News]
+    { hGetNews :: Page -> m [News]
     , hMaxPageLimit :: PageLimit
     }
 
-getNews :: Handle m -> m [News]
-getNews Handle {..} = hGetNews hMaxPageLimit
+getNews :: Handle m -> PageQuery -> m [News]
+getNews Handle {..} pageQuery =
+  hGetNews (restrictPageLimit hMaxPageLimit $ fromPageQuery pageQuery)
 
 data News =
   News

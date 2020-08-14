@@ -25,6 +25,7 @@ import qualified Network.Socket as Socket
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import Text.Printf
+import Web.Exception
 import qualified Web.Router as R
 import Web.Types
 import Web.Types.Internal.SessionId
@@ -52,7 +53,7 @@ makeState = do
 application :: Handle -> Wai.Application
 application h =
   createSessionMiddleware h .
-  logEnterAndExit h . convertExceptionsToStatus500 . logUncaughtExceptions h $
+  logEnterAndExit h . convertExceptionsToErrorResponse . logUncaughtExceptions h $
   routerApplication h
 
 createSessionMiddleware :: Handle -> EApplication -> Wai.Application
@@ -117,16 +118,23 @@ generateSessionId Handle {..} =
     let new = SessionId (succ n)
      in (new, new)
 
-convertExceptionsToStatus500 :: EMiddleware
-convertExceptionsToStatus500 eapp session request respond =
+convertExceptionsToErrorResponse :: EMiddleware
+convertExceptionsToErrorResponse eapp session request respond =
   catchJustS
     testException
     (eapp session request respond)
-    (respond . Warp.defaultOnExceptionResponse)
+    (respond . exceptionToResponse)
   where
     testException e
       | Just (_ :: SomeAsyncException) <- fromException e = Nothing
       | otherwise = Just e
+    exceptionToResponse e
+      | Just t@(BadRequestException _) <- fromException e =
+        stubErrorResponseWithReason
+          Http.badRequest400
+          []
+          (badRequestExceptionReason t)
+      | otherwise = Warp.defaultOnExceptionResponse e
 
 logUncaughtExceptions :: Handle -> EMiddleware
 logUncaughtExceptions h eapp session request respond =
@@ -153,6 +161,11 @@ routerApplication Handle {..} session request =
 
 stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
 stubErrorResponse status additionalHeaders =
+  stubErrorResponseWithReason status additionalHeaders ""
+
+stubErrorResponseWithReason ::
+     Http.Status -> [Http.Header] -> T.Text -> Wai.Response
+stubErrorResponseWithReason status additionalHeaders reason =
   Wai.responseBuilder
     status
     ((Http.hContentType, "text/html") : additionalHeaders)
@@ -164,5 +177,7 @@ stubErrorResponse status additionalHeaders =
         , BB.stringUtf8 (show (Http.statusCode status))
         , " "
         , BB.byteString (Http.statusMessage status)
-        , "</h1></body></html>\n"
+        , "</h1><p>"
+        , BB.byteString $ T.encodeUtf8 reason
+        , "</p></body></html>\n"
         ]

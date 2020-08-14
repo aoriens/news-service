@@ -24,18 +24,18 @@ data Handle =
     , hLoggerHandle :: Logger.Handle IO
     }
 
-getNews :: Handle -> PageLimit -> IO [GetNews.News]
-getNews Handle {..} pageLimit =
+getNews :: Handle -> Page -> IO [GetNews.News]
+getNews Handle {..} page =
   toList <$>
-  DB.runStatement hWithConnection hLoggerHandle pageLimit selectNewsStatement
+  DB.runStatement hWithConnection hLoggerHandle page selectNewsStatement
 
-selectNewsStatement :: Statement.Statement PageLimit (Vector GetNews.News)
+selectNewsStatement :: Statement.Statement Page (Vector GetNews.News)
 selectNewsStatement =
   dimap
-    getPageLimit
+    (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
     (fmap $ \(newsId, newsTitle, newsDate, newsText) -> GetNews.News {..})
     [TH.vectorStatement|
     select id :: integer, title :: varchar, date :: date, body :: varchar
     from news
-    limit $1 :: integer
+    limit $1 :: integer offset $2 :: integer
   |]

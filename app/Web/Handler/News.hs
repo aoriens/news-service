@@ -6,9 +6,12 @@ module Web.Handler.News
   , run
   ) where
 
+import Control.Exception
 import qualified Core.Interactor.GetNews as GetNews
+import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
+import qualified Data.ByteString.Builder as BB
 import Data.Int
 import Data.List
 import Data.Maybe
@@ -17,6 +20,8 @@ import Data.Time.Calendar
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Util as Wai
+import Web.Exception
+import Web.QueryParameter
 
 newtype Handle =
   Handle
@@ -24,16 +29,29 @@ newtype Handle =
     }
 
 run :: Handle -> Wai.Application
-run h _ respond =
+run h request respond =
   respond $
   Wai.simpleResponseStream
     Http.ok200
     [(Http.hContentType, "application/json")]
-    (A.fromEncoding . A.toEncoding . map presentNews <$>
-     GetNews.getNews (hGetNewsHandle h))
+    getResponse
+  where
+    getResponse = do
+      page <- either (throwIO . BadRequestException) pure $ parsePage request
+      response <- GetNews.getNews (hGetNewsHandle h) page
+      pure $ presentResponse response
 
-presentNews :: GetNews.News -> News
-presentNews GetNews.News {..} = News {..}
+parsePage :: Wai.Request -> Either Text PageQuery
+parsePage request = do
+  let query = Wai.queryString request
+  pageQueryLimit <- fmap PageLimit <$> lookupQueryParameter "limit" query
+  pageQueryOffset <- fmap PageOffset <$> lookupQueryParameter "offset" query
+  pure PageQuery {..}
+
+presentResponse :: [GetNews.News] -> BB.Builder
+presentResponse = A.fromEncoding . A.toEncoding . map presentNews
+  where
+    presentNews GetNews.News {..} = News {..}
 
 data News =
   News

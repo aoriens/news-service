@@ -24,6 +24,7 @@ library
     , Core.Interactor.GetNews
     , Core.Pagination
     , Logger
+    , Web.QueryParameter
     , Web.Types
     , Web.Types.Internal.SessionId
     , Web.Router
@@ -51,6 +52,7 @@ executable news-service-exe
     , Logger.Impl
     , Network.Wai.Util
     , Web.Application
+    , Web.Exception
     , Web.Handler.News
   hs-source-dirs:
       app

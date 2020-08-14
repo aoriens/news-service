@@ -30,11 +30,14 @@ spec =
             ]
           hMaxPageLimit = PageLimit maxBound
           hGetNews = const (pure stubResults)
-      results <- I.getNews I.Handle {..}
+      results <- I.getNews I.Handle {..} noPageQuery
       results `shouldBe` stubResults
     it "should pass the given max page limit to the gateway" $ do
       passedLimit <- newIORef (PageLimit 0)
       let hMaxPageLimit = PageLimit 10
-          hGetNews = \limit -> writeIORef passedLimit limit >> pure []
-      _ <- I.getNews I.Handle {..}
+          hGetNews = \Page {..} -> writeIORef passedLimit pageLimit >> pure []
+      _ <- I.getNews I.Handle {..} noPageQuery
       readIORef passedLimit `shouldReturn` hMaxPageLimit
+
+noPageQuery :: PageQuery
+noPageQuery = PageQuery Nothing Nothing
