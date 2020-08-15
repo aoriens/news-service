@@ -78,9 +78,11 @@ makeDBConnectionConfig Cf.Config {..} =
 
 getWebAppHandle :: Deps -> IO Web.Application.Handle
 getWebAppHandle deps@Deps {..} = do
-  let hLogger = (`sessionLoggerHandle` dLoggerHandle)
   hState <- Web.Application.makeState
-  let hRouter = router deps
+  let hLogger = (`sessionLoggerHandle` dLoggerHandle)
+      hRouter = router deps
+      hShowInternalExceptionInfoInResponses =
+        Just True == Cf.cfDebugShowInternalErrorInfoInResponse dConfig
   pure Web.Application.Handle {..}
 
 router :: Deps -> R.Router

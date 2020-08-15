@@ -64,3 +64,10 @@ log {
   #
   # path = ""
 }
+
+debug {
+  # Always output internal exception info in the error response.
+  # Defaults to false.
+  #
+  # show_internal_errors = false
+}

@@ -37,6 +37,7 @@ data Config =
     , cfLoggerVerbosity :: Maybe String
     , cfLogFilePath :: Maybe String
     , cfCoreMaxPageLimit :: Maybe Int32
+    , cfDebugShowInternalErrorInfoInResponse :: Maybe Bool
     }
   deriving (Show)
 
@@ -61,6 +62,8 @@ parseConfig = do
   cfLoggerVerbosity <- lookupOpt "log.verbosity"
   cfLogFilePath <- lookupOpt "log.path"
   cfCoreMaxPageLimit <- lookupOpt "core.max_page_limit"
+  cfDebugShowInternalErrorInfoInResponse <-
+    lookupOpt "debug.show_internal_errors"
   pure Config {..}
 
 loadConfigFile :: IO C.Config

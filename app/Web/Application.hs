@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
--- | The web application entry point and top-level definitions.
+-- | The web application entry point.
 module Web.Application
   ( application
   , Handle(..)
@@ -35,6 +35,7 @@ data Handle =
     { hLogger :: Session -> Logger.Handle IO
     , hRouter :: R.Router
     , hState :: State
+    , hShowInternalExceptionInfoInResponses :: Bool
     }
 
 -- | A mutable state of the module. Use 'makeState' to create it and
@@ -53,7 +54,8 @@ makeState = do
 application :: Handle -> Wai.Application
 application h =
   createSessionMiddleware h .
-  logEnterAndExit h . convertExceptionsToErrorResponse . logUncaughtExceptions h $
+  logEnterAndExit h .
+  convertExceptionsToErrorResponse h . logUncaughtExceptions h $
   routerApplication h
 
 createSessionMiddleware :: Handle -> EApplication -> Wai.Application
@@ -118,8 +120,8 @@ generateSessionId Handle {..} =
     let new = SessionId (succ n)
      in (new, new)
 
-convertExceptionsToErrorResponse :: EMiddleware
-convertExceptionsToErrorResponse eapp session request respond =
+convertExceptionsToErrorResponse :: Handle -> EMiddleware
+convertExceptionsToErrorResponse h eapp session request respond =
   catchJustS
     testException
     (eapp session request respond)
@@ -134,6 +136,8 @@ convertExceptionsToErrorResponse eapp session request respond =
           Http.badRequest400
           []
           (badRequestExceptionReason t)
+      | hShowInternalExceptionInfoInResponses h =
+        Warp.exceptionResponseForDebug e
       | otherwise = Warp.defaultOnExceptionResponse e
 
 logUncaughtExceptions :: Handle -> EMiddleware
