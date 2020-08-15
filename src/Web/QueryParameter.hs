@@ -51,10 +51,20 @@ class QueryParameter a
   parseQueryParameter :: Maybe BS.ByteString -> Maybe a
 
 instance QueryParameter Int where
-  parseQueryParameter = readFromChar8ByteString
+  parseQueryParameter = parseIntegral $ maxLengthOfNum (maxBound :: Int)
 
 instance QueryParameter Int32 where
-  parseQueryParameter = readFromChar8ByteString
+  parseQueryParameter = parseIntegral $ maxLengthOfNum (maxBound :: Int32)
 
-readFromChar8ByteString :: Read a => Maybe BS.ByteString -> Maybe a
-readFromChar8ByteString = fmap BS8.unpack >=> readMaybe
+parseIntegral :: Integral a => Int -> Maybe BS.ByteString -> Maybe a
+parseIntegral maxLength optBS = do
+  bs <- optBS
+  guard $ BS.length bs <= maxLength
+  exact <- readMaybe (BS8.unpack bs)
+  let r = fromInteger exact
+  guard $ toInteger r == exact
+  pure r
+
+maxLengthOfNum :: Real a => a -> Int
+maxLengthOfNum x = 2 + ceiling (logBase 10 (realToFrac x :: Double))
+  -- Adding one digit for sign and one more for calculation inaccuracy
