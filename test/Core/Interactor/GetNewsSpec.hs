@@ -35,18 +35,18 @@ spec =
     it "should pass the page offset to the gateway" $ do
       passedOffset <- newIORef (PageOffset 0)
       let hMaxPageLimit = PageLimit 1
-          offset = PageOffset 3
+          offset = 3
           hGetNews = \Page {..} -> writeIORef passedOffset pageOffset >> pure []
       _ <- I.getNews I.Handle {..} noPageQuery {pageQueryOffset = Just offset}
-      readIORef passedOffset `shouldReturn` offset
+      readIORef passedOffset `shouldReturn` PageOffset offset
     it
       "should pass the specified page limit to the gateway if less than max limit" $ do
       passedLimit <- newIORef (PageLimit 0)
       let hMaxPageLimit = PageLimit 10
-          limit = PageLimit 9
+          limit = 9
           hGetNews = \Page {..} -> writeIORef passedLimit pageLimit >> pure []
       _ <- I.getNews I.Handle {..} noPageQuery {pageQueryLimit = Just limit}
-      readIORef passedLimit `shouldReturn` limit
+      readIORef passedLimit `shouldReturn` PageLimit limit
 
 noPageQuery :: PageQuery
 noPageQuery = PageQuery Nothing Nothing

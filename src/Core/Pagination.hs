@@ -9,7 +9,6 @@ module Core.Pagination
   ) where
 
 import Data.Int
-import Data.Maybe
 
 -- | The part of data to be output in a response.
 data Page =
@@ -24,8 +23,8 @@ data Page =
 -- interactors.
 data PageQuery =
   PageQuery
-    { pageQueryOffset :: Maybe PageOffset
-    , pageQueryLimit :: Maybe PageLimit
+    { pageQueryOffset :: Maybe Int32
+    , pageQueryLimit :: Maybe Int32
     }
   deriving (Eq, Show)
 
@@ -43,11 +42,21 @@ newtype PageLimit =
     }
   deriving (Eq, Ord, Show)
 
--- | Convert a page query to a page using maximum limit in the first
--- parameter.
-fromPageQuery :: PageLimit -> PageQuery -> Page
-fromPageQuery maxLimit PageQuery {..} =
-  Page
-    { pageLimit = maybe maxLimit (min maxLimit) pageQueryLimit
-    , pageOffset = fromMaybe (PageOffset 0) pageQueryOffset
-    }
+-- | Convert a page query to a page keeping maximum limit specified in
+-- the first parameter. Nothing is returned in case of invalid (e.g.
+-- negative) field values.
+fromPageQuery :: PageLimit -> PageQuery -> Maybe Page
+fromPageQuery maxLimit PageQuery {..} = do
+  pageLimit <-
+    case pageQueryLimit of
+      Just limit
+        | limit >= 0 -> Just $ min maxLimit (PageLimit limit)
+        | otherwise -> Nothing
+      Nothing -> Just maxLimit
+  pageOffset <-
+    case pageQueryOffset of
+      Just offset
+        | offset >= 0 -> Just $ PageOffset offset
+        | otherwise -> Nothing
+      Nothing -> Just $ PageOffset 0
+  pure Page {..}

@@ -38,14 +38,17 @@ run h request respond =
   where
     getResponse = do
       page <- either (throwIO . BadRequestException) pure $ parsePage request
-      response <- GetNews.getNews (hGetNewsHandle h) page
+      response <-
+        catch
+          (GetNews.getNews (hGetNewsHandle h) page)
+          (throwIO . BadRequestException . GetNews.logicExceptionReason)
       pure $ presentResponse response
 
 parsePage :: Wai.Request -> Either Text PageQuery
 parsePage request = do
   let query = Wai.queryString request
-  pageQueryLimit <- fmap PageLimit <$> lookupQueryParameter "limit" query
-  pageQueryOffset <- fmap PageOffset <$> lookupQueryParameter "offset" query
+  pageQueryLimit <- lookupQueryParameter "limit" query
+  pageQueryOffset <- lookupQueryParameter "offset" query
   pure PageQuery {..}
 
 presentResponse :: [GetNews.News] -> BB.Builder

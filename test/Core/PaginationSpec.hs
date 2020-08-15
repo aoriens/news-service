@@ -11,30 +11,42 @@ spec =
     it "should return max limit if no limit specified" $ do
       let maxLimit = PageLimit 10
           r = fromPageQuery maxLimit noPageQuery
-      pageLimit r `shouldBe` maxLimit
+      pageLimit <$> r `shouldBe` Just maxLimit
     it "should return max limit if specified limit is greater" $ do
       let maxLimit = PageLimit 10
-          limit = PageLimit 11
+          limit = 11
           r = fromPageQuery maxLimit noPageQuery {pageQueryLimit = Just limit}
-      pageLimit r `shouldBe` maxLimit
+      pageLimit <$> r `shouldBe` Just maxLimit
     it "should return the specified page limit if less than max limit" $ do
       let maxLimit = PageLimit 10
-          limit = PageLimit 9
+          limit = 9
           r = fromPageQuery maxLimit noPageQuery {pageQueryLimit = Just limit}
-      pageLimit r `shouldBe` limit
+      pageLimit <$> r `shouldBe` Just (PageLimit limit)
     it "should return offset if specified" $ do
-      let offset = PageOffset 5
+      let offset = 5
           r =
             fromPageQuery
               defaultMaxLimit
               noPageQuery {pageQueryOffset = Just offset}
-      pageOffset r `shouldBe` offset
+      pageOffset <$> r `shouldBe` Just (PageOffset offset)
     it "should return zero offset if no offset specified" $ do
       let r =
             fromPageQuery
               defaultMaxLimit
               noPageQuery {pageQueryOffset = Nothing}
-      pageOffset r `shouldBe` PageOffset 0
+      pageOffset <$> r `shouldBe` Just (PageOffset 0)
+    it "should return Nothing if offset is negative" $ do
+      let r =
+            fromPageQuery
+              defaultMaxLimit
+              noPageQuery {pageQueryOffset = Just (-1)}
+      r `shouldBe` Nothing
+    it "should return Nothing if limit is negative" $ do
+      let r =
+            fromPageQuery
+              defaultMaxLimit
+              noPageQuery {pageQueryLimit = Just (-1)}
+      r `shouldBe` Nothing
 
 noPageQuery :: PageQuery
 noPageQuery = PageQuery Nothing Nothing
