@@ -21,6 +21,7 @@ source-repository head
 library
   exposed-modules:
       Control.Exception.Sync
+    , Core.ExactConversion
     , Core.Interactor.GetNews
     , Core.Pagination
     , Logger
@@ -86,6 +87,7 @@ test-suite news-service-test
   main-is: Spec.hs
   other-modules:
       Core.Interactor.GetNewsSpec
+    , Core.ExactConversionSpec
     , Core.PaginationSpec
     , Web.QueryParameterSpec
     , Web.RouterSpec
@@ -98,6 +100,7 @@ test-suite news-service-test
     , hspec
     , http-types
     , news-service
+    , QuickCheck
     , time
     , wai
   default-language: Haskell2010

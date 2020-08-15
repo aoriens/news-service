@@ -12,6 +12,7 @@ module Config
 import Control.Exception.Sync
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
+import Core.ExactConversion
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
 import qualified Data.HashMap.Lazy as LHM
@@ -107,14 +108,6 @@ newtype StricterIntegral a =
 
 instance Integral a => C.Configured (StricterIntegral a) where
   convert (C.Number n)
-    | denominator n == 1 =
-      StricterIntegral <$> fromIntegerReversibly (numerator n)
+    | denominator n == 1 = StricterIntegral <$> fromIntegralExact (numerator n)
     | otherwise = Nothing
   convert _ = Nothing
-
-fromIntegerReversibly :: (Integral a) => Integer -> Maybe a
-fromIntegerReversibly a =
-  let r = fromInteger a
-   in if a == toInteger r
-        then Just r
-        else Nothing
