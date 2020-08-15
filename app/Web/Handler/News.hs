@@ -7,7 +7,7 @@ module Web.Handler.News
   ) where
 
 import Control.Exception
-import qualified Core.Interactor.GetNews as GetNews
+import qualified Core.Interactor.GetNews as I
 import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -25,7 +25,7 @@ import Web.QueryParameter
 
 newtype Handle =
   Handle
-    { hGetNewsHandle :: GetNews.Handle IO
+    { hGetNewsHandle :: I.Handle IO
     }
 
 run :: Handle -> Wai.Application
@@ -40,8 +40,8 @@ run h request respond =
       page <- either (throwIO . BadRequestException) pure $ parsePage request
       response <-
         catch
-          (GetNews.getNews (hGetNewsHandle h) page)
-          (throwIO . BadRequestException . GetNews.logicExceptionReason)
+          (I.getNews (hGetNewsHandle h) page)
+          (throwIO . BadRequestException . I.logicExceptionReason)
       pure $ presentResponse response
 
 parsePage :: Wai.Request -> Either Text PageQuery
@@ -51,10 +51,10 @@ parsePage request = do
   pageQueryOffset <- lookupQueryParameter "offset" query
   pure PageQuery {..}
 
-presentResponse :: [GetNews.News] -> BB.Builder
+presentResponse :: [I.News] -> BB.Builder
 presentResponse = A.fromEncoding . A.toEncoding . map presentNews
   where
-    presentNews GetNews.News {..} = News {..}
+    presentNews I.News {..} = News {..}
 
 data News =
   News
