@@ -55,7 +55,7 @@ parseConfig = do
   cfServerName <- lookupOpt "server.name"
   cfDatabaseName <- require "postgresql.databaseName"
   cfDatabaseHost <- lookupOpt "postgresql.host"
-  cfDatabasePort <- fmap getStricterIntegral <$> lookupOpt "postgresql.port"
+  cfDatabasePort <- fmap getExactIntegral <$> lookupOpt "postgresql.port"
   cfDatabaseUser <- lookupOpt "postgresql.user"
   cfDatabasePassword <- lookupOpt "postgresql.password"
   cfLoggerVerbosity <- lookupOpt "log.verbosity"
@@ -101,13 +101,13 @@ require key = do
 -- tries to decode a value without loss of precision. Normally, trying
 -- to represent 9999999 as 'Word16' results in something like 16959,
 -- which is unsafe when dealing with configuration files.
-newtype StricterIntegral a =
-  StricterIntegral
-    { getStricterIntegral :: a
+newtype ExactIntegral a =
+  ExactIntegral
+    { getExactIntegral :: a
     }
 
-instance Integral a => C.Configured (StricterIntegral a) where
+instance Integral a => C.Configured (ExactIntegral a) where
   convert (C.Number n)
-    | denominator n == 1 = StricterIntegral <$> fromIntegralExact (numerator n)
+    | denominator n == 1 = ExactIntegral <$> fromIntegralExact (numerator n)
     | otherwise = Nothing
   convert _ = Nothing
