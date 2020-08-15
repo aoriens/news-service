@@ -50,10 +50,6 @@ class QueryParameter a
   where
   parseQueryParameter :: Maybe BS.ByteString -> Maybe a
 
--- | Just determines whether such a parameter exists.
-instance QueryParameter () where
-  parseQueryParameter = void
-
 instance QueryParameter Int where
   parseQueryParameter = readFromChar8ByteString
 

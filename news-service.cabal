@@ -87,6 +87,7 @@ test-suite news-service-test
   other-modules:
       Core.Interactor.GetNewsSpec
     , Core.PaginationSpec
+    , Web.QueryParameterSpec
     , Web.RouterSpec
   hs-source-dirs:
       test
