@@ -25,6 +25,7 @@ import System.Exit
 import System.IO hiding (Handle)
 import qualified Web.Application
 import qualified Web.Handler.News as HNews
+import qualified Web.JSONEncoder as JSONEncoder
 import qualified Web.Router as R
 import qualified Web.Types as Web
 
@@ -92,7 +93,9 @@ router deps =
       R.ifMethod Http.methodGet $ HNews.run . newsHandlerHandle deps
 
 newsHandlerHandle :: Deps -> Web.Session -> HNews.Handle
-newsHandlerHandle Deps {..} session = HNews.Handle interactorHandle
+newsHandlerHandle Deps {..} session =
+  HNews.Handle
+    {hGetNewsHandle = interactorHandle, hJSONEncode = JSONEncoder.encode}
   where
     interactorHandle =
       let hGetNews = Gateway.News.getNews gatewayHandle

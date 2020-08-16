@@ -1,5 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Web.Handler.News
   ( Handle(..)
@@ -23,9 +24,11 @@ import qualified Network.Wai.Util as Wai
 import Web.Exception
 import Web.QueryParameter
 
-newtype Handle =
+data Handle =
   Handle
     { hGetNewsHandle :: I.Handle IO
+    , hJSONEncode :: forall a. A.ToJSON a =>
+                                 a -> BB.Builder
     }
 
 run :: Handle -> Wai.Application
@@ -42,7 +45,7 @@ run h request respond =
         catch
           (I.getNews (hGetNewsHandle h) page)
           (throwIO . BadRequestException . I.logicExceptionReason)
-      pure $ presentResponse response
+      pure $ presentResponse h response
 
 parsePage :: Wai.Request -> Either Text PageQuery
 parsePage request = do
@@ -51,8 +54,8 @@ parsePage request = do
   pageQueryOffset <- lookupQueryParameter "offset" query
   pure PageQuery {..}
 
-presentResponse :: [I.News] -> BB.Builder
-presentResponse = A.fromEncoding . A.toEncoding . map presentNews
+presentResponse :: Handle -> [I.News] -> BB.Builder
+presentResponse Handle {..} = hJSONEncode . map presentNews
   where
     presentNews I.News {..} = News {..}
 
