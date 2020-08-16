@@ -78,7 +78,7 @@ getConfigPaths = do
   args <- getArgs
   case args of
     ("--config":path:_) -> pure [path]
-    _ -> pure []
+    _ -> die "Option '--config PATH_TO_CONFIG_FILE' is required"
 
 lookupOpt :: (C.Configured a) => C.Name -> ReaderT C.Config IO (Maybe a)
 lookupOpt key = do
