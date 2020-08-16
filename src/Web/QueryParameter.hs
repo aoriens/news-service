@@ -6,6 +6,7 @@ module Web.QueryParameter
   ) where
 
 import Control.Monad
+import Core.ExactConversion
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import Data.Int
@@ -60,10 +61,8 @@ parseIntegral :: Integral a => Int -> Maybe BS.ByteString -> Maybe a
 parseIntegral maxLength optBS = do
   bs <- optBS
   guard $ BS.length bs <= maxLength
-  exact <- readMaybe (BS8.unpack bs)
-  let r = fromInteger exact
-  guard $ toInteger r == exact
-  pure r
+  exact <- readMaybe (BS8.unpack bs) :: Maybe Integer
+  fromIntegralExact exact
 
 maxLengthOfNum :: Real a => a -> Int
 maxLengthOfNum x = 2 + ceiling (logBase 10 (realToFrac x :: Double))
