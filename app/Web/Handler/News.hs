@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ApplicativeDo #-}
 
 module Web.Handler.News
   ( Handle(..)
@@ -22,7 +23,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Util as Wai
 import Web.Exception
-import Web.QueryParameter
+import qualified Web.QueryParameter as QP
 
 data Handle =
   Handle
@@ -40,18 +41,19 @@ run h request respond =
     getResponse
   where
     getResponse = do
-      page <- either (throwIO . BadRequestException) pure $ parsePage request
+      pageQuery <-
+        either (throwIO . queryParameterException) pure $
+        QP.parseQuery (Wai.queryString request) pageQueryParser
       response <-
         catch
-          (I.getNews (hGetNewsHandle h) page)
+          (I.getNews (hGetNewsHandle h) pageQuery)
           (throwIO . BadRequestException . I.logicExceptionReason)
       pure $ presentResponse h response
 
-parsePage :: Wai.Request -> Either Text PageQuery
-parsePage request = do
-  let query = Wai.queryString request
-  pageQueryLimit <- lookupQueryParameter "limit" query
-  pageQueryOffset <- lookupQueryParameter "offset" query
+pageQueryParser :: QP.QueryParser PageQuery
+pageQueryParser = do
+  pageQueryLimit <- QP.lookupP "limit"
+  pageQueryOffset <- QP.lookupP "offset"
   pure PageQuery {..}
 
 presentResponse :: Handle -> [I.News] -> BB.Builder

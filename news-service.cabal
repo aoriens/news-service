@@ -34,10 +34,13 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , deepseq
+    , dlist
     , exceptions
     , http-types
     , mtl
     , text
+    , transformers
     , time
     , unordered-containers
     , wai
@@ -100,11 +103,28 @@ test-suite news-service-test
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , deepseq
     , hspec
     , http-types
     , news-service
     , QuickCheck
     , time
     , wai
+  default-language: Haskell2010
+  default-extensions: OverloadedStrings
+
+benchmark news-service-bench
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+    Web.QueryParameterBench
+  hs-source-dirs:
+      bench
+  ghc-options: -rtsopts -O2
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , criterion
+    , news-service
   default-language: Haskell2010
   default-extensions: OverloadedStrings

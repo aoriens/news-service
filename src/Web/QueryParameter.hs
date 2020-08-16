@@ -1,55 +1,131 @@
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+
 -- | Reading parameters from URI query.
 module Web.QueryParameter
-  ( QueryParameter(..)
-  , lookupQueryParameter
-  , requireQueryParameter
+  ( QueryParser
+  , parseQuery
+  , requireP
+  , lookupP
+  , lookupRawP
+  , Failure(..)
+  , QueryParameter(..)
   ) where
 
+import Control.DeepSeq
 import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.Reader
 import Core.ExactConversion
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
+import qualified Data.DList as DL
+import qualified Data.HashMap.Strict as HM
 import Data.Int
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
+import GHC.Generics
 import qualified Network.HTTP.Types as Http
-import Text.Read
+import Text.Read hiding (lift)
 
 type Key = BS.ByteString
 
--- | Searches and parses the first value matching the key. A missing
---  value is considered an error.
-requireQueryParameter ::
-     QueryParameter a => Key -> Http.Query -> Either T.Text a
-requireQueryParameter key query = do
-  raw <- maybe (missingKeyError key) Right $ lookup key query
-  maybe (badFormatError key) Right (parseQueryParameter raw)
+-- | The raw value of a query parameter is an optional bytestring. It
+-- may be Nothing if the parameter is specified in the form @?a@
+-- rather than @?a=1@ or @?a=@.
+type RawValue = Maybe BS.ByteString
 
--- | Searches and parses the first value matching the key. A missing
--- value results in @Right Nothing@.
-lookupQueryParameter ::
-     QueryParameter a => Key -> Http.Query -> Either T.Text (Maybe a)
-lookupQueryParameter key query =
-  case lookup key query of
-    Nothing -> Right Nothing
-    Just raw ->
-      maybe (badFormatError key) (Right . Just) (parseQueryParameter raw)
+-- | The query parser functor focusing on performance. It allows
+-- parsing query parameters in the applicative style. It traverses the
+-- query once only and stops as soon as all interesting parameters are
+-- found.
+data QueryParser a =
+  QueryParser
+    (DL.DList Key) -- ^ Keys to search for
+    (ParameterReader a) -- ^ A reader monad to consume parameters found
 
-missingKeyError :: Key -> Either T.Text a
-missingKeyError key =
-  Left $
-  "Parameter '" <> T.decodeLatin1 key <> "' is missing from the request query"
+type ParameterReader = ReaderT ParameterMap (Either Failure)
 
-badFormatError :: Key -> Either T.Text a
-badFormatError key =
-  Left $ "Wrong value of parameter '" <> T.decodeLatin1 key <> "'"
+-- The map contains keys to be searched for. Values may be:
+-- - Nothing - no value is found for the key yet
+-- - Just value - a value is found
+type ParameterMap = HM.HashMap Key (Maybe RawValue)
+
+instance Functor QueryParser where
+  fmap f (QueryParser keys r) = QueryParser keys (fmap f r)
+
+instance Applicative QueryParser where
+  pure = QueryParser DL.empty . pure
+  (QueryParser keys1 f) <*> (QueryParser keys2 a) =
+    QueryParser (keys1 <> keys2) (f <*> a)
+
+data Failure
+  = MissingKey Key
+  | BadValue Key RawValue
+  deriving (Eq, Show, Generic, NFData)
+
+-- | Runs the query parser on the given query.
+parseQuery :: Http.Query -> QueryParser a -> Either Failure a
+parseQuery items (QueryParser keys r) =
+  runReaderT r $ findAll initialMap (length initialMap) items
+  where
+    initialMap = HM.fromList . map (, Nothing) $ DL.toList keys
+    findAll pmap 0 _ = pmap
+    findAll pmap _ [] = pmap
+    findAll pmap remainingCount ((k, v):items') =
+      case HM.lookup k pmap
+        -- The key is searched for, but no value found yet
+            of
+        Just Nothing ->
+          findAll (HM.insert k (Just v) pmap) (pred remainingCount) items'
+        -- The key is not searched for, or a value has already been found
+        _ -> findAll pmap remainingCount items'
+
+-- | Finds a raw value for the given key. If none found, returns Nothing.
+lookupRawP :: Key -> QueryParser (Maybe RawValue)
+lookupRawP key =
+  QueryParser (DL.singleton key) (ReaderT $ pure . join . HM.lookup key)
+
+-- | Finds a value for the given key and tries to parse it. If none
+-- found, returns Nothnig. If a wrong value found, generates a
+-- failure.
+lookupP :: QueryParameter a => Key -> QueryParser (Maybe a)
+lookupP key = mapValue f (lookupRawP key)
+  where
+    f a =
+      case a of
+        Nothing -> Right Nothing
+        Just optBS -> Just <$> parseQueryParameterE key optBS
+
+-- | Finds a value for the given key and tries to parse it. If none
+-- found or parsing failed, generates a failure.
+requireP :: QueryParameter a => Key -> QueryParser a
+requireP key = mapValue f (lookupRawP key)
+  where
+    f a =
+      case a of
+        Nothing -> Left (MissingKey key)
+        Just optBS -> parseQueryParameterE key optBS
+
+mapValue :: (a -> Either Failure b) -> QueryParser a -> QueryParser b
+mapValue f (QueryParser keys r) = QueryParser keys (r >>= lift . f)
+
+parseQueryParameterE :: QueryParameter a => Key -> RawValue -> Either Failure a
+parseQueryParameterE key bs =
+  case parseQueryParameter bs of
+    Just v -> Right v
+    Nothing -> Left (BadValue key bs)
 
 -- | Types that can be parsed from an HTTP request query item.
 class QueryParameter a
   -- | Parses a value from an optional bytestring value. It should
   -- return Nothing in case of parse error.
   where
-  parseQueryParameter :: Maybe BS.ByteString -> Maybe a
+  parseQueryParameter :: RawValue -> Maybe a
+
+-- | Parsing always succeeds. It may be used to check for parameter
+-- existence.
+instance QueryParameter () where
+  parseQueryParameter _ = Just ()
 
 instance QueryParameter Int where
   parseQueryParameter = parseIntegral $ maxLengthOfNum (maxBound :: Int)
@@ -57,9 +133,11 @@ instance QueryParameter Int where
 instance QueryParameter Int32 where
   parseQueryParameter = parseIntegral $ maxLengthOfNum (maxBound :: Int32)
 
-parseIntegral :: Integral a => Int -> Maybe BS.ByteString -> Maybe a
+parseIntegral :: Integral a => Int -> RawValue -> Maybe a
 parseIntegral maxLength optBS = do
   bs <- optBS
+  -- Filters out too long numbers to avoid excess work on malformed
+  -- requests
   guard $ BS.length bs <= maxLength
   exact <- readMaybe (BS8.unpack bs) :: Maybe Integer
   fromIntegralExact exact
