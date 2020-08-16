@@ -70,4 +70,9 @@ debug {
   # Defaults to false.
   #
   # show_internal_errors = false
+
+  # Output pretty-printed JSON in response bodies. This is probably
+  # slower. Defaults to false.
+  #
+  # json_pretty_print = false
 }

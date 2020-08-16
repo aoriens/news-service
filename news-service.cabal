@@ -62,6 +62,7 @@ executable news-service-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , aeson-pretty
     , async
     , base >=4.7 && <5
     , bytestring

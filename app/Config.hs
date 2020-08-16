@@ -38,6 +38,7 @@ data Config =
     , cfLogFilePath :: Maybe String
     , cfCoreMaxPageLimit :: Maybe Int32
     , cfDebugShowInternalErrorInfoInResponse :: Maybe Bool
+    , cfDebugJSONPrettyPrint :: Maybe Bool
     }
   deriving (Show)
 
@@ -64,6 +65,7 @@ parseConfig = do
   cfCoreMaxPageLimit <- lookupOpt "core.max_page_limit"
   cfDebugShowInternalErrorInfoInResponse <-
     lookupOpt "debug.show_internal_errors"
+  cfDebugJSONPrettyPrint <- lookupOpt "debug.json_pretty_print"
   pure Config {..}
 
 loadConfigFile :: IO C.Config

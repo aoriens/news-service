@@ -40,6 +40,7 @@ data Deps =
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     , dMaxPageLimit :: PageLimit
+    , dJSONEncoderConfig :: JSONEncoder.Config
     }
 
 main :: IO ()
@@ -72,6 +73,9 @@ getDeps = do
             DBConnManager.withConnection (makeDBConnectionConfig dConfig)
         , dMaxPageLimit =
             PageLimit $ fromMaybe 100 (Cf.cfCoreMaxPageLimit dConfig)
+        , dJSONEncoderConfig =
+            JSONEncoder.Config
+              {prettyPrint = Just True == Cf.cfDebugJSONPrettyPrint dConfig}
         })
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
@@ -105,7 +109,9 @@ router deps =
 newsHandlerHandle :: Deps -> Web.Session -> HNews.Handle
 newsHandlerHandle Deps {..} session =
   HNews.Handle
-    {hGetNewsHandle = interactorHandle, hJSONEncode = JSONEncoder.encode}
+    { hGetNewsHandle = interactorHandle
+    , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
+    }
   where
     interactorHandle =
       Core.Interactor.GetNews.Handle
