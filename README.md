@@ -27,3 +27,35 @@ accommodate it for your needs or import it to your own configuration file, e.g.
 
 Files `*.private` are ignored by git, so it is safe to give such a name to a
 configuration file containing passwords.
+
+# API
+
+## Pagination
+
+Responses returning lists of entities support paginated output which can be
+managed with parameters `offset` and `limit`. They can be passed in the URI
+query.
+
+`limit` is a number meaning the amount of entities to output in a single
+response. When missing or too big, the maximum configured limit is used. It must
+not be negative.
+
+`offset` is a number of the first entity to output which defaults to `0`. It
+must not be negative.
+
+## Endpoints
+
+### `GET /news`
+
+Returns a list of [News](#News) entities.
+
+## Entities
+
+### News
+
+A news entry. Fields:
+
+- `id` - the entity identifier
+- `title` - the news title
+- `date` - the issue date
+- `text` - the news body text. It is considered as a plain Unicode text.
