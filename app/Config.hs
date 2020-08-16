@@ -55,7 +55,7 @@ parseConfig = do
   cfServerPort <- lookupOpt "server.port"
   cfServerHostPreference <- lookupOpt "server.host"
   cfServerName <- lookupOpt "server.name"
-  cfDatabaseName <- require "postgresql.databaseName"
+  cfDatabaseName <- require "postgresql.database_name"
   cfDatabaseHost <- lookupOpt "postgresql.host"
   cfDatabasePort <- fmap getExactIntegral <$> lookupOpt "postgresql.port"
   cfDatabaseUser <- lookupOpt "postgresql.user"
