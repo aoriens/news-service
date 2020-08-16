@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 
 module Main
@@ -62,10 +63,16 @@ getDeps :: IO (Logger.Impl.Worker, Deps)
 getDeps = do
   dConfig <- Cf.getConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
-  let dWithDBConnection =
-        DBConnManager.withConnection (makeDBConnectionConfig dConfig)
-      dMaxPageLimit = PageLimit $ fromMaybe 100 (Cf.cfCoreMaxPageLimit dConfig)
-  pure (loggerWorker, Deps {..})
+  pure
+    ( loggerWorker
+    , Deps
+        { dConfig
+        , dLoggerHandle
+        , dWithDBConnection =
+            DBConnManager.withConnection (makeDBConnectionConfig dConfig)
+        , dMaxPageLimit =
+            PageLimit $ fromMaybe 100 (Cf.cfCoreMaxPageLimit dConfig)
+        })
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
 makeDBConnectionConfig Cf.Config {..} =
@@ -80,11 +87,14 @@ makeDBConnectionConfig Cf.Config {..} =
 getWebAppHandle :: Deps -> IO Web.Application.Handle
 getWebAppHandle deps@Deps {..} = do
   hState <- Web.Application.makeState
-  let hLogger = (`sessionLoggerHandle` dLoggerHandle)
-      hRouter = router deps
-      hShowInternalExceptionInfoInResponses =
-        Just True == Cf.cfDebugShowInternalErrorInfoInResponse dConfig
-  pure Web.Application.Handle {..}
+  pure
+    Web.Application.Handle
+      { hState
+      , hLogger = (`sessionLoggerHandle` dLoggerHandle)
+      , hRouter = router deps
+      , hShowInternalExceptionInfoInResponses =
+          Just True == Cf.cfDebugShowInternalErrorInfoInResponse dConfig
+      }
 
 router :: Deps -> R.Router
 router deps =
@@ -98,13 +108,15 @@ newsHandlerHandle Deps {..} session =
     {hGetNewsHandle = interactorHandle, hJSONEncode = JSONEncoder.encode}
   where
     interactorHandle =
-      let hGetNews = Gateway.News.getNews gatewayHandle
-          hMaxPageLimit = dMaxPageLimit
-       in Core.Interactor.GetNews.Handle {..}
+      Core.Interactor.GetNews.Handle
+        { hGetNews = Gateway.News.getNews gatewayHandle
+        , hMaxPageLimit = dMaxPageLimit
+        }
     gatewayHandle =
-      let hWithConnection = dWithDBConnection
-          hLoggerHandle = sessionLoggerHandle session dLoggerHandle
-       in Gateway.News.Handle {..}
+      Gateway.News.Handle
+        { hWithConnection = dWithDBConnection
+        , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+        }
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
@@ -112,7 +124,7 @@ getLoggerHandle :: Cf.Config -> IO (Logger.Impl.Worker, Logger.Handle IO)
 getLoggerHandle Cf.Config {..} = do
   hFileHandle <- getFileHandle cfLogFilePath
   hMinLevel <- either die pure (parseVerbosity cfLoggerVerbosity)
-  Logger.Impl.new Logger.Impl.Handle {..}
+  Logger.Impl.new Logger.Impl.Handle {hFileHandle, hMinLevel}
   where
     getFileHandle (Just path@(_:_)) =
       openFile path AppendMode `catchS` \e ->
