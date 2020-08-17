@@ -34,7 +34,7 @@ library
     , Network.Wai.Util
     , Web.Application
     , Web.Exception
-    , Web.Handler.News
+    , Web.Handler.GetNews
     , Web.JSONEncoder
     , Web.QueryParameter
     , Web.Types

@@ -3,7 +3,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ApplicativeDo #-}
 
-module Web.Handler.News
+module Web.Handler.GetNews
   ( Handle(..)
   , run
   ) where

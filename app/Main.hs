@@ -25,7 +25,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
 import qualified Web.Application
-import qualified Web.Handler.News as HNews
+import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.JSONEncoder as JSONEncoder
 import qualified Web.Router as R
 import qualified Web.Types as Web
@@ -104,11 +104,11 @@ router :: Deps -> R.Router
 router deps =
   R.new $ do
     R.ifPath ["news"] $ do
-      R.ifMethod Http.methodGet $ HNews.run . newsHandlerHandle deps
+      R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
 
-newsHandlerHandle :: Deps -> Web.Session -> HNews.Handle
+newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
 newsHandlerHandle Deps {..} session =
-  HNews.Handle
+  HGetNews.Handle
     { hGetNewsHandle = interactorHandle
     , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
     }
