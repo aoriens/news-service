@@ -37,5 +37,6 @@ selectNewsStatement =
     [TH.vectorStatement|
     select id :: integer, title :: varchar, date :: date, body :: varchar
     from news
+    order by date desc, id desc
     limit $1 :: integer offset $2 :: integer
   |]
