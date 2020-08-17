@@ -4,6 +4,7 @@ module Gateway.SecretTokenSpec
   ( spec
   ) where
 
+import Core.Interactor.CreateUser as I
 import qualified Data.ByteString as BS
 import qualified Gateway.SecretToken as G
 import Test.Hspec
@@ -22,27 +23,28 @@ spec = do
       state <- G.initState
       let (tokenInfo1, state') = G.generate state defaultConfig
           (tokenInfo2, _) = G.generate state' defaultConfig
-      G.stiToken tokenInfo1 `shouldNotBe` G.stiToken tokenInfo2
-      G.stiHash tokenInfo1 `shouldNotBe` G.stiHash tokenInfo2
+      I.stiToken tokenInfo1 `shouldNotBe` I.stiToken tokenInfo2
+      I.stiHash tokenInfo1 `shouldNotBe` I.stiHash tokenInfo2
     it "should return hash algorithm in the output matching the input one" $ do
       state <- G.initState
-      let expectedHashAlgorithm = G.HashAlgorithmSHA256
+      let expectedHashAlgorithm = I.HashAlgorithmSHA256
           config =
             G.Config
               {cfHashAlgorithm = expectedHashAlgorithm, cfTokenLength = 8}
           (tokenInfo, _) = G.generate state config
-      G.stiHashAlgorithm tokenInfo `shouldBe` expectedHashAlgorithm
+      I.stiHashAlgorithm tokenInfo `shouldBe` expectedHashAlgorithm
     it "should return token of the specified length" $
       property $ \(NonNegative expectedLen) -> do
         state <- G.initState
         let config =
               G.Config
-                { cfHashAlgorithm = G.HashAlgorithmSHA256
+                { cfHashAlgorithm = I.HashAlgorithmSHA256
                 , cfTokenLength = expectedLen
                 }
             (tokenInfo, _) = G.generate state config
-        BS.length (G.stiToken tokenInfo) `shouldBe` expectedLen
+        BS.length (I.secretTokenBytes $ I.stiToken tokenInfo) `shouldBe`
+          expectedLen
 
 defaultConfig :: G.Config
 defaultConfig =
-  G.Config {cfHashAlgorithm = G.HashAlgorithmSHA256, cfTokenLength = 8}
+  G.Config {cfHashAlgorithm = I.HashAlgorithmSHA256, cfTokenLength = 8}

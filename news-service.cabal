@@ -24,6 +24,7 @@ library
     , Control.Exception.Sync
     , Core.ExactConversion
     , Core.Interactor.GetNews
+    , Core.Interactor.CreateUser
     , Core.Pagination
     , Database
     , Database.ConnectionManager
