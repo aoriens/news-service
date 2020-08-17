@@ -24,6 +24,7 @@ library
     , Core.ExactConversion
     , Core.Interactor.GetNews
     , Core.Pagination
+    , Gateway.SecretToken
     , Logger
     , Web.QueryParameter
     , Web.Types
@@ -34,10 +35,12 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , cryptonite
     , deepseq
     , dlist
     , exceptions
     , http-types
+    , memory
     , mtl
     , text
     , transformers
@@ -95,6 +98,7 @@ test-suite news-service-test
       Core.Interactor.GetNewsSpec
     , Core.ExactConversionSpec
     , Core.PaginationSpec
+    , Gateway.SecretTokenSpec
     , Web.QueryParameterSpec
     , Web.RouterSpec
   hs-source-dirs:
