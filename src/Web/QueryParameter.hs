@@ -86,7 +86,7 @@ lookupRawP key =
   QueryParser (DL.singleton key) (ReaderT $ pure . join . HM.lookup key)
 
 -- | Finds a value for the given key and tries to parse it. If none
--- found, returns Nothnig. If a wrong value found, generates a
+-- found, returns Nothing. If a wrong value is found, generates a
 -- failure.
 lookupP :: QueryParameter a => Key -> QueryParser (Maybe a)
 lookupP key = mapValue f (lookupRawP key)
