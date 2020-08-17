@@ -20,12 +20,22 @@ source-repository head
 
 library
   exposed-modules:
-      Control.Exception.Sync
+      Config
+    , Control.Exception.Sync
     , Core.ExactConversion
     , Core.Interactor.GetNews
     , Core.Pagination
+    , Database
+    , Database.ConnectionManager
     , Gateway.SecretToken
+    , Gateway.News
     , Logger
+    , Logger.Impl
+    , Network.Wai.Util
+    , Web.Application
+    , Web.Exception
+    , Web.Handler.News
+    , Web.JSONEncoder
     , Web.QueryParameter
     , Web.Types
     , Web.Types.Internal.SessionId
@@ -33,51 +43,20 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , aeson-pretty
+    , base >=4.7 && <5
     , bytestring
+    , configurator
     , cryptonite
     , deepseq
     , dlist
     , exceptions
-    , http-types
-    , memory
-    , mtl
-    , text
-    , transformers
-    , time
-    , unordered-containers
-    , wai
-  default-language: Haskell2010
-  default-extensions: OverloadedStrings
-
-executable news-service-exe
-  main-is: Main.hs
-  other-modules:
-      Config
-    , Database
-    , Database.ConnectionManager
-    , Gateway.News
-    , Logger.Impl
-    , Network.Wai.Util
-    , Web.Application
-    , Web.Exception
-    , Web.Handler.News
-    , Web.JSONEncoder
-  hs-source-dirs:
-      app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      aeson
-    , aeson-pretty
-    , async
-    , base >=4.7 && <5
-    , bytestring
-    , configurator
     , hasql
     , hasql-th
     , http-types
+    , memory
     , mtl
-    , news-service
     , network
     , profunctors
     , stm
@@ -87,6 +66,22 @@ executable news-service-exe
     , unordered-containers
     , vector
     , wai
+    , warp
+  default-language: Haskell2010
+  default-extensions: OverloadedStrings
+
+executable news-service-exe
+  main-is: Main.hs
+  other-modules:
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      async
+    , base >=4.7 && <5
+    , http-types
+    , news-service
+    , text
     , warp
   default-language: Haskell2010
   default-extensions: OverloadedStrings
