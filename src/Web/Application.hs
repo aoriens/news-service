@@ -24,6 +24,7 @@ import Network.HTTP.Types.Status as Http
 import qualified Network.Socket as Socket
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Network.Wai.Util as Wai
 import Text.Printf
 import Web.Exception
 import qualified Web.Router as R
@@ -66,7 +67,7 @@ createSessionMiddleware h eapp request respond = do
 logEnterAndExit :: Handle -> EMiddleware
 logEnterAndExit h eapp session@Session {..} req respond = do
   Logger.info loggerH enterMessage
-  (r, status) <- runApplicationAndGetStatus (eapp session) req respond
+  (r, status) <- Wai.runApplicationAndGetStatus (eapp session) req respond
   Logger.info loggerH (exitMessage status)
   pure r
   where
@@ -86,21 +87,6 @@ logEnterAndExit h eapp session@Session {..} req respond = do
         , T.pack (show (Http.statusCode status))
         , T.decodeLatin1 (Http.statusMessage status)
         ]
-
-runApplicationAndGetStatus ::
-     Wai.Application
-  -> Wai.Request
-  -> (Wai.Response -> IO Wai.ResponseReceived)
-  -> IO (Wai.ResponseReceived, Http.Status)
-runApplicationAndGetStatus app request respond = do
-  statusRef <- newIORef (error "The response status must be set here")
-  r <-
-    app request $ \response -> do
-      let (status, _, _) = Wai.responseToStream response
-      writeIORef statusRef status
-      respond response
-  status <- readIORef statusRef
-  pure (r, status)
 
 -- Not so fast, though simple.
 formatPeerAddr :: Socket.SockAddr -> String
