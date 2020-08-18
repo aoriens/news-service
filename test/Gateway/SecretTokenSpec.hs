@@ -12,36 +12,36 @@ import Test.QuickCheck
 
 spec :: Spec
 spec = do
-  describe "generate " $ do
+  describe "generateIO" $ do
     it
       "should return hash that is checked successfully against the generated token" $ do
-      state <- G.initState
-      let (tokenInfo, _) = G.generate state defaultConfig
-          matches = G.tokenMatchesHash tokenInfo
+      state <- G.initIOState
+      tokenInfo <- G.generateIO defaultConfig state
+      let matches = G.tokenMatchesHash tokenInfo
       matches `shouldBe` True
     it "should return a different token and hash on a next invocation" $ do
-      state <- G.initState
-      let (tokenInfo1, state') = G.generate state defaultConfig
-          (tokenInfo2, _) = G.generate state' defaultConfig
+      state <- G.initIOState
+      tokenInfo1 <- G.generateIO defaultConfig state
+      tokenInfo2 <- G.generateIO defaultConfig state
       I.stiToken tokenInfo1 `shouldNotBe` I.stiToken tokenInfo2
       I.stiHash tokenInfo1 `shouldNotBe` I.stiHash tokenInfo2
     it "should return hash algorithm in the output matching the input one" $ do
-      state <- G.initState
+      state <- G.initIOState
       let expectedHashAlgorithm = I.HashAlgorithmSHA256
           config =
             G.Config
               {cfHashAlgorithm = expectedHashAlgorithm, cfTokenLength = 8}
-          (tokenInfo, _) = G.generate state config
+      tokenInfo <- G.generateIO config state
       I.stiHashAlgorithm tokenInfo `shouldBe` expectedHashAlgorithm
     it "should return token of the specified length" $
       property $ \(NonNegative expectedLen) -> do
-        state <- G.initState
+        state <- G.initIOState
         let config =
               G.Config
                 { cfHashAlgorithm = I.HashAlgorithmSHA256
                 , cfTokenLength = expectedLen
                 }
-            (tokenInfo, _) = G.generate state config
+        tokenInfo <- G.generateIO config state
         BS.length (I.secretTokenBytes $ I.stiToken tokenInfo) `shouldBe`
           expectedLen
 

@@ -2,12 +2,16 @@
 
 module Gateway.SecretToken
   ( generate
+  , generateIO
   , initState
+  , initIOState
   , tokenMatchesHash
   , State
   , Config(..)
+  , IOState
   ) where
 
+import Control.Concurrent.MVar
 import qualified Core.Interactor.CreateUser as I
 import qualified Crypto.Hash as Hash
 import qualified Crypto.Random as Random
@@ -24,20 +28,29 @@ data Config =
 newtype State =
   State Random.ChaChaDRG
 
+newtype IOState =
+  IOState (MVar State)
+
 initState :: IO State
 initState = State <$> Random.drgNew
 
-generate :: State -> Config -> (I.SecretTokenInfo, State)
-generate (State oldGen) Config {..} =
-  ( I.SecretTokenInfo
+initIOState :: IO IOState
+initIOState = IOState <$> (initState >>= newMVar)
+
+generate :: Config -> State -> (State, I.SecretTokenInfo)
+generate Config {..} (State oldGen) =
+  ( State newGen
+  , I.SecretTokenInfo
       { stiToken = I.SecretToken tokenBytes
       , stiHash = hashWithAlgorithm cfHashAlgorithm tokenBytes
       , stiHashAlgorithm = cfHashAlgorithm
-      }
-  , State newGen)
+      })
   where
     (tokenBytes, newGen) =
       Random.withDRG oldGen $ Random.getRandomBytes cfTokenLength
+
+generateIO :: Config -> IOState -> IO I.SecretTokenInfo
+generateIO config (IOState mvar) = modifyMVar mvar (pure . generate config)
 
 hashWithAlgorithm :: I.HashAlgorithm -> BS.ByteString -> BS.ByteString
 hashWithAlgorithm I.HashAlgorithmSHA256 bytes =
