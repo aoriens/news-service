@@ -8,7 +8,6 @@ module Web.Handler.PostCreateUser
   ) where
 
 import Control.Exception
-import Control.Monad
 import qualified Core.Interactor.CreateUser as I
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Encoding.Internal as A
@@ -17,7 +16,6 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.DList as DL
 import Data.Int
 import Data.List
 import Data.Maybe
@@ -25,7 +23,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Time.Clock
-import Data.Word
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Util as Wai
@@ -44,48 +41,17 @@ data Handle =
     { hCreateUserHandle :: I.Handle IO
     , hJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
+    , hGetRequestBody :: Wai.Request -> IO LBS.ByteString
     }
 
 buildResponse :: Handle -> Wai.Request -> IO BB.Builder
 buildResponse Handle {..} request = do
-  rejectInvalidContentType request
-  bodyBytes <- loadRequestBodyNoLonger maxBodyLength request
+  bodyBytes <- hGetRequestBody request
   userEntity <-
     either (throwIO . BadRequestException . T.pack) pure $
     A.eitherDecode' bodyBytes
   (user, secretToken) <- I.run hCreateUserHandle (queryFromInUser userEntity)
   pure $ hJSONEncode (formatResponse user secretToken)
-
-rejectInvalidContentType :: Wai.Request -> IO ()
-rejectInvalidContentType request =
-  when
-    ((Http.hContentType, expectedContentType) `notElem`
-     Wai.requestHeaders request) $
-  throwIO (UnsupportedMediaTypeException [T.decodeUtf8 expectedContentType])
-
-expectedContentType :: BS.ByteString
-expectedContentType = "application/json"
-
-loadRequestBodyNoLonger :: Word64 -> Wai.Request -> IO LBS.ByteString
-loadRequestBodyNoLonger maxLen request =
-  case Wai.requestBodyLength request of
-    Wai.KnownLength len
-      | len > maxLen -> throwIO $ PayloadTooLargeException maxLen
-      | otherwise -> Wai.strictRequestBody request
-    Wai.ChunkedBody -> go 0 DL.empty
-  where
-    go len chunks
-      | len > maxLen = throwIO $ PayloadTooLargeException maxLen
-      | otherwise = do
-        chunk <- Wai.getRequestBodyChunk request
-        if BS.null chunk
-          then pure $ LBS.fromChunks (DL.toList chunks)
-          else go
-                 (len + fromIntegral (BS.length chunk))
-                 (chunks `DL.snoc` chunk)
-
-maxBodyLength :: Word64
-maxBodyLength = 65536
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =

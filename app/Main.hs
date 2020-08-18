@@ -31,6 +31,7 @@ import qualified Web.Application
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
+import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
 import qualified Web.Types as Web
 
@@ -137,6 +138,7 @@ postCreateUserHandle Deps {..} _ =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
     , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
+    , hGetRequestBody = RequestBodyLoader.getJSONRequestBody
     }
   where
     interactorHandle =

@@ -39,6 +39,7 @@ library
     , Web.Handler.PostCreateUser
     , Web.JSONEncoder
     , Web.QueryParameter
+    , Web.RequestBodyLoader
     , Web.Types
     , Web.Types.Internal.SessionId
     , Web.Router
