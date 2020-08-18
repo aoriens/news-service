@@ -11,7 +11,7 @@ import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import qualified Core.Interactor.CreateUser as ICreateUser
-import qualified Core.Interactor.GetNews
+import qualified Core.Interactor.GetNews as IGetNews
 import Core.Pagination
 import Data.Maybe
 import Data.String
@@ -19,7 +19,7 @@ import qualified Data.Text as T
 import Data.Time.Clock
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
-import qualified Gateway.News
+import qualified Gateway.News as GNews
 import qualified Gateway.SecretToken as GSecretToken
 import qualified Logger
 import qualified Logger.Impl
@@ -124,12 +124,10 @@ newsHandlerHandle Deps {..} session =
     }
   where
     interactorHandle =
-      Core.Interactor.GetNews.Handle
-        { hGetNews = Gateway.News.getNews gatewayHandle
-        , hMaxPageLimit = dMaxPageLimit
-        }
+      IGetNews.Handle
+        {hGetNews = GNews.getNews gatewayHandle, hMaxPageLimit = dMaxPageLimit}
     gatewayHandle =
-      Gateway.News.Handle
+      GNews.Handle
         { hWithConnection = dWithDBConnection
         , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
         }
