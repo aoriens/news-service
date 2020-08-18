@@ -26,7 +26,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Util as Wai
 import Text.Printf
-import Web.Exception
+import qualified Web.Exception as E
 import qualified Web.Router as R
 import Web.Types
 import Web.Types.Internal.SessionId
@@ -111,20 +111,26 @@ convertExceptionsToErrorResponse h eapp session request respond =
   catchJustS
     testException
     (eapp session request respond)
-    (respond . exceptionToResponse)
+    (respond . exceptionToResponse h)
   where
     testException e
       | Just (_ :: SomeAsyncException) <- fromException e = Nothing
       | otherwise = Just e
-    exceptionToResponse e
-      | Just t@(BadRequestException _) <- fromException e =
-        stubErrorResponseWithReason
-          Http.badRequest400
-          []
-          (badRequestExceptionReason t)
-      | hShowInternalExceptionInfoInResponses h =
-        Warp.exceptionResponseForDebug e
-      | otherwise = Warp.defaultOnExceptionResponse e
+
+exceptionToResponse :: Handle -> SomeException -> Wai.Response
+exceptionToResponse h e
+  | Just t@(E.BadRequestException _) <- fromException e =
+    stubErrorResponseWithReason Http.badRequest400 [] $
+    E.badRequestExceptionReason t
+  | Just t@(E.UnsupportedMediaTypeException _) <- fromException e =
+    stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
+    "Supported media types are: " <> T.intercalate ", " (E.supportedMimeTypes t)
+  | Just t@(E.PayloadTooLargeException _) <- fromException e =
+    stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
+    "The request body length must not exceed " <>
+    T.pack (show (E.maxPayloadSize t)) <> " bytes"
+  | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
+  | otherwise = Warp.defaultOnExceptionResponse e
 
 logUncaughtExceptions :: Handle -> EMiddleware
 logUncaughtExceptions h eapp session request respond =
