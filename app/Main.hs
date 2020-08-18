@@ -10,14 +10,17 @@ import qualified Config as Cf
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
+import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.GetNews
 import Core.Pagination
 import Data.Maybe
 import Data.String
 import qualified Data.Text as T
+import Data.Time.Clock
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News
+import qualified Gateway.SecretToken as GSecretToken
 import qualified Logger
 import qualified Logger.Impl
 import qualified Network.HTTP.Types as Http
@@ -26,6 +29,7 @@ import System.Exit
 import System.IO hiding (Handle)
 import qualified Web.Application
 import qualified Web.Handler.GetNews as HGetNews
+import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
 import qualified Web.Router as R
 import qualified Web.Types as Web
@@ -41,6 +45,7 @@ data Deps =
     , dLoggerHandle :: Logger.Handle IO
     , dMaxPageLimit :: PageLimit
     , dJSONEncoderConfig :: JSONEncoder.Config
+    , dSecretTokenIOState :: GSecretToken.IOState
     }
 
 main :: IO ()
@@ -64,6 +69,7 @@ getDeps :: IO (Logger.Impl.Worker, Deps)
 getDeps = do
   dConfig <- Cf.getConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
+  dSecretTokenIOState <- GSecretToken.initIOState
   pure
     ( loggerWorker
     , Deps
@@ -76,6 +82,7 @@ getDeps = do
         , dJSONEncoderConfig =
             JSONEncoder.Config
               {prettyPrint = Just True == Cf.cfDebugJSONPrettyPrint dConfig}
+        , dSecretTokenIOState
         })
 
 makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
@@ -105,6 +112,9 @@ router deps =
   R.new $ do
     R.ifPath ["news"] $ do
       R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
+    R.ifPath ["create_user"] $ do
+      R.ifMethod Http.methodPost $
+        HPostCreateUser.run . postCreateUserHandle deps
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
 newsHandlerHandle Deps {..} session =
@@ -123,6 +133,29 @@ newsHandlerHandle Deps {..} session =
         { hWithConnection = dWithDBConnection
         , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
         }
+
+postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
+postCreateUserHandle Deps {..} _ =
+  HPostCreateUser.Handle
+    { hCreateUserHandle = interactorHandle
+    , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
+    }
+  where
+    interactorHandle =
+      ICreateUser.Handle
+        { hCreateUser = const $ pure stubCreateUserResult
+        , hGenerateToken =
+            GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
+        , hGetCurrentTime = getCurrentTime
+        }
+    stubCreateUserResult =
+      ICreateUser.CreateUserResult
+        { curUserId = ICreateUser.UserId 101
+        , curAvatarId = Just $ ICreateUser.ImageId 909
+        }
+    secretTokenConfig =
+      GSecretToken.Config
+        {cfTokenLength = 32, cfHashAlgorithm = ICreateUser.HashAlgorithmSHA256}
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.

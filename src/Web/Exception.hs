@@ -1,6 +1,8 @@
 -- | Common exception types available for use in web handlers.
 module Web.Exception
   ( BadRequestException(..)
+  , UnsupportedMediaTypeException(..)
+  , PayloadTooLargeException(..)
   , queryParameterException
   ) where
 
@@ -8,6 +10,7 @@ import Control.Exception
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
+import Data.Word
 import qualified Web.QueryParameter as QP
 
 -- | An exception to indicate an issue on the client side. It should
@@ -19,6 +22,22 @@ newtype BadRequestException =
   deriving (Show)
 
 instance Exception BadRequestException
+
+newtype UnsupportedMediaTypeException =
+  UnsupportedMediaTypeException
+    { supportedMimeTypes :: [Text]
+    }
+  deriving (Show)
+
+instance Exception UnsupportedMediaTypeException
+
+newtype PayloadTooLargeException =
+  PayloadTooLargeException
+    { maxPayloadSize :: Word64
+    }
+  deriving (Show)
+
+instance Exception PayloadTooLargeException
 
 queryParameterException :: QP.Failure -> BadRequestException
 queryParameterException (QP.MissingKey key) =
