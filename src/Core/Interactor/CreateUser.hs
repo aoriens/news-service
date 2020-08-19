@@ -23,6 +23,13 @@ import Data.Int
 import Data.Text (Text)
 import Data.Time.Clock
 
+data Handle m =
+  Handle
+    { hCreateUser :: CreateUserCommand -> m CreateUserResult
+    , hGenerateToken :: m SecretTokenInfo
+    , hGetCurrentTime :: m UTCTime
+    }
+
 run :: Monad m => Handle m -> Query -> m (User, SecretToken)
 run Handle {..} Query {..} = do
   let isAdmin = False
@@ -49,13 +56,6 @@ run Handle {..} Query {..} = do
         , userIsAdmin = isAdmin
         }
     , stiToken)
-
-data Handle m =
-  Handle
-    { hCreateUser :: CreateUserCommand -> m CreateUserResult
-    , hGenerateToken :: m SecretTokenInfo
-    , hGetCurrentTime :: m UTCTime
-    }
 
 data Query =
   Query
