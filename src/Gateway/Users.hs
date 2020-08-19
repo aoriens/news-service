@@ -4,27 +4,18 @@
 
 module Gateway.Users
   ( createUser
-  , Handle(..)
   ) where
 
 import qualified Core.Interactor.CreateUser as I
 import Data.Profunctor
 import qualified Data.Text as T
 import Database as DB
-import qualified Hasql.Connection as C
 import qualified Hasql.Statement as S
 import qualified Hasql.TH as TH
-import qualified Logger
 
-data Handle =
-  Handle
-    { hWithConnection :: forall a. (C.Connection -> IO a) -> IO a
-    , hLoggerHandle :: Logger.Handle IO
-    }
-
-createUser :: Handle -> I.CreateUserCommand -> IO I.CreateUserResult
-createUser Handle {..} cmd@I.CreateUserCommand {..} =
-  DB.runSession hWithConnection hLoggerHandle $ do
+createUser :: DB.Handle -> I.CreateUserCommand -> IO I.CreateUserResult
+createUser h cmd@I.CreateUserCommand {..} =
+  DB.runSession h $ do
     optAvatarId <-
       case cuAvatar of
         Just image -> do

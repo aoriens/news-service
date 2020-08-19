@@ -1,6 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RankNTypes #-}
 
 module Main
   ( main
@@ -42,7 +41,7 @@ import qualified Web.Types as Web
 -- signatures.
 data Deps =
   Deps
-    { dWithDBConnection :: forall a. Database.WithConnection a
+    { dDatabaseConnectionConfig :: DBConnManager.Config
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     , dMaxPageLimit :: PageLimit
@@ -77,8 +76,7 @@ getDeps = do
     , Deps
         { dConfig
         , dLoggerHandle
-        , dWithDBConnection =
-            DBConnManager.withConnection (makeDBConnectionConfig dConfig)
+        , dDatabaseConnectionConfig = makeDBConnectionConfig dConfig
         , dMaxPageLimit =
             PageLimit $ fromMaybe 100 (Cf.cfCoreMaxPageLimit dConfig)
         , dJSONEncoderConfig =
@@ -119,7 +117,7 @@ router deps =
         HPostCreateUser.run . postCreateUserHandle deps
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
-newsHandlerHandle Deps {..} session =
+newsHandlerHandle deps@Deps {..} session =
   HGetNews.Handle
     { hGetNewsHandle = interactorHandle
     , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
@@ -127,15 +125,12 @@ newsHandlerHandle Deps {..} session =
   where
     interactorHandle =
       IGetNews.Handle
-        {hGetNews = GNews.getNews gatewayHandle, hMaxPageLimit = dMaxPageLimit}
-    gatewayHandle =
-      GNews.Handle
-        { hWithConnection = dWithDBConnection
-        , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+        { hGetNews = GNews.getNews $ sessionDatabaseHandle session deps
+        , hMaxPageLimit = dMaxPageLimit
         }
 
 postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
-postCreateUserHandle Deps {..} session =
+postCreateUserHandle deps@Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
     , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
@@ -144,15 +139,10 @@ postCreateUserHandle Deps {..} session =
   where
     interactorHandle =
       ICreateUser.Handle
-        { hCreateUser = GUsers.createUser gatewayHandle
+        { hCreateUser = GUsers.createUser $ sessionDatabaseHandle session deps
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = getCurrentTime
-        }
-    gatewayHandle =
-      GUsers.Handle
-        { hWithConnection = dWithDBConnection
-        , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
         }
     secretTokenConfig =
       GSecretToken.Config
@@ -181,3 +171,10 @@ getLoggerHandle Cf.Config {..} = do
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =
   Logger.mapMessage $ \text -> "SID-" <> T.pack (show sessionId) <> " " <> text
+
+sessionDatabaseHandle :: Web.Session -> Deps -> Database.Handle
+sessionDatabaseHandle session Deps {..} =
+  Database.Handle
+    { hConnectionConfig = dDatabaseConnectionConfig
+    , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+    }
