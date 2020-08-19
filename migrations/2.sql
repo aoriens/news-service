@@ -1,20 +1,4 @@
--- The database schema description and the initial data.
--- Execute psql MYDATABASENAME -f PATH_TO_THIS_FILE to apply it.
-
-create table config (
-       key varchar not null primary key,
-       value varchar not null
-);
-
--- The schema version is to be incremented on every schema change.
-insert into config values ('schema_version', '2');
-
-create table news (
-       id serial not null primary key,
-       title varchar not null,
-       body varchar not null,
-       "date" date not null
-);
+update config set value = '2' where key = 'schema_version';
 
 create table mime_types (
        id serial not null primary key,

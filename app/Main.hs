@@ -21,6 +21,7 @@ import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.News as GNews
 import qualified Gateway.SecretToken as GSecretToken
+import qualified Gateway.Users as GUsers
 import qualified Logger
 import qualified Logger.Impl
 import qualified Network.HTTP.Types as Http
@@ -134,7 +135,7 @@ newsHandlerHandle Deps {..} session =
         }
 
 postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
-postCreateUserHandle Deps {..} _ =
+postCreateUserHandle Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
     , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
@@ -143,15 +144,15 @@ postCreateUserHandle Deps {..} _ =
   where
     interactorHandle =
       ICreateUser.Handle
-        { hCreateUser = const $ pure stubCreateUserResult
+        { hCreateUser = GUsers.createUser gatewayHandle
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = getCurrentTime
         }
-    stubCreateUserResult =
-      ICreateUser.CreateUserResult
-        { curUserId = ICreateUser.UserId 101
-        , curAvatarId = Just $ ICreateUser.ImageId 909
+    gatewayHandle =
+      GUsers.Handle
+        { hWithConnection = dWithDBConnection
+        , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
         }
     secretTokenConfig =
       GSecretToken.Config

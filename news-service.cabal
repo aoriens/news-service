@@ -30,6 +30,7 @@ library
     , Database.ConnectionManager
     , Gateway.SecretToken
     , Gateway.News
+    , Gateway.Users
     , Logger
     , Logger.Impl
     , Network.Wai.Util
