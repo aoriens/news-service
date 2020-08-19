@@ -40,8 +40,8 @@ runSession withConnection loggerH (Session session) =
     hasqlSession = runReaderT session loggerH
 
 -- | Creates a session from a statement.
-statement :: params -> St.Statement params result -> Session result
-statement params st@(St.Statement sql _ _ _) =
+statement :: St.Statement params result -> params -> Session result
+statement st@(St.Statement sql _ _ _) params =
   Session $ do
     loggerH <- ask
     liftIO $ Logger.debug loggerH ("Run SQL: " <> T.decodeLatin1 sql)
@@ -52,11 +52,11 @@ statement params st@(St.Statement sql _ _ _) =
 runStatement ::
      WithConnection out
   -> Logger.Handle IO
-  -> params
   -> St.Statement params out
+  -> params
   -> IO out
-runStatement withConnection loggerH params =
-  runSession withConnection loggerH . statement params
+runStatement withConnection loggerH st =
+  runSession withConnection loggerH . statement st
 
 newtype QueryException =
   QueryException S.QueryError

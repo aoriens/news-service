@@ -27,7 +27,7 @@ data Handle =
 getNews :: Handle -> Page -> IO [GetNews.News]
 getNews Handle {..} page =
   toList <$>
-  DB.runStatement hWithConnection hLoggerHandle page selectNewsStatement
+  DB.runStatement hWithConnection hLoggerHandle selectNewsStatement page
 
 selectNewsStatement :: Statement.Statement Page (Vector GetNews.News)
 selectNewsStatement =
