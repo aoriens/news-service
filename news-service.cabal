@@ -99,6 +99,7 @@ test-suite news-service-test
   main-is: Spec.hs
   other-modules:
       Core.Interactor.GetNewsSpec
+    , Core.Interactor.CreateUserSpec
     , Core.ExactConversionSpec
     , Core.PaginationSpec
     , Gateway.SecretTokenSpec

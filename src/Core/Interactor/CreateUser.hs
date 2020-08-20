@@ -74,6 +74,7 @@ data Image =
     { imageData :: BS.ByteString
     , imageContentType :: Text
     }
+  deriving (Eq, Show)
 
 newtype ImageId =
   ImageId
