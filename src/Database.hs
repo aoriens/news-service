@@ -102,7 +102,7 @@ transactionWithMode level mode (Transaction t) =
   where
     logSQLs sqls =
       "Executed SQL transaction:\n" <>
-      T.intercalate "\n" (map T.decodeLatin1 $ DL.toList sqls)
+      T.intercalate "\n" (map ((<> ";") . T.decodeLatin1) $ DL.toList sqls)
 
 runTransactionRW :: Handle -> Transaction a -> IO a
 runTransactionRW h = runSession h . transactionRW
