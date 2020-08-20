@@ -6,6 +6,7 @@
 module Database
   ( Handle(..)
   , Session
+  , Transaction
   , runSession
   , statement
   , runStatement
@@ -26,8 +27,8 @@ import qualified Data.DList as DL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Database.ConnectionManager as CM
-import qualified Hasql.Session as S
-import qualified Hasql.Statement as St
+import qualified Hasql.Session as HS
+import qualified Hasql.Statement as HSt
 import qualified Hasql.Transaction as HT
 import qualified Hasql.Transaction.Sessions as HT
 import qualified Logger
@@ -39,32 +40,32 @@ data Handle =
     }
 
 -- | An SQL session - a monad containing SQL statements and optional
--- IO actions. It supersedes 'S.Session' to perform additional
+-- IO actions. It supersedes 'HS.Session' to perform additional
 -- processing when producing sessions from statements.
 newtype Session a =
-  Session (ReaderT (Logger.Handle IO) S.Session a)
+  Session (ReaderT (Logger.Handle IO) HS.Session a)
   deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Runs a session. It can throw 'QueryException'.
 runSession :: Handle -> Session a -> IO a
 runSession Handle {..} (Session session) =
   CM.withConnection hConnectionConfig $
-  S.run hasqlSession >=> either (throwIO . QueryException) pure
+  HS.run hasqlSession >=> either (throwIO . QueryException) pure
   where
     hasqlSession = runReaderT session hLoggerHandle
 
 -- | Creates a session from a statement. It is executed in a separate,
 -- auto-committed transaction.
-statement :: St.Statement params result -> params -> Session result
-statement st@(St.Statement sql _ _ _) params =
+statement :: HSt.Statement params result -> params -> Session result
+statement st@(HSt.Statement sql _ _ _) params =
   Session $ do
     loggerH <- ask
     liftIO $ Logger.debug loggerH ("Run SQL: " <> T.decodeLatin1 sql)
-    lift $ S.statement params st
+    lift $ HS.statement params st
 
 -- | A shortcut to run a single statement as a session. It can throw
 -- 'QueryException'.
-runStatement :: Handle -> St.Statement params out -> params -> IO out
+runStatement :: Handle -> HSt.Statement params out -> params -> IO out
 runStatement h st = runSession h . statement st
 
 type SQL = BS.ByteString
@@ -77,8 +78,8 @@ newtype Transaction a =
   deriving (Functor, Applicative, Monad)
 
 -- | Creates a composable transaction from a statement.
-tstatement :: St.Statement a b -> a -> Transaction b
-tstatement st@(St.Statement sql _ _ _) params =
+tstatement :: HSt.Statement a b -> a -> Transaction b
+tstatement st@(HSt.Statement sql _ _ _) params =
   Transaction $ do
     modify' (`DL.snoc` sql)
     lift $ HT.statement params st
@@ -107,7 +108,7 @@ runTransactionRW :: Handle -> Transaction a -> IO a
 runTransactionRW h = runSession h . transactionRW
 
 newtype QueryException =
-  QueryException S.QueryError
+  QueryException HS.QueryError
   deriving (Show)
 
 instance Exception QueryException
