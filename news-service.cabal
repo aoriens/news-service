@@ -59,6 +59,7 @@ library
     , exceptions
     , hasql
     , hasql-th
+    , hasql-transaction
     , http-types
     , memory
     , mtl

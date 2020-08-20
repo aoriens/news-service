@@ -15,14 +15,14 @@ import qualified Hasql.TH as TH
 
 createUser :: DB.Handle -> I.CreateUserCommand -> IO I.CreateUserResult
 createUser h cmd@I.CreateUserCommand {..} =
-  DB.runSession h $ do
+  DB.runTransactionRW h $ do
     optAvatarId <-
       case cuAvatar of
         Just image -> do
-          DB.statement createMimeTypeIfNotFound (I.imageContentType image)
-          Just <$> DB.statement createImage image
+          DB.tstatement createMimeTypeIfNotFound (I.imageContentType image)
+          Just <$> DB.tstatement createImage image
         Nothing -> pure Nothing
-    userId <- DB.statement createUserSt (optAvatarId, cmd)
+    userId <- DB.tstatement createUserSt (optAvatarId, cmd)
     pure I.CreateUserResult {curUserId = userId, curAvatarId = optAvatarId}
 
 createMimeTypeIfNotFound :: S.Statement T.Text ()
