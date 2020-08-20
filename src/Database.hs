@@ -6,13 +6,15 @@
 module Database
   ( Handle(..)
   , Session
-  , Transaction
   , runSession
+  , Transaction
+  , HT.IsolationLevel(..)
+  , HT.Mode(..)
   , statement
-  , runStatement
-  , tstatement
-  , transactionWithMode
+  , transaction
   , transactionRW
+  , transactionWithMode
+  , runTransaction
   , runTransactionRW
   , QueryException(..)
   ) where
@@ -39,7 +41,7 @@ data Handle =
     , hLoggerHandle :: Logger.Handle IO
     }
 
--- | An SQL session - a monad containing SQL statements and optional
+-- | The SQL session - a monad containing SQL statements and optional
 -- IO actions. It supersedes 'HS.Session' to perform additional
 -- processing when producing sessions from statements.
 newtype Session a =
@@ -54,43 +56,31 @@ runSession Handle {..} (Session session) =
   where
     hasqlSession = runReaderT session hLoggerHandle
 
--- | Creates a session from a statement. It is executed in a separate,
--- auto-committed transaction.
-statement :: HSt.Statement params result -> params -> Session result
-statement st@(HSt.Statement sql _ _ _) params =
-  Session $ do
-    loggerH <- ask
-    liftIO $ Logger.debug loggerH ("Run SQL: " <> T.decodeLatin1 sql)
-    lift $ HS.statement params st
-
--- | A shortcut to run a single statement as a session. It can throw
--- 'QueryException'.
-runStatement :: Handle -> HSt.Statement params out -> params -> IO out
-runStatement h st = runSession h . statement st
-
 type SQL = BS.ByteString
 
--- | An SQL transaction - a composable group of SQL statements that
--- are followed with an implicit transaction commit. In case of a
--- transaction conflict, it will restart automatically until success.
+-- | The SQL transaction - a composable group of SQL statements that
+-- are followed with an implicit transaction commit statement. In case
+-- of a transaction conflict, it will restart automatically until
+-- success.
 newtype Transaction a =
   Transaction (StateT (DL.DList SQL) HT.Transaction a)
   deriving (Functor, Applicative, Monad)
 
 -- | Creates a composable transaction from a statement.
-tstatement :: HSt.Statement a b -> a -> Transaction b
-tstatement st@(HSt.Statement sql _ _ _) params =
+statement :: HSt.Statement a b -> a -> Transaction b
+statement st@(HSt.Statement sql _ _ _) params =
   Transaction $ do
     modify' (`DL.snoc` sql)
     lift $ HT.statement params st
 
--- | Creates a session from a read-write transaction with the safest
--- isolation level. It is a recommended default.
 transactionRW :: Transaction a -> Session a
 transactionRW = transactionWithMode HT.Serializable HT.Write
 
--- | Creates a session from a transaction. Thus, several transactions
--- can be composed into a single session.
+transaction :: Transaction a -> Session a
+transaction = transactionWithMode HT.Serializable HT.Read
+
+-- | Creates a session of a single, atomic transaction. Thus, several
+-- transactions can be composed into a single session.
 transactionWithMode ::
      HT.IsolationLevel -> HT.Mode -> Transaction a -> Session a
 transactionWithMode level mode (Transaction t) =
@@ -104,8 +94,15 @@ transactionWithMode level mode (Transaction t) =
       "Executed SQL transaction:\n" <>
       T.intercalate "\n" (map ((<> ";") . T.decodeLatin1) $ DL.toList sqls)
 
+-- | Creates and runs a session from a single read-write transaction.
+-- It can throw 'QueryException'.
 runTransactionRW :: Handle -> Transaction a -> IO a
 runTransactionRW h = runSession h . transactionRW
+
+-- | Creates and runs a session from a single read-only transaction.
+-- It can throw 'QueryException'.
+runTransaction :: Handle -> Transaction a -> IO a
+runTransaction h = runSession h . transaction
 
 newtype QueryException =
   QueryException HS.QueryError

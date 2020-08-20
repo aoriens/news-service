@@ -19,10 +19,10 @@ createUser h cmd@I.CreateUserCommand {..} =
     optAvatarId <-
       case cuAvatar of
         Just image -> do
-          DB.tstatement createMimeTypeIfNotFound (I.imageContentType image)
-          Just <$> DB.tstatement createImage image
+          DB.statement createMimeTypeIfNotFound (I.imageContentType image)
+          Just <$> DB.statement createImage image
         Nothing -> pure Nothing
-    userId <- DB.tstatement createUserSt (optAvatarId, cmd)
+    userId <- DB.statement createUserSt (optAvatarId, cmd)
     pure I.CreateUserResult {curUserId = userId, curAvatarId = optAvatarId}
 
 createMimeTypeIfNotFound :: S.Statement T.Text ()

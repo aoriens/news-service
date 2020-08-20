@@ -16,7 +16,8 @@ import qualified Hasql.Statement as Statement
 import qualified Hasql.TH as TH
 
 getNews :: DB.Handle -> Page -> IO [GetNews.News]
-getNews h page = toList <$> DB.runStatement h selectNewsStatement page
+getNews h page =
+  toList <$> DB.runTransaction h (DB.statement selectNewsStatement page)
 
 selectNewsStatement :: Statement.Statement Page (Vector GetNews.News)
 selectNewsStatement =
