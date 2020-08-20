@@ -15,9 +15,9 @@ import Core.Pagination
 import Data.Maybe
 import Data.String
 import qualified Data.Text as T
-import Data.Time.Clock
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
+import Gateway.CurrentTime as GCurrentTime
 import qualified Gateway.News as GNews
 import qualified Gateway.SecretToken as GSecretToken
 import qualified Gateway.Users as GUsers
@@ -142,7 +142,7 @@ postCreateUserHandle deps@Deps {..} session =
         { hCreateUser = GUsers.createUser $ sessionDatabaseHandle session deps
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
-        , hGetCurrentTime = getCurrentTime
+        , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
         }
     secretTokenConfig =
       GSecretToken.Config

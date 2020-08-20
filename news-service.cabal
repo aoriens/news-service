@@ -28,6 +28,7 @@ library
     , Core.Pagination
     , Database
     , Database.ConnectionManager
+    , Gateway.CurrentTime
     , Gateway.SecretToken
     , Gateway.News
     , Gateway.Users
