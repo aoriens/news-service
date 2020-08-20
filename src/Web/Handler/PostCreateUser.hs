@@ -58,11 +58,11 @@ queryFromInUser InUser {..} =
   I.Query
     { qFirstName = iuFirstName
     , qLastName = iuLastName
-    , qAvatar = imageFromInImage <$> iuAvatar
+    , qAvatar = imageQueryFromInImage <$> iuAvatar
     }
 
-imageFromInImage :: InImage -> I.Image
-imageFromInImage InImage {..} =
+imageQueryFromInImage :: InImage -> I.ImageQuery
+imageQueryFromInImage InImage {..} =
   I.Image {imageData = unBase64 iiBase64Data, imageContentType = iiContentType}
 
 formatResponse :: I.User -> I.SecretToken -> OutUser

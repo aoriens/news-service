@@ -5,6 +5,7 @@ module Core.Interactor.CreateUser
   , Handle(..)
   -- * Interactor input
   , Query(..)
+  , ImageQuery
   -- * Interactor output
   , Image(..)
   , User(..)
@@ -63,8 +64,10 @@ data Query =
       -- single-component name.
     { qFirstName :: Maybe Text
     , qLastName :: Text
-    , qAvatar :: Maybe Image
+    , qAvatar :: Maybe ImageQuery
     }
+
+type ImageQuery = Image
 
 data Image =
   Image
