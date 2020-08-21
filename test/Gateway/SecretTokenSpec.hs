@@ -25,26 +25,13 @@ spec = do
       tokenInfo2 <- G.generateIO defaultConfig state
       I.stiToken tokenInfo1 `shouldNotBe` I.stiToken tokenInfo2
       I.stiHash tokenInfo1 `shouldNotBe` I.stiHash tokenInfo2
-    it "should return hash algorithm in the output matching the input one" $ do
-      state <- G.initIOState
-      let expectedHashAlgorithm = I.HashAlgorithmSHA256
-          config =
-            G.Config
-              {cfHashAlgorithm = expectedHashAlgorithm, cfTokenLength = 8}
-      tokenInfo <- G.generateIO config state
-      I.stiHashAlgorithm tokenInfo `shouldBe` expectedHashAlgorithm
     it "should return token of the specified length" $
       property $ \(NonNegative expectedLen) -> do
         state <- G.initIOState
-        let config =
-              G.Config
-                { cfHashAlgorithm = I.HashAlgorithmSHA256
-                , cfTokenLength = expectedLen
-                }
+        let config = G.Config {cfTokenLength = expectedLen}
         tokenInfo <- G.generateIO config state
         BS.length (I.secretTokenBytes $ I.stiToken tokenInfo) `shouldBe`
           expectedLen
 
 defaultConfig :: G.Config
-defaultConfig =
-  G.Config {cfHashAlgorithm = I.HashAlgorithmSHA256, cfTokenLength = 8}
+defaultConfig = G.Config {cfTokenLength = 8}

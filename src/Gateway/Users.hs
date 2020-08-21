@@ -54,7 +54,6 @@ createUserSt =
        , cuCreatedAt {-4-}
        , cuIsAdmin {-5-}
        , cuTokenHash {-6-}
-       , fromIntegral $ fromEnum cuTokenHashAlgorithm {-7-}
         ))
     I.UserId
     [TH.singletonStatement|
@@ -64,15 +63,13 @@ createUserSt =
       avatar_id,
       created_at,
       is_admin,
-      token_hash,
-      token_hash_algorithm
+      token_hash
     ) values (
       $1 :: varchar?,
       $2 :: varchar,
       $3 :: integer?,
       $4 :: timestamptz,
       $5 :: boolean,
-      $6 :: bytea,
-      $7 :: integer
+      $6 :: bytea
     ) returning id :: integer
     |]

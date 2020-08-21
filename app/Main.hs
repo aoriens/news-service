@@ -144,9 +144,7 @@ postCreateUserHandle deps@Deps {..} session =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
         }
-    secretTokenConfig =
-      GSecretToken.Config
-        {cfTokenLength = 32, cfHashAlgorithm = ICreateUser.HashAlgorithmSHA256}
+    secretTokenConfig = GSecretToken.Config {cfTokenLength = 32}
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.

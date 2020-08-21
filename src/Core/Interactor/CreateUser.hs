@@ -13,7 +13,6 @@ module Core.Interactor.CreateUser
   , ImageId(..)
   , SecretTokenInfo(..)
   , SecretToken(..)
-  , HashAlgorithm(..)
   -- * Gateway API
   , CreateUserCommand(..)
   , CreateUserResult(..)
@@ -45,7 +44,6 @@ run Handle {..} Query {..} = do
         , cuCreatedAt = createdAt
         , cuIsAdmin = isAdmin
         , cuTokenHash = stiHash
-        , cuTokenHashAlgorithm = stiHashAlgorithm
         }
   pure
     ( User
@@ -104,7 +102,6 @@ data SecretTokenInfo =
   SecretTokenInfo
     { stiToken :: SecretToken
     , stiHash :: BS.ByteString
-    , stiHashAlgorithm :: HashAlgorithm
     }
 
 newtype SecretToken =
@@ -112,10 +109,6 @@ newtype SecretToken =
     { secretTokenBytes :: BS.ByteString
     }
   deriving (Eq, Show)
-
-data HashAlgorithm =
-  HashAlgorithmSHA256
-  deriving (Eq, Show, Bounded, Enum)
 
 data CreateUserCommand =
   CreateUserCommand
@@ -125,7 +118,6 @@ data CreateUserCommand =
     , cuCreatedAt :: UTCTime
     , cuIsAdmin :: Bool
     , cuTokenHash :: BS.ByteString
-    , cuTokenHashAlgorithm :: HashAlgorithm
     }
 
 data CreateUserResult =

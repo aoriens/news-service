@@ -72,12 +72,7 @@ stubHandle =
     }
 
 stubTokenInfo :: I.SecretTokenInfo
-stubTokenInfo =
-  I.SecretTokenInfo
-    { stiToken = I.SecretToken ""
-    , stiHash = ""
-    , stiHashAlgorithm = I.HashAlgorithmSHA256
-    }
+stubTokenInfo = I.SecretTokenInfo {stiToken = I.SecretToken "", stiHash = ""}
 
 stubGetCurrentTime :: IO UTCTime
 stubGetCurrentTime = pure $ UTCTime (ModifiedJulianDay 6666) 0

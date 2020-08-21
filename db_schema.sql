@@ -7,7 +7,7 @@ create table config (
 );
 
 -- The schema version is to be incremented on every schema change.
-insert into config values ('schema_version', '2');
+insert into config values ('schema_version', '3');
 
 create table news (
        id serial not null primary key,
@@ -34,6 +34,5 @@ create table users (
        avatar_id integer references images,
        created_at timestamp with time zone not null,
        is_admin boolean not null default false,
-       token_hash bytea not null,
-       token_hash_algorithm integer not null
+       token_hash bytea not null
 );

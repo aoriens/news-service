@@ -17,11 +17,12 @@ import qualified Crypto.Hash as Hash
 import qualified Crypto.Random as Random
 import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
+import Data.List
+import Data.Word
 
-data Config =
+newtype Config =
   Config
     { cfTokenLength :: Int
-    , cfHashAlgorithm :: I.HashAlgorithm
     }
   deriving (Eq, Show)
 
@@ -41,10 +42,7 @@ generate :: Config -> State -> (State, I.SecretTokenInfo)
 generate Config {..} (State oldGen) =
   ( State newGen
   , I.SecretTokenInfo
-      { stiToken = I.SecretToken tokenBytes
-      , stiHash = hashWithAlgorithm cfHashAlgorithm tokenBytes
-      , stiHashAlgorithm = cfHashAlgorithm
-      })
+      {stiToken = I.SecretToken tokenBytes, stiHash = hashDefault tokenBytes})
   where
     (tokenBytes, newGen) =
       Random.withDRG oldGen $ Random.getRandomBytes cfTokenLength
@@ -52,10 +50,49 @@ generate Config {..} (State oldGen) =
 generateIO :: Config -> IOState -> IO I.SecretTokenInfo
 generateIO config (IOState mvar) = modifyMVar mvar (pure . generate config)
 
-hashWithAlgorithm :: I.HashAlgorithm -> BS.ByteString -> BS.ByteString
-hashWithAlgorithm I.HashAlgorithmSHA256 bytes =
-  BA.convert $ Hash.hashWith Hash.SHA256 bytes
+hashDefault :: BS.ByteString -> BS.ByteString
+hashDefault = hashWith sha256Algorithm
+
+hashWith :: HashAlgorithm -> BS.ByteString -> BS.ByteString
+hashWith HashAlgorithm {..} = BS.cons haHashPrefix . haHasher
+                              -- See Note [Multiple hash algorithms]
 
 tokenMatchesHash :: I.SecretTokenInfo -> Bool
 tokenMatchesHash I.SecretTokenInfo {..} =
-  hashWithAlgorithm stiHashAlgorithm (I.secretTokenBytes stiToken) == stiHash
+  case algorithmOfHash stiHash -- See Note [Multiple hash algorithms]
+        of
+    Nothing -> False
+    Just alg -> hashWith alg (I.secretTokenBytes stiToken) == stiHash
+
+algorithmOfHash :: BS.ByteString -> Maybe HashAlgorithm
+algorithmOfHash s = do
+  (prefix, _) <- BS.uncons s
+  find ((prefix ==) . haHashPrefix) supportedAlgorithms
+  where
+    supportedAlgorithms = [sha256Algorithm]
+
+data HashAlgorithm =
+  HashAlgorithm
+    { haHasher :: Hasher
+    , haHashPrefix :: Word8
+    }
+
+type Hasher = BS.ByteString -> BS.ByteString
+
+sha256Algorithm :: HashAlgorithm
+sha256Algorithm =
+  HashAlgorithm
+    {haHasher = BA.convert . Hash.hashWith Hash.SHA256, haHashPrefix = 0}
+{-
+
+Note [Multiple hash algorithms]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Hash algorithms may get obsolete and showing vulnerabilities over
+time. So, changing a hash algorithm in future should be possible, yet
+keeping ability to authenticate credentials hashed with an obsolete
+algorithms. It is implemented by prepending a hash with an extra octet
+to encode the hash algorithm. When matching a credential against a
+hash, the proper algorithm is to be determined out of the first octet.
+
+-}
