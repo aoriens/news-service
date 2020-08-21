@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main
   ( main
@@ -12,6 +13,8 @@ import Control.Exception.Sync
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.GetNews as IGetNews
 import Core.Pagination
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Builder as BB
 import Data.Maybe
 import Data.String
 import qualified Data.Text as T
@@ -45,7 +48,8 @@ data Deps =
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     , dMaxPageLimit :: PageLimit
-    , dJSONEncoderConfig :: JSONEncoder.Config
+    , dJSONEncode :: forall a. A.ToJSON a =>
+                                 a -> BB.Builder
     , dSecretTokenIOState :: GSecretToken.IOState
     }
 
@@ -79,9 +83,10 @@ getDeps = do
         , dDatabaseConnectionConfig = makeDBConnectionConfig dConfig
         , dMaxPageLimit =
             PageLimit $ fromMaybe 100 (Cf.cfCoreMaxPageLimit dConfig)
-        , dJSONEncoderConfig =
-            JSONEncoder.Config
-              {prettyPrint = Just True == Cf.cfDebugJSONPrettyPrint dConfig}
+        , dJSONEncode =
+            JSONEncoder.encode
+              JSONEncoder.Config
+                {prettyPrint = Just True == Cf.cfDebugJSONPrettyPrint dConfig}
         , dSecretTokenIOState
         })
 
@@ -118,10 +123,7 @@ router deps =
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
 newsHandlerHandle deps@Deps {..} session =
-  HGetNews.Handle
-    { hGetNewsHandle = interactorHandle
-    , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
-    }
+  HGetNews.Handle {hGetNewsHandle = interactorHandle, hJSONEncode = dJSONEncode}
   where
     interactorHandle =
       IGetNews.Handle
@@ -133,7 +135,7 @@ postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
 postCreateUserHandle deps@Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
-    , hJSONEncode = JSONEncoder.encode dJSONEncoderConfig
+    , hJSONEncode = dJSONEncode
     , hGetRequestBody = RequestBodyLoader.getJSONRequestBody
     }
   where
