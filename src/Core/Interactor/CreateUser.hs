@@ -78,7 +78,7 @@ newtype ImageId =
   ImageId
     { getImageId :: Int32
     }
-  deriving (Eq)
+  deriving (Eq, Show)
 
 data User =
   User
