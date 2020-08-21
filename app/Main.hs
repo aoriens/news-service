@@ -6,7 +6,7 @@ module Main
   ( main
   ) where
 
-import qualified Config as Cf
+import qualified Config.IO as Cf
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync

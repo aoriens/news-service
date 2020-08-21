@@ -4,7 +4,7 @@
 -- files, command line parameters etc). It should only allow getting
 -- and parsing settings to simple data types as they are, neither
 -- providing default values nor parsing to library-specific types.
-module Config
+module Config.IO
   ( getConfig
   , Config(..)
   ) where
