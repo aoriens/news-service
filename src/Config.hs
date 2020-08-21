@@ -62,7 +62,8 @@ parseConfig = do
   cfDatabasePassword <- lookupOpt "postgresql.password"
   cfLoggerVerbosity <- lookupOpt "log.verbosity"
   cfLogFilePath <- lookupOpt "log.path"
-  cfCoreMaxPageLimit <- lookupOpt "core.max_page_limit"
+  cfCoreMaxPageLimit <-
+    fmap getExactIntegral <$> lookupOpt "core.max_page_limit"
   cfDebugShowInternalErrorInfoInResponse <-
     lookupOpt "debug.show_internal_errors"
   cfDebugJSONPrettyPrint <- lookupOpt "debug.json_pretty_print"
