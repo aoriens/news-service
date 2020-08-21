@@ -15,6 +15,7 @@ import qualified Core.Interactor.GetNews as IGetNews
 import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe
 import Data.String
 import qualified Data.Text as T
@@ -27,6 +28,7 @@ import qualified Gateway.Users as GUsers
 import qualified Logger
 import qualified Logger.Impl
 import qualified Network.HTTP.Types as Http
+import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
@@ -50,6 +52,7 @@ data Deps =
     , dMaxPageLimit :: PageLimit
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
+    , dLoadRequestJSONBody :: Wai.Request -> IO LBS.ByteString
     , dSecretTokenIOState :: GSecretToken.IOState
     }
 
@@ -87,6 +90,12 @@ getDeps = do
             JSONEncoder.encode
               JSONEncoder.Config
                 {prettyPrint = Just True == Cf.cfDebugJSONPrettyPrint dConfig}
+        , dLoadRequestJSONBody =
+            RequestBodyLoader.getJSONRequestBody
+              RequestBodyLoader.Config
+                { cfMaxBodySize =
+                    fromMaybe 16384 $ Cf.cfCoreMaxRequestJsonBodySize dConfig
+                }
         , dSecretTokenIOState
         })
 
@@ -136,7 +145,7 @@ postCreateUserHandle deps@Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
     , hJSONEncode = dJSONEncode
-    , hGetRequestBody = RequestBodyLoader.getJSONRequestBody
+    , hGetRequestBody = dLoadRequestJSONBody
     }
   where
     interactorHandle =

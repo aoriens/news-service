@@ -37,6 +37,7 @@ data Config =
     , cfLoggerVerbosity :: Maybe String
     , cfLogFilePath :: Maybe String
     , cfCoreMaxPageLimit :: Maybe Int32
+    , cfCoreMaxRequestJsonBodySize :: Maybe Word64
     , cfDebugShowInternalErrorInfoInResponse :: Maybe Bool
     , cfDebugJSONPrettyPrint :: Maybe Bool
     }
@@ -64,6 +65,8 @@ parseConfig = do
   cfLogFilePath <- lookupOpt "log.path"
   cfCoreMaxPageLimit <-
     fmap getExactIntegral <$> lookupOpt "core.max_page_limit"
+  cfCoreMaxRequestJsonBodySize <-
+    fmap getExactIntegral <$> lookupOpt "core.max_request_json_body_size"
   cfDebugShowInternalErrorInfoInResponse <-
     lookupOpt "debug.show_internal_errors"
   cfDebugJSONPrettyPrint <- lookupOpt "debug.json_pretty_print"
