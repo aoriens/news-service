@@ -40,9 +40,9 @@ parseConfig = do
   inDatabasePassword <- lookupOpt "postgresql.password"
   inLoggerVerbosity <- lookupOpt "log.verbosity"
   inLogFilePath <- lookupOpt "log.path"
-  inMaxPageLimit <- fmap getExactIntegral <$> lookupOpt "core.max_page_limit"
+  inMaxPageLimit <- fmap getExactIntegral <$> lookupOpt "server.max_page_limit"
   inMaxRequestJsonBodySize <-
-    fmap getExactIntegral <$> lookupOpt "core.max_request_json_body_size"
+    fmap getExactIntegral <$> lookupOpt "server.max_request_json_body_size"
   inShowInternalErrorInfoInResponse <- lookupOpt "debug.show_internal_errors"
   inSecretTokenLength <-
     fmap getExactIntegral <$> lookupOpt "core.secret_token_length"
