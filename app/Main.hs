@@ -77,15 +77,14 @@ getDeps = do
         { dConfig
         , dLoggerHandle
         , dDatabaseConnectionConfig = Cf.cfDatabaseConfig dConfig
-        , dMaxPageLimit = Cf.cfCoreMaxPageLimit dConfig
+        , dMaxPageLimit = Cf.cfMaxPageLimit dConfig
         , dJSONEncode =
             JSONEncoder.encode
-              JSONEncoder.Config
-                {prettyPrint = Cf.cfDebugJSONPrettyPrint dConfig}
+              JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
         , dLoadRequestJSONBody =
             RequestBodyLoader.getJSONRequestBody
               RequestBodyLoader.Config
-                {cfMaxBodySize = Cf.cfCoreMaxRequestJsonBodySize dConfig}
+                {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
         })
 
@@ -98,7 +97,7 @@ getWebAppHandle deps@Deps {..} = do
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
       , hRouter = router deps
       , hShowInternalExceptionInfoInResponses =
-          Cf.cfDebugShowInternalErrorInfoInResponse dConfig
+          Cf.cfShowInternalErrorInfoInResponse dConfig
       }
 
 router :: Deps -> R.Router

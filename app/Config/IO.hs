@@ -40,15 +40,13 @@ parseConfig = do
   inDatabasePassword <- lookupOpt "postgresql.password"
   inLoggerVerbosity <- lookupOpt "log.verbosity"
   inLogFilePath <- lookupOpt "log.path"
-  inCoreMaxPageLimit <-
-    fmap getExactIntegral <$> lookupOpt "core.max_page_limit"
-  inCoreMaxRequestJsonBodySize <-
+  inMaxPageLimit <- fmap getExactIntegral <$> lookupOpt "core.max_page_limit"
+  inMaxRequestJsonBodySize <-
     fmap getExactIntegral <$> lookupOpt "core.max_request_json_body_size"
-  inDebugShowInternalErrorInfoInResponse <-
-    lookupOpt "debug.show_internal_errors"
+  inShowInternalErrorInfoInResponse <- lookupOpt "debug.show_internal_errors"
   inSecretTokenLength <-
     fmap getExactIntegral <$> lookupOpt "core.secret_token_length"
-  inDebugJSONPrettyPrint <- lookupOpt "debug.json_pretty_print"
+  inJSONPrettyPrint <- lookupOpt "debug.json_pretty_print"
   pure C.InConfig {..}
 
 loadConfigFile :: IO DC.Config

@@ -26,11 +26,11 @@ data Config =
     , cfDatabaseConfig :: !DB.Config
     , cfLoggerVerbosity :: !Logger.Level
     , cfLogFile :: !LogFile
-    , cfCoreMaxPageLimit :: !PageLimit
-    , cfCoreMaxRequestJsonBodySize :: !Word64
+    , cfMaxPageLimit :: !PageLimit
+    , cfMaxRequestJsonBodySize :: !Word64
     , cfSecretTokenLength :: !Int
-    , cfDebugShowInternalErrorInfoInResponse :: !Bool
-    , cfDebugJSONPrettyPrint :: !Bool
+    , cfShowInternalErrorInfoInResponse :: !Bool
+    , cfJSONPrettyPrint :: !Bool
     }
 
 data LogFile
@@ -50,11 +50,11 @@ data InConfig =
     , inDatabasePassword :: Maybe String
     , inLoggerVerbosity :: Maybe String
     , inLogFilePath :: Maybe String
-    , inCoreMaxPageLimit :: Maybe Int32
-    , inCoreMaxRequestJsonBodySize :: Maybe Word64
+    , inMaxPageLimit :: Maybe Int32
+    , inMaxRequestJsonBodySize :: Maybe Word64
     , inSecretTokenLength :: Maybe Int
-    , inDebugShowInternalErrorInfoInResponse :: Maybe Bool
-    , inDebugJSONPrettyPrint :: Maybe Bool
+    , inShowInternalErrorInfoInResponse :: Maybe Bool
+    , inJSONPrettyPrint :: Maybe Bool
     }
 
 -- | Creates configuration. Errors are reported as a 'Left' with a
@@ -73,12 +73,11 @@ makeConfig inConfig@InConfig {..} = do
           case inLogFilePath of
             Just path@(_:_) -> LogFilePath path
             _ -> LogFileStdErr
-      , cfCoreMaxPageLimit = PageLimit $ fromMaybe 100 inCoreMaxPageLimit
-      , cfCoreMaxRequestJsonBodySize =
-          fromMaybe 16384 inCoreMaxRequestJsonBodySize
-      , cfDebugShowInternalErrorInfoInResponse =
-          Just True == inDebugShowInternalErrorInfoInResponse
-      , cfDebugJSONPrettyPrint = Just True == inDebugJSONPrettyPrint
+      , cfMaxPageLimit = PageLimit $ fromMaybe 100 inMaxPageLimit
+      , cfMaxRequestJsonBodySize = fromMaybe 16384 inMaxRequestJsonBodySize
+      , cfShowInternalErrorInfoInResponse =
+          Just True == inShowInternalErrorInfoInResponse
+      , cfJSONPrettyPrint = Just True == inJSONPrettyPrint
       , ..
       }
 
