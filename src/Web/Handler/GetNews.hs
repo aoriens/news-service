@@ -47,7 +47,7 @@ run h request respond =
       response <-
         catch
           (I.getNews (hGetNewsHandle h) pageQuery)
-          (throwIO . BadRequestException . I.logicExceptionReason)
+          (throwIO . BadRequestException . I.queryExceptionReason)
       pure $ presentResponse h response
 
 pageQueryParser :: QP.QueryParser PageQuery

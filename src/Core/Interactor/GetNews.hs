@@ -4,7 +4,7 @@ module Core.Interactor.GetNews
   ( getNews
   , Handle(..)
   , News(..)
-  , LogicException(..)
+  , QueryException(..)
   ) where
 
 import Control.Monad.Catch
@@ -19,7 +19,7 @@ getNews Handle {..} pageQuery = hGetNews =<< getPage
     getPage =
       maybe (throwM pageException) pure (fromPageQuery hMaxPageLimit pageQuery)
     pageException =
-      LogicException "Invalid pagination parameters: offset or limit"
+      QueryException "Invalid pagination parameters: offset or limit"
 
 data Handle m =
   Handle
@@ -36,10 +36,10 @@ data News =
     }
   deriving (Eq, Show)
 
-newtype LogicException =
-  LogicException
-    { logicExceptionReason :: Text
+newtype QueryException =
+  QueryException
+    { queryExceptionReason :: Text
     }
   deriving (Show)
 
-instance Exception LogicException
+instance Exception QueryException
