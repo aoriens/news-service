@@ -20,7 +20,7 @@ source-repository head
 
 library
   exposed-modules:
-      Control.Exception.Sync
+    Control.Exception.Sync
     , Core.ExactConversion
     , Core.Interactor.GetNews
     , Core.Interactor.CreateUser
@@ -78,7 +78,8 @@ library
 executable news-service-exe
   main-is: Main.hs
   other-modules:
-    Config.IO
+      Config
+    , Config.IO
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N

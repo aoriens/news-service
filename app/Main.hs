@@ -6,7 +6,8 @@ module Main
   ( main
   ) where
 
-import qualified Config.IO as Cf
+import qualified Config as Cf
+import qualified Config.IO as CIO
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
@@ -16,8 +17,6 @@ import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LBS
-import Data.Maybe
-import Data.String
 import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
@@ -63,19 +62,13 @@ main = do
   race_ loggerWorker $ do
     Logger.info dLoggerHandle "Starting Warp"
     Warp.runSettings
-      (warpSettings dConfig)
+      (Cf.cfWarpSettings dConfig)
       (Web.Application.application webHandle)
-
-warpSettings :: Cf.Config -> Warp.Settings
-warpSettings Cf.Config {..} =
-  maybe id (Warp.setServerName . fromString) cfServerName .
-  maybe id (Warp.setHost . fromString) cfServerHostPreference .
-  maybe id Warp.setPort cfServerPort $
-  Warp.setHost "localhost" Warp.defaultSettings
 
 getDeps :: IO (Logger.Impl.Worker, Deps)
 getDeps = do
-  dConfig <- Cf.getConfig
+  inConfig <- CIO.getConfig
+  dConfig <- either die pure $ Cf.makeConfig inConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   dSecretTokenIOState <- GSecretToken.initIOState
   pure
@@ -83,31 +76,18 @@ getDeps = do
     , Deps
         { dConfig
         , dLoggerHandle
-        , dDatabaseConnectionConfig = makeDBConnectionConfig dConfig
-        , dMaxPageLimit =
-            PageLimit $ fromMaybe 100 (Cf.cfCoreMaxPageLimit dConfig)
+        , dDatabaseConnectionConfig = Cf.cfDatabaseConfig dConfig
+        , dMaxPageLimit = Cf.cfCoreMaxPageLimit dConfig
         , dJSONEncode =
             JSONEncoder.encode
               JSONEncoder.Config
-                {prettyPrint = Just True == Cf.cfDebugJSONPrettyPrint dConfig}
+                {prettyPrint = Cf.cfDebugJSONPrettyPrint dConfig}
         , dLoadRequestJSONBody =
             RequestBodyLoader.getJSONRequestBody
               RequestBodyLoader.Config
-                { cfMaxBodySize =
-                    fromMaybe 16384 $ Cf.cfCoreMaxRequestJsonBodySize dConfig
-                }
+                {cfMaxBodySize = Cf.cfCoreMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
         })
-
-makeDBConnectionConfig :: Cf.Config -> DBConnManager.Config
-makeDBConnectionConfig Cf.Config {..} =
-  DBConnManager.makeConfig $
-  (DBConnManager.connectionSettingsWithDatabaseName $ fromString cfDatabaseName)
-    { DBConnManager.settingsHost = fromString <$> cfDatabaseHost
-    , DBConnManager.settingsPort = cfDatabasePort
-    , DBConnManager.settingsUser = fromString <$> cfDatabaseUser
-    , DBConnManager.settingsPassword = fromString <$> cfDatabasePassword
-    }
 
 getWebAppHandle :: Deps -> IO Web.Application.Handle
 getWebAppHandle deps@Deps {..} = do
@@ -118,7 +98,7 @@ getWebAppHandle deps@Deps {..} = do
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
       , hRouter = router deps
       , hShowInternalExceptionInfoInResponses =
-          Just True == Cf.cfDebugShowInternalErrorInfoInResponse dConfig
+          Cf.cfDebugShowInternalErrorInfoInResponse dConfig
       }
 
 router :: Deps -> R.Router
@@ -161,21 +141,14 @@ postCreateUserHandle deps@Deps {..} session =
 -- forked in order for logging to work.
 getLoggerHandle :: Cf.Config -> IO (Logger.Impl.Worker, Logger.Handle IO)
 getLoggerHandle Cf.Config {..} = do
-  hFileHandle <- getFileHandle cfLogFilePath
-  hMinLevel <- either die pure (parseVerbosity cfLoggerVerbosity)
-  Logger.Impl.new Logger.Impl.Handle {hFileHandle, hMinLevel}
+  hFileHandle <- getFileHandle cfLogFile
+  Logger.Impl.new
+    Logger.Impl.Handle {hFileHandle, hMinLevel = cfLoggerVerbosity}
   where
-    getFileHandle (Just path@(_:_)) =
+    getFileHandle (Cf.LogFilePath path) =
       openFile path AppendMode `catchS` \e ->
         die $ "While opening log file: " ++ displayException (e :: IOException)
-    getFileHandle _ = pure stderr
-    parseVerbosity v
-      | Nothing <- v = Right Logger.Info
-      | v == Just "debug" = Right Logger.Debug
-      | v == Just "info" = Right Logger.Info
-      | v == Just "warning" = Right Logger.Warning
-      | v == Just "error" = Right Logger.Error
-      | Just s <- v = Left $ "Logger verbosity is set incorrectly: " ++ show s
+    getFileHandle Cf.LogFileStdErr = pure stderr
 
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =
