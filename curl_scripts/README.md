@@ -10,9 +10,9 @@ Normally, scripts does not require parameters. The following command sends `GET
 
     ./get_news
 
-Scripts can support an optional query parameter. Note that it is added to the
-URL without escaping. The following command sends `GET
-<DOMAIN>/news?offset=10&limit=20`:
+Scripts support an optional query parameter. Note that it is appended to the URL
+as is, without escaping. The leading '?' is required. The following command
+sends `GET <DOMAIN>/news?offset=10&limit=20`:
 
     ./get_news "?offset=10&limit=20"
 
