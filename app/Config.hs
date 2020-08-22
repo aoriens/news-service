@@ -28,6 +28,7 @@ data Config =
     , cfLogFile :: !LogFile
     , cfCoreMaxPageLimit :: !PageLimit
     , cfCoreMaxRequestJsonBodySize :: !Word64
+    , cfSecretTokenLength :: !Int
     , cfDebugShowInternalErrorInfoInResponse :: !Bool
     , cfDebugJSONPrettyPrint :: !Bool
     }
@@ -51,6 +52,7 @@ data InConfig =
     , inLogFilePath :: Maybe String
     , inCoreMaxPageLimit :: Maybe Int32
     , inCoreMaxRequestJsonBodySize :: Maybe Word64
+    , inSecretTokenLength :: Maybe Int
     , inDebugShowInternalErrorInfoInResponse :: Maybe Bool
     , inDebugJSONPrettyPrint :: Maybe Bool
     }
@@ -60,6 +62,9 @@ data InConfig =
 makeConfig :: InConfig -> Either String Config
 makeConfig inConfig@InConfig {..} = do
   cfLoggerVerbosity <- parseLoggerLevel inLoggerVerbosity
+  cfSecretTokenLength <-
+    assureRange 8 1024 "Secret token length parameter" $
+    fromMaybe 32 inSecretTokenLength
   Right
     Config
       { cfWarpSettings = warpSettings inConfig
@@ -102,3 +107,18 @@ parseLoggerLevel v
   | v == Just "warning" = Right Logger.Warning
   | v == Just "error" = Right Logger.Error
   | Just s <- v = Left $ "Logger verbosity is set incorrectly: " ++ show s
+
+assureRange :: (Ord a, Show a) => a -> a -> String -> a -> Either String a
+assureRange min_ max_ xName x
+  | x >= min_ && x <= max_ = Right x
+  | otherwise =
+    Left $
+    concat
+      [ xName
+      , " must fall into range "
+      , show min_
+      , "..."
+      , show max_
+      , ", but given value "
+      , show x
+      ]

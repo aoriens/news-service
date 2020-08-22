@@ -46,6 +46,8 @@ parseConfig = do
     fmap getExactIntegral <$> lookupOpt "core.max_request_json_body_size"
   inDebugShowInternalErrorInfoInResponse <-
     lookupOpt "debug.show_internal_errors"
+  inSecretTokenLength <-
+    fmap getExactIntegral <$> lookupOpt "core.secret_token_length"
   inDebugJSONPrettyPrint <- lookupOpt "debug.json_pretty_print"
   pure C.InConfig {..}
 
