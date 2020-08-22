@@ -13,7 +13,7 @@ Run `stack build`.
     news-service --config PATH_TO_CONFIG
 
 A sample, documented configuration file is available in
-`news-service.conf.default`.
+`news-service.default.conf`.
 
 To start development quickly, you can use file `development.conf`. You may
 accommodate it for your needs or import it to your own configuration file, e.g.
