@@ -13,8 +13,8 @@ import Control.Exception.Sync
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import Core.ExactConversion
-import qualified Data.Configurator as C
-import qualified Data.Configurator.Types as C
+import qualified Data.Configurator as DC
+import qualified Data.Configurator.Types as DC
 import qualified Data.HashMap.Lazy as LHM
 import Data.Int
 import Data.Ratio
@@ -48,10 +48,10 @@ data Config =
 getConfig :: IO Config
 getConfig = do
   conf <- loadConfigFile
-  runReaderT parseConfig conf `catchS` \(C.KeyError key) ->
+  runReaderT parseConfig conf `catchS` \(DC.KeyError key) ->
     die $ printf "Configuration option '%v' is missing" key
 
-parseConfig :: ReaderT C.Config IO Config
+parseConfig :: ReaderT DC.Config IO Config
 parseConfig = do
   cfServerPort <- lookupOpt "server.port"
   cfServerHostPreference <- lookupOpt "server.host"
@@ -72,10 +72,10 @@ parseConfig = do
   cfDebugJSONPrettyPrint <- lookupOpt "debug.json_pretty_print"
   pure Config {..}
 
-loadConfigFile :: IO C.Config
+loadConfigFile :: IO DC.Config
 loadConfigFile = do
   paths <- getConfigPaths
-  C.load $ map C.Required paths
+  DC.load $ map DC.Required paths
 
 getConfigPaths :: IO [FilePath]
 getConfigPaths = do
@@ -84,13 +84,13 @@ getConfigPaths = do
     ("--config":path:_) -> pure [path]
     _ -> die "Option '--config PATH_TO_CONFIG_FILE' is required"
 
-lookupOpt :: (C.Configured a) => C.Name -> ReaderT C.Config IO (Maybe a)
+lookupOpt :: (DC.Configured a) => DC.Name -> ReaderT DC.Config IO (Maybe a)
 lookupOpt key = do
-  hmap <- lift . C.getMap =<< ask
+  hmap <- lift . DC.getMap =<< ask
   case LHM.lookup key hmap of
     Nothing -> pure Nothing
     Just rawValue ->
-      case C.convert rawValue of
+      case DC.convert rawValue of
         Nothing -> lift $ rejectValue rawValue
         Just v -> pure $ Just v
   where
@@ -101,10 +101,10 @@ lookupOpt key = do
         key
         (show value)
 
-require :: (C.Configured a) => C.Name -> ReaderT C.Config IO a
+require :: (DC.Configured a) => DC.Name -> ReaderT DC.Config IO a
 require key = do
   conf <- ask
-  lift $ C.require conf key
+  lift $ DC.require conf key
 
 -- | An integral type wrapper with a stricter decoding policy. It
 -- tries to decode a value without loss of precision. Normally, trying
@@ -115,8 +115,8 @@ newtype ExactIntegral a =
     { getExactIntegral :: a
     }
 
-instance Integral a => C.Configured (ExactIntegral a) where
-  convert (C.Number n)
+instance Integral a => DC.Configured (ExactIntegral a) where
+  convert (DC.Number n)
     | denominator n == 1 = ExactIntegral <$> fromIntegralExact (numerator n)
     | otherwise = Nothing
   convert _ = Nothing
