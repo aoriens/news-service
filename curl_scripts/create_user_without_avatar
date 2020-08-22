@@ -1,0 +1,11 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+run_curl -X POST "$DOMAIN/create_user$1" -H "Content-Type: application/json" --data-binary @- <<'EOF'
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "avatar": null
+}
+EOF
