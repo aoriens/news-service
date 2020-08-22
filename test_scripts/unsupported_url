@@ -1,4 +1,5 @@
 #!/bin/sh
 
 . "$(dirname "$0")"/prefix.sh
-send GET unsupported_url
+
+run_curl "$DOMAIN/unsupported_url$1"

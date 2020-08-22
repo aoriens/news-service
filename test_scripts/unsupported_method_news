@@ -1,4 +1,5 @@
 #!/bin/sh
 
 . "$(dirname "$0")"/prefix.sh
-send BADMETHOD news
+
+run_curl -X BADMETHOD "$DOMAIN/news$1"

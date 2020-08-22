@@ -1,4 +1,5 @@
 #!/bin/sh
 
 . "$(dirname "$0")"/prefix.sh
-send GET news
+
+run_curl "$DOMAIN/news$1"
