@@ -50,7 +50,10 @@ buildResponse Handle {..} request = do
   userEntity <-
     either (throwIO . BadRequestException . T.pack) pure $
     A.eitherDecode' bodyBytes
-  (user, secretToken) <- I.run hCreateUserHandle (queryFromInUser userEntity)
+  (user, secretToken) <-
+    catch
+      (I.run hCreateUserHandle (queryFromInUser userEntity))
+      (throwIO . BadRequestException . I.queryExceptionReason)
   pure $ hJSONEncode (formatResponse user secretToken)
 
 queryFromInUser :: InUser -> I.Query

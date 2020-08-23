@@ -133,6 +133,7 @@ postCreateUserHandle deps@Deps {..} session =
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
+        , hAllowedImageContentTypes = Cf.cfAllowedImageMimeTypes dConfig
         }
     secretTokenConfig =
       GSecretToken.Config {cfTokenLength = Cf.cfSecretTokenLength dConfig}

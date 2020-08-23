@@ -43,6 +43,8 @@ parseConfig = do
   inMaxPageLimit <- fmap getExactIntegral <$> lookupOpt "server.max_page_limit"
   inMaxRequestJsonBodySize <-
     fmap getExactIntegral <$> lookupOpt "server.max_request_json_body_size"
+  inAllowedImageMimeTypes <-
+    lookupOpt "server.image_mime_types_allowed_for_upload"
   inShowInternalErrorInfoInResponse <- lookupOpt "debug.show_internal_errors"
   inSecretTokenLength <-
     fmap getExactIntegral <$> lookupOpt "core.secret_token_length"

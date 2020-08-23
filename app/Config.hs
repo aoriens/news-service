@@ -11,9 +11,11 @@ module Config
   ) where
 
 import Core.Pagination
+import qualified Data.HashSet as HS
 import Data.Int
 import Data.Maybe
 import Data.String
+import Data.Text (Text)
 import Data.Word
 import qualified Database.ConnectionManager as DB
 import qualified Logger
@@ -29,6 +31,7 @@ data Config =
     , cfMaxPageLimit :: !PageLimit
     , cfMaxRequestJsonBodySize :: !Word64
     , cfSecretTokenLength :: !Int
+    , cfAllowedImageMimeTypes :: HS.HashSet Text
     , cfShowInternalErrorInfoInResponse :: !Bool
     , cfJSONPrettyPrint :: !Bool
     }
@@ -53,6 +56,7 @@ data InConfig =
     , inMaxPageLimit :: Maybe Int32
     , inMaxRequestJsonBodySize :: Maybe Word64
     , inSecretTokenLength :: Maybe Int
+    , inAllowedImageMimeTypes :: Maybe [Text]
     , inShowInternalErrorInfoInResponse :: Maybe Bool
     , inJSONPrettyPrint :: Maybe Bool
     }
@@ -65,6 +69,11 @@ makeConfig inConfig@InConfig {..} = do
   cfSecretTokenLength <-
     assureRange 8 1024 "Secret token length parameter" $
     fromMaybe 32 inSecretTokenLength
+  cfAllowedImageMimeTypes <-
+    case inAllowedImageMimeTypes of
+      Nothing -> pure $ HS.fromList ["image/jpeg", "image/png"]
+      Just types@(_:_) -> pure $ HS.fromList types
+      Just [] -> Left "Allowed image MIME types list must not be empty"
   Right
     Config
       { cfWarpSettings = warpSettings inConfig

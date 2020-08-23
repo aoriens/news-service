@@ -122,7 +122,9 @@ test-suite news-service-test
     , http-types
     , news-service
     , QuickCheck
+    , text
     , time
+    , unordered-containers
     , wai
   default-language: Haskell2010
   default-extensions: OverloadedStrings

@@ -6,7 +6,9 @@ module Core.Interactor.CreateUserSpec
 
 import Control.Monad
 import qualified Core.Interactor.CreateUser as I
+import qualified Data.HashSet as HS
 import Data.IORef
+import Data.Text (Text)
 import Data.Time
 import Test.Hspec
 
@@ -107,6 +109,35 @@ spec = do
       (user, _) <- I.run h stubQuery
       I.userIsAdmin user `shouldBe` False
       readIORef ref `shouldReturn` False
+    it
+      "should throw QueryException if avatar content type is not in the allowed list" $ do
+      let disallowedContentType = "image/jpeg"
+          allowedContentTypes = ["image/tiff"]
+          query =
+            stubQuery
+              { I.qAvatar =
+                  Just
+                    I.Image
+                      {imageContentType = disallowedContentType, imageData = ""}
+              }
+          h =
+            stubHandle
+              {I.hAllowedImageContentTypes = HS.fromList allowedContentTypes}
+      I.run h query `shouldThrow` \I.QueryException {} -> True
+    it
+      "should not throw QueryException if avatar content type is in the allowed list" $ do
+      let allowedContentType = "image/tiff"
+          query =
+            stubQuery
+              { I.qAvatar =
+                  Just
+                    I.Image
+                      {imageContentType = allowedContentType, imageData = ""}
+              }
+          h =
+            stubHandle
+              {I.hAllowedImageContentTypes = HS.singleton allowedContentType}
+      void $ I.run h query -- should not throw
 
 stubHandle :: I.Handle IO
 stubHandle =
@@ -114,7 +145,11 @@ stubHandle =
     { hCreateUser = const $ pure stubCreateUserResult
     , hGenerateToken = pure stubTokenInfo
     , hGetCurrentTime = stubGetCurrentTime
+    , hAllowedImageContentTypes = HS.singleton defaultAllowedImageContentType
     }
+
+defaultAllowedImageContentType :: Text
+defaultAllowedImageContentType = "image/png"
 
 stubTokenInfo :: I.SecretTokenInfo
 stubTokenInfo = I.SecretTokenInfo {stiToken = I.SecretToken "", stiHash = ""}
@@ -131,5 +166,8 @@ stubQuery =
   I.Query
     { qFirstName = Just "John"
     , qLastName = "Doe"
-    , qAvatar = Just I.Image {imageContentType = "image/jpeg", imageData = ""}
+    , qAvatar =
+        Just
+          I.Image
+            {imageContentType = defaultAllowedImageContentType, imageData = ""}
     }

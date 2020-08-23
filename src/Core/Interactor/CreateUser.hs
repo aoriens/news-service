@@ -13,14 +13,20 @@ module Core.Interactor.CreateUser
   , ImageId(..)
   , SecretTokenInfo(..)
   , SecretToken(..)
+  , QueryException(..)
   -- * Gateway API
   , CreateUserCommand(..)
   , CreateUserResult(..)
   ) where
 
-import Data.ByteString as BS
+import Control.Monad
+import Control.Monad.Catch
+import qualified Data.ByteString as BS
+import qualified Data.HashSet as HS
 import Data.Int
+import Data.List
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time.Clock
 
 data Handle m =
@@ -28,11 +34,14 @@ data Handle m =
     { hCreateUser :: CreateUserCommand -> m CreateUserResult
     , hGenerateToken :: m SecretTokenInfo
     , hGetCurrentTime :: m UTCTime
+    , hAllowedImageContentTypes :: HS.HashSet Text
     }
 
-run :: Monad m => Handle m -> Query -> m (User, SecretToken)
-run Handle {..} Query {..} = do
+-- | Run the interactor. It can throw 'QueryException'
+run :: MonadThrow m => Handle m -> Query -> m (User, SecretToken)
+run h@Handle {..} q@Query {..} = do
   let isAdmin = False
+  rejectDisallowedAvatarContentType h q
   tokenInfo <- hGenerateToken
   createdAt <- hGetCurrentTime
   result <-
@@ -55,6 +64,17 @@ run Handle {..} Query {..} = do
         , userIsAdmin = isAdmin
         }
     , stiToken tokenInfo)
+
+rejectDisallowedAvatarContentType :: MonadThrow m => Handle m -> Query -> m ()
+rejectDisallowedAvatarContentType Handle {..} Query {..} =
+  case qAvatar of
+    Just Image {..} ->
+      when (imageContentType `notElem` hAllowedImageContentTypes) $
+      throwM
+        (disallowedAvatarContentTypeException
+           imageContentType
+           hAllowedImageContentTypes)
+    Nothing -> pure ()
 
 data Query =
   Query
@@ -125,3 +145,22 @@ data CreateUserResult =
     { curUserId :: UserId
     , curAvatarId :: Maybe ImageId
     }
+
+newtype QueryException =
+  QueryException
+    { queryExceptionReason :: Text
+    }
+  deriving (Show)
+
+instance Exception QueryException
+
+disallowedAvatarContentTypeException ::
+     Text -> HS.HashSet Text -> QueryException
+disallowedAvatarContentTypeException badContentType allowedContentTypes =
+  QueryException $
+  mconcat
+    [ "Content type '"
+    , badContentType
+    , "' is disallowed. Allowed content types: "
+    ] <>
+  T.intercalate ", " (sort $ HS.toList allowedContentTypes)
