@@ -33,9 +33,9 @@ data Handle m =
 run :: Monad m => Handle m -> Query -> m (User, SecretToken)
 run Handle {..} Query {..} = do
   let isAdmin = False
-  SecretTokenInfo {..} <- hGenerateToken
+  tokenInfo <- hGenerateToken
   createdAt <- hGetCurrentTime
-  CreateUserResult {..} <-
+  result <-
     hCreateUser
       CreateUserCommand
         { cuFirstName = qFirstName
@@ -43,18 +43,18 @@ run Handle {..} Query {..} = do
         , cuAvatar = qAvatar
         , cuCreatedAt = createdAt
         , cuIsAdmin = isAdmin
-        , cuTokenHash = stiHash
+        , cuTokenHash = stiHash tokenInfo
         }
   pure
     ( User
-        { userId = curUserId
+        { userId = curUserId result
         , userFirstName = qFirstName
         , userLastName = qLastName
-        , userAvatarId = curAvatarId
+        , userAvatarId = curAvatarId result
         , userCreatedAt = createdAt
         , userIsAdmin = isAdmin
         }
-    , stiToken)
+    , stiToken tokenInfo)
 
 data Query =
   Query
