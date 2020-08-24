@@ -17,12 +17,12 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
-import Core.ExactConversion
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.DList as DL
 import qualified Data.HashMap.Strict as HM
 import Data.Int
+import Data.Int.Exact
 import GHC.Generics
 import qualified Network.HTTP.Types as Http
 import Text.Read hiding (lift)

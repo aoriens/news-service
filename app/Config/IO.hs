@@ -11,10 +11,10 @@ import qualified Config as C
 import Control.Exception.Sync
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
-import Core.ExactConversion
 import qualified Data.Configurator as DC
 import qualified Data.Configurator.Types as DC
 import qualified Data.HashMap.Lazy as LHM
+import Data.Int.Exact
 import Data.Ratio
 import System.Environment
 import System.Exit

@@ -21,11 +21,11 @@ source-repository head
 library
   exposed-modules:
     Control.Exception.Sync
-    , Core.ExactConversion
     , Core.Image
     , Core.Interactor.GetNews
     , Core.Interactor.CreateUser
     , Core.Pagination
+    , Data.Int.Exact
     , Database
     , Database.ConnectionManager
     , Gateway.CurrentTime
@@ -108,8 +108,8 @@ test-suite news-service-test
   other-modules:
       Core.Interactor.GetNewsSpec
     , Core.Interactor.CreateUserSpec
-    , Core.ExactConversionSpec
     , Core.PaginationSpec
+    , Data.Int.ExactSpec
     , Gateway.SecretTokenSpec
     , Web.AppURLSpec
     , Web.QueryParameterSpec

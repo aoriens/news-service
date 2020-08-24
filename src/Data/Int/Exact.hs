@@ -1,4 +1,4 @@
-module Core.ExactConversion
+module Data.Int.Exact
   ( fromIntegralExact
   ) where
 
