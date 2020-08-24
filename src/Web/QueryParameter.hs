@@ -25,7 +25,6 @@ import Data.Int
 import Data.Int.Exact
 import GHC.Generics
 import qualified Network.HTTP.Types as Http
-import Text.Read hiding (lift)
 
 type Key = BS.ByteString
 
@@ -128,20 +127,7 @@ instance QueryParameter () where
   parseQueryParameter _ = Just ()
 
 instance QueryParameter Int where
-  parseQueryParameter = parseIntegral $ maxLengthOfNum (maxBound :: Int)
+  parseQueryParameter = (>>= parseExactInt . BS8.unpack)
 
 instance QueryParameter Int32 where
-  parseQueryParameter = parseIntegral $ maxLengthOfNum (maxBound :: Int32)
-
-parseIntegral :: Integral a => Int -> RawValue -> Maybe a
-parseIntegral maxLength optBS = do
-  bs <- optBS
-  -- Filters out too long numbers to avoid excess work on malformed
-  -- requests
-  guard $ BS.length bs <= maxLength
-  exact <- readMaybe (BS8.unpack bs) :: Maybe Integer
-  fromIntegralExact exact
-
-maxLengthOfNum :: Real a => a -> Int
-maxLengthOfNum x = 2 + ceiling (logBase 10 (realToFrac x :: Double))
-  -- Adding one digit for sign and one more for calculation inaccuracy
+  parseQueryParameter = (>>= parseExactInt32 . BS8.unpack)
