@@ -22,6 +22,7 @@ library
   exposed-modules:
     Control.Exception.Sync
     , Core.ExactConversion
+    , Core.Image
     , Core.Interactor.GetNews
     , Core.Interactor.CreateUser
     , Core.Pagination
@@ -35,6 +36,7 @@ library
     , Logger.Impl
     , Network.Wai.Util
     , Web.Application
+    , Web.AppURL
     , Web.Exception
     , Web.Handler.GetNews
     , Web.Handler.PostCreateUser
@@ -109,6 +111,7 @@ test-suite news-service-test
     , Core.ExactConversionSpec
     , Core.PaginationSpec
     , Gateway.SecretTokenSpec
+    , Web.AppURLSpec
     , Web.QueryParameterSpec
     , Web.RouterSpec
   hs-source-dirs:
@@ -120,6 +123,7 @@ test-suite news-service-test
     , deepseq
     , hspec
     , http-types
+    , network-uri
     , news-service
     , QuickCheck
     , text

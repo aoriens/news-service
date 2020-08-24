@@ -21,6 +21,7 @@ module Core.Interactor.CreateUser
 
 import Control.Monad
 import Control.Monad.Catch
+import Core.Image
 import qualified Data.ByteString as BS
 import qualified Data.HashSet as HS
 import Data.Int
@@ -91,12 +92,6 @@ data Image =
   Image
     { imageData :: BS.ByteString
     , imageContentType :: Text
-    }
-  deriving (Eq, Show)
-
-newtype ImageId =
-  ImageId
-    { getImageId :: Int32
     }
   deriving (Eq, Show)
 
