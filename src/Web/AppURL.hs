@@ -18,11 +18,11 @@ import Core.Image
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LBS
+import Data.Int.Exact
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Word
 import qualified Network.HTTP.Types as Http
-import Text.Read
 
 data Config =
   Config
@@ -60,5 +60,5 @@ toRelativeURL (URLImage (ImageId imageId)) =
 
 fromRelativeURL :: RelativeURL -> Maybe AppURL
 fromRelativeURL (RelativeURL ["image", ident]) =
-  URLImage . ImageId <$> readMaybe (T.unpack ident)
+  URLImage . ImageId <$> parseExactInt32 (T.unpack ident)
 fromRelativeURL _ = Nothing
