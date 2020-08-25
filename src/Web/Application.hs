@@ -122,6 +122,8 @@ exceptionToResponse h e
   | Just t@(E.BadRequestException _) <- fromException e =
     stubErrorResponseWithReason Http.badRequest400 [] $
     E.badRequestExceptionReason t
+  | Just E.NotFoundException <- fromException e =
+    stubErrorResponse Http.notFound404 []
   | Just t@(E.UnsupportedMediaTypeException _) <- fromException e =
     stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
     "Supported media types are: " <> T.intercalate ", " (E.supportedMimeTypes t)
