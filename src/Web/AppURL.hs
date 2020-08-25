@@ -21,14 +21,12 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Int.Exact
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Word
 import qualified Network.HTTP.Types as Http
 
 data Config =
   Config
     { cfUseHTTPS :: Bool
-    , cfDomain :: BB.Builder
-    , cfPort :: Maybe Word16
+    , cfDomain :: BS.ByteString
     }
 
 newtype RelativeURL =
@@ -44,14 +42,12 @@ render' :: Config -> AppURL -> BS.ByteString
 render' = (LBS.toStrict .) . (BB.toLazyByteString .) . render
 
 render :: Config -> AppURL -> BB.Builder
-render Config {..} appURL = BB.byteString scheme <> cfDomain <> port <> path
+render Config {..} appURL =
+  BB.byteString scheme <> BB.byteString cfDomain <> path
   where
     scheme
       | cfUseHTTPS = "https://"
       | otherwise = "http://"
-    port
-      | Just p <- cfPort = BB.char7 ':' <> BB.word16Dec p
-      | otherwise = mempty
     path = Http.encodePathSegments . relativeURLPath $ toRelativeURL appURL
 
 toRelativeURL :: AppURL -> RelativeURL

@@ -31,17 +31,6 @@ spec = do
           r = X.render' config defaultAppURL
           domain = uriRegName <$> (uriAuthority =<< parseURI (BC.unpack r))
       domain `shouldBe` Just expectedDomain
-    it "should return URL with port from cfPort if is not Nothing" $ do
-      let expectedPort = 42
-          config = defaultConfig {X.cfPort = Just expectedPort}
-          r = X.render' config defaultAppURL
-          port = uriPort <$> (uriAuthority =<< parseURI (BC.unpack r))
-      port `shouldBe` Just (':' : show expectedPort)
-    it "should return URL without port when cfPort = Nothing" $ do
-      let config = defaultConfig {X.cfPort = Nothing}
-          r = X.render' config defaultAppURL
-          port = uriPort <$> (uriAuthority =<< parseURI (BC.unpack r))
-      port `shouldBe` Just ""
     it "should return URL without fragment, query, username, or password" $ do
       let r = X.render' defaultConfig defaultAppURL
           uri = parseURI (BC.unpack r)
@@ -53,6 +42,4 @@ defaultAppURL :: X.AppURL
 defaultAppURL = X.URLImage $ I.ImageId 1
 
 defaultConfig :: X.Config
-defaultConfig =
-  X.Config
-    {X.cfUseHTTPS = False, X.cfDomain = "example.com", X.cfPort = Just 152}
+defaultConfig = X.Config {X.cfUseHTTPS = False, X.cfDomain = "example.com"}
