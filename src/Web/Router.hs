@@ -4,7 +4,7 @@
 module Web.Router
   ( Router
   , new
-  , UrlPath
+  , URLPath
   , Spec
   , ifPath
   , ifMethod
@@ -23,20 +23,20 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Types
 
-type UrlPath = [T.Text]
+type URLPath = [T.Text]
 
 -- | The router type is responsible for finding handlers for the given
 -- URL path and HTTP methods and for handling some exceptional cases.
 newtype Router =
-  Router Table
+  Router URLTable
 
-type Table = HM.HashMap UrlPath MethodsToHandlers
+type URLTable = HM.HashMap URLPath MethodsToHandlers
 
 type MethodsToHandlers = HM.HashMap Http.Method EApplication
 
 -- | A monad type to make it easier to specify route configuration.
 newtype Spec a =
-  Spec (State Table a)
+  Spec (State URLTable a)
   deriving (Functor, Applicative, Monad)
 
 newtype MethodsSpec a =
@@ -59,16 +59,15 @@ newtype MethodsSpec a =
 new :: Spec () -> Router
 new (Spec m) = Router $ execState m HM.empty
 
-ifPath :: UrlPath -> MethodsSpec () -> Spec ()
-ifPath path (MethodsSpec methodsSpec) =
-  Spec $
-  if HM.null methodsToHandlers
-    then error ("Empty entry for path " ++ show path)
-    else modify' $
-         HM.insertWith
-           (\_ _ -> error ("Duplicate entry for path " ++ show path))
-           path
-           methodsToHandlers
+ifPath :: URLPath -> MethodsSpec () -> Spec ()
+ifPath path (MethodsSpec methodsSpec)
+  | HM.null methodsToHandlers = error ("Empty entry for path " ++ show path)
+  | otherwise =
+    Spec . modify' $
+    HM.insertWith
+      (\_ _ -> error ("Duplicate entry for path " ++ show path))
+      path
+      methodsToHandlers
   where
     methodsToHandlers = execState methodsSpec HM.empty
 
