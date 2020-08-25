@@ -88,13 +88,6 @@ data Query =
 
 type ImageQuery = Image
 
-data Image =
-  Image
-    { imageData :: BS.ByteString
-    , imageContentType :: Text
-    }
-  deriving (Eq, Show)
-
 data User =
   User
   -- | The first name. This is unnecessary in case of a

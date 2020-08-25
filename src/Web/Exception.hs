@@ -3,6 +3,7 @@ module Web.Exception
   ( BadRequestException(..)
   , UnsupportedMediaTypeException(..)
   , PayloadTooLargeException(..)
+  , NotFoundException(..)
   , queryParameterException
   ) where
 
@@ -38,6 +39,12 @@ newtype PayloadTooLargeException =
   deriving (Show)
 
 instance Exception PayloadTooLargeException
+
+data NotFoundException =
+  NotFoundException
+  deriving (Show)
+
+instance Exception NotFoundException
 
 queryParameterException :: QP.Failure -> BadRequestException
 queryParameterException (QP.MissingKey key) =

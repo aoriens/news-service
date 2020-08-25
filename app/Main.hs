@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Main
   ( main
@@ -12,6 +13,7 @@ import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import qualified Core.Interactor.CreateUser as ICreateUser
+import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import Core.Pagination
 import qualified Data.Aeson as A
@@ -21,6 +23,7 @@ import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import Gateway.CurrentTime as GCurrentTime
+import qualified Gateway.Images as GImages
 import qualified Gateway.News as GNews
 import qualified Gateway.SecretToken as GSecretToken
 import qualified Gateway.Users as GUsers
@@ -31,7 +34,9 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
+import qualified Web.AppURL as U
 import qualified Web.Application
+import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
@@ -108,6 +113,10 @@ router deps =
     R.ifPath ["create_user"] $ do
       R.ifMethod Http.methodPost $
         HPostCreateUser.run . postCreateUserHandle deps
+    R.ifAppURL $ \case
+      (U.URLImage imageId) ->
+        R.ifMethod Http.methodGet $ \session ->
+          HGetImage.run (getImageHandlerHandle deps session) imageId
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
 newsHandlerHandle deps@Deps {..} session =
@@ -137,6 +146,11 @@ postCreateUserHandle deps@Deps {..} session =
         }
     secretTokenConfig =
       GSecretToken.Config {cfTokenLength = Cf.cfSecretTokenLength dConfig}
+
+getImageHandlerHandle :: Deps -> Web.Session -> HGetImage.Handle
+getImageHandlerHandle deps@Deps {..} session =
+  HGetImage.Handle $
+  IGetImage.Handle $ GImages.getImage $ sessionDatabaseHandle session deps
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
