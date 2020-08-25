@@ -16,10 +16,12 @@ import Data.Int
 import Data.Maybe
 import Data.String
 import Data.Text (Text)
+import qualified Data.Text.Encoding as T
 import Data.Word
 import qualified Database.ConnectionManager as DB
 import qualified Logger
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Web.AppURL
 
 -- | The high-level application configuration.
 data Config =
@@ -32,6 +34,7 @@ data Config =
     , cfMaxRequestJsonBodySize :: !Word64
     , cfSecretTokenLength :: !Int
     , cfAllowedImageMimeTypes :: HS.HashSet Text
+    , cfAppURLConfig :: Web.AppURL.Config
     , cfShowInternalErrorInfoInResponse :: !Bool
     , cfJSONPrettyPrint :: !Bool
     }
@@ -46,6 +49,8 @@ data InConfig =
     { inServerPort :: Maybe Int
     , inServerHostPreference :: Maybe String
     , inServerName :: Maybe String
+    , inServerPublicURLsUseHTTPS :: Maybe Bool
+    , inServerPublicDomain :: String
     , inDatabaseName :: String
     , inDatabaseHost :: Maybe String
     , inDatabasePort :: Maybe Word16
@@ -87,6 +92,11 @@ makeConfig inConfig@InConfig {..} = do
       , cfShowInternalErrorInfoInResponse =
           Just True == inShowInternalErrorInfoInResponse
       , cfJSONPrettyPrint = Just True == inJSONPrettyPrint
+      , cfAppURLConfig =
+          Web.AppURL.Config
+            { cfUseHTTPS = Just True == inServerPublicURLsUseHTTPS
+            , cfDomain = T.encodeUtf8 $ fromString inServerPublicDomain
+            }
       , ..
       }
 

@@ -26,6 +26,7 @@ import Data.Time.Clock
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Util as Wai
+import qualified Web.AppURL as U
 import Web.Exception
 
 run :: Handle -> Wai.Application
@@ -42,10 +43,11 @@ data Handle =
     , hJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , hGetRequestBody :: Wai.Request -> IO LBS.ByteString
+    , hRenderAppURL :: U.AppURL -> Text
     }
 
 buildResponse :: Handle -> Wai.Request -> IO BB.Builder
-buildResponse Handle {..} request = do
+buildResponse h@Handle {..} request = do
   bodyBytes <- hGetRequestBody request
   userEntity <-
     either (throwIO . BadRequestException . T.pack) pure $
@@ -54,7 +56,7 @@ buildResponse Handle {..} request = do
     catch
       (I.run hCreateUserHandle (queryFromInUser userEntity))
       (throwIO . BadRequestException . I.queryExceptionReason)
-  pure $ hJSONEncode (formatResponse user secretToken)
+  pure $ hJSONEncode (formatResponse h user secretToken)
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =
@@ -68,13 +70,13 @@ imageQueryFromInImage :: InImage -> I.ImageQuery
 imageQueryFromInImage InImage {..} =
   I.Image {imageData = unBase64 iiBase64Data, imageContentType = iiContentType}
 
-formatResponse :: I.User -> I.SecretToken -> OutUser
-formatResponse I.User {..} (I.SecretToken tokenBytes) =
+formatResponse :: Handle -> I.User -> I.SecretToken -> OutUser
+formatResponse Handle {..} I.User {..} (I.SecretToken tokenBytes) =
   OutUser
     { ouId = I.getUserId userId
     , ouFirstName = userFirstName
     , ouLastName = userLastName
-    , ouAvatarId = I.getImageId <$> userAvatarId
+    , ouAvatarURL = hRenderAppURL . U.URLImage <$> userAvatarId
     , ouCreatedAt = userCreatedAt
     , ouIsAdmin = userIsAdmin
     , ouSecretToken = Base64 tokenBytes
@@ -98,7 +100,7 @@ data OutUser =
     { ouId :: Int32
     , ouFirstName :: Maybe Text
     , ouLastName :: Text
-    , ouAvatarId :: Maybe Int32
+    , ouAvatarURL :: Maybe Text
     , ouCreatedAt :: UTCTime
     , ouIsAdmin :: Bool
     , ouSecretToken :: Base64

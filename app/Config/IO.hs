@@ -33,6 +33,8 @@ parseConfig = do
   inServerPort <- lookupOpt "server.port"
   inServerHostPreference <- lookupOpt "server.host"
   inServerName <- lookupOpt "server.name"
+  inServerPublicDomain <- require "server.public_domain"
+  inServerPublicURLsUseHTTPS <- lookupOpt "server.public_urls_use_https"
   inDatabaseName <- require "postgresql.database_name"
   inDatabaseHost <- lookupOpt "postgresql.host"
   inDatabasePort <- fmap getExactIntegral <$> lookupOpt "postgresql.port"

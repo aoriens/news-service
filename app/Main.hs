@@ -20,6 +20,7 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import Gateway.CurrentTime as GCurrentTime
@@ -58,6 +59,7 @@ data Deps =
                                  a -> BB.Builder
     , dLoadRequestJSONBody :: Wai.Request -> IO LBS.ByteString
     , dSecretTokenIOState :: GSecretToken.IOState
+    , dRenderAppURL :: U.AppURL -> T.Text
     }
 
 main :: IO ()
@@ -91,6 +93,7 @@ getDeps = do
               RequestBodyLoader.Config
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
+        , dRenderAppURL = T.decodeUtf8 . U.render' (Cf.cfAppURLConfig dConfig)
         })
 
 getWebAppHandle :: Deps -> IO Web.Application.Handle
@@ -134,6 +137,7 @@ postCreateUserHandle deps@Deps {..} session =
     { hCreateUserHandle = interactorHandle
     , hJSONEncode = dJSONEncode
     , hGetRequestBody = dLoadRequestJSONBody
+    , hRenderAppURL = dRenderAppURL
     }
   where
     interactorHandle =
