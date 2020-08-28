@@ -25,8 +25,8 @@ selectNewsStatement =
     (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
     (fmap $ \(newsId, newsTitle, newsDate, newsText) -> GetNews.News {..})
     [TH.vectorStatement|
-    select id :: integer, title :: varchar, date :: date, body :: varchar
+    select news_id :: integer, title :: varchar, date :: date, body :: varchar
     from news
-    order by date desc, id desc
+    order by date desc, news_id desc
     limit $1 :: integer offset $2 :: integer
   |]

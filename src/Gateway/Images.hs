@@ -21,6 +21,6 @@ selectImage =
     (fmap $ \(imageData, imageContentType) -> Image {..})
     [TH.maybeStatement|
       select images.content :: bytea, mime_types.value :: varchar
-      from images join mime_types on mime_type_id = mime_types.id
-      where images.id = $1 :: integer
+      from images join mime_types using (mime_type_id)
+      where image_id = $1 :: integer
     |]

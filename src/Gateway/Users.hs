@@ -40,8 +40,8 @@ createImage =
     insert into images (content, mime_type_id)
     values (
       $1 :: bytea,
-      (select id from mime_types where value = $2 :: varchar)
-    ) returning id :: integer
+      (select mime_type_id from mime_types where value = $2 :: varchar)
+    ) returning image_id :: integer
     |]
 
 createUserSt :: S.Statement (Maybe I.ImageId, I.CreateUserCommand) I.UserId
@@ -71,5 +71,5 @@ createUserSt =
       $4 :: timestamptz,
       $5 :: boolean,
       $6 :: bytea
-    ) returning id :: integer
+    ) returning user_id :: integer
     |]

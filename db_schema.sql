@@ -7,28 +7,28 @@ create table config (
 );
 
 -- The schema version is to be incremented on every schema change.
-insert into config values ('schema_version', '3');
+insert into config values ('schema_version', '4');
 
 create table news (
-       id serial not null primary key,
+       news_id serial not null primary key,
        title varchar not null,
        body varchar not null,
        "date" date not null
 );
 
 create table mime_types (
-       id serial not null primary key,
+       mime_type_id serial not null primary key,
        value varchar not null unique
 );
 
 create table images (
-       id serial not null primary key,
+       image_id serial not null primary key,
        content bytea not null,
        mime_type_id integer not null references mime_types
 );
 
 create table users (
-       id serial not null primary key,
+       user_id serial not null primary key,
        first_name varchar,
        last_name varchar not null,
        avatar_id integer references images,
