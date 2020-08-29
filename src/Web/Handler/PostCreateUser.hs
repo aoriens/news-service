@@ -19,17 +19,15 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Web.AppURL as U
-import Web.Entity.User
+import Web.Entity.Base64
 import Web.Exception
+import qualified Web.Presenter.UserPresenter as P
 
 data Handle =
   Handle
     { hCreateUserHandle :: I.Handle IO
-    , hJSONEncode :: forall a. A.ToJSON a =>
-                                 a -> BB.Builder
+    , hPresenterHandle :: P.Handle
     , hGetRequestBody :: Wai.Request -> IO LBS.ByteString
-    , hRenderAppURL :: U.AppURL -> Text
     }
 
 run :: Handle -> Wai.Application
@@ -42,7 +40,7 @@ run h request respond = do
       builder
 
 buildResponse :: Handle -> Wai.Request -> IO BB.Builder
-buildResponse h@Handle {..} request = do
+buildResponse Handle {..} request = do
   bodyBytes <- hGetRequestBody request
   userEntity <-
     either (throwIO . BadRequestException . T.pack) pure $
@@ -51,7 +49,7 @@ buildResponse h@Handle {..} request = do
     catch
       (I.run hCreateUserHandle (queryFromInUser userEntity))
       (throwIO . BadRequestException . I.queryExceptionReason)
-  pure $ hJSONEncode (formatResponse h user secretToken)
+  pure $ P.presentUser hPresenterHandle user secretToken
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =
@@ -64,18 +62,6 @@ queryFromInUser InUser {..} =
 imageQueryFromInImage :: InImage -> I.ImageQuery
 imageQueryFromInImage InImage {..} =
   I.Image {imageData = unBase64 iiBase64Data, imageContentType = iiContentType}
-
-formatResponse :: Handle -> I.User -> I.SecretToken -> User
-formatResponse Handle {..} I.User {..} (I.SecretToken tokenBytes) =
-  User
-    { userId = I.getUserId userId
-    , userFirstName = userFirstName
-    , userLastName = userLastName
-    , userAvatarURL = hRenderAppURL . U.URLImage <$> userAvatarId
-    , userCreatedAt = userCreatedAt
-    , userIsAdmin = userIsAdmin
-    , userSecretToken = Base64 tokenBytes
-    }
 
 data InUser =
   InUser

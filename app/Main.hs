@@ -41,6 +41,7 @@ import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
+import qualified Web.Presenter.UserPresenter as UserPresenter
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
 import qualified Web.Types as Web
@@ -135,9 +136,10 @@ postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
 postCreateUserHandle deps@Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
-    , hJSONEncode = dJSONEncode
+    , hPresenterHandle =
+        UserPresenter.Handle
+          {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
     , hGetRequestBody = dLoadRequestJSONBody
-    , hRenderAppURL = dRenderAppURL
     }
   where
     interactorHandle =

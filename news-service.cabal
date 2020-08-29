@@ -40,12 +40,12 @@ library
     , Web.Application
     , Web.AppURL
     , Web.Entity.Base64
-    , Web.Entity.User
     , Web.Exception
     , Web.Handler.GetNews
     , Web.Handler.GetImage
     , Web.Handler.PostCreateUser
     , Web.JSONEncoder
+    , Web.Presenter.UserPresenter
     , Web.QueryParameter
     , Web.RequestBodyLoader
     , Web.Types
