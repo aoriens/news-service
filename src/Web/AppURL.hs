@@ -56,5 +56,5 @@ toRelativeURL (URLImage (ImageId imageId)) =
 
 fromRelativeURL :: RelativeURL -> Maybe AppURL
 fromRelativeURL (RelativeURL ["image", ident]) =
-  URLImage . ImageId <$> parseExactInt32 (T.unpack ident)
+  URLImage . ImageId <$> readExactIntegral (T.unpack ident)
 fromRelativeURL _ = Nothing

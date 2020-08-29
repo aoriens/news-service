@@ -127,7 +127,7 @@ instance QueryParameter () where
   parseQueryParameter _ = Just ()
 
 instance QueryParameter Int where
-  parseQueryParameter = (>>= parseExactInt . BS8.unpack)
+  parseQueryParameter = (>>= readExactIntegral . BS8.unpack)
 
 instance QueryParameter Int32 where
-  parseQueryParameter = (>>= parseExactInt32 . BS8.unpack)
+  parseQueryParameter = (>>= readExactIntegral . BS8.unpack)

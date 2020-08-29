@@ -1,10 +1,8 @@
 module Data.Int.Exact
   ( fromIntegralExact
-  , parseExactInt
-  , parseExactInt32
+  , readExactIntegral
   ) where
 
-import Data.Int
 import Data.Maybe
 import Text.Read
 
@@ -17,20 +15,12 @@ fromIntegralExact x
   where
     r = fromIntegral x
 
--- | Parses a string as an 'Int32'. Discards values out of range.
-parseExactInt32 :: String -> Maybe Int32
-parseExactInt32 = parseIntegral
-
--- | Parses a string as an 'Int'. Discards values out of range.
-parseExactInt :: String -> Maybe Int
-parseExactInt = parseIntegral
-
 -- | Parses a string into an integral number. It rejects values out of
 -- range and too long strings in order to avoid unneeded computation.
 --
 -- Not so fast, but simple.
-parseIntegral :: (Integral a, Bounded a) => String -> Maybe a
-parseIntegral s = r
+readExactIntegral :: (Integral a, Bounded a) => String -> Maybe a
+readExactIntegral s = r
   where
     r
       | atLeastLong (maxLength + 1) s = Nothing
