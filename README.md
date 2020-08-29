@@ -30,11 +30,15 @@ configuration file containing passwords.
 
 # API
 
+## Entity encoding
+
+Non-empty request and response bodies containing API entities are encoded in
+JSON, when the opposite is not specified.
+
 ## Pagination
 
-Responses returning lists of entities support paginated output which can be
-managed with parameters `offset` and `limit`. They can be passed in the URI
-query.
+Responses returning lists of entities support paginated output. It is controlled
+with parameters `offset` and `limit`. They can be passed in the URI query.
 
 `limit` is a number meaning the amount of entities to output in a single
 response. When missing or too big, the maximum configured limit is used. It must
@@ -49,13 +53,65 @@ must not be negative.
 
 Returns a list of [News](#News) entities.
 
+### `GET /image/{image_id}`
+
+Returns an image at the specified URL. The endpoint is not considered as part of
+the public API, it is used for constructing URLs returned by other endpoints.
+
+The response contains the image data with the corresponding MIME type.
+
+### `POST /create_user`
+
+Creates a user. Accepts [InUser](#InUser) entity in the request body and returns [User](#User) entity.
+
+Returns a list of [News](#News) entities.
+
 ## Entities
+
+### Day
+
+A string in `YYYY-mm-dd` format to specify a calendar day.
+
+### InImage
+
+A request to create an image. Fields:
+
+- `base64_data` - a base64-encoded image data. A string, required.
+- `content_type` - a MIME content type of the image. A string, required.
+
+### InUser
+
+An incoming request to create a user. Fields:
+
+- `first_name` - the user's first name. A string, optional.
+- `last_name` - the user's last name. This is to be used in case of a
+  single-component name. A string, required.
+- `avatar` - the user's avatar image. An [InImage](#InImage), optional.
 
 ### News
 
 A news entry. Fields:
 
-- `id` - the entity identifier
-- `title` - the news title
-- `date` - the issue date
+- `id` - the entity identifier. An integer, required.
+- `title` - the news title. A string, required.
+- `date` - the issue date. A [Day](#Day), required.
 - `text` - the news body text. It is considered as a plain Unicode text.
+  A string, required.
+
+### UTCTime
+
+A string in ISO8601 format to describe a specific UTC date and time. Example:
+`2020-08-29T08:04:52Z`.
+
+### User
+
+A user. Fields:
+
+- `id` - the user's identifier. An integer, required.
+- `first_name` - the first name. A string, optional.
+- `last_name` - the last name. A string, required.
+- `avatar_url` - the avatar image URL. An string, optional.
+- `created_at` - the time the user was created. A [UTCTime](#UTCTime), required.
+- `is_admin` - does the user have administrator permissions. A boolean,
+  required.
+- `secret_token` - the authentication token. A string, required.
