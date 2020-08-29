@@ -5,7 +5,7 @@ module Gateway.Images
   ( getImage
   ) where
 
-import Core.Image
+import Core.DTO.Image
 import Data.Profunctor
 import Database as DB
 import qualified Hasql.Statement as S

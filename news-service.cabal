@@ -21,7 +21,7 @@ source-repository head
 library
   exposed-modules:
     Control.Exception.Sync
-    , Core.Image
+    , Core.DTO.Image
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.CreateUser

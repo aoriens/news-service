@@ -21,7 +21,7 @@ module Core.Interactor.CreateUser
 
 import Control.Monad
 import Control.Monad.Catch
-import Core.Image
+import Core.DTO.Image
 import qualified Data.ByteString as BS
 import qualified Data.HashSet as HS
 import Data.Int

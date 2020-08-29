@@ -1,4 +1,4 @@
-module Core.Image
+module Core.DTO.Image
   ( ImageId(..)
   , Image(..)
   ) where

@@ -2,7 +2,7 @@ module Web.RouterSpec
   ( spec
   ) where
 
-import Core.Image
+import Core.DTO.Image
 import Data.IORef
 import Data.List
 import qualified Network.HTTP.Types as Http
