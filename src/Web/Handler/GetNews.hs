@@ -21,7 +21,6 @@ import Data.Text (Text)
 import Data.Time.Calendar
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Network.Wai.Util as Wai
 import Web.Exception
 import qualified Web.QueryParameter as QP
 
@@ -33,22 +32,19 @@ data Handle =
     }
 
 run :: Handle -> Wai.Application
-run h request respond =
+run h request respond = do
+  pageQuery <-
+    either (throwIO . queryParameterException) pure $
+    QP.parseQuery (Wai.queryString request) pageQueryParser
+  response <-
+    catch
+      (I.getNews (hGetNewsHandle h) pageQuery)
+      (throwIO . BadRequestException . I.queryExceptionReason)
   respond $
-  Wai.simpleResponseStream
-    Http.ok200
-    [(Http.hContentType, "application/json")]
-    getResponse
-  where
-    getResponse = do
-      pageQuery <-
-        either (throwIO . queryParameterException) pure $
-        QP.parseQuery (Wai.queryString request) pageQueryParser
-      response <-
-        catch
-          (I.getNews (hGetNewsHandle h) pageQuery)
-          (throwIO . BadRequestException . I.queryExceptionReason)
-      pure $ presentResponse h response
+    Wai.responseBuilder
+      Http.ok200
+      [(Http.hContentType, "application/json")]
+      (presentResponse h response)
 
 pageQueryParser :: QP.QueryParser PageQuery
 pageQueryParser = do

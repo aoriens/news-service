@@ -12,7 +12,6 @@ import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Network.Wai.Util as Wai
 import qualified Web.Exception as E
 
 newtype Handle =
@@ -25,7 +24,7 @@ run Handle {..} imageId _ respond = do
   optImage <- I.run hGetImage_Handle imageId
   Image {..} <- maybe (throwIO E.NotFoundException) pure optImage
   respond $
-    Wai.simpleResponseStream
+    Wai.responseBuilder
       Http.ok200
       [(Http.hContentType, T.encodeUtf8 imageContentType)]
-      (pure $ BB.byteString imageData)
+      (BB.byteString imageData)

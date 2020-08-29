@@ -25,17 +25,8 @@ import qualified Data.Text.Encoding as T
 import Data.Time.Clock
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Network.Wai.Util as Wai
 import qualified Web.AppURL as U
 import Web.Exception
-
-run :: Handle -> Wai.Application
-run h request respond =
-  respond $
-  Wai.simpleResponseStream
-    Http.ok200
-    [(Http.hContentType, "application/json")]
-    (buildResponse h request)
 
 data Handle =
   Handle
@@ -45,6 +36,15 @@ data Handle =
     , hGetRequestBody :: Wai.Request -> IO LBS.ByteString
     , hRenderAppURL :: U.AppURL -> Text
     }
+
+run :: Handle -> Wai.Application
+run h request respond = do
+  builder <- buildResponse h request
+  respond $
+    Wai.responseBuilder
+      Http.ok200
+      [(Http.hContentType, "application/json")]
+      builder
 
 buildResponse :: Handle -> Wai.Request -> IO BB.Builder
 buildResponse h@Handle {..} request = do
