@@ -39,6 +39,8 @@ library
     , Network.Wai.Util
     , Web.Application
     , Web.AppURL
+    , Web.Entity.Base64
+    , Web.Entity.User
     , Web.Exception
     , Web.Handler.GetNews
     , Web.Handler.GetImage
