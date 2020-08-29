@@ -15,7 +15,7 @@ Run `stack build`.
 A sample, documented configuration file is available in
 `news-service.default.conf`.
 
-To start development quickly, you can use file `development.conf`. You may
+To start development quickly, you can use `development.conf` file. You may
 accommodate it for your needs or import it to your own configuration file, e.g.
 `config.private`:
 
@@ -25,7 +25,7 @@ accommodate it for your needs or import it to your own configuration file, e.g.
       # Overriding parameters specified in development.conf
     }
 
-Files `*.private` are ignored by git, so it is safe to give such a name to a
+`*.private` files are ignored by git, so it is safe to give such a name to a
 configuration file containing passwords.
 
 # API
@@ -112,6 +112,6 @@ A user. Fields:
 - `last_name` - the last name. A string, required.
 - `avatar_url` - the avatar image URL. An string, optional.
 - `created_at` - the time the user was created. A [UTCTime](#UTCTime), required.
-- `is_admin` - does the user have administrator permissions. A boolean,
+- `is_admin` - whether the user have administrator permissions. A boolean,
   required.
 - `secret_token` - the authentication token. A string, required.
