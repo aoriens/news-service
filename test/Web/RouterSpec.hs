@@ -15,7 +15,9 @@ import Web.Types as Web
 import Web.Types.Internal.SessionId as Web
 
 spec :: Spec
-spec =
+spec
+  {- HLINT ignore spec "Reduce duplication" -}
+ =
   describe "route" $ do
     it "should return a handler by URL path and HTTP method" $ do
       let path = ["my_path"]
@@ -41,15 +43,98 @@ spec =
               }
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
-    it "should return ResourceNotFoundRequest for unknown URL path" $ do
+    it "should return a handler for path with prefix from ifPathPrefix argument" $ do
+      let method = Http.methodGet
+          prefix = ["a", "b"]
+          expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
+          router =
+            R.new $ R.ifPathPrefix prefix $ R.ifMethod method expectedHandler
+          request =
+            Wai.defaultRequest
+              {Wai.pathInfo = prefix ++ ["x"], Wai.requestMethod = method}
+          (R.HandlerResult handler) = R.route router request
+      handler `shouldEmitSameHeadersAs` expectedHandler
+    it "should return a handler for path equal to a prefix from ifPathPrefix" $ do
+      let method = Http.methodGet
+          prefix = ["a", "b"]
+          expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
+          router =
+            R.new $ R.ifPathPrefix prefix $ R.ifMethod method expectedHandler
+          request =
+            Wai.defaultRequest
+              {Wai.pathInfo = prefix, Wai.requestMethod = method}
+          (R.HandlerResult handler) = R.route router request
+      handler `shouldEmitSameHeadersAs` expectedHandler
+    it
+      "when ifPathPrefix and ifPath both used with the same argument, \
+      \ifPath should be selected for exact match" $ do
+      let path = ["a", "b", "c"]
+          expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
+          router =
+            R.new $ do
+              R.ifPathPrefix path $ R.ifMethod "GET" noOpHandler
+              R.ifPath path $ R.ifMethod "GET" expectedHandler
+          request = Wai.defaultRequest {Wai.pathInfo = path}
+          (R.HandlerResult handler) = R.route router request
+      handler `shouldEmitSameHeadersAs` expectedHandler
+    it "should match the longest prefix in ifPathPrefix if no exact match found" $ do
+      let prefix1 = ["a", "b"]
+          prefix2 = prefix1 ++ ["c", "d"]
+          path = prefix2 ++ ["q"]
+          prefix3 = path ++ ["x"]
+          expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
+          router =
+            R.new $ do
+              R.ifPathPrefix prefix1 $ R.ifMethod "GET" noOpHandler
+              R.ifPathPrefix prefix2 $ R.ifMethod "GET" expectedHandler
+              R.ifPathPrefix prefix3 $ R.ifMethod "GET" noOpHandler
+          request = Wai.defaultRequest {Wai.pathInfo = path}
+          (R.HandlerResult handler) = R.route router request
+      handler `shouldEmitSameHeadersAs` expectedHandler
+    it
+      "should return MethodNotSupportedResult when path matches exactly, but \
+       \method does not, and there is a prefix match containing the required method" $ do
+      let neededMethod = Http.methodGet
+          unneededMethod = Http.methodPost
+          prefix = ["a", "b"]
+          path = prefix ++ ["z"]
+          router =
+            R.new $ do
+              R.ifPath path $ R.ifMethod unneededMethod noOpHandler
+              R.ifPathPrefix prefix $ R.ifMethod neededMethod noOpHandler
+          request =
+            Wai.defaultRequest
+              {Wai.pathInfo = path, Wai.requestMethod = neededMethod}
+          result = R.route router request
+      result `shouldSatisfy` R.isMethodNotSupportedResult
+    it
+      "when ifPathPrefix matched, should pass to handler pathInfo with the prefix removed" $ do
+      pathInfoRef <- newIORef $ error "pathInfo must have been stored here"
+      let method = Http.methodGet
+          prefix = ["a", "b"]
+          suffix = ["y", "z"]
+          expectedHandler _ r _ = do
+            writeIORef pathInfoRef $ Wai.pathInfo r
+            pure Wai.ResponseReceived
+          router =
+            R.new $ R.ifPathPrefix prefix $ R.ifMethod method expectedHandler
+          request =
+            Wai.defaultRequest
+              {Wai.pathInfo = prefix ++ suffix, Wai.requestMethod = method}
+          (R.HandlerResult handler) = R.route router request
+      Wai.ResponseReceived <- handler undefined request undefined
+      readIORef pathInfoRef `shouldReturn` suffix
+    it "should return ResourceNotFoundRequest for an empty router" $ do
       let router = R.new $ pure ()
           request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
-    it
-      "should return ResourceNotFoundRequest for unknown URL path even when ifAppURL is used" $ do
+    it "should return ResourceNotFoundRequest if no match found" $ do
       let router =
-            R.new $ R.ifAppURL $ \U.URLImage {} -> R.ifMethod "GET" noOpHandler
+            R.new $ do
+              R.ifAppURL $ \U.URLImage {} -> R.ifMethod "GET" noOpHandler
+              R.ifPath ["path"] $ R.ifMethod "GET" noOpHandler
+              R.ifPathPrefix ["prefix"] $ R.ifMethod "GET" noOpHandler
           request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
