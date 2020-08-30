@@ -1,0 +1,5 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+run_curl "$DOMAIN/image/${1?Pass an image ID as an argument}"
