@@ -16,22 +16,21 @@ spec = do
     it
       "should return hash that is checked successfully against the generated token" $ do
       state <- G.initIOState
-      tokenInfo <- G.generateIO defaultConfig state
-      let matches = G.tokenMatchesHash tokenInfo
+      (token, hash) <- G.generateIO defaultConfig state
+      let matches = G.tokenMatchesHash token hash
       matches `shouldBe` True
     it "should return a different token and hash on a next invocation" $ do
       state <- G.initIOState
-      tokenInfo1 <- G.generateIO defaultConfig state
-      tokenInfo2 <- G.generateIO defaultConfig state
-      I.stiToken tokenInfo1 `shouldNotBe` I.stiToken tokenInfo2
-      I.stiHash tokenInfo1 `shouldNotBe` I.stiHash tokenInfo2
+      (token1, hash1) <- G.generateIO defaultConfig state
+      (token2, hash2) <- G.generateIO defaultConfig state
+      token1 `shouldNotBe` token2
+      hash1 `shouldNotBe` hash2
     it "should return token of the specified length" $
       property $ \(NonNegative expectedLen) -> do
         state <- G.initIOState
         let config = G.Config {cfTokenLength = expectedLen}
-        tokenInfo <- G.generateIO config state
-        BS.length (I.secretTokenBytes $ I.stiToken tokenInfo) `shouldBe`
-          expectedLen
+        (I.SecretToken token, _) <- G.generateIO config state
+        BS.length token `shouldBe` expectedLen
 
 defaultConfig :: G.Config
 defaultConfig = G.Config {cfTokenLength = 8}

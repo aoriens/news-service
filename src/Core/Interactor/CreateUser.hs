@@ -7,7 +7,7 @@ module Core.Interactor.CreateUser
   , Query(..)
   , ImageQuery
   -- * Interactor output
-  , SecretTokenInfo(..)
+  , SecretTokenHash(..)
   , SecretToken(..)
   -- * Gateway API
   , CreateUserCommand(..)
@@ -29,7 +29,7 @@ import Data.Time.Clock
 data Handle m =
   Handle
     { hCreateUser :: CreateUserCommand -> m CreateUserResult
-    , hGenerateToken :: m SecretTokenInfo
+    , hGenerateToken :: m (SecretToken, SecretTokenHash)
     , hGetCurrentTime :: m UTCTime
     , hAllowedImageContentTypes :: HS.HashSet Text
     }
@@ -39,7 +39,7 @@ run :: MonadThrow m => Handle m -> Query -> m (User, SecretToken)
 run h@Handle {..} q@Query {..} = do
   let isAdmin = False
   rejectDisallowedAvatarContentType h q
-  tokenInfo <- hGenerateToken
+  (token, tokenHash) <- hGenerateToken
   createdAt <- hGetCurrentTime
   result <-
     hCreateUser
@@ -49,7 +49,7 @@ run h@Handle {..} q@Query {..} = do
         , cuAvatar = qAvatar
         , cuCreatedAt = createdAt
         , cuIsAdmin = isAdmin
-        , cuTokenHash = stiHash tokenInfo
+        , cuTokenHash = tokenHash
         }
   pure
     ( User
@@ -60,7 +60,7 @@ run h@Handle {..} q@Query {..} = do
         , userCreatedAt = createdAt
         , userIsAdmin = isAdmin
         }
-    , stiToken tokenInfo)
+    , token)
 
 rejectDisallowedAvatarContentType :: MonadThrow m => Handle m -> Query -> m ()
 rejectDisallowedAvatarContentType Handle {..} Query {..} =
@@ -84,15 +84,15 @@ data Query =
 
 type ImageQuery = Image
 
-data SecretTokenInfo =
-  SecretTokenInfo
-    { stiToken :: SecretToken
-    , stiHash :: BS.ByteString
-    }
-
 newtype SecretToken =
   SecretToken
     { secretTokenBytes :: BS.ByteString
+    }
+  deriving (Eq, Show)
+
+newtype SecretTokenHash =
+  SecretTokenHash
+    { secretTokenHashBytes :: BS.ByteString
     }
   deriving (Eq, Show)
 
@@ -103,7 +103,7 @@ data CreateUserCommand =
     , cuAvatar :: Maybe Image
     , cuCreatedAt :: UTCTime
     , cuIsAdmin :: Bool
-    , cuTokenHash :: BS.ByteString
+    , cuTokenHash :: SecretTokenHash
     }
 
 data CreateUserResult =

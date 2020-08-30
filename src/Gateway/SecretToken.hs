@@ -38,16 +38,15 @@ initState = State <$> Random.drgNew
 initIOState :: IO IOState
 initIOState = IOState <$> (initState >>= newMVar)
 
-generate :: Config -> State -> (State, I.SecretTokenInfo)
+generate :: Config -> State -> (State, (I.SecretToken, I.SecretTokenHash))
 generate Config {..} (State oldGen) =
   ( State newGen
-  , I.SecretTokenInfo
-      {stiToken = I.SecretToken tokenBytes, stiHash = hashDefault tokenBytes})
+  , (I.SecretToken tokenBytes, I.SecretTokenHash $ hashDefault tokenBytes))
   where
     (tokenBytes, newGen) =
       Random.withDRG oldGen $ Random.getRandomBytes cfTokenLength
 
-generateIO :: Config -> IOState -> IO I.SecretTokenInfo
+generateIO :: Config -> IOState -> IO (I.SecretToken, I.SecretTokenHash)
 generateIO config (IOState mvar) = modifyMVar mvar (pure . generate config)
 
 hashDefault :: BS.ByteString -> BS.ByteString
@@ -57,12 +56,13 @@ hashWith :: HashAlgorithm -> BS.ByteString -> BS.ByteString
 hashWith HashAlgorithm {..} = BS.cons haHashPrefix . haHasher
                               -- See Note [Multiple hash algorithms]
 
-tokenMatchesHash :: I.SecretTokenInfo -> Bool
-tokenMatchesHash I.SecretTokenInfo {..} =
-  case algorithmOfHash stiHash -- See Note [Multiple hash algorithms]
-        of
+tokenMatchesHash :: I.SecretToken -> I.SecretTokenHash -> Bool
+tokenMatchesHash (I.SecretToken token) (I.SecretTokenHash hash)
+  -- See Note [Multiple hash algorithms]
+ =
+  case algorithmOfHash hash of
     Nothing -> False
-    Just alg -> hashWith alg (I.secretTokenBytes stiToken) == stiHash
+    Just alg -> hashWith alg token == hash
 
 algorithmOfHash :: BS.ByteString -> Maybe HashAlgorithm
 algorithmOfHash s = do

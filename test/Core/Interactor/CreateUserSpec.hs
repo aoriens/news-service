@@ -60,24 +60,21 @@ spec = do
       userCreatedAt user `shouldBe` expectedTime
     it "should pass the hash from hGenerateToken to hCreateUser" $ do
       ref <- newIORef (error "Must have written a hash here")
-      let expectedHash = "1"
+      let expectedHash = I.SecretTokenHash "1"
           h =
             stubHandle
               { I.hCreateUser =
                   \I.CreateUserCommand {..} -> do
                     writeIORef ref cuTokenHash
                     pure stubCreateUserResult
-              , I.hGenerateToken = pure stubTokenInfo {I.stiHash = expectedHash}
+              , I.hGenerateToken = pure (stubToken, expectedHash)
               }
       void $ I.run h stubQuery
       readIORef ref `shouldReturn` expectedHash
     it "should return the token from hGenerateToken" $ do
       let expectedToken = I.SecretToken "1"
           h =
-            stubHandle
-              { I.hGenerateToken =
-                  pure stubTokenInfo {I.stiToken = expectedToken}
-              }
+            stubHandle {I.hGenerateToken = pure (expectedToken, stubTokenHash)}
       (_, token) <- I.run h stubQuery
       token `shouldBe` expectedToken
     it "should return UserId from hCreateUser" $ do
@@ -146,7 +143,7 @@ stubHandle :: I.Handle IO
 stubHandle =
   I.Handle
     { hCreateUser = const $ pure stubCreateUserResult
-    , hGenerateToken = pure stubTokenInfo
+    , hGenerateToken = pure (stubToken, stubTokenHash)
     , hGetCurrentTime = stubGetCurrentTime
     , hAllowedImageContentTypes = HS.singleton defaultAllowedImageContentType
     }
@@ -154,8 +151,11 @@ stubHandle =
 defaultAllowedImageContentType :: Text
 defaultAllowedImageContentType = "image/png"
 
-stubTokenInfo :: I.SecretTokenInfo
-stubTokenInfo = I.SecretTokenInfo {stiToken = I.SecretToken "", stiHash = ""}
+stubToken :: I.SecretToken
+stubToken = I.SecretToken ""
+
+stubTokenHash :: I.SecretTokenHash
+stubTokenHash = I.SecretTokenHash ""
 
 stubGetCurrentTime :: IO UTCTime
 stubGetCurrentTime = pure $ UTCTime (ModifiedJulianDay 6666) 0

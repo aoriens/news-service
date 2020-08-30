@@ -63,7 +63,7 @@ createUserSt =
        , getImageId <$> optImageId {-3-}
        , cuCreatedAt {-4-}
        , cuIsAdmin {-5-}
-       , cuTokenHash {-6-}
+       , I.secretTokenHashBytes cuTokenHash {-6-}
         ))
     UserId
     [TH.singletonStatement|
