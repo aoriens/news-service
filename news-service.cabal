@@ -22,9 +22,11 @@ library
   exposed-modules:
     Control.Exception.Sync
     , Core.DTO.Image
+    , Core.DTO.User
+    , Core.Interactor.CreateUser
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
-    , Core.Interactor.CreateUser
+    , Core.Interactor.GetUser
     , Core.Pagination
     , Data.Int.Exact
     , Database
@@ -43,6 +45,7 @@ library
     , Web.Exception
     , Web.Handler.GetNews
     , Web.Handler.GetImage
+    , Web.Handler.GetUser
     , Web.Handler.PostCreateUser
     , Web.JSONEncoder
     , Web.Presenter.UserPresenter

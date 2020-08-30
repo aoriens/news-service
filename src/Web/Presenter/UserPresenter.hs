@@ -26,8 +26,8 @@ data Handle =
     , hRenderAppURL :: U.AppURL -> Text
     }
 
-presentUser :: Handle -> I.User -> I.SecretToken -> BB.Builder
-presentUser h I.User {..} (I.SecretToken tokenBytes) =
+presentUser :: Handle -> I.User -> Maybe I.SecretToken -> BB.Builder
+presentUser h I.User {..} token =
   hJSONEncode
     h
     User
@@ -37,7 +37,7 @@ presentUser h I.User {..} (I.SecretToken tokenBytes) =
       , userAvatarURL = hRenderAppURL h . U.URLImage <$> userAvatarId
       , userCreatedAt = userCreatedAt
       , userIsAdmin = userIsAdmin
-      , userSecretToken = Base64 tokenBytes
+      , userSecretToken = Base64 . I.secretTokenBytes <$> token
       }
 
 data User =
@@ -48,7 +48,7 @@ data User =
     , userAvatarURL :: Maybe Text
     , userCreatedAt :: UTCTime
     , userIsAdmin :: Bool
-    , userSecretToken :: Base64
+    , userSecretToken :: Maybe Base64
     }
 
 $(A.deriveToJSON

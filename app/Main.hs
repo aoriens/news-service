@@ -15,6 +15,7 @@ import Control.Exception.Sync
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
+import qualified Core.Interactor.GetUser as IGetUser
 import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
@@ -39,6 +40,7 @@ import qualified Web.AppURL as U
 import qualified Web.Application
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
+import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
 import qualified Web.Presenter.UserPresenter as UserPresenter
@@ -112,11 +114,13 @@ getWebAppHandle deps@Deps {..} = do
 router :: Deps -> R.Router
 router deps =
   R.new $ do
-    R.ifPath ["news"] $ do
-      R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
     R.ifPath ["create_user"] $ do
       R.ifMethod Http.methodPost $
         HPostCreateUser.run . postCreateUserHandle deps
+    R.ifPath ["news"] $ do
+      R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
+    R.ifPathPrefix ["user"] $ do
+      R.ifMethod Http.methodGet $ HGetUser.run . getUserHandlerHandle deps
     R.ifAppURL $ \case
       (U.URLImage imageId) ->
         R.ifMethod Http.methodGet $ \session ->
@@ -157,6 +161,16 @@ getImageHandlerHandle :: Deps -> Web.Session -> HGetImage.Handle
 getImageHandlerHandle deps@Deps {..} session =
   HGetImage.Handle $
   IGetImage.Handle $ GImages.getImage $ sessionDatabaseHandle session deps
+
+getUserHandlerHandle :: Deps -> Web.Session -> HGetUser.Handle
+getUserHandlerHandle deps@Deps {..} session =
+  HGetUser.Handle
+    { hGetUserHandle =
+        IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle session deps
+    , hPresenterHandle =
+        UserPresenter.Handle
+          {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
+    }
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.

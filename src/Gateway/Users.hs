@@ -4,6 +4,7 @@
 
 module Gateway.Users
   ( createUser
+  , getUser
   ) where
 
 import qualified Core.Interactor.CreateUser as I
@@ -72,4 +73,28 @@ createUserSt =
       $5 :: boolean,
       $6 :: bytea
     ) returning user_id :: integer
+    |]
+
+getUser :: DB.Handle -> I.UserId -> IO (Maybe I.User)
+getUser h ident = DB.runTransaction h $ DB.statement selectUserById ident
+
+selectUserById :: S.Statement I.UserId (Maybe I.User)
+selectUserById =
+  dimap
+    I.getUserId
+    (fmap $ \(userId, userFirstName, userLastName, userAvatarId, userCreatedAt, userIsAdmin) ->
+       I.User
+         { userId = I.UserId userId
+         , userAvatarId = I.ImageId <$> userAvatarId
+         , ..
+         })
+    [TH.maybeStatement|
+    select user_id :: integer,
+           first_name :: varchar?,
+           last_name :: varchar,
+           avatar_id :: integer?,
+           created_at :: timestamptz,
+           is_admin :: boolean
+    from users
+    where user_id = $1 :: integer
     |]

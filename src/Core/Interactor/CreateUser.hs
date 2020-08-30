@@ -22,9 +22,9 @@ module Core.Interactor.CreateUser
 import Control.Monad
 import Control.Monad.Catch
 import Core.DTO.Image
+import Core.DTO.User
 import qualified Data.ByteString as BS
 import qualified Data.HashSet as HS
-import Data.Int
 import Data.List
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -87,22 +87,6 @@ data Query =
     }
 
 type ImageQuery = Image
-
-data User =
-  User
-    { userId :: UserId
-    , userFirstName :: Maybe Text
-    , userLastName :: Text
-    , userAvatarId :: Maybe ImageId
-    , userCreatedAt :: UTCTime
-    , userIsAdmin :: Bool
-    }
-
-newtype UserId =
-  UserId
-    { getUserId :: Int32
-    }
-  deriving (Eq, Show)
 
 data SecretTokenInfo =
   SecretTokenInfo

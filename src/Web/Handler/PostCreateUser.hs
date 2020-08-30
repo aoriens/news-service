@@ -49,7 +49,7 @@ buildResponse Handle {..} request = do
     catch
       (I.run hCreateUserHandle (queryFromInUser userEntity))
       (throwIO . BadRequestException . I.queryExceptionReason)
-  pure $ P.presentUser hPresenterHandle user secretToken
+  pure $ P.presentUser hPresenterHandle user (Just secretToken)
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =
