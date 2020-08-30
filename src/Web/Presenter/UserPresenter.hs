@@ -53,5 +53,7 @@ data User =
 
 $(A.deriveToJSON
     A.defaultOptions
-      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "user"}
+      { A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "user"
+      , A.omitNothingFields = True
+      }
     ''User)
