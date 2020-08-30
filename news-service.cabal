@@ -23,8 +23,11 @@ library
     Control.Exception.Sync
     , Core.DTO.Image
     , Core.DTO.User
+    , Core.Authentication
+    , Core.Authorization
     , Core.Exception
     , Core.Interactor.CreateUser
+    , Core.Interactor.DeleteUser
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetUser

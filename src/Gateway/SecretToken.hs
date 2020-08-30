@@ -12,7 +12,7 @@ module Gateway.SecretToken
   ) where
 
 import Control.Concurrent.MVar
-import qualified Core.Interactor.CreateUser as I
+import qualified Core.Authentication as Auth
 import qualified Crypto.Hash as Hash
 import qualified Crypto.Random as Random
 import qualified Data.ByteArray as BA
@@ -38,15 +38,15 @@ initState = State <$> Random.drgNew
 initIOState :: IO IOState
 initIOState = IOState <$> (initState >>= newMVar)
 
-generate :: Config -> State -> (State, (I.SecretToken, I.SecretTokenHash))
+generate :: Config -> State -> (State, (Auth.SecretToken, Auth.SecretTokenHash))
 generate Config {..} (State oldGen) =
   ( State newGen
-  , (I.SecretToken tokenBytes, I.SecretTokenHash $ hashDefault tokenBytes))
+  , (Auth.SecretToken tokenBytes, Auth.SecretTokenHash $ hashDefault tokenBytes))
   where
     (tokenBytes, newGen) =
       Random.withDRG oldGen $ Random.getRandomBytes cfTokenLength
 
-generateIO :: Config -> IOState -> IO (I.SecretToken, I.SecretTokenHash)
+generateIO :: Config -> IOState -> IO (Auth.SecretToken, Auth.SecretTokenHash)
 generateIO config (IOState mvar) = modifyMVar mvar (pure . generate config)
 
 hashDefault :: BS.ByteString -> BS.ByteString
@@ -56,8 +56,8 @@ hashWith :: HashAlgorithm -> BS.ByteString -> BS.ByteString
 hashWith HashAlgorithm {..} = BS.cons haHashPrefix . haHasher
                               -- See Note [Multiple hash algorithms]
 
-tokenMatchesHash :: I.SecretToken -> I.SecretTokenHash -> Bool
-tokenMatchesHash (I.SecretToken token) (I.SecretTokenHash hash)
+tokenMatchesHash :: Auth.SecretToken -> Auth.SecretTokenHash -> Bool
+tokenMatchesHash (Auth.SecretToken token) (Auth.SecretTokenHash hash)
   -- See Note [Multiple hash algorithms]
  =
   case algorithmOfHash hash of
@@ -88,7 +88,7 @@ sha256Algorithm =
 Note [Multiple hash algorithms]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Hash algorithms may get obsolete and showing vulnerabilities over
+Hash algorithms may get obsolete and be showing vulnerabilities over
 time. So, changing a hash algorithm in future should be possible, yet
 keeping ability to authenticate credentials hashed with an obsolete
 algorithms. It is implemented by prepending a hash with an extra octet
