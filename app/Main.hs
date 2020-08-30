@@ -63,6 +63,7 @@ data Deps =
     , dLoadRequestJSONBody :: Wai.Request -> IO LBS.ByteString
     , dSecretTokenIOState :: GSecretToken.IOState
     , dRenderAppURL :: U.AppURL -> T.Text
+    , dUserPresenterHandle :: UserPresenter.Handle
     }
 
 main :: IO ()
@@ -81,6 +82,11 @@ getDeps = do
   dConfig <- either die pure $ Cf.makeConfig inConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   dSecretTokenIOState <- GSecretToken.initIOState
+  let dJSONEncode a =
+        JSONEncoder.encode
+          JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
+          a
+      dRenderAppURL = T.decodeUtf8 . U.render' (Cf.cfAppURLConfig dConfig)
   pure
     ( loggerWorker
     , Deps
@@ -88,15 +94,16 @@ getDeps = do
         , dLoggerHandle
         , dDatabaseConnectionConfig = Cf.cfDatabaseConfig dConfig
         , dMaxPageLimit = Cf.cfMaxPageLimit dConfig
-        , dJSONEncode =
-            JSONEncoder.encode
-              JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
+        , dJSONEncode
         , dLoadRequestJSONBody =
             RequestBodyLoader.getJSONRequestBody
               RequestBodyLoader.Config
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
-        , dRenderAppURL = T.decodeUtf8 . U.render' (Cf.cfAppURLConfig dConfig)
+        , dRenderAppURL
+        , dUserPresenterHandle =
+            UserPresenter.Handle
+              {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
         })
 
 getWebAppHandle :: Deps -> IO Web.Application.Handle
@@ -140,9 +147,7 @@ postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
 postCreateUserHandle deps@Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
-    , hPresenterHandle =
-        UserPresenter.Handle
-          {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
+    , hPresenterHandle = dUserPresenterHandle
     , hGetRequestBody = dLoadRequestJSONBody
     }
   where
@@ -167,9 +172,7 @@ getUserHandlerHandle deps@Deps {..} session =
   HGetUser.Handle
     { hGetUserHandle =
         IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle session deps
-    , hPresenterHandle =
-        UserPresenter.Handle
-          {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
+    , hPresenterHandle = dUserPresenterHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be
