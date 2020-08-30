@@ -28,6 +28,7 @@ library
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetUser
+    , Core.Interactor.GetUsers
     , Core.Pagination
     , Data.Int.Exact
     , Database
@@ -47,6 +48,7 @@ library
     , Web.Handler.GetNews
     , Web.Handler.GetImage
     , Web.Handler.GetUser
+    , Web.Handler.GetUsers
     , Web.Handler.PostCreateUser
     , Web.HTTP
     , Web.JSONEncoder

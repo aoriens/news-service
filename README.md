@@ -62,11 +62,16 @@ Returns a list of [News](#News) entities.
 
 ### `POST /user/create`
 
-Creates a user. Accepts [InUser](#InUser) entity in the request body and returns [User](#User) entity.
+Creates a user. Accepts [InUser](#InUser) entity in the request body and returns
+[User](#User) entity.
 
 ### `GET /user/{user_id}`
 
 Returns a [User](#User).
+
+### `GET /users`
+
+Returns an array [User](#User) entities.
 
 ## Entities
 

@@ -4,6 +4,7 @@
 
 module Web.Presenter.UserPresenter
   ( presentUser
+  , presentUsers
   , Handle(..)
   ) where
 
@@ -27,18 +28,22 @@ data Handle =
     }
 
 presentUser :: Handle -> I.User -> Maybe I.SecretToken -> BB.Builder
-presentUser h I.User {..} token =
-  hJSONEncode
-    h
-    User
-      { userId = I.getUserId userId
-      , userFirstName = userFirstName
-      , userLastName = userLastName
-      , userAvatarURL = hRenderAppURL h . U.URLImage <$> userAvatarId
-      , userCreatedAt = userCreatedAt
-      , userIsAdmin = userIsAdmin
-      , userSecretToken = Base64 . I.secretTokenBytes <$> token
-      }
+presentUser h user token = hJSONEncode h $ userEntity h token user
+
+presentUsers :: Handle -> [I.User] -> BB.Builder
+presentUsers h = hJSONEncode h . map (userEntity h Nothing)
+
+userEntity :: Handle -> Maybe I.SecretToken -> I.User -> User
+userEntity h token I.User {..} =
+  User
+    { userId = I.getUserId userId
+    , userFirstName = userFirstName
+    , userLastName = userLastName
+    , userAvatarURL = hRenderAppURL h . U.URLImage <$> userAvatarId
+    , userCreatedAt = userCreatedAt
+    , userIsAdmin = userIsAdmin
+    , userSecretToken = Base64 . I.secretTokenBytes <$> token
+    }
 
 data User =
   User

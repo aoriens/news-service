@@ -16,6 +16,7 @@ import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetUser as IGetUser
+import qualified Core.Interactor.GetUsers as IGetUsers
 import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
@@ -41,6 +42,7 @@ import qualified Web.Application
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetUser as HGetUser
+import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
 import qualified Web.Presenter.UserPresenter as UserPresenter
@@ -128,6 +130,8 @@ router deps =
     R.ifPath ["user", "create"] $ do
       R.ifMethod Http.methodPost $
         HPostCreateUser.run . postCreateUserHandle deps
+    R.ifPath ["users"] $ do
+      R.ifMethod Http.methodGet $ HGetUsers.run . getUsersHandlerHandle deps
     R.ifAppURL $ \case
       (U.URLImage imageId) ->
         R.ifMethod Http.methodGet $ \session ->
@@ -172,6 +176,17 @@ getUserHandlerHandle deps@Deps {..} session =
   HGetUser.Handle
     { hGetUserHandle =
         IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle session deps
+    , hPresenterHandle = dUserPresenterHandle
+    }
+
+getUsersHandlerHandle :: Deps -> Web.Session -> HGetUsers.Handle
+getUsersHandlerHandle deps@Deps {..} session =
+  HGetUsers.Handle
+    { hGetUsersHandle =
+        IGetUsers.Handle
+          { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle session deps
+          , hMaxPageLimit = dMaxPageLimit
+          }
     , hPresenterHandle = dUserPresenterHandle
     }
 

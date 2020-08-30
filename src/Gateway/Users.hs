@@ -5,11 +5,18 @@
 module Gateway.Users
   ( createUser
   , getUser
+  , getUsers
   ) where
 
 import qualified Core.Interactor.CreateUser as I
+import Core.Pagination
+import Data.Foldable
+import Data.Int
 import Data.Profunctor
 import qualified Data.Text as T
+import Data.Text (Text)
+import Data.Time
+import Data.Vector (Vector)
 import Database as DB
 import qualified Hasql.Statement as S
 import qualified Hasql.TH as TH
@@ -82,12 +89,7 @@ selectUserById :: S.Statement I.UserId (Maybe I.User)
 selectUserById =
   dimap
     I.getUserId
-    (fmap $ \(userId, userFirstName, userLastName, userAvatarId, userCreatedAt, userIsAdmin) ->
-       I.User
-         { userId = I.UserId userId
-         , userAvatarId = I.ImageId <$> userAvatarId
-         , ..
-         })
+    (fmap decodeUser)
     [TH.maybeStatement|
     select user_id :: integer,
            first_name :: varchar?,
@@ -98,3 +100,27 @@ selectUserById =
     from users
     where user_id = $1 :: integer
     |]
+
+getUsers :: DB.Handle -> Page -> IO [I.User]
+getUsers h page = toList <$> DB.runTransaction h (DB.statement selectUsers page)
+
+selectUsers :: S.Statement Page (Vector I.User)
+selectUsers =
+  dimap
+    (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
+    (fmap decodeUser)
+    [TH.vectorStatement|
+    select user_id :: integer,
+           first_name :: varchar?,
+           last_name :: varchar,
+           avatar_id :: integer?,
+           created_at :: timestamptz,
+           is_admin :: boolean
+    from users
+    limit $1 :: integer offset $2 :: integer
+    |]
+
+decodeUser :: (Int32, Maybe Text, Text, Maybe Int32, UTCTime, Bool) -> I.User
+decodeUser (userId, userFirstName, userLastName, userAvatarId, userCreatedAt, userIsAdmin) =
+  I.User
+    {userId = I.UserId userId, userAvatarId = I.ImageId <$> userAvatarId, ..}
