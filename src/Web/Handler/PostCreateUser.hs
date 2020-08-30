@@ -8,6 +8,7 @@ module Web.Handler.PostCreateUser
   ) where
 
 import Control.Exception
+import Core.DTO.Image
 import qualified Core.Interactor.CreateUser as I
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -58,7 +59,7 @@ queryFromInUser InUser {..} =
 
 imageQueryFromInImage :: InImage -> I.ImageQuery
 imageQueryFromInImage InImage {..} =
-  I.Image {imageData = unBase64 iiBase64Data, imageContentType = iiContentType}
+  Image {imageData = unBase64 iiBase64Data, imageContentType = iiContentType}
 
 data InUser =
   InUser

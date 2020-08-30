@@ -7,10 +7,6 @@ module Core.Interactor.CreateUser
   , Query(..)
   , ImageQuery
   -- * Interactor output
-  , Image(..)
-  , User(..)
-  , UserId(..)
-  , ImageId(..)
   , SecretTokenInfo(..)
   , SecretToken(..)
   , QueryException(..)

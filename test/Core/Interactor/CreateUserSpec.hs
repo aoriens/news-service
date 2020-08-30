@@ -5,6 +5,8 @@ module Core.Interactor.CreateUserSpec
   ) where
 
 import Control.Monad
+import Core.DTO.Image
+import Core.DTO.User
 import qualified Core.Interactor.CreateUser as I
 import qualified Data.HashSet as HS
 import Data.IORef
@@ -39,7 +41,7 @@ spec = do
           query = stubQuery
       (user, _) <- I.run h query
       readIORef ref `shouldReturn` (I.qFirstName query, I.qLastName query)
-      (I.userFirstName user, I.userLastName user) `shouldBe`
+      (userFirstName user, userLastName user) `shouldBe`
         (I.qFirstName query, I.qLastName query)
     it "should pass time from hGetCurrentTime to hCreateUser and in the result" $ do
       ref <- newIORef (error "Must have written here the current time")
@@ -54,7 +56,7 @@ spec = do
               }
       (user, _) <- I.run h stubQuery
       readIORef ref `shouldReturn` expectedTime
-      I.userCreatedAt user `shouldBe` expectedTime
+      userCreatedAt user `shouldBe` expectedTime
     it "should pass the hash from hGenerateToken to hCreateUser" $ do
       ref <- newIORef (error "Must have written a hash here")
       let expectedHash = "1"
@@ -78,7 +80,7 @@ spec = do
       (_, token) <- I.run h stubQuery
       token `shouldBe` expectedToken
     it "should return UserId from hCreateUser" $ do
-      let expectedUserId = I.UserId 1
+      let expectedUserId = UserId 1
           h =
             stubHandle
               { I.hCreateUser =
@@ -86,9 +88,9 @@ spec = do
                   pure stubCreateUserResult {I.curUserId = expectedUserId}
               }
       (user, _) <- I.run h stubQuery
-      I.userId user `shouldBe` expectedUserId
+      userId user `shouldBe` expectedUserId
     it "should return curAvatarId from hCreateUser" $ do
-      let expectedImageId = Just $ I.ImageId 1
+      let expectedImageId = Just $ ImageId 1
           h =
             stubHandle
               { I.hCreateUser =
@@ -96,7 +98,7 @@ spec = do
                   pure stubCreateUserResult {I.curAvatarId = expectedImageId}
               }
       (user, _) <- I.run h stubQuery
-      I.userAvatarId user `shouldBe` expectedImageId
+      userAvatarId user `shouldBe` expectedImageId
     it "should pass isAdmin = False to hCreateUser and in the result" $ do
       ref <- newIORef $ error "Must have been set a Bool here"
       let h =
@@ -107,7 +109,7 @@ spec = do
                     pure stubCreateUserResult
               }
       (user, _) <- I.run h stubQuery
-      I.userIsAdmin user `shouldBe` False
+      userIsAdmin user `shouldBe` False
       readIORef ref `shouldReturn` False
     it
       "should throw QueryException if avatar content type is not in the allowed list" $ do
@@ -117,7 +119,7 @@ spec = do
             stubQuery
               { I.qAvatar =
                   Just
-                    I.Image
+                    Image
                       {imageContentType = disallowedContentType, imageData = ""}
               }
           h =
@@ -131,7 +133,7 @@ spec = do
             stubQuery
               { I.qAvatar =
                   Just
-                    I.Image
+                    Image
                       {imageContentType = allowedContentType, imageData = ""}
               }
           h =
@@ -159,7 +161,7 @@ stubGetCurrentTime = pure $ UTCTime (ModifiedJulianDay 6666) 0
 
 stubCreateUserResult :: I.CreateUserResult
 stubCreateUserResult =
-  I.CreateUserResult {curUserId = I.UserId 0, curAvatarId = Nothing}
+  I.CreateUserResult {curUserId = UserId 0, curAvatarId = Nothing}
 
 stubQuery :: I.Query
 stubQuery =
@@ -168,6 +170,6 @@ stubQuery =
     , qLastName = "Doe"
     , qAvatar =
         Just
-          I.Image
+          Image
             {imageContentType = defaultAllowedImageContentType, imageData = ""}
     }

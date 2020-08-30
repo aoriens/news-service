@@ -8,6 +8,8 @@ module Gateway.Users
   , getUsers
   ) where
 
+import Core.DTO.Image
+import Core.DTO.User
 import qualified Core.Interactor.CreateUser as I
 import Core.Pagination
 import Data.Foldable
@@ -27,7 +29,7 @@ createUser h cmd@I.CreateUserCommand {..} =
     optAvatarId <-
       case cuAvatar of
         Just image -> do
-          DB.statement createMimeTypeIfNotFound (I.imageContentType image)
+          DB.statement createMimeTypeIfNotFound (imageContentType image)
           Just <$> DB.statement createImage image
         Nothing -> pure Nothing
     userId <- DB.statement createUserSt (optAvatarId, cmd)
@@ -39,11 +41,11 @@ createMimeTypeIfNotFound =
     insert into mime_types (value) values ($1 :: varchar) on conflict do nothing
   |]
 
-createImage :: S.Statement I.Image I.ImageId
+createImage :: S.Statement Image ImageId
 createImage =
   dimap
-    (\I.Image {..} -> (imageData, imageContentType))
-    I.ImageId
+    (\Image {..} -> (imageData, imageContentType))
+    ImageId
     [TH.singletonStatement|
     insert into images (content, mime_type_id)
     values (
@@ -52,18 +54,18 @@ createImage =
     ) returning image_id :: integer
     |]
 
-createUserSt :: S.Statement (Maybe I.ImageId, I.CreateUserCommand) I.UserId
+createUserSt :: S.Statement (Maybe ImageId, I.CreateUserCommand) UserId
 createUserSt =
   dimap
     (\(optImageId, I.CreateUserCommand {..}) ->
        ( cuFirstName {-1-}
        , cuLastName {-2-}
-       , I.getImageId <$> optImageId {-3-}
+       , getImageId <$> optImageId {-3-}
        , cuCreatedAt {-4-}
        , cuIsAdmin {-5-}
        , cuTokenHash {-6-}
         ))
-    I.UserId
+    UserId
     [TH.singletonStatement|
     insert into users (
       first_name,
@@ -82,13 +84,13 @@ createUserSt =
     ) returning user_id :: integer
     |]
 
-getUser :: DB.Handle -> I.UserId -> IO (Maybe I.User)
+getUser :: DB.Handle -> UserId -> IO (Maybe User)
 getUser h ident = DB.runTransaction h $ DB.statement selectUserById ident
 
-selectUserById :: S.Statement I.UserId (Maybe I.User)
+selectUserById :: S.Statement UserId (Maybe User)
 selectUserById =
   dimap
-    I.getUserId
+    getUserId
     (fmap decodeUser)
     [TH.maybeStatement|
     select user_id :: integer,
@@ -101,10 +103,10 @@ selectUserById =
     where user_id = $1 :: integer
     |]
 
-getUsers :: DB.Handle -> Page -> IO [I.User]
+getUsers :: DB.Handle -> Page -> IO [User]
 getUsers h page = toList <$> DB.runTransaction h (DB.statement selectUsers page)
 
-selectUsers :: S.Statement Page (Vector I.User)
+selectUsers :: S.Statement Page (Vector User)
 selectUsers =
   dimap
     (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
@@ -120,7 +122,6 @@ selectUsers =
     limit $1 :: integer offset $2 :: integer
     |]
 
-decodeUser :: (Int32, Maybe Text, Text, Maybe Int32, UTCTime, Bool) -> I.User
+decodeUser :: (Int32, Maybe Text, Text, Maybe Int32, UTCTime, Bool) -> User
 decodeUser (userId, userFirstName, userLastName, userAvatarId, userCreatedAt, userIsAdmin) =
-  I.User
-    {userId = I.UserId userId, userAvatarId = I.ImageId <$> userAvatarId, ..}
+  User {userId = UserId userId, userAvatarId = ImageId <$> userAvatarId, ..}
