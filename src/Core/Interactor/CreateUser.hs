@@ -79,9 +79,9 @@ rejectDisallowedAvatarContentType Handle {..} Query {..} =
 
 data Query =
   Query
-      -- | The first name. This is unnecessary in case of a
-      -- single-component name.
     { qFirstName :: Maybe Text
+      -- ^ The first name. This is unnecessary in case of a
+      -- single-component name.
     , qLastName :: Text
     , qAvatar :: Maybe ImageQuery
     }
@@ -90,8 +90,6 @@ type ImageQuery = Image
 
 data User =
   User
-  -- | The first name. This is unnecessary in case of a
-  -- single-component name.
     { userId :: UserId
     , userFirstName :: Maybe Text
     , userLastName :: Text

@@ -115,11 +115,9 @@ parseQueryParameterE key bs =
     Nothing -> Left (BadValue key bs)
 
 -- | Types that can be parsed from an HTTP request query item.
-class QueryParameter a
-  -- | Parses a value from an optional bytestring value. It should
+class QueryParameter a where
+  parseQueryParameter :: RawValue -> Maybe a -- ^ Parses a value from an optional bytestring value. It should
   -- return Nothing in case of parse error.
-  where
-  parseQueryParameter :: RawValue -> Maybe a
 
 -- | Parsing always succeeds. It may be used to check for parameter
 -- existence.

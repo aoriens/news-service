@@ -24,11 +24,8 @@ import GHC.Stack
 import Prelude hiding (error, log)
 
 -- | The actual logger implementation is hidden here.
-class Logger t m
-  | t -> m
-  -- | Log a message
-  where
-  lowLevelLog :: t -> Level -> Maybe CallSite -> T.Text -> m ()
+class Logger t m | t -> m where
+  lowLevelLog :: t -> Level -> Maybe CallSite -> T.Text -> m () -- ^ Logs a message
 
 -- | A flexible implementation of Logger - a Logger class adapter.
 newtype Handle m =
