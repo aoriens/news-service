@@ -9,6 +9,7 @@ module Web.Handler.GetNews
   ) where
 
 import Control.Exception
+import Core.Exception
 import qualified Core.Interactor.GetNews as I
 import Core.Pagination
 import qualified Data.Aeson as A
@@ -40,7 +41,7 @@ run h request respond = do
   response <-
     catch
       (I.getNews (hGetNewsHandle h) pageQuery)
-      (throwIO . BadRequestException . I.queryExceptionReason)
+      (throwIO . BadRequestException . queryExceptionReason)
   respond $
     Wai.responseBuilder
       Http.ok200
