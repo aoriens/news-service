@@ -4,7 +4,7 @@ module Gateway.SecretTokenSpec
   ( spec
   ) where
 
-import Core.Interactor.CreateUser as I
+import qualified Core.Authentication as Auth
 import qualified Data.ByteString as BS
 import qualified Gateway.SecretToken as G
 import Test.Hspec
@@ -29,7 +29,7 @@ spec = do
       property $ \(NonNegative expectedLen) -> do
         state <- G.initIOState
         let config = G.Config {cfTokenLength = expectedLen}
-        (I.SecretToken token, _) <- G.generateIO config state
+        (Auth.SecretToken token, _) <- G.generateIO config state
         BS.length token `shouldBe` expectedLen
 
 defaultConfig :: G.Config

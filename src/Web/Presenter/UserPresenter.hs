@@ -8,8 +8,8 @@ module Web.Presenter.UserPresenter
   , Handle(..)
   ) where
 
+import qualified Core.Authentication as Auth
 import qualified Core.DTO.User as C
-import qualified Core.Interactor.CreateUser as I
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import qualified Data.ByteString.Builder as BB
@@ -28,13 +28,13 @@ data Handle =
     , hRenderAppURL :: U.AppURL -> Text
     }
 
-presentUser :: Handle -> C.User -> Maybe I.SecretToken -> BB.Builder
+presentUser :: Handle -> C.User -> Maybe Auth.SecretToken -> BB.Builder
 presentUser h user token = hJSONEncode h $ userEntity h token user
 
 presentUsers :: Handle -> [C.User] -> BB.Builder
 presentUsers h = hJSONEncode h . map (userEntity h Nothing)
 
-userEntity :: Handle -> Maybe I.SecretToken -> C.User -> User
+userEntity :: Handle -> Maybe Auth.SecretToken -> C.User -> User
 userEntity h token C.User {..} =
   User
     { userId = C.getUserId userId
@@ -43,7 +43,7 @@ userEntity h token C.User {..} =
     , userAvatarURL = hRenderAppURL h . U.URLImage <$> userAvatarId
     , userCreatedAt = userCreatedAt
     , userIsAdmin = userIsAdmin
-    , userSecretToken = Base64 . I.secretTokenBytes <$> token
+    , userSecretToken = Base64 . Auth.secretTokenBytes <$> token
     }
 
 data User =

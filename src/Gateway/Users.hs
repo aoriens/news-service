@@ -8,6 +8,7 @@ module Gateway.Users
   , getUsers
   ) where
 
+import qualified Core.Authentication as Auth
 import Core.DTO.Image
 import Core.DTO.User
 import qualified Core.Interactor.CreateUser as I
@@ -63,7 +64,7 @@ createUserSt =
        , getImageId <$> optImageId {-3-}
        , cuCreatedAt {-4-}
        , cuIsAdmin {-5-}
-       , I.secretTokenHashBytes cuTokenHash {-6-}
+       , Auth.secretTokenHashBytes cuTokenHash {-6-}
         ))
     UserId
     [TH.singletonStatement|

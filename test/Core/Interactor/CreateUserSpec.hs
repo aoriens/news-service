@@ -5,6 +5,7 @@ module Core.Interactor.CreateUserSpec
   ) where
 
 import Control.Monad
+import qualified Core.Authentication as Auth
 import Core.DTO.Image
 import Core.DTO.User
 import Core.Exception
@@ -60,7 +61,7 @@ spec = do
       userCreatedAt user `shouldBe` expectedTime
     it "should pass the hash from hGenerateToken to hCreateUser" $ do
       ref <- newIORef (error "Must have written a hash here")
-      let expectedHash = I.SecretTokenHash "1"
+      let expectedHash = Auth.SecretTokenHash "1"
           h =
             stubHandle
               { I.hCreateUser =
@@ -72,7 +73,7 @@ spec = do
       void $ I.run h stubQuery
       readIORef ref `shouldReturn` expectedHash
     it "should return the token from hGenerateToken" $ do
-      let expectedToken = I.SecretToken "1"
+      let expectedToken = Auth.SecretToken "1"
           h =
             stubHandle {I.hGenerateToken = pure (expectedToken, stubTokenHash)}
       (_, token) <- I.run h stubQuery
@@ -151,11 +152,11 @@ stubHandle =
 defaultAllowedImageContentType :: Text
 defaultAllowedImageContentType = "image/png"
 
-stubToken :: I.SecretToken
-stubToken = I.SecretToken ""
+stubToken :: Auth.SecretToken
+stubToken = Auth.SecretToken ""
 
-stubTokenHash :: I.SecretTokenHash
-stubTokenHash = I.SecretTokenHash ""
+stubTokenHash :: Auth.SecretTokenHash
+stubTokenHash = Auth.SecretTokenHash ""
 
 stubGetCurrentTime :: IO UTCTime
 stubGetCurrentTime = pure $ UTCTime (ModifiedJulianDay 6666) 0

@@ -3,23 +3,18 @@
 module Core.Interactor.CreateUser
   ( run
   , Handle(..)
-  -- * Interactor input
   , Query(..)
   , ImageQuery
-  -- * Interactor output
-  , SecretTokenHash(..)
-  , SecretToken(..)
-  -- * Gateway API
   , CreateUserCommand(..)
   , CreateUserResult(..)
   ) where
 
 import Control.Monad
 import Control.Monad.Catch
+import qualified Core.Authentication as Auth
 import Core.DTO.Image
 import Core.DTO.User
 import Core.Exception
-import qualified Data.ByteString as BS
 import qualified Data.HashSet as HS
 import Data.List
 import Data.Text (Text)
@@ -29,13 +24,13 @@ import Data.Time.Clock
 data Handle m =
   Handle
     { hCreateUser :: CreateUserCommand -> m CreateUserResult
-    , hGenerateToken :: m (SecretToken, SecretTokenHash)
+    , hGenerateToken :: m (Auth.SecretToken, Auth.SecretTokenHash)
     , hGetCurrentTime :: m UTCTime
     , hAllowedImageContentTypes :: HS.HashSet Text
     }
 
 -- | Run the interactor. It can throw 'QueryException'
-run :: MonadThrow m => Handle m -> Query -> m (User, SecretToken)
+run :: MonadThrow m => Handle m -> Query -> m (User, Auth.SecretToken)
 run h@Handle {..} q@Query {..} = do
   let isAdmin = False
   rejectDisallowedAvatarContentType h q
@@ -84,18 +79,6 @@ data Query =
 
 type ImageQuery = Image
 
-newtype SecretToken =
-  SecretToken
-    { secretTokenBytes :: BS.ByteString
-    }
-  deriving (Eq, Show)
-
-newtype SecretTokenHash =
-  SecretTokenHash
-    { secretTokenHashBytes :: BS.ByteString
-    }
-  deriving (Eq, Show)
-
 data CreateUserCommand =
   CreateUserCommand
     { cuFirstName :: Maybe Text
@@ -103,7 +86,7 @@ data CreateUserCommand =
     , cuAvatar :: Maybe Image
     , cuCreatedAt :: UTCTime
     , cuIsAdmin :: Bool
-    , cuTokenHash :: SecretTokenHash
+    , cuTokenHash :: Auth.SecretTokenHash
     }
 
 data CreateUserResult =
