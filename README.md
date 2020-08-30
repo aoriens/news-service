@@ -66,6 +66,10 @@ The response contains the image data with the corresponding MIME type.
 
 Returns a list of [News](#News) entities.
 
+### `GET /user/{user_id}`
+
+Returns a [User](#User).
+
 ## Entities
 
 ### Day
@@ -114,4 +118,5 @@ A user. Fields:
 - `created_at` - the time the user was created. A [UTCTime](#UTCTime), required.
 - `is_admin` - whether the user have administrator permissions. A boolean,
   required.
-- `secret_token` - the authentication token. A string, required.
+- `secret_token` - the authentication token. The field is only output when
+  creating a user, otherwise it is missing. A string, optional.
