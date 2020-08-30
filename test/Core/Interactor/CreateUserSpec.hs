@@ -7,6 +7,7 @@ module Core.Interactor.CreateUserSpec
 import Control.Monad
 import Core.DTO.Image
 import Core.DTO.User
+import Core.Exception
 import qualified Core.Interactor.CreateUser as I
 import qualified Data.HashSet as HS
 import Data.IORef
@@ -125,7 +126,7 @@ spec = do
           h =
             stubHandle
               {I.hAllowedImageContentTypes = HS.fromList allowedContentTypes}
-      I.run h query `shouldThrow` \I.QueryException {} -> True
+      I.run h query `shouldThrow` \QueryException {} -> True
     it
       "should not throw QueryException if avatar content type is in the allowed list" $ do
       let allowedContentType = "image/tiff"

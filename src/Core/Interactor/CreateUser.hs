@@ -9,7 +9,6 @@ module Core.Interactor.CreateUser
   -- * Interactor output
   , SecretTokenInfo(..)
   , SecretToken(..)
-  , QueryException(..)
   -- * Gateway API
   , CreateUserCommand(..)
   , CreateUserResult(..)
@@ -19,6 +18,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Core.DTO.Image
 import Core.DTO.User
+import Core.Exception
 import qualified Data.ByteString as BS
 import qualified Data.HashSet as HS
 import Data.List
@@ -111,14 +111,6 @@ data CreateUserResult =
     { curUserId :: UserId
     , curAvatarId :: Maybe ImageId
     }
-
-newtype QueryException =
-  QueryException
-    { queryExceptionReason :: Text
-    }
-  deriving (Show)
-
-instance Exception QueryException
 
 disallowedAvatarContentTypeException ::
      Text -> HS.HashSet Text -> QueryException
