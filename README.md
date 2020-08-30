@@ -49,7 +49,9 @@ must not be negative.
 
 ## Endpoints
 
-### `GET /news`
+### `POST /create_user`
+
+Creates a user. Accepts [InUser](#InUser) entity in the request body and returns [User](#User) entity.
 
 Returns a list of [News](#News) entities.
 
@@ -60,9 +62,7 @@ the public API, it is used for constructing URLs returned by other endpoints.
 
 The response contains the image data with the corresponding MIME type.
 
-### `POST /create_user`
-
-Creates a user. Accepts [InUser](#InUser) entity in the request body and returns [User](#User) entity.
+### `GET /news`
 
 Returns a list of [News](#News) entities.
 
