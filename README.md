@@ -49,12 +49,6 @@ must not be negative.
 
 ## Endpoints
 
-### `POST /create_user`
-
-Creates a user. Accepts [InUser](#InUser) entity in the request body and returns [User](#User) entity.
-
-Returns a list of [News](#News) entities.
-
 ### `GET /image/{image_id}`
 
 Returns an image at the specified URL. The endpoint is not considered as part of
@@ -63,6 +57,12 @@ the public API, it is used for constructing URLs returned by other endpoints.
 The response contains the image data with the corresponding MIME type.
 
 ### `GET /news`
+
+Returns a list of [News](#News) entities.
+
+### `POST /user/create`
+
+Creates a user. Accepts [InUser](#InUser) entity in the request body and returns [User](#User) entity.
 
 Returns a list of [News](#News) entities.
 

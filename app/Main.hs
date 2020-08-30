@@ -121,13 +121,13 @@ getWebAppHandle deps@Deps {..} = do
 router :: Deps -> R.Router
 router deps =
   R.new $ do
-    R.ifPath ["create_user"] $ do
-      R.ifMethod Http.methodPost $
-        HPostCreateUser.run . postCreateUserHandle deps
     R.ifPath ["news"] $ do
       R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
     R.ifPathPrefix ["user"] $ do
       R.ifMethod Http.methodGet $ HGetUser.run . getUserHandlerHandle deps
+    R.ifPath ["user", "create"] $ do
+      R.ifMethod Http.methodPost $
+        HPostCreateUser.run . postCreateUserHandle deps
     R.ifAppURL $ \case
       (U.URLImage imageId) ->
         R.ifMethod Http.methodGet $ \session ->
