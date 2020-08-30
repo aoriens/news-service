@@ -6,6 +6,7 @@
 module Web.QueryParameter
   ( QueryParser
   , parseQuery
+  , parseQueryM
   , require
   , lookup
   , lookupRaw
@@ -15,6 +16,7 @@ module Web.QueryParameter
 
 import Control.DeepSeq
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import qualified Data.ByteString as BS
@@ -23,9 +25,12 @@ import qualified Data.DList as DL
 import qualified Data.HashMap.Strict as HM
 import Data.Int
 import Data.Int.Exact
+import Data.Maybe
+import qualified Data.Text.Encoding as T
 import GHC.Generics
 import qualified Network.HTTP.Types as Http
 import Prelude hiding (lookup)
+import qualified Web.Exception as E
 
 type Key = BS.ByteString
 
@@ -79,6 +84,26 @@ parseQuery items (QueryParser keys r) =
           findAll (HM.insert k (Just v) pmap) (pred remainingCount) items'
         -- The key is not searched for, or a value has already been found
         _ -> findAll pmap remainingCount items'
+
+-- | Runs 'parseQuery' and throws 'BadExceptionRequest' in case of
+-- parse failure.
+parseQueryM :: MonadThrow m => Http.Query -> QueryParser a -> m a
+parseQueryM query parser =
+  either (throwM . formatException) pure $ parseQuery query parser
+  where
+    formatException (MissingKey key) =
+      E.BadRequestException $
+      "Parameter '" <>
+      T.decodeLatin1 key <> "' is missing from the request query"
+    formatException (BadValue key value) =
+      E.BadRequestException $
+      mconcat
+        [ "Wrong value of parameter '"
+        , T.decodeLatin1 key
+        , "': '"
+        , T.decodeLatin1 (fromMaybe "<missing>" value)
+        , "'"
+        ]
 
 -- | Finds a raw value for the given key. If none found, returns Nothing.
 lookupRaw :: Key -> QueryParser (Maybe RawValue)

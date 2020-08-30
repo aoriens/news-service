@@ -1,7 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ApplicativeDo #-}
 
 module Web.Handler.GetNews
   ( Handle(..)
@@ -11,7 +10,6 @@ module Web.Handler.GetNews
 import Control.Exception
 import Core.Exception
 import qualified Core.Interactor.GetNews as I
-import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import qualified Data.ByteString.Builder as BB
@@ -25,6 +23,7 @@ import qualified Network.Wai as Wai
 import Web.Exception
 import qualified Web.HTTP as Http
 import qualified Web.QueryParameter as QP
+import qualified Web.QueryParameter.PageQuery as QP
 
 data Handle =
   Handle
@@ -35,9 +34,7 @@ data Handle =
 
 run :: Handle -> Wai.Application
 run h request respond = do
-  pageQuery <-
-    either (throwIO . queryParameterException) pure $
-    QP.parseQuery (Wai.queryString request) pageQueryParser
+  pageQuery <- QP.parseQueryM (Wai.queryString request) QP.parsePageQuery
   response <-
     catch
       (I.getNews (hGetNewsHandle h) pageQuery)
@@ -47,12 +44,6 @@ run h request respond = do
       Http.ok200
       [Http.hJSONContentType]
       (presentResponse h response)
-
-pageQueryParser :: QP.QueryParser PageQuery
-pageQueryParser = do
-  pageQueryLimit <- QP.lookup "limit"
-  pageQueryOffset <- QP.lookup "offset"
-  pure PageQuery {..}
 
 presentResponse :: Handle -> [I.News] -> BB.Builder
 presentResponse Handle {..} = hJSONEncode . map presentNews

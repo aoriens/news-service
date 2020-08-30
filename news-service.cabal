@@ -52,6 +52,7 @@ library
     , Web.JSONEncoder
     , Web.Presenter.UserPresenter
     , Web.QueryParameter
+    , Web.QueryParameter.PageQuery
     , Web.RequestBodyLoader
     , Web.Types
     , Web.Types.Internal.SessionId
