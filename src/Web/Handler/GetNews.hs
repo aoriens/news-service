@@ -49,8 +49,8 @@ run h request respond = do
 
 pageQueryParser :: QP.QueryParser PageQuery
 pageQueryParser = do
-  pageQueryLimit <- QP.lookupP "limit"
-  pageQueryOffset <- QP.lookupP "offset"
+  pageQueryLimit <- QP.lookup "limit"
+  pageQueryOffset <- QP.lookup "offset"
   pure PageQuery {..}
 
 presentResponse :: Handle -> [I.News] -> BB.Builder

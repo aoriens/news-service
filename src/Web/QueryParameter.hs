@@ -6,9 +6,9 @@
 module Web.QueryParameter
   ( QueryParser
   , parseQuery
-  , requireP
-  , lookupP
-  , lookupRawP
+  , require
+  , lookup
+  , lookupRaw
   , Failure(..)
   , QueryParameter(..)
   ) where
@@ -25,6 +25,7 @@ import Data.Int
 import Data.Int.Exact
 import GHC.Generics
 import qualified Network.HTTP.Types as Http
+import Prelude hiding (lookup)
 
 type Key = BS.ByteString
 
@@ -80,15 +81,15 @@ parseQuery items (QueryParser keys r) =
         _ -> findAll pmap remainingCount items'
 
 -- | Finds a raw value for the given key. If none found, returns Nothing.
-lookupRawP :: Key -> QueryParser (Maybe RawValue)
-lookupRawP key =
+lookupRaw :: Key -> QueryParser (Maybe RawValue)
+lookupRaw key =
   QueryParser (DL.singleton key) (ReaderT $ pure . join . HM.lookup key)
 
 -- | Finds a value for the given key and tries to parse it. If none
 -- found, returns Nothing. If a wrong value is found, generates a
 -- failure.
-lookupP :: QueryParameter a => Key -> QueryParser (Maybe a)
-lookupP key = mapValue f (lookupRawP key)
+lookup :: QueryParameter a => Key -> QueryParser (Maybe a)
+lookup key = mapValue f (lookupRaw key)
   where
     f a =
       case a of
@@ -97,8 +98,8 @@ lookupP key = mapValue f (lookupRawP key)
 
 -- | Finds a value for the given key and tries to parse it. If none
 -- found or parsing failed, generates a failure.
-requireP :: QueryParameter a => Key -> QueryParser a
-requireP key = mapValue f (lookupRawP key)
+require :: QueryParameter a => Key -> QueryParser a
+require key = mapValue f (lookupRaw key)
   where
     f a =
       case a of
