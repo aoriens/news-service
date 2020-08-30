@@ -64,8 +64,6 @@ Returns a list of [News](#News) entities.
 
 Creates a user. Accepts [InUser](#InUser) entity in the request body and returns [User](#User) entity.
 
-Returns a list of [News](#News) entities.
-
 ### `GET /user/{user_id}`
 
 Returns a [User](#User).
