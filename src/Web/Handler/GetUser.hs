@@ -11,6 +11,7 @@ import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Exception
+import qualified Web.HTTP as Http
 import qualified Web.Presenter.UserPresenter as P
 
 data Handle =
@@ -27,7 +28,7 @@ run h request respond = do
     maybe (throwIO NotFoundException) pure =<<
     I.run (hGetUserHandle h) userIdent
   respond $
-    Wai.responseBuilder Http.ok200 [(Http.hContentType, "application/json")] $
+    Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
     P.presentUser (hPresenterHandle h) user Nothing
 
 parseUserId :: [T.Text] -> Maybe UserId

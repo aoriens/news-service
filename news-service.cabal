@@ -47,6 +47,7 @@ library
     , Web.Handler.GetImage
     , Web.Handler.GetUser
     , Web.Handler.PostCreateUser
+    , Web.HTTP
     , Web.JSONEncoder
     , Web.Presenter.UserPresenter
     , Web.QueryParameter

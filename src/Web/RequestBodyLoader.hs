@@ -14,6 +14,7 @@ import Data.Word
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Web.Exception as E
+import qualified Web.HTTP as Http
 
 newtype Config =
   Config
@@ -36,7 +37,7 @@ rejectInvalidContentType request =
   throwIO (E.UnsupportedMediaTypeException [T.decodeUtf8 expectedContentType])
 
 expectedContentType :: BS.ByteString
-expectedContentType = "application/json"
+expectedContentType = Http.jsonContentType
 
 loadRequestBodyNoLonger :: Word64 -> Wai.Request -> IO LBS.ByteString
 loadRequestBodyNoLonger maxLen request =

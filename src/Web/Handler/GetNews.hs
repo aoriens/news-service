@@ -22,6 +22,7 @@ import Data.Time.Calendar
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Exception
+import qualified Web.HTTP as Http
 import qualified Web.QueryParameter as QP
 
 data Handle =
@@ -43,7 +44,7 @@ run h request respond = do
   respond $
     Wai.responseBuilder
       Http.ok200
-      [(Http.hContentType, "application/json")]
+      [Http.hJSONContentType]
       (presentResponse h response)
 
 pageQueryParser :: QP.QueryParser PageQuery

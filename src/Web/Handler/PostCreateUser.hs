@@ -21,6 +21,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Entity.Base64
 import Web.Exception
+import qualified Web.HTTP as Http
 import qualified Web.Presenter.UserPresenter as P
 
 data Handle =
@@ -33,11 +34,7 @@ data Handle =
 run :: Handle -> Wai.Application
 run h request respond = do
   builder <- buildResponse h request
-  respond $
-    Wai.responseBuilder
-      Http.ok200
-      [(Http.hContentType, "application/json")]
-      builder
+  respond $ Wai.responseBuilder Http.ok200 [Http.hJSONContentType] builder
 
 buildResponse :: Handle -> Wai.Request -> IO BB.Builder
 buildResponse Handle {..} request = do
