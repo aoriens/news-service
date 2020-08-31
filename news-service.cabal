@@ -46,6 +46,7 @@ library
     , Network.Wai.Util
     , Web.Application
     , Web.AppURL
+    , Web.BasicAuth
     , Web.Entity.Base64
     , Web.Exception
     , Web.Handler.GetNews
@@ -128,6 +129,7 @@ test-suite news-service-test
     , Data.Int.ExactSpec
     , Gateway.SecretTokenSpec
     , Web.AppURLSpec
+    , Web.BasicAuthSpec
     , Web.QueryParameterSpec
     , Web.RouterSpec
   hs-source-dirs:
@@ -135,6 +137,7 @@ test-suite news-service-test
   ghc-options: -rtsopts
   build-depends:
       base >=4.7 && <5
+    , base64
     , bytestring
     , deepseq
     , hspec
