@@ -19,9 +19,8 @@ data Handle m =
     , hTokenMatchesHash :: SecretToken -> SecretTokenHash -> Bool
     }
 
-data Credentials
-  = TokenCredentials UserId SecretToken
-  | EmptyCredentials
+data Credentials =
+  TokenCredentials !UserId !SecretToken
 
 newtype SecretToken =
   SecretToken
@@ -46,9 +45,9 @@ newtype IsAdmin =
 
 -- | Authenticate a user with credentials. It can throw
 -- 'BadCredentialsException'.
-authenticate :: MonadThrow m => Handle m -> Credentials -> m AuthenticatedUser
-authenticate _ EmptyCredentials = pure AnonymousUser
-authenticate h (TokenCredentials userIdent token) = do
+authenticate :: MonadThrow m => Handle m -> Maybe Credentials -> m AuthenticatedUser
+authenticate _ Nothing = pure AnonymousUser
+authenticate h (Just (TokenCredentials userIdent token)) = do
   optData <- hGetUserAuthData h userIdent
   case optData of
     Nothing -> throwM BadCredentialsException
