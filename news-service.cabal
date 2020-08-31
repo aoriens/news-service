@@ -47,6 +47,7 @@ library
     , Web.Application
     , Web.AppURL
     , Web.BasicAuth
+    , Web.Credentials
     , Web.Entity.Base64
     , Web.Exception
     , Web.Handler.GetNews
@@ -130,6 +131,7 @@ test-suite news-service-test
     , Gateway.SecretTokenSpec
     , Web.AppURLSpec
     , Web.BasicAuthSpec
+    , Web.CredentialsSpec
     , Web.QueryParameterSpec
     , Web.RouterSpec
   hs-source-dirs:
