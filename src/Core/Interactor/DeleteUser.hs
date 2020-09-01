@@ -7,7 +7,7 @@ module Core.Interactor.DeleteUser
 
 import Control.Monad.Catch
 import qualified Core.Authorization as Auth
-import Core.DTO.User
+import Core.User
 
 data Handle m =
   Handle

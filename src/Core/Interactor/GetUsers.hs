@@ -6,8 +6,8 @@ module Core.Interactor.GetUsers
   ) where
 
 import Control.Monad.Catch
-import Core.DTO.User
 import Core.Pagination
+import Core.User
 
 data Handle m =
   Handle

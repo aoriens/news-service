@@ -8,7 +8,7 @@ module Web.Handler.PostCreateUser
   ) where
 
 import Control.Exception
-import Core.DTO.Image
+import Core.Image
 import qualified Core.Interactor.CreateUser as I
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A

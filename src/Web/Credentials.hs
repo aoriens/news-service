@@ -8,7 +8,7 @@ module Web.Credentials
 
 import Control.Monad.Catch
 import qualified Core.Authentication as Core
-import Core.DTO.User
+import Core.User
 import Data.ByteString.Base64
 import qualified Data.ByteString.Char8 as B
 import Data.Either.Util

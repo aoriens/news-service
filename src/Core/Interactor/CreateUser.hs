@@ -12,9 +12,9 @@ module Core.Interactor.CreateUser
 import Control.Monad
 import Control.Monad.Catch
 import qualified Core.Authentication as Auth
-import Core.DTO.Image
-import Core.DTO.User
 import Core.Exception
+import Core.Image
+import Core.User
 import qualified Data.HashSet as HS
 import Data.List
 import Data.Text (Text)

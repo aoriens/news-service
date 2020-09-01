@@ -3,7 +3,7 @@ module Core.Interactor.GetImage
   , Handle(..)
   ) where
 
-import Core.DTO.Image
+import Core.Image
 
 newtype Handle m =
   Handle

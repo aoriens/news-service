@@ -4,8 +4,8 @@ module Web.Handler.GetUser
   ) where
 
 import Control.Exception
-import Core.DTO.User
 import qualified Core.Interactor.GetUser as I
+import Core.User
 import Data.Integral.Exact
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http

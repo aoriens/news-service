@@ -3,7 +3,7 @@ module Core.Interactor.GetUser
   , Handle(..)
   ) where
 
-import Core.DTO.User
+import Core.User
 
 newtype Handle m =
   Handle

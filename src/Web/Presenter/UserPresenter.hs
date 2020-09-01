@@ -9,7 +9,7 @@ module Web.Presenter.UserPresenter
   ) where
 
 import qualified Core.Authentication as Auth
-import qualified Core.DTO.User as C
+import qualified Core.User as C
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import qualified Data.ByteString.Builder as BB

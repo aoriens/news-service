@@ -14,7 +14,7 @@ module Web.AppURL
   , fromRelativeURL
   ) where
 
-import Core.DTO.Image
+import Core.Image
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LBS

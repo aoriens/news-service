@@ -3,7 +3,7 @@ module Web.CredentialsSpec
   ) where
 
 import qualified Core.Authentication as Core
-import Core.DTO.User
+import Core.User
 import Data.ByteString.Base64
 import Data.String
 import Test.Hspec

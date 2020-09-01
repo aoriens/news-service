@@ -3,8 +3,8 @@ module Web.Handler.DeleteUser
   , Handle(..)
   ) where
 
-import Core.DTO.User
 import qualified Core.Interactor.DeleteUser as I
+import Core.User
 import Data.Integral.Exact
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http

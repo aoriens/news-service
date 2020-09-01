@@ -10,7 +10,7 @@ module Core.Authentication
   ) where
 
 import Control.Monad.Catch
-import Core.DTO.User
+import Core.User
 import qualified Data.ByteString as BS
 
 data Handle m =

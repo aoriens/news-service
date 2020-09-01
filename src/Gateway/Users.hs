@@ -12,10 +12,10 @@ module Gateway.Users
 
 import Control.Arrow
 import qualified Core.Authentication as Auth
-import Core.DTO.Image
-import Core.DTO.User
+import Core.Image
 import qualified Core.Interactor.CreateUser as I
 import Core.Pagination
+import Core.User
 import Data.Foldable
 import Data.Int
 import Data.Profunctor

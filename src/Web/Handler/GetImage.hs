@@ -6,7 +6,7 @@ module Web.Handler.GetImage
   ) where
 
 import Control.Exception
-import Core.DTO.Image
+import Core.Image
 import qualified Core.Interactor.GetImage as I
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T

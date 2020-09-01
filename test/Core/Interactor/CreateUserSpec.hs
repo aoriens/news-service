@@ -6,10 +6,10 @@ module Core.Interactor.CreateUserSpec
 
 import Control.Monad
 import qualified Core.Authentication as Auth
-import Core.DTO.Image
-import Core.DTO.User
 import Core.Exception
+import Core.Image
 import qualified Core.Interactor.CreateUser as I
+import Core.User
 import qualified Data.HashSet as HS
 import Data.IORef
 import Data.Text (Text)

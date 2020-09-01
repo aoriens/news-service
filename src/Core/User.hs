@@ -1,9 +1,9 @@
-module Core.DTO.User
+module Core.User
   ( User(..)
   , UserId(..)
   ) where
 
-import Core.DTO.Image
+import Core.Image
 import Data.Int
 import Data.Text (Text)
 import Data.Time

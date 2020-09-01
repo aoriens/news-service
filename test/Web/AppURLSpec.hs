@@ -2,7 +2,7 @@ module Web.AppURLSpec
   ( spec
   ) where
 
-import qualified Core.DTO.Image as I
+import qualified Core.Image as I
 import qualified Data.ByteString.Char8 as BC
 import Data.String
 import Network.URI

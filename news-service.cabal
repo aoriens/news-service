@@ -21,11 +21,10 @@ source-repository head
 library
   exposed-modules:
     Control.Exception.Sync
-    , Core.DTO.Image
-    , Core.DTO.User
     , Core.Authentication
     , Core.Authorization
     , Core.Exception
+    , Core.Image
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetImage
@@ -33,6 +32,7 @@ library
     , Core.Interactor.GetUser
     , Core.Interactor.GetUsers
     , Core.Pagination
+    , Core.User
     , Data.Either.Util
     , Data.Integral.Exact
     , Database
