@@ -33,6 +33,7 @@ library
     , Core.Interactor.GetUser
     , Core.Interactor.GetUsers
     , Core.Pagination
+    , Data.Either.Util
     , Data.Int.Exact
     , Database
     , Database.ConnectionManager

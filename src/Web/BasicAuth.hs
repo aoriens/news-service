@@ -7,6 +7,7 @@ import Control.Monad
 import Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import Data.Char
+import Data.Either.Util
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
@@ -37,6 +38,3 @@ credentialsFromAuthorizationHeader =
       let (login, p) = B.break (== ':') s
       (_, password) <- B.uncons p
       pure (login, password)
-
-eitherToMaybe :: Either e a -> Maybe a
-eitherToMaybe = either (const Nothing) Just

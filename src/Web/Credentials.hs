@@ -11,6 +11,7 @@ import qualified Core.Authentication as Core
 import Core.DTO.User
 import Data.ByteString.Base64
 import qualified Data.ByteString.Char8 as B
+import Data.Either.Util
 import Data.Int.Exact
 import Data.String
 import qualified Network.Wai as Wai
@@ -34,7 +35,7 @@ readCredentials (WebToken webToken) = do
   let (uidString, t) = B.break (== ',') webToken
   userIdent <- readExactIntegral $ B.unpack uidString
   (_, codedToken) <- B.uncons t
-  token <- either (const Nothing) Just $ decodeBase64 codedToken
+  token <- eitherToMaybe $ decodeBase64 codedToken
   pure $ Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)
 
 -- | Returns Nothing if no credentials found, but throws
