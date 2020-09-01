@@ -50,6 +50,7 @@ library
     , Web.Credentials
     , Web.Entity.Base64
     , Web.Exception
+    , Web.Handler.DeleteUser
     , Web.Handler.GetNews
     , Web.Handler.GetImage
     , Web.Handler.GetUser

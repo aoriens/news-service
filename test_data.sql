@@ -18,12 +18,13 @@ insert into images (content, mime_type_id) values
        , (select mime_type_id from mime_types where value = 'image/png')
        );
 
+-- Token: "" (empty)
 insert into users (last_name, avatar_id, created_at, is_admin, token_hash) values
        ('Admin'
        , (select image_id from images limit 1)
        , '2020-08-20'
        , true
-       , '\x0000'
+       , '\x00e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
        );
 
 commit;

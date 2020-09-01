@@ -12,7 +12,9 @@ import qualified Config.IO as CIO
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
+import Core.Authentication as Auth
 import qualified Core.Interactor.CreateUser as ICreateUser
+import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetUser as IGetUser
@@ -39,6 +41,7 @@ import System.Exit
 import System.IO hiding (Handle)
 import qualified Web.AppURL as U
 import qualified Web.Application
+import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetUser as HGetUser
@@ -66,6 +69,7 @@ data Deps =
     , dSecretTokenIOState :: GSecretToken.IOState
     , dRenderAppURL :: U.AppURL -> T.Text
     , dUserPresenterHandle :: UserPresenter.Handle
+    , dMakeAuthHandle :: Web.Session -> Auth.Handle IO
     }
 
 main :: IO ()
@@ -84,7 +88,8 @@ getDeps = do
   dConfig <- either die pure $ Cf.makeConfig inConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   dSecretTokenIOState <- GSecretToken.initIOState
-  let dJSONEncode a =
+  let dDatabaseConnectionConfig = Cf.cfDatabaseConfig dConfig
+      dJSONEncode a =
         JSONEncoder.encode
           JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
           a
@@ -94,7 +99,7 @@ getDeps = do
     , Deps
         { dConfig
         , dLoggerHandle
-        , dDatabaseConnectionConfig = Cf.cfDatabaseConfig dConfig
+        , dDatabaseConnectionConfig
         , dMaxPageLimit = Cf.cfMaxPageLimit dConfig
         , dJSONEncode
         , dLoadRequestJSONBody =
@@ -106,6 +111,17 @@ getDeps = do
         , dUserPresenterHandle =
             UserPresenter.Handle
               {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
+        , dMakeAuthHandle =
+            \session ->
+              Auth.Handle
+                { hGetUserAuthData =
+                    GUsers.getUserAuthData $
+                    sessionDatabaseHandle'
+                      dDatabaseConnectionConfig
+                      dLoggerHandle
+                      session
+                , hTokenMatchesHash = GSecretToken.tokenMatchesHash
+                }
         })
 
 getWebAppHandle :: Deps -> IO Web.Application.Handle
@@ -127,6 +143,8 @@ router deps =
       R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
     R.ifPathPrefix ["user"] $ do
       R.ifMethod Http.methodGet $ HGetUser.run . getUserHandlerHandle deps
+      R.ifMethod Http.methodDelete $
+        HDeleteUser.run . deleteUserHandlerHandle deps
     R.ifPath ["user", "create"] $ do
       R.ifMethod Http.methodPost $
         HPostCreateUser.run . postCreateUserHandle deps
@@ -179,6 +197,14 @@ getUserHandlerHandle deps@Deps {..} session =
     , hPresenterHandle = dUserPresenterHandle
     }
 
+deleteUserHandlerHandle :: Deps -> Web.Session -> HDeleteUser.Handle
+deleteUserHandlerHandle deps@Deps {..} session =
+  HDeleteUser.Handle $
+  IDeleteUser.Handle
+    { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle session deps
+    , hAuthHandle = dMakeAuthHandle session
+    }
+
 getUsersHandlerHandle :: Deps -> Web.Session -> HGetUsers.Handle
 getUsersHandlerHandle deps@Deps {..} session =
   HGetUsers.Handle
@@ -209,7 +235,12 @@ sessionLoggerHandle Web.Session {..} =
 
 sessionDatabaseHandle :: Web.Session -> Deps -> Database.Handle
 sessionDatabaseHandle session Deps {..} =
+  sessionDatabaseHandle' dDatabaseConnectionConfig dLoggerHandle session
+
+sessionDatabaseHandle' ::
+     DBConnManager.Config -> Logger.Handle IO -> Web.Session -> Database.Handle
+sessionDatabaseHandle' dbConnectionConfig loggerH session =
   Database.Handle
-    { hConnectionConfig = dDatabaseConnectionConfig
-    , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+    { hConnectionConfig = dbConnectionConfig
+    , hLoggerHandle = sessionLoggerHandle session loggerH
     }

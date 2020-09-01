@@ -6,8 +6,11 @@ module Gateway.Users
   ( createUser
   , getUser
   , getUsers
+  , getUserAuthData
+  , deleteUser
   ) where
 
+import Control.Arrow
 import qualified Core.Authentication as Auth
 import Core.DTO.Image
 import Core.DTO.User
@@ -126,3 +129,33 @@ selectUsers =
 decodeUser :: (Int32, Maybe Text, Text, Maybe Int32, UTCTime, Bool) -> User
 decodeUser (userId, userFirstName, userLastName, userAvatarId, userCreatedAt, userIsAdmin) =
   User {userId = UserId userId, userAvatarId = ImageId <$> userAvatarId, ..}
+
+getUserAuthData ::
+     DB.Handle -> UserId -> IO (Maybe (Auth.SecretTokenHash, Auth.IsAdmin))
+getUserAuthData h uid =
+  DB.runTransaction h $ DB.statement selectUserAuthData uid
+
+selectUserAuthData ::
+     S.Statement UserId (Maybe (Auth.SecretTokenHash, Auth.IsAdmin))
+selectUserAuthData =
+  dimap
+    getUserId
+    (fmap (Auth.SecretTokenHash *** Auth.IsAdmin))
+    [TH.maybeStatement|
+    select token_hash :: bytea, is_admin :: boolean
+    from users
+    where user_id = $1 :: integer
+    |]
+
+deleteUser :: DB.Handle -> UserId -> IO ()
+deleteUser h uid = DB.runTransactionRW h $ DB.statement deleteUserSt uid
+
+deleteUserSt :: S.Statement UserId ()
+deleteUserSt =
+  dimap
+    getUserId
+    id
+    [TH.resultlessStatement|
+    delete from users
+    where user_id = $1 :: integer
+    |]

@@ -12,6 +12,7 @@ module Web.Application
 
 import Control.Exception
 import Control.Exception.Sync
+import qualified Core.Authorization as Core
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
@@ -122,8 +123,7 @@ exceptionToResponse h e
   | Just t@(E.BadRequestException _) <- fromException e =
     stubErrorResponseWithReason Http.badRequest400 [] $
     E.badRequestExceptionReason t
-  | Just E.NotFoundException <- fromException e =
-    stubErrorResponse Http.notFound404 []
+  | Just E.NotFoundException <- fromException e = notFoundResponse
   | Just t@(E.UnsupportedMediaTypeException _) <- fromException e =
     stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
     "Supported media types are: " <> T.intercalate ", " (E.supportedMimeTypes t)
@@ -131,6 +131,9 @@ exceptionToResponse h e
     stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
     "The request body length must not exceed " <>
     T.pack (show (E.maxPayloadSize t)) <> " bytes"
+  | Just (_ :: Core.BadCredentialsException) <- fromException e =
+    notFoundResponse
+  | Just (_ :: Core.NoPermissionException) <- fromException e = notFoundResponse
   | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
   | otherwise = Warp.defaultOnExceptionResponse e
 
@@ -156,6 +159,9 @@ routerApplication Handle {..} session request =
            [makeAllowHeader knownMethods])
   where
     makeAllowHeader methods = ("Allow", SBS.intercalate ", " methods)
+
+notFoundResponse :: Wai.Response
+notFoundResponse = stubErrorResponse Http.notFound404 []
 
 stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
 stubErrorResponse status additionalHeaders =
