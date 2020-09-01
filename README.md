@@ -30,6 +30,13 @@ configuration file containing passwords.
 
 # API
 
+## Authentication
+
+Some parts of API require authentication, which is documented appropriately, but
+majority of methods is available without authentication. Currently we support
+HTTP basic authentication. You should use user's secret token as a login and an
+empty password. The secret token is only returned on user creation.
+
 ## Entity encoding
 
 Non-empty request and response bodies containing API entities are encoded in
@@ -64,6 +71,11 @@ Returns a list of [News](#News) entities.
 
 Creates a user. Accepts [InUser](#InUser) entity in the request body and returns
 [User](#User) entity.
+
+### `DELETE /user/{user_id}`
+
+Deletes the identified user and returns no content. Requires authentication of a
+user having administrator privileges.
 
 ### `GET /user/{user_id}`
 
