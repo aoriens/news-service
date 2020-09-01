@@ -97,7 +97,7 @@ formatPeerAddr (Socket.SockAddrInet _ ip4) =
   where
     (b1, b2, b3, b4) = Socket.hostAddressToTuple ip4
 formatPeerAddr (Socket.SockAddrInet6 _ _ ip6 _) =
-  printf "%04X.%04X.%04X.%04X.%04X.%04X.%04X.%04X" b1 b2 b3 b4 b5 b6 b7 b8
+  printf "%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X" b1 b2 b3 b4 b5 b6 b7 b8
   where
     (b1, b2, b3, b4, b5, b6, b7, b8) = Socket.hostAddress6ToTuple ip6
 formatPeerAddr (Socket.SockAddrUnix s) = s
