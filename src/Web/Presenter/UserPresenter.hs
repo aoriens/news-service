@@ -44,7 +44,8 @@ userEntity h creds C.User {..} =
     , userAvatarURL = hRenderAppURL h . U.URLImage <$> userAvatarId
     , userCreatedAt = userCreatedAt
     , userIsAdmin = userIsAdmin
-    , userSecretToken = T.decodeUtf8 . unWebToken . presentCredentials <$> creds
+    , userSecretToken =
+        T.decodeLatin1 . unWebToken . presentCredentials <$> creds
     }
 
 data User =

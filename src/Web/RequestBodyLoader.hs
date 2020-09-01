@@ -34,7 +34,7 @@ rejectInvalidContentType request =
   when
     ((Http.hContentType, expectedContentType) `notElem`
      Wai.requestHeaders request) $
-  throwIO (E.UnsupportedMediaTypeException [T.decodeUtf8 expectedContentType])
+  throwIO (E.UnsupportedMediaTypeException [T.decodeLatin1 expectedContentType])
 
 expectedContentType :: BS.ByteString
 expectedContentType = Http.jsonContentType
