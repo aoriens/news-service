@@ -38,7 +38,7 @@ readCredentials (WebToken webToken) = do
   pure $ Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)
 
 -- | Returns Nothing if no credentials found, but throws
--- 'BadRequestException' in case of malformed credentials.
+-- 'MalformedAuthDataException in case of malformed credentials.
 getCredentialsFromRequest ::
      MonadThrow m => Wai.Request -> m (Maybe Core.Credentials)
 getCredentialsFromRequest request =
@@ -51,4 +51,4 @@ getCredentialsFromRequest request =
           pure coreCreds
         | otherwise -> Left ()
   where
-    failure = throwM $ BadRequestException "Malformed credentials"
+    failure = throwM MalformedAuthDataException

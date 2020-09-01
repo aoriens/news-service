@@ -4,6 +4,7 @@ module Web.Exception
   , UnsupportedMediaTypeException(..)
   , PayloadTooLargeException(..)
   , NotFoundException(..)
+  , MalformedAuthDataException(..)
   ) where
 
 import Control.Exception
@@ -41,3 +42,9 @@ data NotFoundException =
   deriving (Show)
 
 instance Exception NotFoundException
+
+data MalformedAuthDataException =
+  MalformedAuthDataException
+  deriving (Show)
+
+instance Exception MalformedAuthDataException

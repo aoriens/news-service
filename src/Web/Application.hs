@@ -133,6 +133,8 @@ exceptionToResponse h e
     T.pack (show (E.maxPayloadSize t)) <> " bytes"
   | Just (_ :: Core.BadCredentialsException) <- fromException e =
     notFoundResponse
+  | Just (_ :: E.MalformedAuthDataException) <- fromException e =
+    notFoundResponse
   | Just (_ :: Core.NoPermissionException) <- fromException e = notFoundResponse
   | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
   | otherwise = Warp.defaultOnExceptionResponse e
