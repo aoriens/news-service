@@ -30,7 +30,7 @@ data Handle m =
     }
 
 -- | Run the interactor. It can throw 'QueryException'
-run :: MonadThrow m => Handle m -> Query -> m (User, Auth.SecretToken)
+run :: MonadThrow m => Handle m -> Query -> m (User, Auth.Credentials)
 run h@Handle {..} q@Query {..} = do
   let isAdmin = False
   rejectDisallowedAvatarContentType h q
@@ -55,7 +55,7 @@ run h@Handle {..} q@Query {..} = do
         , userCreatedAt = createdAt
         , userIsAdmin = isAdmin
         }
-    , token)
+    , Auth.TokenCredentials (curUserId result) token)
 
 rejectDisallowedAvatarContentType :: MonadThrow m => Handle m -> Query -> m ()
 rejectDisallowedAvatarContentType Handle {..} Query {..} =

@@ -17,9 +17,10 @@ import Data.Int
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
+import qualified Data.Text.Encoding as T
 import Data.Time
 import qualified Web.AppURL as U
-import Web.Entity.Base64
+import Web.Credentials
 
 data Handle =
   Handle
@@ -28,14 +29,14 @@ data Handle =
     , hRenderAppURL :: U.AppURL -> Text
     }
 
-presentUser :: Handle -> C.User -> Maybe Auth.SecretToken -> BB.Builder
-presentUser h user token = hJSONEncode h $ userEntity h token user
+presentUser :: Handle -> C.User -> Maybe Auth.Credentials -> BB.Builder
+presentUser h user creds = hJSONEncode h $ userEntity h creds user
 
 presentUsers :: Handle -> [C.User] -> BB.Builder
 presentUsers h = hJSONEncode h . map (userEntity h Nothing)
 
-userEntity :: Handle -> Maybe Auth.SecretToken -> C.User -> User
-userEntity h token C.User {..} =
+userEntity :: Handle -> Maybe Auth.Credentials -> C.User -> User
+userEntity h creds C.User {..} =
   User
     { userId = C.getUserId userId
     , userFirstName = userFirstName
@@ -43,7 +44,7 @@ userEntity h token C.User {..} =
     , userAvatarURL = hRenderAppURL h . U.URLImage <$> userAvatarId
     , userCreatedAt = userCreatedAt
     , userIsAdmin = userIsAdmin
-    , userSecretToken = Base64 . Auth.secretTokenBytes <$> token
+    , userSecretToken = T.decodeUtf8 . unWebToken . presentCredentials <$> creds
     }
 
 data User =
@@ -54,7 +55,7 @@ data User =
     , userAvatarURL :: Maybe Text
     , userCreatedAt :: UTCTime
     , userIsAdmin :: Bool
-    , userSecretToken :: Maybe Base64
+    , userSecretToken :: Maybe Text
     }
 
 $(A.deriveToJSON

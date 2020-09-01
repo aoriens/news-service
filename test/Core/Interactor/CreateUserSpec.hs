@@ -72,11 +72,11 @@ spec = do
               }
       void $ I.run h stubQuery
       readIORef ref `shouldReturn` expectedHash
-    it "should return the token from hGenerateToken" $ do
+    it "should return credentials with the token from hGenerateToken" $ do
       let expectedToken = Auth.SecretToken "1"
           h =
             stubHandle {I.hGenerateToken = pure (expectedToken, stubTokenHash)}
-      (_, token) <- I.run h stubQuery
+      (_, Auth.TokenCredentials _ token) <- I.run h stubQuery
       token `shouldBe` expectedToken
     it "should return UserId from hCreateUser" $ do
       let expectedUserId = UserId 1
