@@ -10,7 +10,7 @@ import Data.Char
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
--- | Returns Left in case of a malformed credentials, Right Nothing if
+-- | Returns Left in case of malformed credentials, Right Nothing if
 -- no credentials found, or Right (Just _) if credentials are found.
 credentialsFromRequest ::
      Wai.Request -> Either () (Maybe (B.ByteString, B.ByteString))
