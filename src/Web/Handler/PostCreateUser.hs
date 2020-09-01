@@ -9,7 +9,6 @@ module Web.Handler.PostCreateUser
 
 import Control.Exception
 import Core.DTO.Image
-import Core.Exception
 import qualified Core.Interactor.CreateUser as I
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -44,10 +43,7 @@ buildResponse Handle {..} request = do
   userEntity <-
     either (throwIO . BadRequestException . T.pack) pure $
     A.eitherDecode' bodyBytes
-  (user, credentials) <-
-    catch
-      (I.run hCreateUserHandle (queryFromInUser userEntity))
-      (throwIO . BadRequestException . queryExceptionReason)
+  (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)
   pure $ P.presentUser hPresenterHandle user (Just credentials)
 
 queryFromInUser :: InUser -> I.Query

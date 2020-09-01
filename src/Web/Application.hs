@@ -13,6 +13,7 @@ module Web.Application
 import Control.Exception
 import Control.Exception.Sync
 import qualified Core.Authorization as Core
+import qualified Core.Exception as Core
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
@@ -131,6 +132,9 @@ exceptionToResponse h e
     stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
     "The request body length must not exceed " <>
     T.pack (show (E.maxPayloadSize t)) <> " bytes"
+  | Just (t :: Core.QueryException) <- fromException e =
+    stubErrorResponseWithReason Http.badRequest400 [] $
+    Core.queryExceptionReason t
   | Just (_ :: Core.BadCredentialsException) <- fromException e =
     notFoundResponse
   | Just (_ :: E.MalformedAuthDataException) <- fromException e =

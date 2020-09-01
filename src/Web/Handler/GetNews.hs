@@ -7,8 +7,6 @@ module Web.Handler.GetNews
   , run
   ) where
 
-import Control.Exception
-import Core.Exception
 import qualified Core.Interactor.GetNews as I
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -20,7 +18,6 @@ import Data.Text (Text)
 import Data.Time.Calendar
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import Web.Exception
 import qualified Web.HTTP as Http
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
@@ -35,10 +32,7 @@ data Handle =
 run :: Handle -> Wai.Application
 run h request respond = do
   pageQuery <- QP.parseQueryM (Wai.queryString request) QP.parsePageQuery
-  response <-
-    catch
-      (I.getNews (hGetNewsHandle h) pageQuery)
-      (throwIO . BadRequestException . queryExceptionReason)
+  response <- I.getNews (hGetNewsHandle h) pageQuery
   respond $
     Wai.responseBuilder
       Http.ok200
