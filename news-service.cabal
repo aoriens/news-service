@@ -34,7 +34,7 @@ library
     , Core.Interactor.GetUsers
     , Core.Pagination
     , Data.Either.Util
-    , Data.Int.Exact
+    , Data.Integral.Exact
     , Database
     , Database.ConnectionManager
     , Gateway.CurrentTime
@@ -129,7 +129,7 @@ test-suite news-service-test
       Core.Interactor.GetNewsSpec
     , Core.Interactor.CreateUserSpec
     , Core.PaginationSpec
-    , Data.Int.ExactSpec
+    , Data.Integral.ExactSpec
     , Gateway.SecretTokenSpec
     , Web.AppURLSpec
     , Web.BasicAuthSpec

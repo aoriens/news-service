@@ -6,7 +6,7 @@ module Web.Handler.GetUser
 import Control.Exception
 import Core.DTO.User
 import qualified Core.Interactor.GetUser as I
-import Data.Int.Exact
+import Data.Integral.Exact
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai

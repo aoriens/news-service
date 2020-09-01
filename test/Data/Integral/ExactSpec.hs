@@ -1,9 +1,9 @@
-module Data.Int.ExactSpec
+module Data.Integral.ExactSpec
   ( spec
   ) where
 
 import Data.Int
-import Data.Int.Exact
+import Data.Integral.Exact
 import Data.Word
 import Test.Hspec
 import Test.QuickCheck

@@ -12,7 +12,7 @@ import Core.DTO.User
 import Data.ByteString.Base64
 import qualified Data.ByteString.Char8 as B
 import Data.Either.Util
-import Data.Int.Exact
+import Data.Integral.Exact
 import Data.String
 import qualified Network.Wai as Wai
 import qualified Web.BasicAuth as BasicAuth

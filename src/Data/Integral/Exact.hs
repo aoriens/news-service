@@ -1,4 +1,4 @@
-module Data.Int.Exact
+module Data.Integral.Exact
   ( fromIntegralExact
   , readExactIntegral
   ) where

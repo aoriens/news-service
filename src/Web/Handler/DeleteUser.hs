@@ -5,7 +5,7 @@ module Web.Handler.DeleteUser
 
 import Core.DTO.User
 import qualified Core.Interactor.DeleteUser as I
-import Data.Int.Exact
+import Data.Integral.Exact
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai

@@ -24,7 +24,7 @@ import qualified Data.ByteString.Char8 as BS8
 import qualified Data.DList as DL
 import qualified Data.HashMap.Strict as HM
 import Data.Int
-import Data.Int.Exact
+import Data.Integral.Exact
 import Data.Maybe
 import qualified Data.Text.Encoding as T
 import GHC.Generics
