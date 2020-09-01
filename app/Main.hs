@@ -161,7 +161,7 @@ newsHandlerHandle deps@Deps {..} session =
   where
     interactorHandle =
       IGetNews.Handle
-        { hGetNews = GNews.getNews $ sessionDatabaseHandle session deps
+        { hGetNews = GNews.getNews $ sessionDatabaseHandle deps session
         , hMaxPageLimit = dMaxPageLimit
         }
 
@@ -175,7 +175,7 @@ postCreateUserHandle deps@Deps {..} session =
   where
     interactorHandle =
       ICreateUser.Handle
-        { hCreateUser = GUsers.createUser $ sessionDatabaseHandle session deps
+        { hCreateUser = GUsers.createUser $ sessionDatabaseHandle deps session
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
@@ -187,13 +187,13 @@ postCreateUserHandle deps@Deps {..} session =
 getImageHandlerHandle :: Deps -> Web.Session -> HGetImage.Handle
 getImageHandlerHandle deps@Deps {..} session =
   HGetImage.Handle $
-  IGetImage.Handle $ GImages.getImage $ sessionDatabaseHandle session deps
+  IGetImage.Handle $ GImages.getImage $ sessionDatabaseHandle deps session
 
 getUserHandlerHandle :: Deps -> Web.Session -> HGetUser.Handle
 getUserHandlerHandle deps@Deps {..} session =
   HGetUser.Handle
     { hGetUserHandle =
-        IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle session deps
+        IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle deps session
     , hPresenterHandle = dUserPresenterHandle
     }
 
@@ -201,7 +201,7 @@ deleteUserHandlerHandle :: Deps -> Web.Session -> HDeleteUser.Handle
 deleteUserHandlerHandle deps@Deps {..} session =
   HDeleteUser.Handle $
   IDeleteUser.Handle
-    { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle session deps
+    { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle deps session
     , hAuthHandle = dMakeAuthHandle session
     }
 
@@ -210,7 +210,7 @@ getUsersHandlerHandle deps@Deps {..} session =
   HGetUsers.Handle
     { hGetUsersHandle =
         IGetUsers.Handle
-          { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle session deps
+          { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle deps session
           , hMaxPageLimit = dMaxPageLimit
           }
     , hPresenterHandle = dUserPresenterHandle
@@ -233,9 +233,9 @@ sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =
   Logger.mapMessage $ \text -> "SID-" <> T.pack (show sessionId) <> " " <> text
 
-sessionDatabaseHandle :: Web.Session -> Deps -> Database.Handle
-sessionDatabaseHandle session Deps {..} =
-  sessionDatabaseHandle' dDatabaseConnectionConfig dLoggerHandle session
+sessionDatabaseHandle :: Deps -> Web.Session -> Database.Handle
+sessionDatabaseHandle Deps {..} =
+  sessionDatabaseHandle' dDatabaseConnectionConfig dLoggerHandle
 
 sessionDatabaseHandle' ::
      DBConnManager.Config -> Logger.Handle IO -> Web.Session -> Database.Handle
