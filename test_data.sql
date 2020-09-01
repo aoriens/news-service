@@ -19,6 +19,7 @@ insert into images (content, mime_type_id) values
        );
 
 -- Token: "" (empty)
+-- Web token consists of a single user id and a comma, e.g. "1,"
 insert into users (last_name, avatar_id, created_at, is_admin, token_hash) values
        ('Admin'
        , (select image_id from images limit 1)

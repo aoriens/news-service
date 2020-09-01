@@ -19,18 +19,22 @@ import Web.Exception
 
 -- | Web-specific representation of core credentials. It depends from
 -- the way of passing credentials via web.
-data Credentials =
-  LoginAndPassword B.ByteString B.ByteString
+newtype Credentials =
+  WebToken
+    { unWebToken :: B.ByteString
+    }
   deriving (Eq, Show)
 
 presentCredentials :: Core.Credentials -> Credentials
 presentCredentials (Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)) =
-  LoginAndPassword (fromString $ show userIdent) (encodeBase64' token)
+  WebToken $ fromString (show userIdent) <> "," <> encodeBase64' token
 
 readCredentials :: Credentials -> Maybe Core.Credentials
-readCredentials (LoginAndPassword login password) = do
-  userIdent <- readExactIntegral $ B.unpack login
-  token <- either (const Nothing) Just $ decodeBase64 password
+readCredentials (WebToken webToken) = do
+  let (uidString, t) = B.break (== ',') webToken
+  userIdent <- readExactIntegral $ B.unpack uidString
+  (_, codedToken) <- B.uncons t
+  token <- either (const Nothing) Just $ decodeBase64 codedToken
   pure $ Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)
 
 -- | Returns Nothing if no credentials found, but throws
@@ -42,9 +46,9 @@ getCredentialsFromRequest request =
     optCreds <- BasicAuth.credentialsFromRequest request
     case optCreds of
       Nothing -> pure Nothing
-      Just (login, password)
-        | coreCreds@(Just _) <-
-           readCredentials $ LoginAndPassword login password -> pure coreCreds
+      Just (login, _)
+        | coreCreds@(Just _) <- readCredentials $ WebToken login ->
+          pure coreCreds
         | otherwise -> Left ()
   where
     failure = throwM $ BadRequestException "Malformed credentials"
