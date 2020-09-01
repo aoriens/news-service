@@ -16,7 +16,6 @@ import Data.Int
 import Data.Maybe
 import Data.String
 import Data.Text (Text)
-import qualified Data.Text.Encoding as T
 import Data.Word
 import qualified Database.ConnectionManager as DB
 import qualified Logger
@@ -95,7 +94,7 @@ makeConfig inConfig@InConfig {..} = do
       , cfAppURLConfig =
           Web.AppURL.Config
             { cfUseHTTPS = Just True == inServerPublicURLsUseHTTPS
-            , cfDomain = T.encodeUtf8 $ fromString inServerPublicDomain
+            , cfDomain = fromString inServerPublicDomain
             }
       , ..
       }

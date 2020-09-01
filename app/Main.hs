@@ -24,7 +24,6 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import Gateway.CurrentTime as GCurrentTime
@@ -93,7 +92,7 @@ getDeps = do
         JSONEncoder.encode
           JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
           a
-      dRenderAppURL = T.decodeUtf8 . U.render' (Cf.cfAppURLConfig dConfig)
+      dRenderAppURL = U.render (Cf.cfAppURLConfig dConfig)
   pure
     ( loggerWorker
     , Deps

@@ -8,25 +8,25 @@ module Web.AppURL
   ( AppURL(..)
   , RelativeURL(..)
   , Config(..)
-  , render'
   , render
   , toRelativeURL
   , fromRelativeURL
   ) where
 
 import Core.Image
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
-import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy as LB
 import Data.Integral.Exact
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Types as Http
 
 data Config =
   Config
     { cfUseHTTPS :: Bool
-    , cfDomain :: BS.ByteString
+    , cfDomain :: T.Text
     }
 
 newtype RelativeURL =
@@ -38,17 +38,18 @@ newtype AppURL =
   URLImage ImageId
   deriving (Eq, Show)
 
-render' :: Config -> AppURL -> BS.ByteString
-render' = (LBS.toStrict .) . (BB.toLazyByteString .) . render
-
-render :: Config -> AppURL -> BB.Builder
-render Config {..} appURL =
-  BB.byteString scheme <> BB.byteString cfDomain <> path
+render :: Config -> AppURL -> T.Text
+render Config {..} appURL = scheme <> cfDomain <> path
   where
     scheme
       | cfUseHTTPS = "https://"
       | otherwise = "http://"
-    path = Http.encodePathSegments . relativeURLPath $ toRelativeURL appURL
+    path =
+      T.decodeUtf8 . buildByteString . Http.encodePathSegments . relativeURLPath $
+      toRelativeURL appURL
+
+buildByteString :: BB.Builder -> B.ByteString
+buildByteString = LB.toStrict . BB.toLazyByteString
 
 toRelativeURL :: AppURL -> RelativeURL
 toRelativeURL (URLImage (ImageId imageId)) =

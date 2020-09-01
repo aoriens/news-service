@@ -3,8 +3,8 @@ module Web.AppURLSpec
   ) where
 
 import qualified Core.Image as I
-import qualified Data.ByteString.Char8 as BC
 import Data.String
+import qualified Data.Text as T
 import Network.URI
 import Test.Hspec
 import qualified Web.AppURL as X
@@ -19,21 +19,21 @@ spec = do
   describe "render'" $ do
     it "should return https URL if cfUseHTTPS is True" $ do
       let config = defaultConfig {X.cfUseHTTPS = True}
-          r = X.render' config defaultAppURL
-      uriScheme <$> parseURI (BC.unpack r) `shouldBe` Just "https:"
+          r = X.render config defaultAppURL
+      uriScheme <$> parseURI (T.unpack r) `shouldBe` Just "https:"
     it "should return http URL if cfUseHTTPS is False" $ do
       let config = defaultConfig {X.cfUseHTTPS = False}
-          r = X.render' config defaultAppURL
-      uriScheme <$> parseURI (BC.unpack r) `shouldBe` Just "http:"
+          r = X.render config defaultAppURL
+      uriScheme <$> parseURI (T.unpack r) `shouldBe` Just "http:"
     it "should return URL with domain from cfDomain" $ do
       let expectedDomain = "news.example.org"
           config = defaultConfig {X.cfDomain = fromString expectedDomain}
-          r = X.render' config defaultAppURL
-          domain = uriRegName <$> (uriAuthority =<< parseURI (BC.unpack r))
+          r = X.render config defaultAppURL
+          domain = uriRegName <$> (uriAuthority =<< parseURI (T.unpack r))
       domain `shouldBe` Just expectedDomain
     it "should return URL without fragment, query, username, or password" $ do
-      let r = X.render' defaultConfig defaultAppURL
-          uri = parseURI (BC.unpack r)
+      let r = X.render defaultConfig defaultAppURL
+          uri = parseURI (T.unpack r)
       uriFragment <$> uri `shouldBe` Just ""
       uriQuery <$> uri `shouldBe` Just ""
       uriUserInfo <$> (uriAuthority =<< uri) `shouldBe` Just ""
