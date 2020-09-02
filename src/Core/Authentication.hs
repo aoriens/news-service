@@ -12,6 +12,7 @@ module Core.Authentication
 import Control.Monad.Catch
 import Core.User
 import qualified Data.ByteString as BS
+import qualified Data.Text as T
 
 data Handle m =
   Handle
@@ -52,14 +53,18 @@ authenticate _ Nothing = pure AnonymousUser
 authenticate h (Just (TokenCredentials userIdent token)) = do
   optData <- hGetUserAuthData h userIdent
   case optData of
-    Nothing -> throwM BadCredentialsException
+    Nothing ->
+      throwM . BadCredentialsException $
+      "User does not exist: " <> T.pack (show userIdent)
     Just (hash, isAdmin)
       | hTokenMatchesHash h token hash ->
         pure $ IdentifiedUser userIdent isAdmin
-      | otherwise -> throwM BadCredentialsException
+      | otherwise -> throwM $ BadCredentialsException "secret token mismatch"
 
-data BadCredentialsException =
+newtype BadCredentialsException =
   BadCredentialsException
+    { badCredentialsExceptionReason :: T.Text
+    }
   deriving (Show)
 
 instance Exception BadCredentialsException
