@@ -127,7 +127,8 @@ test-suite news-service-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Core.Interactor.GetNewsSpec
+      Core.AuthenticationSpec
+    , Core.Interactor.GetNewsSpec
     , Core.Interactor.CreateUserSpec
     , Core.PaginationSpec
     , Data.Integral.ExactSpec
