@@ -6,13 +6,20 @@ module Core.Authorization
 
 import Control.Monad.Catch
 import Core.Authentication
+import qualified Data.Text as T
 
-requiresAdminPermission :: MonadThrow m => AuthenticatedUser -> m () -> m ()
-requiresAdminPermission (IdentifiedUser _ (IsAdmin True)) action = action
-requiresAdminPermission _ _ = throwM NoPermissionException
+requiresAdminPermission ::
+     MonadThrow m => AuthenticatedUser -> T.Text -> m () -> m ()
+requiresAdminPermission user actionDescription action
+  | IdentifiedUser _ (IsAdmin True) <- user = action
+  | otherwise =
+    throwM . NoPermissionException $
+    "Requires admin permission: " <> actionDescription
 
-data NoPermissionException =
+newtype NoPermissionException =
   NoPermissionException
+    { noPermissionExceptionReason :: T.Text
+    }
   deriving (Show)
 
 instance Exception NoPermissionException
