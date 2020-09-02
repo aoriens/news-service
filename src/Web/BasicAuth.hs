@@ -7,6 +7,7 @@ import Control.Monad
 import Data.Bifunctor
 import Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Util as B
 import Data.Char
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
@@ -28,13 +29,10 @@ credentialsFromAuthorizationHeader =
   first ("in base64 fragment: " <>) . B64.decodeBase64 >=> splitOnColon
   where
     stripAuthPrefix s =
-      let (authType, creds) = B.break isSpace $ trimLeft s
+      let (authType, creds) = B.break isSpace $ B.trimLeft s
        in if B.map toLower authType == "basic"
-            then Right $ trim creds
+            then Right $ B.trim creds
             else Left "Expected basic authorization"
-    trimLeft = B.dropWhile isSpace
-    trim = trimRight . trimLeft
-    trimRight = fst . B.spanEnd isSpace
     splitOnColon s =
       let (login, p) = B.break (== ':') s
        in case B.uncons p of
