@@ -9,12 +9,14 @@ module Web.Credentials
 import Control.Monad.Catch
 import qualified Core.Authentication as Core
 import Core.User
+import Data.Bifunctor
 import Data.ByteString.Base64
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Util as B
 import Data.Either.Util
 import Data.Integral.Exact
 import Data.String
+import qualified Data.Text as T
 import qualified Network.Wai as Wai
 import qualified Web.BasicAuth as BasicAuth
 import Web.Exception
@@ -31,11 +33,14 @@ presentCredentials :: Core.Credentials -> Credentials
 presentCredentials (Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)) =
   WebToken $ fromString (show userIdent) <> "," <> encodeBase64' token
 
-readCredentials :: Credentials -> Maybe Core.Credentials
+readCredentials :: Credentials -> Either T.Text Core.Credentials
 readCredentials (WebToken webToken) = do
-  (uidString, codedToken) <- B.splitOnCharOnce (== ',') webToken
-  userIdent <- readExactIntegral $ B.unpack uidString
-  token <- eitherToMaybe $ decodeBase64 codedToken
+  (uidString, codedToken) <-
+    maybeToEither "comma is missing" $ B.splitOnCharOnce (== ',') webToken
+  userIdent <-
+    maybeToEither "user id is malformed or too large" $
+    readExactIntegral (B.unpack uidString)
+  token <- first ("incorrect base64 in secret: " <>) $ decodeBase64 codedToken
   pure $ Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)
 
 -- | Returns Nothing if no credentials found, but throws
@@ -43,13 +48,10 @@ readCredentials (WebToken webToken) = do
 getCredentialsFromRequest ::
      MonadThrow m => Wai.Request -> m (Maybe Core.Credentials)
 getCredentialsFromRequest request =
-  either (const failure) pure $ do
-    optCreds <- BasicAuth.credentialsFromRequest request
+  either (throwM . MalformedAuthDataException) pure $ do
+    optCreds <-
+      first ("in basic auth: " <>) $ BasicAuth.credentialsFromRequest request
     case optCreds of
       Nothing -> pure Nothing
-      Just (login, _)
-        | coreCreds@(Just _) <- readCredentials $ WebToken login ->
-          pure coreCreds
-        | otherwise -> Left ""
-  where
-    failure = throwM MalformedAuthDataException
+      Just (login, _) ->
+        bimap ("in the web token: " <>) Just $ readCredentials (WebToken login)

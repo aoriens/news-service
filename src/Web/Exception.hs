@@ -43,8 +43,10 @@ data NotFoundException =
 
 instance Exception NotFoundException
 
-data MalformedAuthDataException =
+newtype MalformedAuthDataException =
   MalformedAuthDataException
+    { malformedAuthDataExceptionReason :: Text
+    }
   deriving (Show)
 
 instance Exception MalformedAuthDataException
