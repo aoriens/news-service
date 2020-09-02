@@ -50,6 +50,6 @@ getCredentialsFromRequest request =
       Just (login, _)
         | coreCreds@(Just _) <- readCredentials $ WebToken login ->
           pure coreCreds
-        | otherwise -> Left ()
+        | otherwise -> Left ""
   where
     failure = throwM MalformedAuthDataException

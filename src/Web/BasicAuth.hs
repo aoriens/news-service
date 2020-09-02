@@ -4,37 +4,39 @@ module Web.BasicAuth
   ) where
 
 import Control.Monad
+import Data.Bifunctor
 import Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import Data.Char
-import Data.Either.Util
+import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
 -- | Returns Left in case of malformed credentials, Right Nothing if
 -- no credentials found, or Right (Just _) if credentials are found.
 credentialsFromRequest ::
-     Wai.Request -> Either () (Maybe (B.ByteString, B.ByteString))
+     Wai.Request -> Either T.Text (Maybe (B.ByteString, B.ByteString))
 credentialsFromRequest request = do
   case lookup Http.hAuthorization $ Wai.requestHeaders request of
     Nothing -> Right Nothing
-    Just value ->
-      maybe (Left ()) (Right . Just) $ credentialsFromAuthorizationHeader value
+    Just value -> second Just $ credentialsFromAuthorizationHeader value
 
--- | Returns Nothing in case of a malformed value.
 credentialsFromAuthorizationHeader ::
-     B.ByteString -> Maybe (B.ByteString, B.ByteString)
+     B.ByteString -> Either T.Text (B.ByteString, B.ByteString)
 credentialsFromAuthorizationHeader =
-  stripAuthPrefix >=> eitherToMaybe . B64.decodeBase64 >=> splitOnColon
+  stripAuthPrefix >=>
+  first ("in base64 fragment: " <>) . B64.decodeBase64 >=> splitOnColon
   where
-    stripAuthPrefix s = do
+    stripAuthPrefix s =
       let (authType, creds) = B.break isSpace $ trimLeft s
-      guard $ B.map toLower authType == "basic"
-      pure $ trim creds
+       in if B.map toLower authType == "basic"
+            then Right $ trim creds
+            else Left "Expected basic authorization"
     trimLeft = B.dropWhile isSpace
     trim = trimRight . trimLeft
     trimRight = fst . B.spanEnd isSpace
-    splitOnColon s = do
+    splitOnColon s =
       let (login, p) = B.break (== ':') s
-      (_, password) <- B.uncons p
-      pure (login, password)
+       in case B.uncons p of
+            Just (_, password) -> Right (login, password)
+            Nothing -> Left "colon is missing in credentials"

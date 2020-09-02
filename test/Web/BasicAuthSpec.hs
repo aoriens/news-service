@@ -4,6 +4,7 @@ module Web.BasicAuthSpec
 
 import qualified Data.ByteString as B
 import Data.ByteString.Base64
+import Data.Either
 import Network.Wai as Wai
 import Test.Hspec
 import Web.BasicAuth
@@ -51,30 +52,30 @@ spec =
     it "should return Left () for header consising of spaces only" $ do
       let request = requestWithAuthHeader "  \t  \n\f\r  \t "
           r = credentialsFromRequest request
-      r `shouldBe` Left ()
+      r `shouldSatisfy` isLeft
     it "should return Left () for a single-word header" $ do
       let request = requestWithAuthHeader "Basic "
           r = credentialsFromRequest request
-      r `shouldBe` Left ()
+      r `shouldSatisfy` isLeft
     it "should return Left () for a triple-word header" $ do
       let request =
             requestWithAuthHeader $
             "Basic " <> correctToken <> " " <> correctToken
           correctToken = encodeBase64' "a:b"
           r = credentialsFromRequest request
-      r `shouldBe` Left ()
+      r `shouldSatisfy` isLeft
     it "should return Left () for a non-basic auth" $ do
       let request = requestWithAuthHeader $ "Digest " <> encodeBase64' "a:b"
           r = credentialsFromRequest request
-      r `shouldBe` Left ()
+      r `shouldSatisfy` isLeft
     it "should return Left () for an incorrect base64" $ do
       let request = requestWithAuthHeader "Basic Og=!"
           r = credentialsFromRequest request
-      r `shouldBe` Left ()
+      r `shouldSatisfy` isLeft
     it "should return Left () when credentials does not contain a colon" $ do
       let request = requestWithAuthHeader $ "Basic " <> encodeBase64' "ab"
           r = credentialsFromRequest request
-      r `shouldBe` Left ()
+      r `shouldSatisfy` isLeft
 
 requestWithAuthHeader :: B.ByteString -> Wai.Request
 requestWithAuthHeader value =
