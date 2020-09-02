@@ -2,6 +2,7 @@ module Data.ByteString.Util
   ( trim
   , trimLeft
   , trimRight
+  , splitOnCharOnce
   ) where
 
 import qualified Data.ByteString.Char8 as B
@@ -18,3 +19,13 @@ trimRight = fst . B.spanEnd isSpace
 -- | Strips leading and trailing spaces.
 trim :: B.ByteString -> B.ByteString
 trim = trimRight . trimLeft
+
+-- | Splits the string on the first byte satisfying the predicate and
+-- returns the prefix and the suffix, if the byte is found.
+splitOnCharOnce ::
+     (Char -> Bool) -> B.ByteString -> Maybe (B.ByteString, B.ByteString)
+splitOnCharOnce charPredicate s =
+  let (prefix, rest) = B.break charPredicate s
+   in case B.uncons rest of
+        Just (_, suffix) -> Just (prefix, suffix)
+        Nothing -> Nothing

@@ -9,6 +9,7 @@ import Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Util as B
 import Data.Char
+import Data.Either.Util
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -34,7 +35,5 @@ credentialsFromAuthorizationHeader =
             then Right $ B.trim creds
             else Left "Expected basic authorization"
     splitOnColon s =
-      let (login, p) = B.break (== ':') s
-       in case B.uncons p of
-            Just (_, password) -> Right (login, password)
-            Nothing -> Left "colon is missing in credentials"
+      maybeToEither "Colon is missing in credentials" $
+      B.splitOnCharOnce (== ':') s

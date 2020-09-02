@@ -11,6 +11,7 @@ import qualified Core.Authentication as Core
 import Core.User
 import Data.ByteString.Base64
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Util as B
 import Data.Either.Util
 import Data.Integral.Exact
 import Data.String
@@ -32,9 +33,8 @@ presentCredentials (Core.TokenCredentials (UserId userIdent) (Core.SecretToken t
 
 readCredentials :: Credentials -> Maybe Core.Credentials
 readCredentials (WebToken webToken) = do
-  let (uidString, t) = B.break (== ',') webToken
+  (uidString, codedToken) <- B.splitOnCharOnce (== ',') webToken
   userIdent <- readExactIntegral $ B.unpack uidString
-  (_, codedToken) <- B.uncons t
   token <- eitherToMaybe $ decodeBase64 codedToken
   pure $ Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)
 
