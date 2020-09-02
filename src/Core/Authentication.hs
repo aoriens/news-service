@@ -13,11 +13,13 @@ import Control.Monad.Catch
 import Core.User
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
+import qualified Logger
 
 data Handle m =
   Handle
     { hGetUserAuthData :: UserId -> m (Maybe (SecretTokenHash, IsAdmin))
     , hTokenMatchesHash :: SecretToken -> SecretTokenHash -> Bool
+    , hLoggerHandle :: Logger.Handle m
     }
 
 data Credentials =
@@ -39,11 +41,13 @@ newtype SecretTokenHash =
 data AuthenticatedUser
   = AnonymousUser
   | IdentifiedUser !UserId !IsAdmin
+  deriving (Eq, Show)
 
 newtype IsAdmin =
   IsAdmin
     { getIsAdmin :: Bool
     }
+  deriving (Eq, Show)
 
 -- | Authenticate a user with credentials. It can throw
 -- 'BadCredentialsException'.
@@ -57,8 +61,11 @@ authenticate h (Just (TokenCredentials userIdent token)) = do
       throwM . BadCredentialsException $
       "User does not exist: " <> T.pack (show userIdent)
     Just (hash, isAdmin)
-      | hTokenMatchesHash h token hash ->
-        pure $ IdentifiedUser userIdent isAdmin
+      | hTokenMatchesHash h token hash -> do
+        let authUser = IdentifiedUser userIdent isAdmin
+        Logger.info (hLoggerHandle h) $
+          "Authentication success: " <> T.pack (show authUser)
+        pure authUser
       | otherwise -> throwM $ BadCredentialsException "secret token mismatch"
 
 newtype BadCredentialsException =

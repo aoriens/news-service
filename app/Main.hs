@@ -120,6 +120,7 @@ getDeps = do
                       dLoggerHandle
                       session
                 , hTokenMatchesHash = GSecretToken.tokenMatchesHash
+                , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
                 }
         })
 
