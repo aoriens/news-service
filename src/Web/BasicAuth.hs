@@ -33,7 +33,7 @@ credentialsFromAuthorizationHeader =
       let (authType, creds) = B.break isSpace $ B.trimLeft s
        in if B.map toLower authType == "basic"
             then Right $ B.trim creds
-            else Left "Expected basic authorization"
+            else Left "expected basic authorization"
     splitOnColon s =
-      maybeToEither "Colon is missing in credentials" $
+      maybeToEither "colon is missing in credentials" $
       B.splitOnCharOnce (== ':') s
