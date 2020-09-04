@@ -9,7 +9,7 @@ import Core.Authentication
 import qualified Data.Text as T
 
 requiresAdminPermission ::
-     MonadThrow m => AuthenticatedUser -> T.Text -> m () -> m ()
+     MonadThrow m => AuthenticatedUser -> T.Text -> m a -> m a
 requiresAdminPermission user actionDescription action
   | IdentifiedUser _ (IsAdmin True) <- user = action
   | otherwise =
