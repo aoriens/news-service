@@ -12,7 +12,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Exception
 import qualified Web.HTTP as Http
-import qualified Web.Presenter.UserPresenter as P
+import qualified Web.Presenter.User as P
 
 data Handle =
   Handle

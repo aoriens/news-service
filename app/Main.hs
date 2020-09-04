@@ -47,7 +47,7 @@ import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
-import qualified Web.Presenter.UserPresenter as UserPresenter
+import qualified Web.Presenter.User as UserPresenter
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
 import qualified Web.Types as Web

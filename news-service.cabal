@@ -61,7 +61,7 @@ library
     , Web.Handler.PostCreateUser
     , Web.HTTP
     , Web.JSONEncoder
-    , Web.Presenter.UserPresenter
+    , Web.Presenter.User
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
     , Web.RequestBodyLoader

@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Web.Presenter.UserPresenter
+module Web.Presenter.User
   ( presentUser
   , presentUsers
   , Handle(..)

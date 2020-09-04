@@ -7,7 +7,7 @@ import qualified Core.Interactor.GetUsers as I
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Web.HTTP as Http
-import qualified Web.Presenter.UserPresenter as P
+import qualified Web.Presenter.User as P
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
 
