@@ -51,6 +51,7 @@ library
     , Web.BasicAuth
     , Web.Credentials
     , Web.Entity.Base64
+    , Web.Entity.User
     , Web.Exception
     , Web.Handler.DeleteUser
     , Web.Handler.GetNews
