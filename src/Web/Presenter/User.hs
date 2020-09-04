@@ -12,7 +12,7 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import Data.Text (Text)
 import qualified Web.AppURL as U
-import Web.Entity.User
+import Web.Representation.User
 
 data Handle =
   Handle
@@ -23,7 +23,8 @@ data Handle =
 
 presentUser :: Handle -> C.User -> Maybe Auth.Credentials -> BB.Builder
 presentUser h user creds =
-  hJSONEncode h $ userEntity (hRenderAppURL h) creds user
+  hJSONEncode h $ userRepresentation (hRenderAppURL h) creds user
 
 presentUsers :: Handle -> [C.User] -> BB.Builder
-presentUsers h = hJSONEncode h . map (userEntity (hRenderAppURL h) Nothing)
+presentUsers h =
+  hJSONEncode h . map (userRepresentation (hRenderAppURL h) Nothing)

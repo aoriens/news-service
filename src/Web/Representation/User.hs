@@ -1,8 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Web.Entity.User
+module Web.Representation.User
   ( User
-  , userEntity
+  , userRepresentation
   ) where
 
 import Core.Authentication as Core
@@ -29,9 +29,9 @@ data User =
     , userSecretToken :: Maybe T.Text
     }
 
-userEntity ::
+userRepresentation ::
      (U.AppURL -> T.Text) -> Maybe Core.Credentials -> Core.User -> User
-userEntity renderAppURL creds Core.User {..} =
+userRepresentation renderAppURL creds Core.User {..} =
   User
     { userId = Core.getUserId userId
     , userFirstName = userFirstName

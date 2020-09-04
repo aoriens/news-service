@@ -1,4 +1,4 @@
-module Web.Entity.Base64
+module Web.Representation.Base64
   ( Base64(..)
   ) where
 
@@ -9,8 +9,8 @@ import qualified Data.ByteString.Base64 as B64
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 
--- | An entity able to decode and encode a bytestring in base64
--- format.
+-- | An representation able to decode and encode a bytestring in
+-- base64 format.
 newtype Base64 =
   Base64
     { unBase64 :: BS.ByteString

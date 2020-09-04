@@ -19,10 +19,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import Web.Entity.Base64
 import Web.Exception
 import qualified Web.HTTP as Http
 import qualified Web.Presenter.User as P
+import Web.Representation.Base64
 
 data Handle =
   Handle
