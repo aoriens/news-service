@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ApplicativeDo #-}
 
 module Web.QueryParameter.PageQuery

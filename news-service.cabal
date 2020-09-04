@@ -96,7 +96,7 @@ library
     , wai
     , warp
   default-language: Haskell2010
-  default-extensions: OverloadedStrings
+  default-extensions: OverloadedStrings RecordWildCards
 
 executable news-service-exe
   main-is: Main.hs
@@ -121,7 +121,7 @@ executable news-service-exe
     , wai
     , warp
   default-language: Haskell2010
-  default-extensions: OverloadedStrings
+  default-extensions: OverloadedStrings RecordWildCards
 
 test-suite news-service-test
   type: exitcode-stdio-1.0
@@ -157,7 +157,7 @@ test-suite news-service-test
     , unordered-containers
     , wai
   default-language: Haskell2010
-  default-extensions: OverloadedStrings
+  default-extensions: OverloadedStrings RecordWildCards
 
 benchmark news-service-bench
   type: exitcode-stdio-1.0

@@ -1,5 +1,3 @@
-{-# LANGUAGE DisambiguateRecordFields #-}
-
 module Core.AuthenticationSpec
   ( spec
   ) where

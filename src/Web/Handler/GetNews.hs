@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RankNTypes #-}
 
 module Web.Handler.GetNews

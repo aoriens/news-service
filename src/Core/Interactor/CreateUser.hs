@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Core.Interactor.CreateUser
   ( run
   , Handle(..)

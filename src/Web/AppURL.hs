@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 -- | Type-safe URLs. The module describes mapping between ADT-encoded
 -- and text URLs existing in the application. ADT-style URLs are good
 -- at finding broken links and easily changing textual representation

@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Gateway.SecretToken
   ( generate
   , generateIO

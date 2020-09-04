@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 -- | The module is responsible for managing open database connections.
 module Database.ConnectionManager
   ( withConnection

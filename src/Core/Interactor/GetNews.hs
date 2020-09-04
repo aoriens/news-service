@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Core.Interactor.GetNews
   ( getNews
   , Handle(..)

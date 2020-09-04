@@ -1,5 +1,3 @@
-{-# LANGUAGE DisambiguateRecordFields #-}
-
 module Gateway.SecretTokenSpec
   ( spec
   ) where

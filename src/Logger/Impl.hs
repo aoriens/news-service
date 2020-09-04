@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 -- | The default implementation of the Logger interface.
 module Logger.Impl
   ( new

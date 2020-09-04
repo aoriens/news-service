@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Core.Pagination
   ( Page(..)
   , PageQuery(..)

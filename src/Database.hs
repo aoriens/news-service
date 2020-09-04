@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- | Database-related basic definitions. They may only be imported
 -- from gateways.

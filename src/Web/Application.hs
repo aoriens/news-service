@@ -1,5 +1,4 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | The web application entry point.
