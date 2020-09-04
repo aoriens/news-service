@@ -17,6 +17,7 @@ import qualified Data.Text.Encoding as T
 import Data.Time
 import qualified Web.AppURL as U
 import Web.Credentials
+import qualified Web.RepresentationBuilder as RB
 
 data User =
   User
@@ -29,19 +30,20 @@ data User =
     , userSecretToken :: Maybe T.Text
     }
 
-userRepresentation ::
-     (U.AppURL -> T.Text) -> Maybe Core.Credentials -> Core.User -> User
-userRepresentation renderAppURL creds Core.User {..} =
-  User
-    { userId = Core.getUserId userId
-    , userFirstName = userFirstName
-    , userLastName = userLastName
-    , userAvatarURL = renderAppURL . U.URLImage <$> userAvatarId
-    , userCreatedAt = userCreatedAt
-    , userIsAdmin = userIsAdmin
-    , userSecretToken =
-        T.decodeLatin1 . unWebToken . presentCredentials <$> creds
-    }
+userRepresentation :: Maybe Core.Credentials -> Core.User -> RB.Builder User
+userRepresentation creds Core.User {..} = do
+  avatarURL <- RB.renderMaybeAppURL (U.URLImage <$> userAvatarId)
+  pure
+    User
+      { userId = Core.getUserId userId
+      , userFirstName = userFirstName
+      , userLastName = userLastName
+      , userAvatarURL = avatarURL
+      , userCreatedAt = userCreatedAt
+      , userIsAdmin = userIsAdmin
+      , userSecretToken =
+          T.decodeLatin1 . unWebToken . presentCredentials <$> creds
+      }
 
 $(A.deriveToJSON
     A.defaultOptions

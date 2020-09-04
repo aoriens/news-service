@@ -62,6 +62,7 @@ library
     , Web.Presenter.User
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
+    , Web.RepresentationBuilder
     , Web.Representation.Base64
     , Web.Representation.User
     , Web.RequestBodyLoader
