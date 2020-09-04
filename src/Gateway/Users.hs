@@ -7,6 +7,8 @@ module Gateway.Users
   , getUsers
   , getUserAuthData
   , deleteUser
+  -- * SQL statements and transactions
+  , selectUserById
   ) where
 
 import Control.Arrow

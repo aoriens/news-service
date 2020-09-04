@@ -22,9 +22,11 @@ library
   exposed-modules:
     Control.Exception.Sync
     , Core.Authentication
+    , Core.Author
     , Core.Authorization
     , Core.Exception
     , Core.Image
+    , Core.Interactor.CreateAuthor
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetImage
@@ -38,6 +40,7 @@ library
     , Data.Integral.Exact
     , Database
     , Database.ConnectionManager
+    , Gateway.Authors
     , Gateway.CurrentTime
     , Gateway.Images
     , Gateway.News
@@ -51,6 +54,7 @@ library
     , Web.BasicAuth
     , Web.Credentials
     , Web.Exception
+    , Web.Handler.CreateAuthor
     , Web.Handler.DeleteUser
     , Web.Handler.GetNews
     , Web.Handler.GetImage
@@ -59,10 +63,12 @@ library
     , Web.Handler.PostCreateUser
     , Web.HTTP
     , Web.JSONEncoder
+    , Web.Presenter.Author
     , Web.Presenter.User
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
     , Web.RepresentationBuilder
+    , Web.Representation.Author
     , Web.Representation.Base64
     , Web.Representation.User
     , Web.RequestBodyLoader

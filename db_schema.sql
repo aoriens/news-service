@@ -1,13 +1,15 @@
 -- The database schema description and the initial data.
 -- Execute psql MYDATABASENAME -f PATH_TO_THIS_FILE to apply it.
 
+begin;
+
 create table config (
        key varchar not null primary key,
        value varchar not null
 );
 
 -- The schema version is to be incremented on every schema change.
-insert into config values ('schema_version', '4');
+insert into config values ('schema_version', '5');
 
 create table news (
        news_id serial not null primary key,
@@ -36,3 +38,11 @@ create table users (
        is_admin boolean not null default false,
        token_hash bytea not null
 );
+
+create table authors (
+       author_id serial not null primary key,
+       user_id integer not null references users,
+       description varchar not null
+);
+
+commit;

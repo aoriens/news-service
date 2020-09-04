@@ -1,0 +1,16 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test X"$2" = X
+then
+    echo "Usage: $0 user_id auth_token" 2>&1
+    exit 1
+fi
+
+run_curl -X POST "$DOMAIN/author/create" -H "Content-Type: application/json" -u "$2:" --data-binary @- <<EOF
+{
+  "user_id": $1,
+  "description": "The administrator of the service"
+}
+EOF

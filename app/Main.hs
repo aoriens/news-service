@@ -13,6 +13,7 @@ import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import Core.Authentication as Auth
+import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetImage as IGetImage
@@ -26,6 +27,7 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
+import qualified Gateway.Authors as GAuthors
 import Gateway.CurrentTime as GCurrentTime
 import qualified Gateway.Images as GImages
 import qualified Gateway.News as GNews
@@ -40,6 +42,7 @@ import System.Exit
 import System.IO hiding (Handle)
 import qualified Web.AppURL as U
 import qualified Web.Application
+import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
@@ -47,7 +50,7 @@ import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
-import qualified Web.Presenter.User as UserPresenter
+import qualified Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
 import qualified Web.Types as Web
@@ -67,7 +70,7 @@ data Deps =
     , dLoadRequestJSONBody :: Wai.Request -> IO LBS.ByteString
     , dSecretTokenIOState :: GSecretToken.IOState
     , dRenderAppURL :: U.AppURL -> T.Text
-    , dUserPresenterHandle :: UserPresenter.Handle
+    , dRepresentationBuilderHandle :: Web.RepresentationBuilder.Handle
     , dMakeAuthHandle :: Web.Session -> Auth.Handle IO
     }
 
@@ -107,8 +110,8 @@ getDeps = do
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
         , dRenderAppURL
-        , dUserPresenterHandle =
-            UserPresenter.Handle
+        , dRepresentationBuilderHandle =
+            Web.RepresentationBuilder.Handle
               {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
         , dMakeAuthHandle =
             \session ->
@@ -139,6 +142,9 @@ getWebAppHandle deps@Deps {..} = do
 router :: Deps -> R.Router
 router deps =
   R.new $ do
+    R.ifPath ["author", "create"] $
+      R.ifMethod Http.methodPost $
+      HCreateAuthor.run . createAuthorHandlerHandle deps
     R.ifPath ["news"] $ do
       R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
     R.ifPathPrefix ["user"] $ do
@@ -155,6 +161,19 @@ router deps =
         R.ifMethod Http.methodGet $ \session ->
           HGetImage.run (getImageHandlerHandle deps session) imageId
 
+createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
+createAuthorHandlerHandle deps@Deps {..} session =
+  HCreateAuthor.Handle
+    { hCreateAuthorHandle =
+        ICreateAuthor.Handle
+          { hAuthHandle = dMakeAuthHandle session
+          , hCreateAuthor =
+              GAuthors.createAuthor $ sessionDatabaseHandle deps session
+          }
+    , hGetRequestBody = dLoadRequestJSONBody
+    , hPresenterHandle = dRepresentationBuilderHandle
+    }
+
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
 newsHandlerHandle deps@Deps {..} session =
   HGetNews.Handle {hGetNewsHandle = interactorHandle, hJSONEncode = dJSONEncode}
@@ -169,7 +188,7 @@ postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
 postCreateUserHandle deps@Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
-    , hPresenterHandle = dUserPresenterHandle
+    , hPresenterHandle = dRepresentationBuilderHandle
     , hGetRequestBody = dLoadRequestJSONBody
     }
   where
@@ -194,7 +213,7 @@ getUserHandlerHandle deps@Deps {..} session =
   HGetUser.Handle
     { hGetUserHandle =
         IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle deps session
-    , hPresenterHandle = dUserPresenterHandle
+    , hPresenterHandle = dRepresentationBuilderHandle
     }
 
 deleteUserHandlerHandle :: Deps -> Web.Session -> HDeleteUser.Handle
@@ -213,7 +232,7 @@ getUsersHandlerHandle deps@Deps {..} session =
           { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle deps session
           , hMaxPageLimit = dMaxPageLimit
           }
-    , hPresenterHandle = dUserPresenterHandle
+    , hPresenterHandle = dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be
