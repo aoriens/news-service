@@ -34,7 +34,6 @@ import qualified Gateway.SecretToken as GSecretToken
 import qualified Gateway.Users as GUsers
 import qualified Logger
 import qualified Logger.Impl
-import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
@@ -143,21 +142,16 @@ router :: Deps -> R.Router
 router deps =
   R.new $ do
     R.path ["author", "create"] $
-      R.method Http.methodPost $
-      HCreateAuthor.run . createAuthorHandlerHandle deps
-    R.path ["news"] $ do
-      R.method Http.methodGet $ HGetNews.run . newsHandlerHandle deps
+      R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
+    R.path ["news"] $ R.get $ HGetNews.run . newsHandlerHandle deps
     R.pathPrefix ["user"] $ do
-      R.method Http.methodGet $ HGetUser.run . getUserHandlerHandle deps
-      R.method Http.methodDelete $
-        HDeleteUser.run . deleteUserHandlerHandle deps
-    R.path ["user", "create"] $ do
-      R.method Http.methodPost $ HCreateUser.run . createUserHandle deps
-    R.path ["users"] $ do
-      R.method Http.methodGet $ HGetUsers.run . getUsersHandlerHandle deps
+      R.get $ HGetUser.run . getUserHandlerHandle deps
+      R.delete $ HDeleteUser.run . deleteUserHandlerHandle deps
+    R.path ["user", "create"] $ R.post $ HCreateUser.run . createUserHandle deps
+    R.path ["users"] $ R.get $ HGetUsers.run . getUsersHandlerHandle deps
     R.appURL $ \case
       (U.URLImage imageId) ->
-        R.method Http.methodGet $ \session ->
+        R.get $ \session ->
           HGetImage.run (getImageHandlerHandle deps session) imageId
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle

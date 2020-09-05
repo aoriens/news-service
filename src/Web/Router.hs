@@ -10,6 +10,10 @@ module Web.Router
   , pathPrefix
   , appURL
   , method
+  , get
+  , post
+  , put
+  , delete
   , route
   , Result(..)
   , isHandlerResult
@@ -18,10 +22,10 @@ module Web.Router
   ) where
 
 import Control.Applicative
-import Control.Monad.State.Strict
+import Control.Monad.State.Strict hiding (get, put)
 import Control.Monad.Writer.Strict
 import qualified Data.HashMap.Strict as HM
-import Data.List
+import Data.List hiding (delete)
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -88,14 +92,14 @@ configuration:
 
 > new $ do
 >   path ["path", "to", "resource"] $ do
->     method "GET"    handleGetForPath
->     method "POST"   handlePostForPath
->     method "PUT"    handlePutForPath
+>     get    handleGetForPath
+>     post   handlePostForPath
+>     put    handlePutForPath
 >   path ["another", "path"] $ do
->     method "GET"    handleGetForPath2
->     method "DELETE" handleDeleteForPath2
+>     get    handleGetForPath2
+>     delete handleDeleteForPath2
 >   pathPrefix ["user"] $ do
->     method "GET"    handleGetUser
+>     get    handleGetUser
 
 Each 'path' clause must be passed a unique path, as well as
 'pathPrefix'. But using the same path in both 'path' and 'pathPrefix'
@@ -118,9 +122,9 @@ contain a subentry for the request method, it is reported as
 is performed. In the following example:
 
 > new $ do
->   path ["a", "b", "c"]  $ method "GET"  h1
->   pathPrefix ["a", "b"] $ method "POST" h2
->   pathPrefix ["a"]      $ method "GET"  h3
+>   path ["a", "b", "c"]  $ get  h1
+>   pathPrefix ["a", "b"] $ post h2
+>   pathPrefix ["a"]      $ get  h3
 
 - @GET "\/a\/b\/c"@ will match @h1@
 - @POST "\/a\/b\/c"@ will result in 'MethodNotSupportedResult',
@@ -218,6 +222,15 @@ appURL f =
 method :: Http.Method -> EApplication -> MethodsSpec ()
 method m handler =
   MethodsSpec . tell . MethodsToHandlersMonoid $ HM.singleton m handler
+
+get, post, put, delete :: EApplication -> MethodsSpec ()
+get = method Http.methodGet
+
+post = method Http.methodPost
+
+put = method Http.methodPut
+
+delete = method Http.methodDelete
 
 -- | The result of finding a route.
 data Result
