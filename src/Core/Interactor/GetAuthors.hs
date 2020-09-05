@@ -12,7 +12,7 @@ data Handle m =
   Handle
     { hGetAuthors :: Page -> m [Author]
     , hAuthHandle :: A.Handle m
-    , hMaxPageLimit :: PageLimit
+    , hPaginationConfig :: Core.Pagination.Config
     }
 
 run ::
@@ -20,5 +20,5 @@ run ::
 run h credentials pageQuery = do
   actor <- A.authenticate (hAuthHandle h) credentials
   A.requiresAdminPermission actor "get authors" $ do
-    page <- pageFromPageQueryM (hMaxPageLimit h) pageQuery
+    page <- pageFromPageQueryM (hPaginationConfig h) pageQuery
     hGetAuthors h page

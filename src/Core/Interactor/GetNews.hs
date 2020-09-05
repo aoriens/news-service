@@ -12,12 +12,12 @@ import Data.Time.Calendar
 
 getNews :: MonadThrow m => Handle m -> PageQuery -> m [News]
 getNews Handle {..} pageQuery =
-  hGetNews =<< pageFromPageQueryM hMaxPageLimit pageQuery
+  hGetNews =<< pageFromPageQueryM hPaginationConfig pageQuery
 
 data Handle m =
   Handle
     { hGetNews :: Page -> m [News]
-    , hMaxPageLimit :: PageLimit
+    , hPaginationConfig :: Core.Pagination.Config
     }
 
 data News =

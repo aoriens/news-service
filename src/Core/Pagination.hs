@@ -3,6 +3,7 @@ module Core.Pagination
   , PageQuery(..)
   , PageLimit(..)
   , PageOffset(..)
+  , Config(..)
   , pageFromPageQuery
   , pageFromPageQueryM
   ) where
@@ -43,11 +44,16 @@ newtype PageLimit =
     }
   deriving (Eq, Ord, Show)
 
+newtype Config =
+  Config
+    { cfMaxPageLimit :: PageLimit
+    }
+
 -- | Converts a page query to a page keeping maximum limit specified
 -- in the first parameter. Nothing is returned in case of invalid
 -- (e.g. negative) field values.
-pageFromPageQuery :: PageLimit -> PageQuery -> Maybe Page
-pageFromPageQuery maxLimit PageQuery {..} = do
+pageFromPageQuery :: Config -> PageQuery -> Maybe Page
+pageFromPageQuery (Config maxLimit) PageQuery {..} = do
   pageLimit <-
     case pageQueryLimit of
       Just limit
@@ -64,9 +70,9 @@ pageFromPageQuery maxLimit PageQuery {..} = do
 
 -- | Performs 'fromPageQuery' and throws 'QueryException' in case of
 -- incorrect 'PageQuery'.
-pageFromPageQueryM :: MonadThrow m => PageLimit -> PageQuery -> m Page
-pageFromPageQueryM maxPageLimit pageQuery =
-  maybe (throwM pageException) pure (pageFromPageQuery maxPageLimit pageQuery)
+pageFromPageQueryM :: MonadThrow m => Config -> PageQuery -> m Page
+pageFromPageQueryM config pageQuery =
+  maybe (throwM pageException) pure (pageFromPageQuery config pageQuery)
   where
     pageException =
       QueryException "Invalid pagination parameters: offset or limit"

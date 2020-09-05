@@ -10,9 +10,9 @@ import Core.User
 data Handle m =
   Handle
     { hGetUsers :: Page -> m [User]
-    , hMaxPageLimit :: PageLimit
+    , hPaginationConfig :: Core.Pagination.Config
     }
 
 run :: MonadThrow m => Handle m -> PageQuery -> m [User]
 run Handle {..} pageQuery =
-  hGetUsers =<< pageFromPageQueryM hMaxPageLimit pageQuery
+  hGetUsers =<< pageFromPageQueryM hPaginationConfig pageQuery

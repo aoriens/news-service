@@ -28,13 +28,13 @@ spec =
                 , I.newsText = "Text2"
                 }
             ]
-          hMaxPageLimit = PageLimit maxBound
+          hPaginationConfig = Core.Pagination.Config $ PageLimit maxBound
           hGetNews = const (pure stubResults)
       results <- I.getNews I.Handle {..} noPageQuery
       results `shouldBe` stubResults
     it "should pass the page offset to the gateway" $ do
       passedOffset <- newIORef (PageOffset 0)
-      let hMaxPageLimit = PageLimit 1
+      let hPaginationConfig = Core.Pagination.Config $ PageLimit 1
           offset = 3
           hGetNews = \Page {..} -> writeIORef passedOffset pageOffset >> pure []
       _ <- I.getNews I.Handle {..} noPageQuery {pageQueryOffset = Just offset}
@@ -42,7 +42,7 @@ spec =
     it
       "should pass the specified page limit to the gateway if less than max limit" $ do
       passedLimit <- newIORef (PageLimit 0)
-      let hMaxPageLimit = PageLimit 10
+      let hPaginationConfig = Core.Pagination.Config $ PageLimit 10
           limit = 9
           hGetNews = \Page {..} -> writeIORef passedLimit pageLimit >> pure []
       _ <- I.getNews I.Handle {..} noPageQuery {pageQueryLimit = Just limit}

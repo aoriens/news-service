@@ -64,7 +64,7 @@ data Deps =
     { dDatabaseConnectionConfig :: DBConnManager.Config
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
-    , dMaxPageLimit :: PageLimit
+    , dPaginationConfig :: Core.Pagination.Config
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
@@ -103,7 +103,7 @@ getDeps = do
         { dConfig
         , dLoggerHandle
         , dDatabaseConnectionConfig
-        , dMaxPageLimit = Cf.cfMaxPageLimit dConfig
+        , dPaginationConfig = Cf.cfPaginationConfig dConfig
         , dJSONEncode
         , dLoadJSONRequestBody =
             RequestBodyLoader.loadJSONRequestBody
@@ -178,7 +178,7 @@ getAuthorsHandlerHandle deps@Deps {..} session =
           { hAuthHandle = dMakeAuthHandle session
           , hGetAuthors =
               GAuthors.getAuthors $ sessionDatabaseHandle deps session
-          , hMaxPageLimit = dMaxPageLimit
+          , hPaginationConfig = dPaginationConfig
           }
     , hPresenterHandle = dRepresentationBuilderHandle
     }
@@ -190,7 +190,7 @@ newsHandlerHandle deps@Deps {..} session =
     interactorHandle =
       IGetNews.Handle
         { hGetNews = GNews.getNews $ sessionDatabaseHandle deps session
-        , hMaxPageLimit = dMaxPageLimit
+        , hPaginationConfig = dPaginationConfig
         }
 
 createUserHandle :: Deps -> Web.Session -> HCreateUser.Handle
@@ -239,7 +239,7 @@ getUsersHandlerHandle deps@Deps {..} session =
     { hGetUsersHandle =
         IGetUsers.Handle
           { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle deps session
-          , hMaxPageLimit = dMaxPageLimit
+          , hPaginationConfig = dPaginationConfig
           }
     , hPresenterHandle = dRepresentationBuilderHandle
     }
