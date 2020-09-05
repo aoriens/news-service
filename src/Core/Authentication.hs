@@ -11,7 +11,7 @@ module Core.Authentication
 import Control.Monad.Catch
 import Core.Exception
 import Core.User
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Logger
 
@@ -28,13 +28,13 @@ data Credentials =
 
 newtype SecretToken =
   SecretToken
-    { secretTokenBytes :: BS.ByteString
+    { secretTokenBytes :: B.ByteString
     }
   deriving (Eq, Show)
 
 newtype SecretTokenHash =
   SecretTokenHash
-    { secretTokenHashBytes :: BS.ByteString
+    { secretTokenHashBytes :: B.ByteString
     }
   deriving (Eq, Show)
 

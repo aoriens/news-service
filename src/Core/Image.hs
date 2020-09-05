@@ -3,7 +3,7 @@ module Core.Image
   , Image(..)
   ) where
 
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import Data.Int
 import qualified Data.Text as T
 
@@ -15,7 +15,7 @@ newtype ImageId =
 
 data Image =
   Image
-    { imageData :: BS.ByteString
+    { imageData :: B.ByteString
     , imageContentType :: T.Text
     }
   deriving (Eq, Show)

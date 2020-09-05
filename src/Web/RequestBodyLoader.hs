@@ -7,7 +7,7 @@ module Web.RequestBodyLoader
 import Control.Exception
 import Control.Monad
 import qualified Data.Aeson as A
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import qualified Data.Text as T
@@ -43,7 +43,7 @@ rejectInvalidContentType request =
      Wai.requestHeaders request) $
   throwIO (E.UnsupportedMediaTypeException [T.decodeLatin1 expectedContentType])
 
-expectedContentType :: BS.ByteString
+expectedContentType :: B.ByteString
 expectedContentType = Http.jsonContentType
 
 loadRequestBodyNoLonger :: Word64 -> Wai.Request -> IO LB.ByteString
@@ -58,8 +58,6 @@ loadRequestBodyNoLonger maxLen request =
       | len > maxLen = throwIO $ E.PayloadTooLargeException maxLen
       | otherwise = do
         chunk <- Wai.getRequestBodyChunk request
-        if BS.null chunk
+        if B.null chunk
           then pure $ LB.fromChunks (DL.toList chunks)
-          else go
-                 (len + fromIntegral (BS.length chunk))
-                 (chunks `DL.snoc` chunk)
+          else go (len + fromIntegral (B.length chunk)) (chunks `DL.snoc` chunk)

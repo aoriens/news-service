@@ -23,7 +23,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Control.Monad.Trans.State.Strict
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import qualified Data.DList as DL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -55,7 +55,7 @@ runSession Handle {..} (Session session) =
   where
     hasqlSession = runReaderT session hLoggerHandle
 
-type SQL = BS.ByteString
+type SQL = B.ByteString
 
 -- | The SQL transaction - a composable group of SQL statements that
 -- are followed with an implicit transaction commit statement. In case

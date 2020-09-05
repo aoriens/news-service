@@ -19,7 +19,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.DList as DL
 import qualified Data.HashMap.Strict as HM
@@ -32,12 +32,12 @@ import qualified Network.HTTP.Types as Http
 import Prelude hiding (lookup)
 import qualified Web.Exception as E
 
-type Key = BS.ByteString
+type Key = B.ByteString
 
 -- | The raw value of a query parameter is an optional bytestring. It
 -- may be Nothing if the parameter is specified in the form @?a@
 -- rather than @?a=1@ or @?a=@.
-type RawValue = Maybe BS.ByteString
+type RawValue = Maybe B.ByteString
 
 -- | The query parser functor focusing on performance. It allows
 -- parsing query parameters in the applicative style. It traverses the

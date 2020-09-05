@@ -12,7 +12,7 @@ module Web.Application
 import Control.Exception
 import Control.Exception.Sync
 import qualified Core.Exception as Core
-import qualified Data.ByteString as SBS
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
 import Data.List
@@ -162,7 +162,7 @@ routerApplication Handle {..} session request =
            Http.methodNotAllowed405
            [makeAllowHeader knownMethods])
   where
-    makeAllowHeader methods = ("Allow", SBS.intercalate ", " methods)
+    makeAllowHeader methods = ("Allow", B.intercalate ", " methods)
 
 notFoundResponse :: Wai.Response
 notFoundResponse = stubErrorResponse Http.notFound404 []

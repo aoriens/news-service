@@ -14,7 +14,7 @@ import qualified Core.Authentication as Auth
 import qualified Crypto.Hash as Hash
 import qualified Crypto.Random as Random
 import qualified Data.ByteArray as BA
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import Data.List
 import Data.Word
 
@@ -47,11 +47,11 @@ generate Config {..} (State oldGen) =
 generateIO :: Config -> IOState -> IO (Auth.SecretToken, Auth.SecretTokenHash)
 generateIO config (IOState mvar) = modifyMVar mvar (pure . generate config)
 
-hashDefault :: BS.ByteString -> BS.ByteString
+hashDefault :: B.ByteString -> B.ByteString
 hashDefault = hashWith sha256Algorithm
 
-hashWith :: HashAlgorithm -> BS.ByteString -> BS.ByteString
-hashWith HashAlgorithm {..} = BS.cons haHashPrefix . haHasher
+hashWith :: HashAlgorithm -> B.ByteString -> B.ByteString
+hashWith HashAlgorithm {..} = B.cons haHashPrefix . haHasher
                               -- See Note [Multiple hash algorithms]
 
 tokenMatchesHash :: Auth.SecretToken -> Auth.SecretTokenHash -> Bool
@@ -62,9 +62,9 @@ tokenMatchesHash (Auth.SecretToken token) (Auth.SecretTokenHash hash)
     Nothing -> False
     Just alg -> hashWith alg token == hash
 
-algorithmOfHash :: BS.ByteString -> Maybe HashAlgorithm
+algorithmOfHash :: B.ByteString -> Maybe HashAlgorithm
 algorithmOfHash s = do
-  (prefix, _) <- BS.uncons s
+  (prefix, _) <- B.uncons s
   find ((prefix ==) . haHashPrefix) supportedAlgorithms
   where
     supportedAlgorithms = [sha256Algorithm]
@@ -75,7 +75,7 @@ data HashAlgorithm =
     , haHashPrefix :: Word8
     }
 
-type Hasher = BS.ByteString -> BS.ByteString
+type Hasher = B.ByteString -> B.ByteString
 
 sha256Algorithm :: HashAlgorithm
 sha256Algorithm =

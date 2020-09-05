@@ -9,7 +9,7 @@ module Database.ConnectionManager
   ) where
 
 import Control.Exception
-import qualified Data.ByteString as SBS
+import qualified Data.ByteString as B
 import Data.Maybe
 import Data.Word
 import qualified Hasql.Connection as C
@@ -40,14 +40,14 @@ makeConfig ConnectionSettings {..} =
 
 data ConnectionSettings =
   ConnectionSettings
-    { settingsHost :: Maybe SBS.ByteString
+    { settingsHost :: Maybe B.ByteString
     , settingsPort :: Maybe Word16
-    , settingsDatabaseName :: SBS.ByteString
-    , settingsUser :: Maybe SBS.ByteString
-    , settingsPassword :: Maybe SBS.ByteString
+    , settingsDatabaseName :: B.ByteString
+    , settingsUser :: Maybe B.ByteString
+    , settingsPassword :: Maybe B.ByteString
     }
 
-connectionSettingsWithDatabaseName :: SBS.ByteString -> ConnectionSettings
+connectionSettingsWithDatabaseName :: B.ByteString -> ConnectionSettings
 connectionSettingsWithDatabaseName databaseName =
   ConnectionSettings
     { settingsHost = Nothing

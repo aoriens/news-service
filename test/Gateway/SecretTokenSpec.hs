@@ -3,7 +3,7 @@ module Gateway.SecretTokenSpec
   ) where
 
 import qualified Core.Authentication as Auth
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import qualified Gateway.SecretToken as G
 import Test.Hspec
 import Test.QuickCheck
@@ -28,7 +28,7 @@ spec = do
         state <- G.initIOState
         let config = G.Config {cfTokenLength = expectedLen}
         (Auth.SecretToken token, _) <- G.generateIO config state
-        BS.length token `shouldBe` expectedLen
+        B.length token `shouldBe` expectedLen
 
 defaultConfig :: G.Config
 defaultConfig = G.Config {cfTokenLength = 8}

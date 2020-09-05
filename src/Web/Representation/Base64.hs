@@ -4,7 +4,7 @@ module Web.Representation.Base64
 
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Encoding.Internal as A
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -13,7 +13,7 @@ import qualified Data.Text.Encoding as T
 -- base64 format.
 newtype Base64 =
   Base64
-    { unBase64 :: BS.ByteString
+    { unBase64 :: B.ByteString
     }
 
 instance A.ToJSON Base64 where
