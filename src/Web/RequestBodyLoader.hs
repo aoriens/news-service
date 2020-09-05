@@ -30,7 +30,11 @@ loadJSONRequestBody :: A.FromJSON a => Config -> Wai.Request -> IO a
 loadJSONRequestBody config request = do
   rejectInvalidContentType request
   body <- loadRequestBodyNoLonger (cfMaxBodySize config) request
-  either (throwIO . E.BadRequestException . T.pack) pure $ A.eitherDecode' body
+  either throwException pure $ A.eitherDecode' body
+  where
+    throwException =
+      throwIO .
+      E.BadRequestException . ("When decoding JSON request body: " <>) . T.pack
 
 rejectInvalidContentType :: Wai.Request -> IO ()
 rejectInvalidContentType request =
