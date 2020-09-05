@@ -5,7 +5,7 @@ module Core.Authentication
   , SecretToken(..)
   , SecretTokenHash(..)
   , AuthenticatedUser(..)
-  , IsAdmin(..)
+  , IsAdmin
   ) where
 
 import Control.Monad.Catch
@@ -43,11 +43,7 @@ data AuthenticatedUser
   | IdentifiedUser !UserId !IsAdmin
   deriving (Eq, Show)
 
-newtype IsAdmin =
-  IsAdmin
-    { getIsAdmin :: Bool
-    }
-  deriving (Eq, Show)
+type IsAdmin = Bool
 
 -- | Authenticate a user with credentials. It can throw
 -- 'BadCredentialsException'.

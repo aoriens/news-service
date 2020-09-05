@@ -103,7 +103,7 @@ selectUserAuthData ::
 selectUserAuthData =
   dimap
     getUserId
-    (fmap (Auth.SecretTokenHash *** Auth.IsAdmin))
+    (fmap $ first Auth.SecretTokenHash)
     [TH.maybeStatement|
     select token_hash :: bytea, is_admin :: boolean
     from users

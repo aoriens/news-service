@@ -48,13 +48,11 @@ spec =
         let h =
               stubHandle
                 { A.hGetUserAuthData =
-                    \_ ->
-                      pure $
-                      Just (A.SecretTokenHash "", A.IsAdmin expectedIsAdmin)
+                    \_ -> pure $ Just (A.SecretTokenHash "", expectedIsAdmin)
                 , A.hTokenMatchesHash = \_ _ -> True
                 }
         A.IdentifiedUser _ isAdmin <- A.authenticate h $ Just stubCreds
-        isAdmin `shouldBe` A.IsAdmin expectedIsAdmin
+        isAdmin `shouldBe` expectedIsAdmin
     it "should pass UserId to hGetUserAuthData" $ do
       ref <- newIORef undefined
       let expectedUserId = UserId 8
@@ -85,8 +83,7 @@ spec =
       let expectedHash = A.SecretTokenHash "1"
           h =
             stubHandle
-              { A.hGetUserAuthData =
-                  \_ -> pure $ Just (expectedHash, A.IsAdmin False)
+              { A.hGetUserAuthData = \_ -> pure $ Just (expectedHash, False)
               , A.hTokenMatchesHash =
                   \_ hash -> unsafePerformIO $ writeIORef ref hash >> pure True
               }
@@ -112,4 +109,4 @@ stubSecretToken :: A.SecretToken
 stubSecretToken = A.SecretToken ""
 
 stubOKAuthData :: Maybe (A.SecretTokenHash, A.IsAdmin)
-stubOKAuthData = Just (A.SecretTokenHash "", A.IsAdmin False)
+stubOKAuthData = Just (A.SecretTokenHash "", False)

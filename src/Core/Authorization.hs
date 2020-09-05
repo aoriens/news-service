@@ -11,7 +11,7 @@ import qualified Data.Text as T
 requiresAdminPermission ::
      MonadThrow m => AuthenticatedUser -> T.Text -> m a -> m a
 requiresAdminPermission user actionDescription action
-  | IdentifiedUser _ (IsAdmin True) <- user = action
+  | IdentifiedUser _ True <- user = action
   | otherwise =
     throwM . NoPermissionException $
     "Requires admin permission: " <> actionDescription
