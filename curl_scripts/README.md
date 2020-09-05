@@ -5,16 +5,21 @@ curl to be installed.
 
 # Usage
 
-Normally, scripts does not require parameters. The following command sends `GET
-<DOMAIN>/news`:
+Normally, scripts does not require parameters, although some of them may do it.
+The following command sends `GET <DOMAIN>/news`:
 
     ./get_news
 
-Scripts support an optional query parameter. Note that it is appended to the URL
-as is, without escaping. The leading '?' is required. The following command
-sends `GET <DOMAIN>/news?offset=10&limit=20`:
+Some scripts may support an optional query parameter. Note that it is appended
+to the URL as is, without escaping. The leading '?' is also required. The
+following command sends `GET <DOMAIN>/news?offset=10&limit=20`:
 
     ./get_news "?offset=10&limit=20"
+
+Some methods require user authentication. You may specify the user
+authentication token via `TOKEN` variable:
+
+    TOKEN=1, ./get_authors
 
 The default domain is `localhost:3000`, but you may override it via `DOMAIN`
 variable:
