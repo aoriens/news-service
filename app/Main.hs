@@ -16,6 +16,7 @@ import Core.Authentication as Auth
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteUser as IDeleteUser
+import qualified Core.Interactor.GetAuthors as IGetAuthors
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetUser as IGetUser
@@ -43,6 +44,7 @@ import qualified Web.Application
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteUser as HDeleteUser
+import qualified Web.Handler.GetAuthors as HGetAuthors
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetUser as HGetUser
@@ -143,6 +145,7 @@ router deps =
   R.new $ do
     R.path ["author", "create"] $
       R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
+    R.path ["authors"] $ R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
     R.path ["news"] $ R.get $ HGetNews.run . newsHandlerHandle deps
     R.pathPrefix ["user"] $ do
       R.get $ HGetUser.run . getUserHandlerHandle deps
@@ -164,6 +167,19 @@ createAuthorHandlerHandle deps@Deps {..} session =
               GAuthors.createAuthor $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
+    , hPresenterHandle = dRepresentationBuilderHandle
+    }
+
+getAuthorsHandlerHandle :: Deps -> Web.Session -> HGetAuthors.Handle
+getAuthorsHandlerHandle deps@Deps {..} session =
+  HGetAuthors.Handle
+    { hGetAuthorsHandle =
+        IGetAuthors.Handle
+          { hAuthHandle = dMakeAuthHandle session
+          , hGetAuthors =
+              GAuthors.getAuthors $ sessionDatabaseHandle deps session
+          , hMaxPageLimit = dMaxPageLimit
+          }
     , hPresenterHandle = dRepresentationBuilderHandle
     }
 

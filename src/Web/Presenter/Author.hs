@@ -1,5 +1,6 @@
 module Web.Presenter.Author
   ( presentAuthor
+  , presentAuthors
   , RB.Handle
   ) where
 
@@ -10,3 +11,6 @@ import qualified Web.RepresentationBuilder as RB
 
 presentAuthor :: RB.Handle -> Core.Author -> BB.Builder
 presentAuthor h = RB.runBuilder h . authorRepresentation
+
+presentAuthors :: RB.Handle -> [Core.Author] -> BB.Builder
+presentAuthors h = RB.runBuilder h . mapM authorRepresentation

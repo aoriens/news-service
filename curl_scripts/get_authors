@@ -1,0 +1,11 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test X"$2" = X
+then
+    echo "Usage: $0 path_suffix auth_token" 2>&1
+    exit 1
+fi
+
+run_curl "$DOMAIN/authors$1" -u "$2:"

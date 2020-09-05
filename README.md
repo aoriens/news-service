@@ -66,8 +66,8 @@ majority of methods is available without authentication. Currently we support
 HTTP basic authentication. You should use user's secret token as a login and an
 empty password. The secret token is only returned on user creation.
 
-In case of authentication failure or lack of permissions `404 NotFound` is
-returned in order to hide API which requires additional permissions.
+In case of authentication failure or lack of privileges `404 NotFound` is
+returned in order to hide API which requires additional privileges.
 
 ## Entity encoding
 
@@ -91,8 +91,13 @@ must not be negative.
 ### `POST /author/create`
 
 Creates an author. Accepts [InAuthor](#InAuthor) entity in the request body and
-returns [Author](#Author) entity. Requires authentication and administrator
-permission.
+returns [Author](#Author) entity. Requires authentication and the administrator
+privilege.
+
+### `GET /authors`
+
+Returns a list of [Author](#Author) entities. Requires the administrator
+privilege.
 
 ### `GET /image/{image_id}`
 
@@ -113,7 +118,7 @@ the created [User](#User) entity.
 ### `DELETE /user/{user_id}`
 
 Deletes the identified user and returns no content. Requires authentication of a
-user having administrator privileges.
+user having administrator privilege.
 
 ### `GET /user/{user_id}`
 
@@ -184,7 +189,7 @@ A user. Fields:
 - `last_name` - the last name. A string, required.
 - `avatar_url` - the avatar image URL. An string, optional.
 - `created_at` - the time the user was created. A [UTCTime](#UTCTime), required.
-- `is_admin` - whether the user have administrator permissions. A boolean,
+- `is_admin` - whether the user has administrator privilege. A boolean,
   required.
 - `secret_token` - the authentication token. The field is only output when
   creating a user, otherwise it is missing. A string, optional.
