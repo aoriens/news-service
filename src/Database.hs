@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- | Database-related basic definitions. They may only be imported
--- from gateways.
+-- from database-related modules.
 module Database
   ( Handle(..)
   , Session
