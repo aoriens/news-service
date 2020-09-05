@@ -52,9 +52,9 @@ news-service --config PATH_TO_CONFIG
 `curl_scripts` directory contains curl scripts to test supported requests
 quickly.
 
-`test_data.sql` contains an administrator user with the least secret token
-possible, which helps to perform curl scripts requiring authentication. It
-corresponds to the pattern of `<USERID>,`, e.g. `1,`, if you populate the
+`test_data.sql` contains an administrator user with the least authentication
+token possible, which helps to run requests which require authentication. The
+token corresponds to the pattern of `<USERID>,`, e.g. `1,`, if you populate the
 database with the test data right after creating it.
 
 # API
