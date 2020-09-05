@@ -6,10 +6,10 @@ module Web.Router
   ( Router
   , new
   , Spec
-  , ifPath
-  , ifPathPrefix
-  , ifAppURL
-  , ifMethod
+  , path
+  , pathPrefix
+  , appURL
+  , method
   , route
   , Result(..)
   , isHandlerResult
@@ -69,7 +69,7 @@ instance Semigroup MethodsToHandlersMonoid where
   (MethodsToHandlersMonoid hm1) <> (MethodsToHandlersMonoid hm2) =
     MethodsToHandlersMonoid $
     HM.unionWithKey
-      (\path _ _ -> error $ "Duplicate entry for path " ++ show path)
+      (\path_ _ _ -> error $ "Duplicate entry for path " ++ show path_)
       hm1
       hm2
 
@@ -87,45 +87,44 @@ Creates a router. It is possible to use Spec monad for path
 configuration:
 
 > new $ do
->   ifPath ["path", "to", "resource"] $ do
->     ifMethod "GET"    handleGetForPath
->     ifMethod "POST"   handlePostForPath
->     ifMethod "PUT"    handlePutForPath
->   ifPath ["another", "path"] $ do
->     ifMethod "GET"    handleGetForPath2
->     ifMethod "DELETE" handleDeleteForPath2
->   ifPathPrefix ["user"] $ do
->     ifMethod "GET"    handleGetUser
+>   path ["path", "to", "resource"] $ do
+>     method "GET"    handleGetForPath
+>     method "POST"   handlePostForPath
+>     method "PUT"    handlePutForPath
+>   path ["another", "path"] $ do
+>     method "GET"    handleGetForPath2
+>     method "DELETE" handleDeleteForPath2
+>   pathPrefix ["user"] $ do
+>     method "GET"    handleGetUser
 
-Each 'ifPath' clause must be passed a unique path, as well as
-'ifPathPrefix'. But using the same path in both 'ifPath' and
-'ifPathPrefix' is allowed. Path prefixes are allowed to be prefixes of
-other path prefixes:
-
-> new $ do
->   ifPathPrefix ["a"] $ ...
->   ifPathPrefix ["a", "b"] $ ... -- OK to have ifPathPrefix ["a", "b"], although ["a"] is its prefix
->   ifPath       ["a", "b"] $ ... -- OK: same path for ifPath & ifPathPrefix
->   ifPathPrefix ["a", "b"] $ ... -- Error: duplicate prefix
->   ifPath       ["q"] $ ...      -- OK
->   ifPath       ["q"] $ ...      -- Error: duplicate path
-
-When matching, an 'ifPath' entry is always preferred over
-'ifPathPrefix' entries, and 'ifPathPrefix' entry with the largest
-number of path components in the argument is preferred over entries
-with shorter ones. If the found entry does not contain a subentry for
-the request method, it is reported as 'MethodNotSupportedResult' and
-no attempt to find other prefix matches is performed. In the following
-example:
+Each 'path' clause must be passed a unique path, as well as
+'pathPrefix'. But using the same path in both 'path' and 'pathPrefix'
+is allowed. Path prefixes are allowed to be prefixes of other path
+prefixes:
 
 > new $ do
->   ifPath ["a", "b", "c"]  $ ifMethod "GET"  h1
->   ifPathPrefix ["a", "b"] $ ifMethod "POST" h2
->   ifPathPrefix ["a"]      $ ifMethod "GET"  h3
+>   pathPrefix ["a"] $ ...
+>   pathPrefix ["a", "b"] $ ... -- OK to have pathPrefix ["a", "b"], although ["a"] is its prefix
+>   path       ["a", "b"] $ ... -- OK: same path for path & pathPrefix
+>   pathPrefix ["a", "b"] $ ... -- Error: duplicate prefix
+>   path       ["q"] $ ...      -- OK
+>   path       ["q"] $ ...      -- Error: duplicate path
+
+When matching, a 'path' entry is always preferred over 'pathPrefix'
+entries, and the longest (in the number of components) 'pathPrefix'
+entry is preferred over shorter ones. If the found entry does not
+contain a subentry for the request method, it is reported as
+'MethodNotSupportedResult' and no attempt to find other prefix matches
+is performed. In the following example:
+
+> new $ do
+>   path ["a", "b", "c"]  $ method "GET"  h1
+>   pathPrefix ["a", "b"] $ method "POST" h2
+>   pathPrefix ["a"]      $ method "GET"  h3
 
 - @GET "\/a\/b\/c"@ will match @h1@
-- @POST "\/a\/b\/c"@ will result in 'MethodNotSupportedResult', although @h2@
-  also supports @POST \/a\/b\/*"@.
+- @POST "\/a\/b\/c"@ will result in 'MethodNotSupportedResult',
+  although @h2@ also supports @POST \/a\/b\/*"@.
 - @POST "\/a\/b"@, @POST "\/a\/b\/c\/d"@, and @POST "\/a\/b\/k"@ will
   match @h2@
 - @GET "\/a"@ and @GET "\/a\/q"@ will match @h3@
@@ -143,22 +142,24 @@ emptyPathTrie =
     , trieMethodTableForPrefixMatch = mempty
     }
 
-ifPath :: Path -> MethodsSpec () -> Spec ()
-ifPath path methodsSpec
-  | HM.null methodsToHandlers = error ("Empty entry for path " ++ show path)
+-- | Starts route specification for a URI path matching exactly to the
+-- argument.
+path :: Path -> MethodsSpec () -> Spec ()
+path p methodsSpec
+  | HM.null methodsToHandlers = error ("Empty entry for path " ++ show p)
   | otherwise =
     Spec . modify' $ \r@Router {..} ->
-      r {rPathTrie = insertExactMatch path methodsToHandlers rPathTrie}
+      r {rPathTrie = insertExactMatch p methodsToHandlers rPathTrie}
   where
     methodsToHandlers = execMethodsSpec methodsSpec
 
 insertExactMatch :: Path -> MethodsToHandlers -> PathTrie -> PathTrie
-insertExactMatch path methodTable = insert_ path
+insertExactMatch path_ methodTable = insert_ path_
   where
     insert_ [] t@PathTrie {..}
       | HM.null trieMethodTableForExactMatch =
         t {trieMethodTableForExactMatch = methodTable}
-      | otherwise = error $ "Duplicate entry for path " ++ show path
+      | otherwise = error $ "Duplicate entry for path " ++ show path_
     insert_ (k:ks) t@PathTrie {..} =
       t
         { trieSubtries =
@@ -169,11 +170,11 @@ insertExactMatch path methodTable = insert_ path
               trieSubtries
         }
 
--- | Performs path prefix matching. If matching succeeds, the handler
--- will be passed a request with the path prefix removed from
--- 'Wai.pathInfo'.
-ifPathPrefix :: Path -> MethodsSpec () -> Spec ()
-ifPathPrefix prefix methodsSpec
+-- | Starts route specification for a URI path starting with the
+-- specified path prefix. If matching succeeds, the handler will be
+-- passed a request with the path prefix removed from 'Wai.pathInfo'.
+pathPrefix :: Path -> MethodsSpec () -> Spec ()
+pathPrefix prefix methodsSpec
   | null prefix = error "Empty path prefix"
   | HM.null methodsToHandlers =
     error ("Empty entry for path prefix " ++ show prefix)
@@ -184,12 +185,12 @@ ifPathPrefix prefix methodsSpec
     methodsToHandlers = execMethodsSpec methodsSpec
 
 insertPrefixMatch :: Path -> MethodsToHandlers -> PathTrie -> PathTrie
-insertPrefixMatch path methodTable = insert_ path
+insertPrefixMatch path_ methodTable = insert_ path_
   where
     insert_ [] t@PathTrie {..}
       | HM.null trieMethodTableForPrefixMatch =
         t {trieMethodTableForPrefixMatch = methodTable}
-      | otherwise = error $ "Duplicate entry for path prefix " ++ show path
+      | otherwise = error $ "Duplicate entry for path prefix " ++ show path_
     insert_ (k:ks) t@PathTrie {..} =
       t
         { trieSubtries =
@@ -200,8 +201,10 @@ insertPrefixMatch path methodTable = insert_ path
               trieSubtries
         }
 
-ifAppURL :: (U.AppURL -> MethodsSpec ()) -> Spec ()
-ifAppURL f =
+-- | Starts route specification for a URI path matching the specified
+-- 'AppURL' exactly.
+appURL :: (U.AppURL -> MethodsSpec ()) -> Spec ()
+appURL f =
   Spec . modify' $ \r@Router {..} ->
     r
       { rAppURLHandler =
@@ -209,11 +212,12 @@ ifAppURL f =
       }
   where
     appURLHandler = execMethodsSpec . f
-    errorDuplicateEntry = error "ifAppURL clause is used more than once"
+    errorDuplicateEntry = error "appURL clause is used more than once"
 
-ifMethod :: Http.Method -> EApplication -> MethodsSpec ()
-ifMethod method handler =
-  MethodsSpec . tell . MethodsToHandlersMonoid $ HM.singleton method handler
+-- | Sets a handler for the specified HTTP method.
+method :: Http.Method -> EApplication -> MethodsSpec ()
+method m handler =
+  MethodsSpec . tell . MethodsToHandlersMonoid $ HM.singleton m handler
 
 -- | The result of finding a route.
 data Result

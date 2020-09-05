@@ -142,22 +142,22 @@ getWebAppHandle deps@Deps {..} = do
 router :: Deps -> R.Router
 router deps =
   R.new $ do
-    R.ifPath ["author", "create"] $
-      R.ifMethod Http.methodPost $
+    R.path ["author", "create"] $
+      R.method Http.methodPost $
       HCreateAuthor.run . createAuthorHandlerHandle deps
-    R.ifPath ["news"] $ do
-      R.ifMethod Http.methodGet $ HGetNews.run . newsHandlerHandle deps
-    R.ifPathPrefix ["user"] $ do
-      R.ifMethod Http.methodGet $ HGetUser.run . getUserHandlerHandle deps
-      R.ifMethod Http.methodDelete $
+    R.path ["news"] $ do
+      R.method Http.methodGet $ HGetNews.run . newsHandlerHandle deps
+    R.pathPrefix ["user"] $ do
+      R.method Http.methodGet $ HGetUser.run . getUserHandlerHandle deps
+      R.method Http.methodDelete $
         HDeleteUser.run . deleteUserHandlerHandle deps
-    R.ifPath ["user", "create"] $ do
-      R.ifMethod Http.methodPost $ HCreateUser.run . createUserHandle deps
-    R.ifPath ["users"] $ do
-      R.ifMethod Http.methodGet $ HGetUsers.run . getUsersHandlerHandle deps
-    R.ifAppURL $ \case
+    R.path ["user", "create"] $ do
+      R.method Http.methodPost $ HCreateUser.run . createUserHandle deps
+    R.path ["users"] $ do
+      R.method Http.methodGet $ HGetUsers.run . getUsersHandlerHandle deps
+    R.appURL $ \case
       (U.URLImage imageId) ->
-        R.ifMethod Http.methodGet $ \session ->
+        R.method Http.methodGet $ \session ->
           HGetImage.run (getImageHandlerHandle deps session) imageId
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle

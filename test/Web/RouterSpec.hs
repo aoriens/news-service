@@ -23,7 +23,7 @@ spec
       let path = ["my_path"]
           method = Http.methodPost
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
-          router = R.new $ R.ifPath path $ R.ifMethod method expectedHandler
+          router = R.new $ R.path path $ R.method method expectedHandler
           request =
             Wai.defaultRequest {Wai.pathInfo = path, Wai.requestMethod = method}
           (R.HandlerResult handler) = R.route router request
@@ -34,8 +34,7 @@ spec
           method = Http.methodGet
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
           router =
-            R.new $
-            R.ifAppURL $ \U.URLImage {} -> R.ifMethod method expectedHandler
+            R.new $ R.appURL $ \U.URLImage {} -> R.method method expectedHandler
           request =
             Wai.defaultRequest
               { Wai.pathInfo = U.relativeURLPath $ U.toRelativeURL appURL
@@ -43,41 +42,39 @@ spec
               }
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
-    it "should return a handler for path with prefix from ifPathPrefix argument" $ do
+    it "should return a handler for path with prefix from pathPrefix argument" $ do
       let method = Http.methodGet
           prefix = ["a", "b"]
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
-          router =
-            R.new $ R.ifPathPrefix prefix $ R.ifMethod method expectedHandler
+          router = R.new $ R.pathPrefix prefix $ R.method method expectedHandler
           request =
             Wai.defaultRequest
               {Wai.pathInfo = prefix ++ ["x"], Wai.requestMethod = method}
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
-    it "should return a handler for path equal to a prefix from ifPathPrefix" $ do
+    it "should return a handler for path equal to a prefix from pathPrefix" $ do
       let method = Http.methodGet
           prefix = ["a", "b"]
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
-          router =
-            R.new $ R.ifPathPrefix prefix $ R.ifMethod method expectedHandler
+          router = R.new $ R.pathPrefix prefix $ R.method method expectedHandler
           request =
             Wai.defaultRequest
               {Wai.pathInfo = prefix, Wai.requestMethod = method}
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
     it
-      "when ifPathPrefix and ifPath both used with the same argument, \
-      \ifPath should be selected for exact match" $ do
+      "when pathPrefix and path both used with the same argument, \
+      \path should be selected for exact match" $ do
       let path = ["a", "b", "c"]
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
           router =
             R.new $ do
-              R.ifPathPrefix path $ R.ifMethod "GET" noOpHandler
-              R.ifPath path $ R.ifMethod "GET" expectedHandler
+              R.pathPrefix path $ R.method "GET" noOpHandler
+              R.path path $ R.method "GET" expectedHandler
           request = Wai.defaultRequest {Wai.pathInfo = path}
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
-    it "should match the longest prefix in ifPathPrefix if no exact match found" $ do
+    it "should match the longest prefix in pathPrefix if no exact match found" $ do
       let prefix1 = ["a", "b"]
           prefix2 = prefix1 ++ ["c", "d"]
           path = prefix2 ++ ["q"]
@@ -85,9 +82,9 @@ spec
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
           router =
             R.new $ do
-              R.ifPathPrefix prefix1 $ R.ifMethod "GET" noOpHandler
-              R.ifPathPrefix prefix2 $ R.ifMethod "GET" expectedHandler
-              R.ifPathPrefix prefix3 $ R.ifMethod "GET" noOpHandler
+              R.pathPrefix prefix1 $ R.method "GET" noOpHandler
+              R.pathPrefix prefix2 $ R.method "GET" expectedHandler
+              R.pathPrefix prefix3 $ R.method "GET" noOpHandler
           request = Wai.defaultRequest {Wai.pathInfo = path}
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
@@ -100,15 +97,15 @@ spec
           path = prefix ++ ["z"]
           router =
             R.new $ do
-              R.ifPath path $ R.ifMethod unneededMethod noOpHandler
-              R.ifPathPrefix prefix $ R.ifMethod neededMethod noOpHandler
+              R.path path $ R.method unneededMethod noOpHandler
+              R.pathPrefix prefix $ R.method neededMethod noOpHandler
           request =
             Wai.defaultRequest
               {Wai.pathInfo = path, Wai.requestMethod = neededMethod}
           result = R.route router request
       result `shouldSatisfy` R.isMethodNotSupportedResult
     it
-      "when ifPathPrefix matched, should pass to handler pathInfo with the prefix removed" $ do
+      "when pathPrefix matched, should pass to handler pathInfo with the prefix removed" $ do
       pathInfoRef <- newIORef $ error "pathInfo must have been stored here"
       let method = Http.methodGet
           prefix = ["a", "b"]
@@ -116,8 +113,7 @@ spec
           expectedHandler _ r _ = do
             writeIORef pathInfoRef $ Wai.pathInfo r
             pure Wai.ResponseReceived
-          router =
-            R.new $ R.ifPathPrefix prefix $ R.ifMethod method expectedHandler
+          router = R.new $ R.pathPrefix prefix $ R.method method expectedHandler
           request =
             Wai.defaultRequest
               {Wai.pathInfo = prefix ++ suffix, Wai.requestMethod = method}
@@ -132,9 +128,9 @@ spec
     it "should return ResourceNotFoundRequest if no match found" $ do
       let router =
             R.new $ do
-              R.ifAppURL $ \U.URLImage {} -> R.ifMethod "GET" noOpHandler
-              R.ifPath ["path"] $ R.ifMethod "GET" noOpHandler
-              R.ifPathPrefix ["prefix"] $ R.ifMethod "GET" noOpHandler
+              R.appURL $ \U.URLImage {} -> R.method "GET" noOpHandler
+              R.path ["path"] $ R.method "GET" noOpHandler
+              R.pathPrefix ["prefix"] $ R.method "GET" noOpHandler
           request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
@@ -143,10 +139,10 @@ spec
       let path = ["my_path"]
           unknownMethod = Http.methodGet
           router =
-            R.new . R.ifPath path $ do
-              R.ifMethod Http.methodPost noOpHandler
-              R.ifMethod Http.methodPut noOpHandler
-              R.ifMethod Http.methodDelete noOpHandler
+            R.new . R.path path $ do
+              R.method Http.methodPost noOpHandler
+              R.method Http.methodPut noOpHandler
+              R.method Http.methodDelete noOpHandler
           request =
             Wai.defaultRequest
               {Wai.pathInfo = path, Wai.requestMethod = unknownMethod}
