@@ -93,8 +93,7 @@ data CreateUserResult =
     , curAvatarId :: Maybe ImageId
     }
 
-disallowedAvatarContentTypeException ::
-     Text -> HS.HashSet Text -> QueryException
+disallowedAvatarContentTypeException :: Text -> HS.HashSet Text -> CoreException
 disallowedAvatarContentTypeException badContentType allowedContentTypes =
   QueryException $
   mconcat

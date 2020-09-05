@@ -11,7 +11,6 @@ module Web.Application
 
 import Control.Exception
 import Control.Exception.Sync
-import qualified Core.Authorization as Core
 import qualified Core.Exception as Core
 import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Builder as BB
@@ -133,12 +132,12 @@ exceptionToResponse h e
         "The request body length must not exceed " <>
         T.pack (show maxPayloadSize) <> " bytes"
       MalformedAuthDataException _ -> notFoundResponse
-  | Just (t :: Core.QueryException) <- fromException e =
-    stubErrorResponseWithReason Http.badRequest400 [] $
-    Core.queryExceptionReason t
-  | Just (_ :: Core.BadCredentialsException) <- fromException e =
-    notFoundResponse
-  | Just (_ :: Core.NoPermissionException) <- fromException e = notFoundResponse
+  | Just coreException <- fromException e =
+    case coreException of
+      Core.QueryException reason ->
+        stubErrorResponseWithReason Http.badRequest400 [] reason
+      Core.BadCredentialsException _ -> notFoundResponse
+      Core.NoPermissionException _ -> notFoundResponse
   | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
   | otherwise = Warp.defaultOnExceptionResponse e
 

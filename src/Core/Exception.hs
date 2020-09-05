@@ -1,16 +1,18 @@
 -- | Core exception types.
 module Core.Exception
-  ( QueryException(..)
+  ( CoreException(..)
   ) where
 
 import Control.Exception
 import Data.Text (Text)
 
+type Reason = Text
+
 -- | An exception to designate incorrect input data to an interactor.
-newtype QueryException =
-  QueryException
-    { queryExceptionReason :: Text
-    }
+data CoreException
+  = QueryException Reason
+  | BadCredentialsException Reason
+  | NoPermissionException Reason
   deriving (Show)
 
-instance Exception QueryException
+instance Exception CoreException

@@ -3,6 +3,7 @@ module Core.AuthorizationSpec
   ) where
 
 import Core.Authorization
+import Core.Exception
 import Core.User
 import Data.IORef
 import Test.Hspec
@@ -26,5 +27,6 @@ spec =
       requiresAdminPermission user "" (pure ()) `shouldThrow`
         isNoPermissionException
 
-isNoPermissionException :: NoPermissionException -> Bool
-isNoPermissionException = const True
+isNoPermissionException :: CoreException -> Bool
+isNoPermissionException NoPermissionException {} = True
+isNoPermissionException _ = False

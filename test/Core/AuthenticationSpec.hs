@@ -3,6 +3,7 @@ module Core.AuthenticationSpec
   ) where
 
 import qualified Core.Authentication as A
+import Core.Exception
 import Core.User
 import Data.IORef
 import qualified Logger
@@ -100,8 +101,9 @@ stubHandle =
     , hLoggerHandle = Logger.Handle {hLowLevelLog = \_ _ _ -> pure ()}
     }
 
-isBadCredentialsException :: A.BadCredentialsException -> Bool
-isBadCredentialsException = const True
+isBadCredentialsException :: CoreException -> Bool
+isBadCredentialsException BadCredentialsException {} = True
+isBadCredentialsException _ = False
 
 stubCreds :: A.Credentials
 stubCreds = A.TokenCredentials (UserId 1) stubSecretToken

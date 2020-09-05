@@ -6,10 +6,10 @@ module Core.Authentication
   , SecretTokenHash(..)
   , AuthenticatedUser(..)
   , IsAdmin(..)
-  , BadCredentialsException
   ) where
 
 import Control.Monad.Catch
+import Core.Exception
 import Core.User
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
@@ -67,11 +67,3 @@ authenticate h (Just (TokenCredentials userIdent token)) = do
           "Authentication success: " <> T.pack (show authUser)
         pure authUser
       | otherwise -> throwM $ BadCredentialsException "secret token mismatch"
-
-newtype BadCredentialsException =
-  BadCredentialsException
-    { badCredentialsExceptionReason :: T.Text
-    }
-  deriving (Show)
-
-instance Exception BadCredentialsException
