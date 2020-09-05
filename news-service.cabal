@@ -142,9 +142,10 @@ test-suite news-service-test
       Core.AuthenticationSpec
     , Core.AuthenticationStubs
     , Core.AuthorizationSpec
+    , Core.Interactor.CreateAuthorSpec
+    , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteUserSpec
     , Core.Interactor.GetNewsSpec
-    , Core.Interactor.CreateUserSpec
     , Core.PaginationSpec
     , Data.Integral.ExactSpec
     , Gateway.SecretTokenSpec

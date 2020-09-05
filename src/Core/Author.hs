@@ -11,6 +11,7 @@ newtype AuthorId =
   AuthorId
     { getAuthorId :: Int32
     }
+  deriving (Eq, Show)
 
 data Author =
   Author
@@ -18,3 +19,4 @@ data Author =
     , authorUser :: User
     , authorDescription :: T.Text
     }
+  deriving (Eq, Show)

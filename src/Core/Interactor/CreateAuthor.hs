@@ -30,3 +30,4 @@ run h credentials uid description = do
 
 data Failure =
   UnknownUserId
+  deriving (Eq, Show)
