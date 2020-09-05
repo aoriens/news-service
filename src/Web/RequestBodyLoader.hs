@@ -8,7 +8,7 @@ import Control.Exception
 import Control.Monad
 import qualified Data.Aeson as A
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -46,7 +46,7 @@ rejectInvalidContentType request =
 expectedContentType :: BS.ByteString
 expectedContentType = Http.jsonContentType
 
-loadRequestBodyNoLonger :: Word64 -> Wai.Request -> IO LBS.ByteString
+loadRequestBodyNoLonger :: Word64 -> Wai.Request -> IO LB.ByteString
 loadRequestBodyNoLonger maxLen request =
   case Wai.requestBodyLength request of
     Wai.KnownLength len
@@ -59,7 +59,7 @@ loadRequestBodyNoLonger maxLen request =
       | otherwise = do
         chunk <- Wai.getRequestBodyChunk request
         if BS.null chunk
-          then pure $ LBS.fromChunks (DL.toList chunks)
+          then pure $ LB.fromChunks (DL.toList chunks)
           else go
                  (len + fromIntegral (BS.length chunk))
                  (chunks `DL.snoc` chunk)
