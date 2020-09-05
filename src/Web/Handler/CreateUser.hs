@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Web.Handler.PostCreateUser
+module Web.Handler.CreateUser
   ( run
   , Handle(..)
   ) where

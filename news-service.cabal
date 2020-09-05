@@ -55,12 +55,12 @@ library
     , Web.Credentials
     , Web.Exception
     , Web.Handler.CreateAuthor
+    , Web.Handler.CreateUser
     , Web.Handler.DeleteUser
     , Web.Handler.GetNews
     , Web.Handler.GetImage
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
-    , Web.Handler.PostCreateUser
     , Web.HTTP
     , Web.JSONEncoder
     , Web.Presenter.Author

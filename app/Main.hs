@@ -42,12 +42,12 @@ import System.IO hiding (Handle)
 import qualified Web.AppURL as U
 import qualified Web.Application
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
+import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
-import qualified Web.Handler.PostCreateUser as HPostCreateUser
 import qualified Web.JSONEncoder as JSONEncoder
 import qualified Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
@@ -152,8 +152,7 @@ router deps =
       R.ifMethod Http.methodDelete $
         HDeleteUser.run . deleteUserHandlerHandle deps
     R.ifPath ["user", "create"] $ do
-      R.ifMethod Http.methodPost $
-        HPostCreateUser.run . postCreateUserHandle deps
+      R.ifMethod Http.methodPost $ HCreateUser.run . createUserHandle deps
     R.ifPath ["users"] $ do
       R.ifMethod Http.methodGet $ HGetUsers.run . getUsersHandlerHandle deps
     R.ifAppURL $ \case
@@ -184,9 +183,9 @@ newsHandlerHandle deps@Deps {..} session =
         , hMaxPageLimit = dMaxPageLimit
         }
 
-postCreateUserHandle :: Deps -> Web.Session -> HPostCreateUser.Handle
-postCreateUserHandle deps@Deps {..} session =
-  HPostCreateUser.Handle
+createUserHandle :: Deps -> Web.Session -> HCreateUser.Handle
+createUserHandle deps@Deps {..} session =
+  HCreateUser.Handle
     { hCreateUserHandle = interactorHandle
     , hPresenterHandle = dRepresentationBuilderHandle
     , hLoadJSONRequestBody = dLoadJSONRequestBody
