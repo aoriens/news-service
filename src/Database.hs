@@ -7,6 +7,7 @@ module Database
   , Session
   , runSession
   , Transaction
+  , HSt.Statement
   , HT.IsolationLevel(..)
   , HT.Mode(..)
   , statement

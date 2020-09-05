@@ -8,10 +8,10 @@ import qualified Core.Interactor.GetNews as GetNews
 import Core.Pagination
 import Data.Profunctor
 import Data.Vector (Vector)
-import qualified Hasql.Statement as Statement
+import Database
 import qualified Hasql.TH as TH
 
-selectNews :: Statement.Statement Page (Vector GetNews.News)
+selectNews :: Statement Page (Vector GetNews.News)
 selectNews =
   dimap
     (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))

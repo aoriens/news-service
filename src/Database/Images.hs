@@ -9,10 +9,9 @@ import Core.Image
 import Data.Profunctor
 import qualified Data.Text as T
 import Database
-import qualified Hasql.Statement as S
 import qualified Hasql.TH as TH
 
-selectImage :: S.Statement ImageId (Maybe Image)
+selectImage :: Statement ImageId (Maybe Image)
 selectImage =
   dimap
     getImageId
@@ -28,13 +27,13 @@ createImage image = do
   statement createMimeTypeIfNotFound (imageContentType image)
   statement createImageSt image
 
-createMimeTypeIfNotFound :: S.Statement T.Text ()
+createMimeTypeIfNotFound :: Statement T.Text ()
 createMimeTypeIfNotFound =
   [TH.resultlessStatement|
     insert into mime_types (value) values ($1 :: varchar) on conflict do nothing
   |]
 
-createImageSt :: S.Statement Image ImageId
+createImageSt :: Statement Image ImageId
 createImageSt =
   dimap
     (\Image {..} -> (imageData, imageContentType))

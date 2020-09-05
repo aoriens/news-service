@@ -21,7 +21,6 @@ import Data.Time
 import Data.Vector (Vector)
 import Database
 import Database.Images
-import qualified Hasql.Statement as S
 import qualified Hasql.TH as TH
 
 createUser :: I.CreateUserCommand -> Transaction I.CreateUserResult
@@ -33,7 +32,7 @@ createUser cmd@I.CreateUserCommand {..} = do
   userId <- statement insertUser (optAvatarId, cmd)
   pure I.CreateUserResult {curUserId = userId, curAvatarId = optAvatarId}
 
-insertUser :: S.Statement (Maybe ImageId, I.CreateUserCommand) UserId
+insertUser :: Statement (Maybe ImageId, I.CreateUserCommand) UserId
 insertUser =
   dimap
     (\(optImageId, I.CreateUserCommand {..}) ->
@@ -63,7 +62,7 @@ insertUser =
     ) returning user_id :: integer
     |]
 
-selectUserById :: S.Statement UserId (Maybe User)
+selectUserById :: Statement UserId (Maybe User)
 selectUserById =
   dimap
     getUserId
@@ -79,7 +78,7 @@ selectUserById =
     where user_id = $1 :: integer
     |]
 
-selectUsers :: S.Statement Page (Vector User)
+selectUsers :: Statement Page (Vector User)
 selectUsers =
   dimap
     (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
@@ -100,7 +99,7 @@ decodeUser (userId, userFirstName, userLastName, userAvatarId, userCreatedAt, us
   User {userId = UserId userId, userAvatarId = ImageId <$> userAvatarId, ..}
 
 selectUserAuthData ::
-     S.Statement UserId (Maybe (Auth.SecretTokenHash, Auth.IsAdmin))
+     Statement UserId (Maybe (Auth.SecretTokenHash, Auth.IsAdmin))
 selectUserAuthData =
   dimap
     getUserId
@@ -111,7 +110,7 @@ selectUserAuthData =
     where user_id = $1 :: integer
     |]
 
-deleteUser :: S.Statement UserId ()
+deleteUser :: Statement UserId ()
 deleteUser =
   dimap
     getUserId

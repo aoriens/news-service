@@ -12,7 +12,6 @@ import Data.Profunctor
 import qualified Data.Text as T
 import Database
 import Database.Users
-import Hasql.Statement as S
 import Hasql.TH as TH
 
 createAuthor :: UserId -> T.Text -> Transaction (Either I.Failure Author)
@@ -27,7 +26,7 @@ createAuthor uid description = do
           Author
             {authorId = aid, authorUser = user, authorDescription = description}
 
-insertAuthor :: S.Statement (UserId, T.Text) AuthorId
+insertAuthor :: Statement (UserId, T.Text) AuthorId
 insertAuthor =
   dimap
     (first getUserId)
