@@ -64,11 +64,12 @@ loggerWorker fileH messageQueue =
 
 formatMessage :: Message -> T.Text
 formatMessage Message {..} =
-  mconcat [timeString, " | ", levelString, " | ", callSiteString, messageText]
+  mconcat
+    [timeString, " | ", levelString, " | ", callSiteString, " | ", messageText]
   where
     timeString = T.pack $ formatTime defaultTimeLocale "%F %T.%3q" messageTime
     levelString = T.justifyLeft 7 ' ' $ T.pack (show messageLevel)
-    callSiteString = maybe "" formatCallSite messageCallSite
+    callSiteString =
+      T.justifyLeft 30 ' ' $ maybe "" formatCallSite messageCallSite
     formatCallSite cs =
-      "(at " <>
-      Logger.csModule cs <> ":" <> T.pack (show $ Logger.csStartLine cs) <> ") "
+      Logger.csModule cs <> ":" <> T.pack (show $ Logger.csStartLine cs)
