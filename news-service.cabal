@@ -39,7 +39,11 @@ library
     , Data.Either.Util
     , Data.Integral.Exact
     , Database
+    , Database.Authors
     , Database.ConnectionManager
+    , Database.Images
+    , Database.News
+    , Database.Users
     , Gateway.Authors
     , Gateway.CurrentTime
     , Gateway.Images
