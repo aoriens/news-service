@@ -23,7 +23,6 @@ import qualified Core.Interactor.GetUsers as IGetUsers
 import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
-import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
@@ -67,7 +66,8 @@ data Deps =
     , dMaxPageLimit :: PageLimit
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
-    , dLoadRequestJSONBody :: Wai.Request -> IO LBS.ByteString
+    , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
+                                          Wai.Request -> IO a
     , dSecretTokenIOState :: GSecretToken.IOState
     , dRenderAppURL :: U.AppURL -> T.Text
     , dRepresentationBuilderHandle :: Web.RepresentationBuilder.Handle
@@ -104,8 +104,8 @@ getDeps = do
         , dDatabaseConnectionConfig
         , dMaxPageLimit = Cf.cfMaxPageLimit dConfig
         , dJSONEncode
-        , dLoadRequestJSONBody =
-            RequestBodyLoader.getJSONRequestBody
+        , dLoadJSONRequestBody =
+            RequestBodyLoader.loadJSONRequestBody
               RequestBodyLoader.Config
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
@@ -170,7 +170,7 @@ createAuthorHandlerHandle deps@Deps {..} session =
           , hCreateAuthor =
               GAuthors.createAuthor $ sessionDatabaseHandle deps session
           }
-    , hGetRequestBody = dLoadRequestJSONBody
+    , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenterHandle = dRepresentationBuilderHandle
     }
 
@@ -189,7 +189,7 @@ postCreateUserHandle deps@Deps {..} session =
   HPostCreateUser.Handle
     { hCreateUserHandle = interactorHandle
     , hPresenterHandle = dRepresentationBuilderHandle
-    , hGetRequestBody = dLoadRequestJSONBody
+    , hLoadJSONRequestBody = dLoadJSONRequestBody
     }
   where
     interactorHandle =

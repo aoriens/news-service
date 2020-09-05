@@ -1,14 +1,16 @@
 -- | A recommended way to get request bodies.
 module Web.RequestBodyLoader
-  ( getJSONRequestBody
+  ( loadJSONRequestBody
   , Config(..)
   ) where
 
 import Control.Exception
 import Control.Monad
+import qualified Data.Aeson as A
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.DList as DL
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Word
 import qualified Network.HTTP.Types as Http
@@ -21,13 +23,14 @@ newtype Config =
     { cfMaxBodySize :: Word64
     }
 
--- | Loads request body bytes. It can perform checks for Content-Type
--- header, for excess body length etc. It can throw exceptions from
--- 'Web.Exception' module.
-getJSONRequestBody :: Config -> Wai.Request -> IO LBS.ByteString
-getJSONRequestBody config request = do
+-- | Loads and decodes JSON request body. It can perform checks for
+-- Content-Type header, for excess body length etc. It can throw
+-- exceptions from 'Web.Exception' module.
+loadJSONRequestBody :: A.FromJSON a => Config -> Wai.Request -> IO a
+loadJSONRequestBody config request = do
   rejectInvalidContentType request
-  loadRequestBodyNoLonger (cfMaxBodySize config) request
+  body <- loadRequestBodyNoLonger (cfMaxBodySize config) request
+  either (throwIO . E.BadRequestException . T.pack) pure $ A.eitherDecode' body
 
 rejectInvalidContentType :: Wai.Request -> IO ()
 rejectInvalidContentType request =

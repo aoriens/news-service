@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Web.Handler.CreateAuthor
   ( run
@@ -10,7 +11,6 @@ import qualified Core.Interactor.CreateAuthor as I
 import Core.User
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
-import qualified Data.ByteString.Lazy as LB
 import Data.Int
 import Data.List
 import Data.Maybe
@@ -25,17 +25,15 @@ import qualified Web.Presenter.Author as P
 data Handle =
   Handle
     { hCreateAuthorHandle :: I.Handle IO
-    , hGetRequestBody :: Wai.Request -> IO LB.ByteString
+    , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
+                                          Wai.Request -> IO a
     , hPresenterHandle :: P.Handle
     }
 
 run :: Handle -> Wai.Application
 run Handle {..} request respond = do
   creds <- getCredentialsFromRequest request
-  bodyBytes <- hGetRequestBody request
-  inAuthor <-
-    either (throwIO . BadRequestException . T.pack) pure $
-    A.eitherDecode' bodyBytes
+  inAuthor <- hLoadJSONRequestBody request
   result <-
     I.run
       hCreateAuthorHandle
