@@ -16,11 +16,11 @@ import Core.Pagination
 import Core.User
 import Data.Int
 import Data.Profunctor
-import qualified Data.Text as T
 import Data.Text (Text)
 import Data.Time
 import Data.Vector (Vector)
 import Database as DB
+import Database.Images
 import qualified Hasql.Statement as S
 import qualified Hasql.TH as TH
 
@@ -28,31 +28,10 @@ createUser :: I.CreateUserCommand -> Transaction I.CreateUserResult
 createUser cmd@I.CreateUserCommand {..} = do
   optAvatarId <-
     case cuAvatar of
-      Just image -> do
-        DB.statement createMimeTypeIfNotFound (imageContentType image)
-        Just <$> DB.statement createImage image
+      Just image -> Just <$> createImage image
       Nothing -> pure Nothing
   userId <- DB.statement insertUser (optAvatarId, cmd)
   pure I.CreateUserResult {curUserId = userId, curAvatarId = optAvatarId}
-
-createMimeTypeIfNotFound :: S.Statement T.Text ()
-createMimeTypeIfNotFound =
-  [TH.resultlessStatement|
-    insert into mime_types (value) values ($1 :: varchar) on conflict do nothing
-  |]
-
-createImage :: S.Statement Image ImageId
-createImage =
-  dimap
-    (\Image {..} -> (imageData, imageContentType))
-    ImageId
-    [TH.singletonStatement|
-    insert into images (content, mime_type_id)
-    values (
-      $1 :: bytea,
-      (select mime_type_id from mime_types where value = $2 :: varchar)
-    ) returning image_id :: integer
-    |]
 
 insertUser :: S.Statement (Maybe ImageId, I.CreateUserCommand) UserId
 insertUser =
