@@ -8,7 +8,7 @@ module Database.Images
 import Core.Image
 import Data.Profunctor
 import qualified Data.Text as T
-import qualified Database as DB
+import Database
 import qualified Hasql.Statement as S
 import qualified Hasql.TH as TH
 
@@ -23,10 +23,10 @@ selectImage =
       where image_id = $1 :: integer
     |]
 
-createImage :: Image -> DB.Transaction ImageId
+createImage :: Image -> Transaction ImageId
 createImage image = do
-  DB.statement createMimeTypeIfNotFound (imageContentType image)
-  DB.statement createImageSt image
+  statement createMimeTypeIfNotFound (imageContentType image)
+  statement createImageSt image
 
 createMimeTypeIfNotFound :: S.Statement T.Text ()
 createMimeTypeIfNotFound =

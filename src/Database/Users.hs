@@ -19,7 +19,7 @@ import Data.Profunctor
 import Data.Text (Text)
 import Data.Time
 import Data.Vector (Vector)
-import Database as DB
+import Database
 import Database.Images
 import qualified Hasql.Statement as S
 import qualified Hasql.TH as TH
@@ -30,7 +30,7 @@ createUser cmd@I.CreateUserCommand {..} = do
     case cuAvatar of
       Just image -> Just <$> createImage image
       Nothing -> pure Nothing
-  userId <- DB.statement insertUser (optAvatarId, cmd)
+  userId <- statement insertUser (optAvatarId, cmd)
   pure I.CreateUserResult {curUserId = userId, curAvatarId = optAvatarId}
 
 insertUser :: S.Statement (Maybe ImageId, I.CreateUserCommand) UserId
