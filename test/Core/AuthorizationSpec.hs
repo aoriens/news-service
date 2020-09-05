@@ -26,7 +26,3 @@ spec =
       let user = IdentifiedUser (UserId 1) False
       requiresAdminPermission user "" (pure ()) `shouldThrow`
         isNoPermissionException
-
-isNoPermissionException :: CoreException -> Bool
-isNoPermissionException NoPermissionException {} = True
-isNoPermissionException _ = False

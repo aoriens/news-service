@@ -1,6 +1,9 @@
 -- | Core exception types.
 module Core.Exception
   ( CoreException(..)
+  , isQueryException
+  , isBadCredentialsException
+  , isNoPermissionException
   ) where
 
 import Control.Exception
@@ -16,3 +19,15 @@ data CoreException
   deriving (Show)
 
 instance Exception CoreException
+
+isQueryException :: CoreException -> Bool
+isQueryException QueryException {} = True
+isQueryException _ = False
+
+isBadCredentialsException :: CoreException -> Bool
+isBadCredentialsException BadCredentialsException {} = True
+isBadCredentialsException _ = False
+
+isNoPermissionException :: CoreException -> Bool
+isNoPermissionException NoPermissionException {} = True
+isNoPermissionException _ = False

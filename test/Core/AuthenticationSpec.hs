@@ -98,10 +98,6 @@ stubHandle =
     , hLoggerHandle = Logger.Handle {hLowLevelLog = \_ _ _ -> pure ()}
     }
 
-isBadCredentialsException :: CoreException -> Bool
-isBadCredentialsException BadCredentialsException {} = True
-isBadCredentialsException _ = False
-
 stubCreds :: A.Credentials
 stubCreds = A.TokenCredentials (UserId 1) stubSecretToken
 
