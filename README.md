@@ -66,6 +66,9 @@ majority of methods is available without authentication. Currently we support
 HTTP basic authentication. You should use user's secret token as a login and an
 empty password. The secret token is only returned on user creation.
 
+In case of authentication failure or lack of permissions `404 NotFound` is
+returned in order to hide API which requires additional permissions.
+
 ## Entity encoding
 
 Non-empty request and response bodies containing API entities are encoded in
@@ -84,6 +87,12 @@ not be negative.
 must not be negative.
 
 ## Endpoints
+
+### `POST /author/create`
+
+Creates an author. Accepts [InAuthor](#InAuthor) entity in the request body and
+returns [Author](#Author) entity. Requires authentication and administrator
+permission.
 
 ### `GET /image/{image_id}`
 
@@ -116,9 +125,24 @@ Returns an array of [User](#User) entities.
 
 ## Entities
 
+### Author
+
+An author of news. Fields:
+
+- `author_id` - the identifier of the author. An integer, required.
+- `user` - the corresponding user. A [User](#User), required.
+- `description` - the author description. A string, required.
+
 ### Day
 
 A string in `YYYY-mm-dd` format to specify a calendar day.
+
+### InAuthor
+
+A request to create an author. Fields:
+
+- `user_id` - the identifier of existing [User](#User). An integer, required.
+- `description` - the description of the author. A string, required.
 
 ### InImage
 
@@ -129,7 +153,7 @@ A request to create an image. Fields:
 
 ### InUser
 
-An incoming request to create a user. Fields:
+An request to create a user. Fields:
 
 - `first_name` - the user's first name. A string, optional.
 - `last_name` - the user's last name. This is to be used in case of a
