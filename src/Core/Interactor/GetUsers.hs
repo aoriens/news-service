@@ -14,4 +14,5 @@ data Handle m =
     }
 
 run :: MonadThrow m => Handle m -> PageQuery -> m [User]
-run Handle {..} pageQuery = hGetUsers =<< fromPageQueryM hMaxPageLimit pageQuery
+run Handle {..} pageQuery =
+  hGetUsers =<< pageFromPageQueryM hMaxPageLimit pageQuery

@@ -7,43 +7,45 @@ import Test.Hspec
 
 spec :: Spec
 spec =
-  describe "fromPageQuery" $ do
+  describe "pageFromPageQuery" $ do
     it "should return max limit if no limit specified" $ do
       let maxLimit = PageLimit 10
-          r = fromPageQuery maxLimit noPageQuery
+          r = pageFromPageQuery maxLimit noPageQuery
       pageLimit <$> r `shouldBe` Just maxLimit
     it "should return max limit if specified limit is greater" $ do
       let maxLimit = PageLimit 10
           limit = 11
-          r = fromPageQuery maxLimit noPageQuery {pageQueryLimit = Just limit}
+          r =
+            pageFromPageQuery maxLimit noPageQuery {pageQueryLimit = Just limit}
       pageLimit <$> r `shouldBe` Just maxLimit
     it "should return the specified page limit if less than max limit" $ do
       let maxLimit = PageLimit 10
           limit = 9
-          r = fromPageQuery maxLimit noPageQuery {pageQueryLimit = Just limit}
+          r =
+            pageFromPageQuery maxLimit noPageQuery {pageQueryLimit = Just limit}
       pageLimit <$> r `shouldBe` Just (PageLimit limit)
     it "should return offset if specified" $ do
       let offset = 5
           r =
-            fromPageQuery
+            pageFromPageQuery
               defaultMaxLimit
               noPageQuery {pageQueryOffset = Just offset}
       pageOffset <$> r `shouldBe` Just (PageOffset offset)
     it "should return zero offset if no offset specified" $ do
       let r =
-            fromPageQuery
+            pageFromPageQuery
               defaultMaxLimit
               noPageQuery {pageQueryOffset = Nothing}
       pageOffset <$> r `shouldBe` Just (PageOffset 0)
     it "should return Nothing if offset is negative" $ do
       let r =
-            fromPageQuery
+            pageFromPageQuery
               defaultMaxLimit
               noPageQuery {pageQueryOffset = Just (-1)}
       r `shouldBe` Nothing
     it "should return Nothing if limit is negative" $ do
       let r =
-            fromPageQuery
+            pageFromPageQuery
               defaultMaxLimit
               noPageQuery {pageQueryLimit = Just (-1)}
       r `shouldBe` Nothing
