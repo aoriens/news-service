@@ -273,14 +273,13 @@ lookupByPath trie request = go Nothing trie (Wai.pathInfo request)
       | otherwise = Just $! PathMatch (trieMethodTableForExactMatch t) Nothing
     go !nearestPrefixMatch oldTrie (k:suffix)
       | Just newTrie <- HM.lookup k $ trieSubtries oldTrie =
-        go
-          (if null $ trieMethodTableForPrefixMatch newTrie
-             then nearestPrefixMatch
-             else Just $!
-                  PathMatch (trieMethodTableForPrefixMatch newTrie) $
-                  Just suffix)
-          newTrie
-          suffix
+        let nearestPrefixMatch' =
+              if null $ trieMethodTableForPrefixMatch newTrie
+                then nearestPrefixMatch
+                else Just $!
+                     PathMatch (trieMethodTableForPrefixMatch newTrie) $
+                     Just suffix
+         in go nearestPrefixMatch' newTrie suffix
       | otherwise = nearestPrefixMatch
 
 data PathMatch =
