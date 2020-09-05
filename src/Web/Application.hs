@@ -27,7 +27,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Util as Wai
 import Text.Printf
-import qualified Web.Exception as E
+import Web.Exception
 import qualified Web.Router as R
 import Web.Types
 import Web.Types.Internal.SessionId
@@ -120,23 +120,23 @@ convertExceptionsToErrorResponse h eapp session request respond =
 
 exceptionToResponse :: Handle -> SomeException -> Wai.Response
 exceptionToResponse h e
-  | Just t@(E.BadRequestException _) <- fromException e =
-    stubErrorResponseWithReason Http.badRequest400 [] $
-    E.badRequestExceptionReason t
-  | Just E.NotFoundException <- fromException e = notFoundResponse
-  | Just t@(E.UnsupportedMediaTypeException _) <- fromException e =
-    stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
-    "Supported media types are: " <> T.intercalate ", " (E.supportedMimeTypes t)
-  | Just t@(E.PayloadTooLargeException _) <- fromException e =
-    stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
-    "The request body length must not exceed " <>
-    T.pack (show (E.maxPayloadSize t)) <> " bytes"
+  | Just webException <- fromException e =
+    case webException of
+      BadRequestException reason ->
+        stubErrorResponseWithReason Http.badRequest400 [] reason
+      NotFoundException -> notFoundResponse
+      UnsupportedMediaTypeException supportedTypes ->
+        stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
+        "Supported media types are: " <> T.intercalate ", " supportedTypes
+      PayloadTooLargeException maxPayloadSize ->
+        stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
+        "The request body length must not exceed " <>
+        T.pack (show maxPayloadSize) <> " bytes"
+      MalformedAuthDataException _ -> notFoundResponse
   | Just (t :: Core.QueryException) <- fromException e =
     stubErrorResponseWithReason Http.badRequest400 [] $
     Core.queryExceptionReason t
   | Just (_ :: Core.BadCredentialsException) <- fromException e =
-    notFoundResponse
-  | Just (_ :: E.MalformedAuthDataException) <- fromException e =
     notFoundResponse
   | Just (_ :: Core.NoPermissionException) <- fromException e = notFoundResponse
   | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
