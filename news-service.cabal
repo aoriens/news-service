@@ -41,9 +41,12 @@ library
     , Data.Integral.Exact
     , Database
     , Database.Authors
+    , Database.Columns
     , Database.ConnectionManager
     , Database.Images
+    , Database.NativeSQLDecodable
     , Database.News
+    , Database.Pagination
     , Database.Users
     , Gateway.Authors
     , Gateway.CurrentTime

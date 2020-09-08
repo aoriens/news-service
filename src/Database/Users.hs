@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ApplicativeDo #-}
 
 module Database.Users
   ( createUser
@@ -6,6 +7,7 @@ module Database.Users
   , selectUsers
   , selectUserAuthData
   , deleteUser
+  , userColumns
   ) where
 
 import Control.Arrow
@@ -14,13 +16,15 @@ import Core.Image
 import qualified Core.Interactor.CreateUser as I
 import Core.Pagination
 import Core.User
-import Data.Int
+import Data.Functor.Contravariant
 import Data.Profunctor
-import Data.Text (Text)
-import Data.Time
 import Data.Vector (Vector)
 import Database
+import Database.Columns
 import Database.Images
+import Database.Pagination
+import qualified Hasql.Decoders as D
+import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
 createUser :: I.CreateUserCommand -> Transaction I.CreateUserResult
@@ -63,40 +67,32 @@ insertUser =
     |]
 
 selectUserById :: Statement UserId (Maybe User)
-selectUserById =
-  dimap
-    getUserId
-    (fmap decodeUser)
-    [TH.maybeStatement|
-    select user_id :: integer,
-           first_name :: varchar?,
-           last_name :: varchar,
-           avatar_id :: integer?,
-           created_at :: timestamptz,
-           is_admin :: boolean
-    from users
-    where user_id = $1 :: integer
-    |]
+selectUserById = selectColumns D.rowMaybe userColumns sqlSuffix encoder True
+  where
+    sqlSuffix = "from users where user_id = $1"
+    encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
 selectUsers :: Statement Page (Vector User)
 selectUsers =
-  dimap
-    (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
-    (fmap decodeUser)
-    [TH.vectorStatement|
-    select user_id :: integer,
-           first_name :: varchar?,
-           last_name :: varchar,
-           avatar_id :: integer?,
-           created_at :: timestamptz,
-           is_admin :: boolean
-    from users
-    limit $1 :: integer offset $2 :: integer
-    |]
+  selectColumns
+    D.rowVector
+    userColumns
+    "from users limit $1 offset $2"
+    pageToLimitOffsetEncoder
+    True
 
-decodeUser :: (Int32, Maybe Text, Text, Maybe Int32, UTCTime, Bool) -> User
-decodeUser (userId, userFirstName, userLastName, userAvatarId, userCreatedAt, userIsAdmin) =
-  User {userId = UserId userId, userAvatarId = ImageId <$> userAvatarId, ..}
+userColumns :: Columns User
+userColumns = do
+  userId <- UserId <$> column usersTable "user_id"
+  userFirstName <- column usersTable "first_name"
+  userLastName <- column usersTable "last_name"
+  userAvatarId <- fmap ImageId <$> column usersTable "avatar_id"
+  userCreatedAt <- column usersTable "created_at"
+  userIsAdmin <- column usersTable "is_admin"
+  pure User {..}
+
+usersTable :: TableName
+usersTable = "users"
 
 selectUserAuthData ::
      Statement UserId (Maybe (Auth.SecretTokenHash, Auth.IsAdmin))
