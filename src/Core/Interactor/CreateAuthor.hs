@@ -25,8 +25,8 @@ run ::
   -> m (Either Failure Author)
 run h credentials uid description = do
   actor <- A.authenticate (hAuthHandle h) credentials
-  A.requiresAdminPermission actor "create an author" $
-    hCreateAuthor h uid description
+  A.requireAdminPermission actor "create an author"
+  hCreateAuthor h uid description
 
 data Failure =
   UnknownUserId

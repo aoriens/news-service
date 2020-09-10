@@ -19,6 +19,6 @@ run ::
      MonadThrow m => Handle m -> Maybe A.Credentials -> PageQuery -> m [Author]
 run h credentials pageQuery = do
   actor <- A.authenticate (hAuthHandle h) credentials
-  A.requiresAdminPermission actor "get authors" $ do
-    page <- pageFromPageQueryM (hPaginationConfig h) pageQuery
-    hGetAuthors h page
+  A.requireAdminPermission actor "get authors"
+  page <- pageFromPageQueryM (hPaginationConfig h) pageQuery
+  hGetAuthors h page
