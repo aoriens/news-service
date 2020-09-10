@@ -22,6 +22,7 @@ library
   exposed-modules:
     Control.Exception.Sync
     , Core.Authentication
+    , Core.Authentication.Impl
     , Core.Author
     , Core.Authorization
     , Core.Exception
@@ -144,8 +145,8 @@ test-suite news-service-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Core.AuthenticationSpec
-    , Core.AuthenticationStubs
+      Core.Authentication.Fakes
+    , Core.Authentication.ImplSpec
     , Core.AuthorizationSpec
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateUserSpec

@@ -3,7 +3,7 @@ module Core.Interactor.CreateAuthorSpec
   ) where
 
 import qualified Core.Authentication as A
-import Core.AuthenticationStubs
+import Core.Authentication.Fakes
 import Core.Author
 import Core.Exception
 import Core.Interactor.CreateAuthor

@@ -3,7 +3,7 @@ module Core.Interactor.DeleteUserSpec
   ) where
 
 import qualified Core.Authentication as A
-import Core.AuthenticationStubs
+import Core.Authentication.Fakes
 import Core.Exception
 import qualified Core.Interactor.DeleteUser as I
 import Core.User

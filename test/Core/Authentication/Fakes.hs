@@ -1,15 +1,11 @@
-module Core.AuthenticationStubs
+module Core.Authentication.Fakes
   ( stubAuthHandleIdentifyingUserWithAdminPermission
   ) where
 
 import Core.Authentication
-import qualified Logger
+import Core.User
 
 stubAuthHandleIdentifyingUserWithAdminPermission ::
      Applicative m => Bool -> Handle m
 stubAuthHandleIdentifyingUserWithAdminPermission isAdmin =
-  Handle
-    { hGetUserAuthData = \_ -> pure $ Just (SecretTokenHash "", isAdmin)
-    , hTokenMatchesHash = \_ _ -> True
-    , hLoggerHandle = Logger.Handle $ \_ _ _ -> pure ()
-    }
+  Handle $ \_ -> pure $ IdentifiedUser (UserId 276194) isAdmin

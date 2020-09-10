@@ -13,6 +13,7 @@ import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import Core.Authentication as Auth
+import Core.Authentication.Impl as AuthImpl
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteUser as IDeleteUser
@@ -116,16 +117,17 @@ getDeps = do
               {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
         , dMakeAuthHandle =
             \session ->
-              Auth.Handle
-                { hGetUserAuthData =
-                    GUsers.getUserAuthData $
-                    sessionDatabaseHandle'
-                      dDatabaseConnectionConfig
-                      dLoggerHandle
-                      session
-                , hTokenMatchesHash = GSecretToken.tokenMatchesHash
-                , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
-                }
+              AuthImpl.new
+                AuthImpl.Handle
+                  { hGetUserAuthData =
+                      GUsers.getUserAuthData $
+                      sessionDatabaseHandle'
+                        dDatabaseConnectionConfig
+                        dLoggerHandle
+                        session
+                  , hTokenMatchesHash = GSecretToken.tokenMatchesHash
+                  , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+                  }
         })
 
 getWebAppHandle :: Deps -> IO Web.Application.Handle
