@@ -41,27 +41,31 @@ spec =
     it
       "should throw NoPermissionException an exception if the actor is \
       \authenticated, but not an admin" $ do
+      userIsDeleted <- newIORef False
       let uid = UserId 1
           isAdmin = False
           credentials = Just stubCredentials
           h =
             I.Handle
-              { hDeleteUser = const $ pure ()
+              { hDeleteUser = \_ -> writeIORef userIsDeleted True
               , hAuthHandle =
                   stubAuthHandleIdentifyingUserWithAdminPermission isAdmin
               }
       I.run h credentials uid `shouldThrow` isNoPermissionException
+      readIORef userIsDeleted `shouldReturn` False
     it "should throw NoPermissionException for an anonymous actor" $ do
+      userIsDeleted <- newIORef False
       let uid = UserId 1
           isAdmin = False
           credentials = Nothing
           h =
             I.Handle
-              { hDeleteUser = const $ pure ()
+              { hDeleteUser = \_ -> writeIORef userIsDeleted True
               , hAuthHandle =
                   stubAuthHandleIdentifyingUserWithAdminPermission isAdmin
               }
       I.run h credentials uid `shouldThrow` isNoPermissionException
+      readIORef userIsDeleted `shouldReturn` False
 
 stubCredentials :: A.Credentials
 stubCredentials = A.TokenCredentials (UserId 1) (A.SecretToken "")
