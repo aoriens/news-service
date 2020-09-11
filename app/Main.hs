@@ -23,6 +23,7 @@ import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
 import Core.Pagination
+import qualified Core.Pagination.Impl
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text as T
@@ -65,7 +66,7 @@ data Deps =
     { dDatabaseConnectionConfig :: DBConnManager.Config
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
-    , dPaginationConfig :: Core.Pagination.Config
+    , dPagerHandle :: PagerHandle
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
@@ -104,7 +105,7 @@ getDeps = do
         { dConfig
         , dLoggerHandle
         , dDatabaseConnectionConfig
-        , dPaginationConfig = Cf.cfPaginationConfig dConfig
+        , dPagerHandle = Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
         , dJSONEncode
         , dLoadJSONRequestBody =
             RequestBodyLoader.loadJSONRequestBody
@@ -180,7 +181,7 @@ getAuthorsHandlerHandle deps@Deps {..} session =
           { hAuthHandle = dMakeAuthHandle session
           , hGetAuthors =
               GAuthors.getAuthors $ sessionDatabaseHandle deps session
-          , hPaginationConfig = dPaginationConfig
+          , hPagerHandle = dPagerHandle
           }
     , hPresenterHandle = dRepresentationBuilderHandle
     }
@@ -192,7 +193,7 @@ newsHandlerHandle deps@Deps {..} session =
     interactorHandle =
       IGetNews.Handle
         { hGetNews = GNews.getNews $ sessionDatabaseHandle deps session
-        , hPaginationConfig = dPaginationConfig
+        , hPagerHandle = dPagerHandle
         }
 
 createUserHandle :: Deps -> Web.Session -> HCreateUser.Handle
@@ -241,7 +242,7 @@ getUsersHandlerHandle deps@Deps {..} session =
     { hGetUsersHandle =
         IGetUsers.Handle
           { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle deps session
-          , hPaginationConfig = dPaginationConfig
+          , hPagerHandle = dPagerHandle
           }
     , hPresenterHandle = dRepresentationBuilderHandle
     }

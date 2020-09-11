@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Core.Interactor.GetNewsSpec
   ( spec
   ) where
@@ -28,25 +26,43 @@ spec =
                 , I.newsText = "Text2"
                 }
             ]
-          hPaginationConfig = Core.Pagination.Config $ PageLimit maxBound
-          hGetNews = const (pure stubResults)
-      results <- I.getNews I.Handle {..} noPageQuery
+          h =
+            I.Handle
+              { hPagerHandle =
+                  PagerHandle . const . Just $ Page (PageOffset 0) (PageLimit 0)
+              , hGetNews = const (pure stubResults)
+              }
+      results <- I.getNews h noPageQuery
       results `shouldBe` stubResults
-    it "should pass the page offset to the gateway" $ do
-      passedOffset <- newIORef (PageOffset 0)
-      let hPaginationConfig = Core.Pagination.Config $ PageLimit 1
-          offset = 3
-          hGetNews = \Page {..} -> writeIORef passedOffset pageOffset >> pure []
-      _ <- I.getNews I.Handle {..} noPageQuery {pageQueryOffset = Just offset}
-      readIORef passedOffset `shouldReturn` PageOffset offset
-    it
-      "should pass the specified page limit to the gateway if less than max limit" $ do
-      passedLimit <- newIORef (PageLimit 0)
-      let hPaginationConfig = Core.Pagination.Config $ PageLimit 10
-          limit = 9
-          hGetNews = \Page {..} -> writeIORef passedLimit pageLimit >> pure []
-      _ <- I.getNews I.Handle {..} noPageQuery {pageQueryLimit = Just limit}
-      readIORef passedLimit `shouldReturn` PageLimit limit
+    it "should pass the page to the gateway" $ do
+      passedPage <- newIORef undefined
+      let page = Page (PageOffset 1) (PageLimit 2)
+          h =
+            I.Handle
+              { hPagerHandle = PagerHandle . const $ Just page
+              , hGetNews = \p -> writeIORef passedPage p >> pure []
+              }
+      _ <- I.getNews h noPageQuery
+      readIORef passedPage `shouldReturn` page
+    it "should pass the page query to the pager" $ do
+      passedPage <- newIORef undefined
+      let offset = 4
+          limit = 3
+          pageQuery = PageQuery (Just offset) (Just limit)
+          expectedPage = Page (PageOffset offset) (PageLimit limit)
+          unexpectedPage = Page (PageOffset 0) (PageLimit 0)
+          h =
+            I.Handle
+              { hPagerHandle =
+                  PagerHandle $ \p ->
+                    Just $
+                    if p == pageQuery
+                      then expectedPage
+                      else unexpectedPage
+              , hGetNews = \p -> writeIORef passedPage p >> pure []
+              }
+      _ <- I.getNews h pageQuery
+      readIORef passedPage `shouldReturn` expectedPage
 
 noPageQuery :: PageQuery
 noPageQuery = PageQuery Nothing Nothing

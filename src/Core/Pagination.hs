@@ -3,8 +3,7 @@ module Core.Pagination
   , PageQuery(..)
   , PageLimit(..)
   , PageOffset(..)
-  , Config(..)
-  , pageFromPageQuery
+  , PagerHandle(..)
   , pageFromPageQueryM
   ) where
 
@@ -20,9 +19,8 @@ data Page =
     }
   deriving (Eq, Show)
 
--- | Resembles 'Page', but allows fields to be optional, since they
--- may be missing from a request. It may be used as an input type in
--- interactors.
+-- | A variant of 'Page' with unchecked, raw data from the user. It
+-- may be used as an input type in interactors.
 data PageQuery =
   PageQuery
     { pageQueryOffset :: Maybe Int32
@@ -44,33 +42,16 @@ newtype PageLimit =
     }
   deriving (Eq, Ord, Show)
 
-newtype Config =
-  Config
-    { cfMaxPageLimit :: PageLimit
+newtype PagerHandle =
+  PagerHandle
+    { pageFromPageQuery :: PageQuery -> Maybe Page
+    -- ^ Converts a page query to a page. Returns Nothing if the page
+    -- query is incorrect.
     }
 
--- | Converts a page query to a page keeping maximum limit specified
--- in the first parameter. Nothing is returned in case of invalid
--- (e.g. negative) field values.
-pageFromPageQuery :: Config -> PageQuery -> Maybe Page
-pageFromPageQuery (Config maxLimit) PageQuery {..} = do
-  pageLimit <-
-    case pageQueryLimit of
-      Just limit
-        | limit >= 0 -> Just $ min maxLimit (PageLimit limit)
-        | otherwise -> Nothing
-      Nothing -> Just maxLimit
-  pageOffset <-
-    case pageQueryOffset of
-      Just offset
-        | offset >= 0 -> Just $ PageOffset offset
-        | otherwise -> Nothing
-      Nothing -> Just $ PageOffset 0
-  pure Page {..}
-
--- | Performs 'fromPageQuery' and throws 'QueryException' in case of
+-- | Performs 'pageFromPageQuery and throws 'CoreException' in case of
 -- incorrect 'PageQuery'.
-pageFromPageQueryM :: MonadThrow m => Config -> PageQuery -> m Page
+pageFromPageQueryM :: MonadThrow m => PagerHandle -> PageQuery -> m Page
 pageFromPageQueryM config pageQuery =
   maybe (throwM pageException) pure (pageFromPageQuery config pageQuery)
   where

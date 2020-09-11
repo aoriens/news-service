@@ -12,12 +12,12 @@ import Data.Time.Calendar
 
 getNews :: MonadThrow m => Handle m -> PageQuery -> m [News]
 getNews Handle {..} pageQuery =
-  hGetNews =<< pageFromPageQueryM hPaginationConfig pageQuery
+  hGetNews =<< pageFromPageQueryM hPagerHandle pageQuery
 
 data Handle m =
   Handle
     { hGetNews :: Page -> m [News]
-    , hPaginationConfig :: Core.Pagination.Config
+    , hPagerHandle :: PagerHandle
     }
 
 data News =

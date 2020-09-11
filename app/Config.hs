@@ -29,7 +29,7 @@ data Config =
     , cfDatabaseConfig :: !DB.Config
     , cfLoggerVerbosity :: !Logger.Level
     , cfLogFile :: !LogFile
-    , cfPaginationConfig :: !Pagination.Config
+    , cfMaxPageLimit :: !Pagination.PageLimit
     , cfMaxRequestJsonBodySize :: !Word64
     , cfSecretTokenLength :: !Int
     , cfAllowedImageMimeTypes :: HS.HashSet Text
@@ -86,9 +86,7 @@ makeConfig inConfig@InConfig {..} = do
           case inLogFilePath of
             Just path@(_:_) -> LogFilePath path
             _ -> LogFileStdErr
-      , cfPaginationConfig =
-          Pagination.Config . Pagination.PageLimit $
-          fromMaybe 100 inMaxPageLimit
+      , cfMaxPageLimit = Pagination.PageLimit $ fromMaybe 100 inMaxPageLimit
       , cfMaxRequestJsonBodySize = fromMaybe 16384 inMaxRequestJsonBodySize
       , cfShowInternalErrorInfoInResponse =
           Just True == inShowInternalErrorInfoInResponse
