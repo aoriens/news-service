@@ -152,6 +152,7 @@ test-suite news-service-test
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteUserSpec
+    , Core.Interactor.GetAuthorsSpec
     , Core.Interactor.GetNewsSpec
     , Core.Pagination.ImplSpec
     , Data.Integral.ExactSpec
