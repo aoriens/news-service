@@ -21,7 +21,7 @@ import qualified Web.RepresentationBuilder as RB
 
 data User =
   User
-    { userId :: Int32
+    { userUserId :: Int32
     , userFirstName :: Maybe T.Text
     , userLastName :: T.Text
     , userAvatarURL :: Maybe T.Text
@@ -35,7 +35,7 @@ userRepresentation creds Core.User {..} = do
   avatarURL <- RB.renderMaybeAppURL (U.URLImage <$> userAvatarId)
   pure
     User
-      { userId = Core.getUserId userId
+      { userUserId = Core.getUserId userId
       , userFirstName = userFirstName
       , userLastName = userLastName
       , userAvatarURL = avatarURL

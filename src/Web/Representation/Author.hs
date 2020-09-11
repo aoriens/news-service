@@ -17,7 +17,7 @@ import qualified Web.RepresentationBuilder as RB
 
 data Author =
   Author
-    { authorId :: Int32
+    { authorAuthorId :: Int32
     , authorUser :: User
     , authorDescription :: T.Text
     }
@@ -27,7 +27,7 @@ authorRepresentation Core.Author {..} = do
   userR <- userRepresentation Nothing authorUser
   pure
     Author
-      { authorId = Core.getAuthorId authorId
+      { authorAuthorId = Core.getAuthorId authorId
       , authorUser = userR
       , authorDescription = authorDescription
       }

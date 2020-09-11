@@ -169,7 +169,7 @@ An request to create a user. Fields:
 
 A news entry. Fields:
 
-- `id` - the entity identifier. An integer, required.
+- `news_id` - the entity identifier. An integer, required.
 - `title` - the news title. A string, required.
 - `date` - the issue date. A [Day](#Day), required.
 - `text` - the news body text. It is considered as a plain Unicode text.
@@ -184,7 +184,7 @@ A string in ISO8601 format to describe a specific UTC date and time. Example:
 
 A user. Fields:
 
-- `id` - the user's identifier. An integer, required.
+- `user_id` - the user's identifier. An integer, required.
 - `first_name` - the first name. A string, optional.
 - `last_name` - the last name. A string, required.
 - `avatar_url` - the avatar image URL. An string, optional.

@@ -41,11 +41,11 @@ run h request respond = do
 presentResponse :: Handle -> [I.News] -> BB.Builder
 presentResponse Handle {..} = hJSONEncode . map presentNews
   where
-    presentNews I.News {..} = News {..}
+    presentNews I.News {..} = News {newsNewsId = newsId, ..}
 
 data News =
   News
-    { newsId :: Int32
+    { newsNewsId :: Int32
     , newsTitle :: Text
     , newsDate :: Day
     , newsText :: Text
