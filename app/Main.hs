@@ -12,7 +12,7 @@ import qualified Config.IO as CIO
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
-import Core.Authentication as Auth
+import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateUser as ICreateUser
@@ -74,7 +74,7 @@ data Deps =
     , dSecretTokenIOState :: GSecretToken.IOState
     , dRenderAppURL :: U.AppURL -> T.Text
     , dRepresentationBuilderHandle :: Web.RepresentationBuilder.Handle
-    , dMakeAuthHandle :: Web.Session -> Auth.Handle IO
+    , dMakeAuthHandle :: Web.Session -> AuthenticationHandle IO
     }
 
 main :: IO ()

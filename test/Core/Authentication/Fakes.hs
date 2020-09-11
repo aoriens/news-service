@@ -7,13 +7,15 @@ module Core.Authentication.Fakes
 import Core.Authentication
 import Core.User
 
-stubAuthHandleReturningAdminUser :: Applicative m => Handle m
+stubAuthHandleReturningAdminUser :: Applicative m => AuthenticationHandle m
 stubAuthHandleReturningAdminUser =
-  Handle $ \_ -> pure $ IdentifiedUser (UserId 276194) True
+  AuthenticationHandle $ \_ -> pure $ IdentifiedUser (UserId 276194) True
 
-stubAuthHandleReturningIdentifiedNonAdminUser :: Applicative m => Handle m
+stubAuthHandleReturningIdentifiedNonAdminUser ::
+     Applicative m => AuthenticationHandle m
 stubAuthHandleReturningIdentifiedNonAdminUser =
-  Handle $ \_ -> pure $ IdentifiedUser (UserId 276194) False
+  AuthenticationHandle $ \_ -> pure $ IdentifiedUser (UserId 276194) False
 
-stubAuthHandleReturningAnonymousUser :: Applicative m => Handle m
-stubAuthHandleReturningAnonymousUser = Handle $ \_ -> pure AnonymousUser
+stubAuthHandleReturningAnonymousUser :: Applicative m => AuthenticationHandle m
+stubAuthHandleReturningAnonymousUser =
+  AuthenticationHandle $ \_ -> pure AnonymousUser

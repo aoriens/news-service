@@ -4,7 +4,7 @@ module Core.Authentication.Impl
   ) where
 
 import Control.Monad.Catch
-import qualified Core.Authentication as A
+import Core.Authentication
 import Core.Exception
 import Core.User
 import qualified Data.Text as T
@@ -12,18 +12,18 @@ import qualified Logger
 
 data Handle m =
   Handle
-    { hGetUserAuthData :: UserId -> m (Maybe (A.SecretTokenHash, A.IsAdmin))
-    , hTokenMatchesHash :: A.SecretToken -> A.SecretTokenHash -> Bool
+    { hGetUserAuthData :: UserId -> m (Maybe (SecretTokenHash, IsAdmin))
+    , hTokenMatchesHash :: SecretToken -> SecretTokenHash -> Bool
     , hLoggerHandle :: Logger.Handle m
     }
 
-new :: Handle m -> A.Handle m
-new h = A.Handle $ authenticate h
+new :: Handle m -> AuthenticationHandle m
+new h = AuthenticationHandle $ authenticate' h
 
-authenticate ::
-     MonadThrow m => Handle m -> Maybe A.Credentials -> m A.AuthenticatedUser
-authenticate _ Nothing = pure A.AnonymousUser
-authenticate h (Just (A.TokenCredentials userIdent token)) = do
+authenticate' ::
+     MonadThrow m => Handle m -> Maybe Credentials -> m AuthenticatedUser
+authenticate' _ Nothing = pure AnonymousUser
+authenticate' h (Just (TokenCredentials userIdent token)) = do
   optData <- hGetUserAuthData h userIdent
   case optData of
     Nothing ->
@@ -31,7 +31,7 @@ authenticate h (Just (A.TokenCredentials userIdent token)) = do
       "User does not exist: " <> T.pack (show userIdent)
     Just (hash, isAdmin)
       | hTokenMatchesHash h token hash -> do
-        let authUser = A.IdentifiedUser userIdent isAdmin
+        let authUser = IdentifiedUser userIdent isAdmin
         Logger.info (hLoggerHandle h) $
           "Authentication success: " <> T.pack (show authUser)
         pure authUser

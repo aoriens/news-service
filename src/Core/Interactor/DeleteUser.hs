@@ -4,17 +4,17 @@ module Core.Interactor.DeleteUser
   ) where
 
 import Control.Monad.Catch
-import qualified Core.Authorization as Auth
+import Core.Authorization
 import Core.User
 
 data Handle m =
   Handle
     { hDeleteUser :: UserId -> m ()
-    , hAuthHandle :: Auth.Handle m
+    , hAuthHandle :: AuthenticationHandle m
     }
 
-run :: MonadThrow m => Handle m -> Maybe Auth.Credentials -> UserId -> m ()
+run :: MonadThrow m => Handle m -> Maybe Credentials -> UserId -> m ()
 run Handle {..} credentials userIdent = do
-  actor <- Auth.authenticate hAuthHandle credentials
-  Auth.requireAdminPermission actor "deleting user"
+  actor <- authenticate hAuthHandle credentials
+  requireAdminPermission actor "deleting user"
   hDeleteUser userIdent

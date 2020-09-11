@@ -2,7 +2,7 @@ module Core.Interactor.GetAuthorsSpec
   ( spec
   ) where
 
-import Core.Authentication hiding (Handle)
+import Core.Authentication
 import Core.Authentication.Fakes
 import Core.Author
 import Core.Exception

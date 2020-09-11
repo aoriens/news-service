@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Core.Authentication
-  ( Handle(..)
+  ( AuthenticationHandle(..)
   , Credentials(..)
   , SecretToken(..)
   , SecretTokenHash(..)
@@ -13,8 +13,8 @@ import Control.Monad.Catch
 import Core.User
 import qualified Data.ByteString as B
 
-newtype Handle m =
-  Handle
+newtype AuthenticationHandle m =
+  AuthenticationHandle
     { authenticate :: MonadThrow m =>
                         Maybe Credentials -> m AuthenticatedUser
       -- ^ Authenticate a user with credentials. It can throw
