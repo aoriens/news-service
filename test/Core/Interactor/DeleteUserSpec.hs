@@ -15,14 +15,12 @@ spec =
   describe "run" $ do
     it "should issue the delete command to the gateway if the actor is admin" $ do
       deleteCommandIsIssued <- newIORef False
-      let isAdmin = True
-          credentials = Just stubCredentials
+      let credentials = Just stubCredentials
           uid = UserId 1
           h =
             I.Handle
               { hDeleteUser = const $ writeIORef deleteCommandIsIssued True
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission isAdmin
+              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       I.run h credentials uid
       readIORef deleteCommandIsIssued `shouldReturn` True
@@ -33,8 +31,7 @@ spec =
           h =
             I.Handle
               { hDeleteUser = writeIORef passedUserId
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission True
+              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       I.run h credentials uid
       readIORef passedUserId `shouldReturn` uid
@@ -43,26 +40,22 @@ spec =
       \authenticated, but not an admin" $ do
       userIsDeleted <- newIORef False
       let uid = UserId 1
-          isAdmin = False
           credentials = Just stubCredentials
           h =
             I.Handle
               { hDeleteUser = \_ -> writeIORef userIsDeleted True
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission isAdmin
+              , hAuthHandle = stubAuthHandleReturningIdentifiedNonAdminUser
               }
       I.run h credentials uid `shouldThrow` isNoPermissionException
       readIORef userIsDeleted `shouldReturn` False
     it "should throw NoPermissionException for an anonymous actor" $ do
       userIsDeleted <- newIORef False
       let uid = UserId 1
-          isAdmin = False
           credentials = Nothing
           h =
             I.Handle
               { hDeleteUser = \_ -> writeIORef userIsDeleted True
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission isAdmin
+              , hAuthHandle = stubAuthHandleReturningAnonymousUser
               }
       I.run h credentials uid `shouldThrow` isNoPermissionException
       readIORef userIsDeleted `shouldReturn` False

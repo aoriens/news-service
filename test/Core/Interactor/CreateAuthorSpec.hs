@@ -20,8 +20,7 @@ spec
     it
       "should pass control to the gateway if the actor is administrator and the user exists" $ do
       createAuthorCommandIsIssued <- newIORef False
-      let isAdmin = True
-          credentials = Just stubCredentials
+      let credentials = Just stubCredentials
           uid = UserId 1
           description = ""
           h =
@@ -30,22 +29,19 @@ spec
                   \_ _ -> do
                     writeIORef createAuthorCommandIsIssued True
                     pure $ Right stubAuthor
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission isAdmin
+              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       _ <- run h credentials uid description
       readIORef createAuthorCommandIsIssued `shouldReturn` True
     it
       "should throw NoPermissionException if the user is an identified non-admin" $ do
-      let isAdmin = False
-          credentials = Just stubCredentials
+      let credentials = Just stubCredentials
           uid = UserId 1
           description = ""
           h =
             Handle
               { hCreateAuthor = \_ _ -> pure $ Right stubAuthor
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission isAdmin
+              , hAuthHandle = stubAuthHandleReturningIdentifiedNonAdminUser
               }
       run h credentials uid description `shouldThrow` isNoPermissionException
     it "should throw NoPermissionException if the user is anonymous" $ do
@@ -55,8 +51,7 @@ spec
           h =
             Handle
               { hCreateAuthor = \_ _ -> pure $ Right stubAuthor
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission False
+              , hAuthHandle = stubAuthHandleReturningAnonymousUser
               }
       run h credentials uid description `shouldThrow` isNoPermissionException
     it "should pass userId and description data to the gateway in a normal case" $ do
@@ -70,8 +65,7 @@ spec
                   \uid desc -> do
                     writeIORef userIdAndDescription (uid, desc)
                     pure $ Right stubAuthor
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission True
+              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       _ <- run h credentials expectedUid expectedDescription
       readIORef userIdAndDescription `shouldReturn`
@@ -84,8 +78,7 @@ spec
           h =
             Handle
               { hCreateAuthor = \_ _ -> pure expectedResult
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission True
+              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       r <- run h credentials uid description
       r `shouldBe` expectedResult
@@ -97,8 +90,7 @@ spec
           h =
             Handle
               { hCreateAuthor = \_ _ -> pure expectedResult
-              , hAuthHandle =
-                  stubAuthHandleIdentifyingUserWithAdminPermission True
+              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       r <- run h credentials uid description
       r `shouldBe` expectedResult

@@ -1,11 +1,19 @@
 module Core.Authentication.Fakes
-  ( stubAuthHandleIdentifyingUserWithAdminPermission
+  ( stubAuthHandleReturningAdminUser
+  , stubAuthHandleReturningIdentifiedNonAdminUser
+  , stubAuthHandleReturningAnonymousUser
   ) where
 
 import Core.Authentication
 import Core.User
 
-stubAuthHandleIdentifyingUserWithAdminPermission ::
-     Applicative m => Bool -> Handle m
-stubAuthHandleIdentifyingUserWithAdminPermission isAdmin =
-  Handle $ \_ -> pure $ IdentifiedUser (UserId 276194) isAdmin
+stubAuthHandleReturningAdminUser :: Applicative m => Handle m
+stubAuthHandleReturningAdminUser =
+  Handle $ \_ -> pure $ IdentifiedUser (UserId 276194) True
+
+stubAuthHandleReturningIdentifiedNonAdminUser :: Applicative m => Handle m
+stubAuthHandleReturningIdentifiedNonAdminUser =
+  Handle $ \_ -> pure $ IdentifiedUser (UserId 276194) False
+
+stubAuthHandleReturningAnonymousUser :: Applicative m => Handle m
+stubAuthHandleReturningAnonymousUser = Handle $ \_ -> pure AnonymousUser
