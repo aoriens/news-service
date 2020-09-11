@@ -30,6 +30,7 @@ library
     , Core.Interactor.CreateAuthor
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteUser
+    , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
@@ -67,6 +68,7 @@ library
     , Web.Handler.CreateAuthor
     , Web.Handler.CreateUser
     , Web.Handler.DeleteUser
+    , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
     , Web.Handler.GetImage
     , Web.Handler.GetNews
@@ -152,6 +154,7 @@ test-suite news-service-test
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteUserSpec
+    , Core.Interactor.GetAuthorSpec
     , Core.Interactor.GetAuthorsSpec
     , Core.Interactor.GetNewsSpec
     , Core.Pagination.ImplSpec

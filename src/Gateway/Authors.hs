@@ -1,6 +1,7 @@
 module Gateway.Authors
   ( createAuthor
   , getAuthors
+  , getAuthor
   ) where
 
 import Core.Author
@@ -19,3 +20,7 @@ createAuthor h uid description =
 getAuthors :: DB.Handle -> Page -> IO [Author]
 getAuthors h page =
   toList <$> DB.runTransaction h (statement DAuthors.selectAuthors page)
+
+getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
+getAuthor h authorIdent =
+  DB.runTransaction h (statement DAuthors.selectAuthorById authorIdent)

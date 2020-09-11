@@ -91,8 +91,11 @@ must not be negative.
 ### `POST /author/create`
 
 Creates an author. Accepts [InAuthor](#InAuthor) entity in the request body and
-returns [Author](#Author) entity. Requires authentication and the administrator
-privilege.
+returns [Author](#Author) entity. Requires the administrator privilege.
+
+### `GET /author/{author_id}`
+
+Returns the specified [Author](#Author). Requires the administrator privilege.
 
 ### `GET /authors`
 

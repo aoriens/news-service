@@ -4,6 +4,7 @@
 module Database.Authors
   ( createAuthor
   , selectAuthors
+  , selectAuthorById
   ) where
 
 import Control.Arrow
@@ -11,6 +12,7 @@ import Core.Author
 import qualified Core.Interactor.CreateAuthor as I
 import Core.Pagination
 import Core.User
+import Data.Functor.Contravariant
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Vector (Vector)
@@ -19,6 +21,7 @@ import Database.Columns
 import Database.Pagination
 import Database.Users
 import qualified Hasql.Decoders as D
+import qualified Hasql.Encoders as E
 import Hasql.TH as TH
 
 createAuthor :: UserId -> T.Text -> Transaction (Either I.Failure Author)
@@ -47,14 +50,28 @@ insertAuthor =
 
 selectAuthors :: Statement Page (Vector Author)
 selectAuthors =
-  selectColumns D.rowVector columns sqlSuffix pageToLimitOffsetEncoder True
-  where
-    sqlSuffix = "from authors join users using (user_id) limit $1 offset $2"
-    columns = do
-      authorUser <- userColumns
-      authorId <- AuthorId <$> column authorsTable "author_id"
-      authorDescription <- column authorsTable "description"
-      pure Author {..}
+  selectColumns
+    D.rowVector
+    authorColumns
+    "from authors join users using (user_id) limit $1 offset $2"
+    pageToLimitOffsetEncoder
+    True
+
+selectAuthorById :: Statement AuthorId (Maybe Author)
+selectAuthorById =
+  selectColumns
+    D.rowMaybe
+    authorColumns
+    "from authors join users using (user_id) where author_id = $1"
+    (getAuthorId >$< E.param (E.nonNullable E.int4))
+    True
+
+authorColumns :: Columns Author
+authorColumns = do
+  authorUser <- userColumns
+  authorId <- AuthorId <$> column authorsTable "author_id"
+  authorDescription <- column authorsTable "description"
+  pure Author {..}
 
 authorsTable :: TableName
 authorsTable = "authors"
