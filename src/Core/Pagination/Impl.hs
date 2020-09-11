@@ -12,13 +12,13 @@ new maxLimit =
     pageLimit <-
       case pageQueryLimit of
         Just limit
-          | limit >= 0 -> Just $ min maxLimit (PageLimit limit)
-          | otherwise -> Nothing
-        Nothing -> Just maxLimit
+          | limit >= 0 -> Right $ min maxLimit (PageLimit limit)
+          | otherwise -> Left "Pagination limit must not be negative"
+        Nothing -> Right maxLimit
     pageOffset <-
       case pageQueryOffset of
         Just offset
-          | offset >= 0 -> Just $ PageOffset offset
-          | otherwise -> Nothing
-        Nothing -> Just $ PageOffset 0
+          | offset >= 0 -> Right $ PageOffset offset
+          | otherwise -> Left "Pagination offset must not be negative"
+        Nothing -> Right $ PageOffset 0
     pure Page {..}

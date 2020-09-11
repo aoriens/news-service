@@ -10,6 +10,7 @@ module Core.Pagination
 import Control.Monad.Catch
 import Core.Exception
 import Data.Int
+import Data.Text
 
 -- | The part of data to be output in a response.
 data Page =
@@ -44,8 +45,8 @@ newtype PageLimit =
 
 newtype PagerHandle =
   PagerHandle
-    { pageFromPageQuery :: PageQuery -> Maybe Page
-    -- ^ Converts a page query to a page. Returns Nothing if the page
+    { pageFromPageQuery :: PageQuery -> Either Text Page
+    -- ^ Converts a page query to a page. Returns Left if the page
     -- query is incorrect.
     }
 
@@ -53,7 +54,4 @@ newtype PagerHandle =
 -- incorrect 'PageQuery'.
 pageFromPageQueryM :: MonadThrow m => PagerHandle -> PageQuery -> m Page
 pageFromPageQueryM config pageQuery =
-  maybe (throwM pageException) pure (pageFromPageQuery config pageQuery)
-  where
-    pageException =
-      QueryException "Invalid pagination parameters: offset or limit"
+  either (throwM . QueryException) pure (pageFromPageQuery config pageQuery)

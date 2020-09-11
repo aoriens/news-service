@@ -29,7 +29,8 @@ spec =
           h =
             I.Handle
               { hPagerHandle =
-                  PagerHandle . const . Just $ Page (PageOffset 0) (PageLimit 0)
+                  PagerHandle . const . Right $
+                  Page (PageOffset 0) (PageLimit 0)
               , hGetNews = const (pure stubResults)
               }
       results <- I.getNews h noPageQuery
@@ -39,7 +40,7 @@ spec =
       let page = Page (PageOffset 1) (PageLimit 2)
           h =
             I.Handle
-              { hPagerHandle = PagerHandle . const $ Just page
+              { hPagerHandle = PagerHandle . const $ Right page
               , hGetNews = \p -> writeIORef passedPage p >> pure []
               }
       _ <- I.getNews h noPageQuery
@@ -55,7 +56,7 @@ spec =
             I.Handle
               { hPagerHandle =
                   PagerHandle $ \p ->
-                    Just $
+                    Right $
                     if p == pageQuery
                       then expectedPage
                       else unexpectedPage
