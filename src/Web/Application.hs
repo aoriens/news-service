@@ -153,15 +153,19 @@ logUncaughtExceptions h eapp session request respond =
       throwIO e
 
 routerApplication :: Handle -> EApplication
-routerApplication Handle {..} session request =
+routerApplication Handle {..} session request respond =
   case R.route hRouter request of
-    R.HandlerResult handler -> handler session request
-    R.ResourceNotFoundResult -> ($ stubErrorResponse Http.notFound404 [])
+    R.HandlerResult handler -> handler session request respond
+    R.ResourceNotFoundResult -> do
+      Logger.error
+        (hLogger session)
+        "Router failed to find a handler for the requested URL"
+      respond $ stubErrorResponse Http.notFound404 []
     R.MethodNotSupportedResult knownMethods ->
-      ($ stubErrorResponse
-           Http.methodNotAllowed405
-           [makeAllowHeader knownMethods])
+      respond $ methodNotAllowedResponse knownMethods
   where
+    methodNotAllowedResponse knownMethods =
+      stubErrorResponse Http.methodNotAllowed405 [makeAllowHeader knownMethods]
     makeAllowHeader methods = ("Allow", B.intercalate ", " methods)
 
 notFoundResponse :: Wai.Response
