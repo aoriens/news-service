@@ -12,7 +12,7 @@ data Handle m =
   Handle
     { hGetAuthors :: PageSpec -> m [Author]
     , hAuthHandle :: AuthenticationHandle m
-    , hPagerHandle :: PagerHandle
+    , hPageSpecParserHandle :: PageSpecParserHandle
     }
 
 run ::
@@ -24,5 +24,5 @@ run ::
 run h credentials pageQuery = do
   actor <- authenticate (hAuthHandle h) credentials
   requireAdminPermission actor "get authors"
-  page <- parsePageSpecM (hPagerHandle h) pageQuery
+  page <- parsePageSpecM (hPageSpecParserHandle h) pageQuery
   hGetAuthors h page

@@ -3,7 +3,7 @@ module Core.Pagination
   , PageSpecQuery(..)
   , PageLimit(..)
   , PageOffset(..)
-  , PagerHandle(..)
+  , PageSpecParserHandle(..)
   , parsePageSpecM
   ) where
 
@@ -43,8 +43,8 @@ newtype PageLimit =
     }
   deriving (Eq, Ord, Show)
 
-newtype PagerHandle =
-  PagerHandle
+newtype PageSpecParserHandle =
+  PageSpecParserHandle
     { parsePageSpec :: PageSpecQuery -> Either Text PageSpec
     -- ^ Converts a page query to a page. Returns Left if the page
     -- query is incorrect.
@@ -52,6 +52,7 @@ newtype PagerHandle =
 
 -- | Performs 'parsePageSpec and throws 'CoreException' in case of
 -- incorrect 'PageSpecQuery'.
-parsePageSpecM :: MonadThrow m => PagerHandle -> PageSpecQuery -> m PageSpec
+parsePageSpecM ::
+     MonadThrow m => PageSpecParserHandle -> PageSpecQuery -> m PageSpec
 parsePageSpecM config pageQuery =
   either (throwM . QueryException) pure (parsePageSpec config pageQuery)

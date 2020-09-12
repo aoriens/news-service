@@ -12,12 +12,12 @@ import Data.Time.Calendar
 
 getNews :: MonadThrow m => Handle m -> PageSpecQuery -> m [News]
 getNews Handle {..} pageQuery =
-  hGetNews =<< parsePageSpecM hPagerHandle pageQuery
+  hGetNews =<< parsePageSpecM hPageSpecParserHandle pageQuery
 
 data Handle m =
   Handle
     { hGetNews :: PageSpec -> m [News]
-    , hPagerHandle :: PagerHandle
+    , hPageSpecParserHandle :: PageSpecParserHandle
     }
 
 data News =

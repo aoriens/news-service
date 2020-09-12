@@ -10,8 +10,9 @@ import Core.User
 data Handle m =
   Handle
     { hGetUsers :: PageSpec -> m [User]
-    , hPagerHandle :: PagerHandle
+    , hPageSpecParserHandle :: PageSpecParserHandle
     }
 
 run :: MonadThrow m => Handle m -> PageSpecQuery -> m [User]
-run Handle {..} pageQuery = hGetUsers =<< parsePageSpecM hPagerHandle pageQuery
+run Handle {..} pageQuery =
+  hGetUsers =<< parsePageSpecM hPageSpecParserHandle pageQuery

@@ -6,9 +6,9 @@ import Core.Pagination
 
 -- | Creates a Handle. The parameter is the maximum 'PageLimit'
 -- allowed.
-new :: PageLimit -> PagerHandle
+new :: PageLimit -> PageSpecParserHandle
 new maxLimit =
-  PagerHandle $ \PageSpecQuery {..} -> do
+  PageSpecParserHandle $ \PageSpecQuery {..} -> do
     pageLimit <-
       case pageQueryLimit of
         Just limit

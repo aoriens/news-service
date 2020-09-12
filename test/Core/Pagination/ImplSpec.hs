@@ -51,5 +51,5 @@ spec =
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing
 
-defaultHandle :: PagerHandle
+defaultHandle :: PageSpecParserHandle
 defaultHandle = Impl.new $ PageLimit 10

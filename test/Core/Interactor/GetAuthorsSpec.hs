@@ -47,8 +47,8 @@ spec =
           h =
             defaultHandle
               { hGetAuthors = \p -> writeIORef passedPage p >> pure []
-              , hPagerHandle =
-                  PagerHandle $ \pq ->
+              , hPageSpecParserHandle =
+                  PageSpecParserHandle $ \pq ->
                     Right $
                     if pq == pageQuery
                       then expectedPage
@@ -71,7 +71,7 @@ defaultHandle =
   Handle
     { hGetAuthors = const $ pure []
     , hAuthHandle = stubAuthHandleReturningAdminUser
-    , hPagerHandle = PagerHandle . const $ Right defaultPage
+    , hPageSpecParserHandle = PageSpecParserHandle . const $ Right defaultPage
     }
 
 noPageQuery :: PageSpecQuery
