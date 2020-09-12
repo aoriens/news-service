@@ -11,7 +11,7 @@ module Web.Application
 
 import Control.Exception
 import Control.Exception.Sync
-import qualified Core.Exception as Core
+import Core.Exception
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
@@ -134,10 +134,10 @@ exceptionToResponse h e
       MalformedAuthDataException _ -> notFoundResponse
   | Just coreException <- fromException e =
     case coreException of
-      Core.QueryException reason ->
+      QueryException reason ->
         stubErrorResponseWithReason Http.badRequest400 [] reason
-      Core.BadCredentialsException _ -> notFoundResponse
-      Core.NoPermissionException _ -> notFoundResponse
+      BadCredentialsException _ -> notFoundResponse
+      NoPermissionException _ -> notFoundResponse
   | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
   | otherwise = Warp.defaultOnExceptionResponse e
 
