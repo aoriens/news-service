@@ -17,7 +17,7 @@ createAuthor :: DB.Handle -> UserId -> T.Text -> IO (Either I.Failure Author)
 createAuthor h uid description =
   DB.runTransactionRW h $ DAuthors.createAuthor uid description
 
-getAuthors :: DB.Handle -> Page -> IO [Author]
+getAuthors :: DB.Handle -> PageSpec -> IO [Author]
 getAuthors h page =
   toList <$> DB.runTransaction h (statement DAuthors.selectAuthors page)
 

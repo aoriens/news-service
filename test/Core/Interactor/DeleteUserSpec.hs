@@ -90,5 +90,5 @@ stubHandle =
   Handle
     { hDeleteUser = \_ _ -> pure (Right ())
     , hAuthHandle = stubAuthHandleReturningAdminUser
-    , hDefaultEntityListRange = Page (PageOffset 0) (PageLimit 0)
+    , hDefaultEntityListRange = PageSpec (PageOffset 0) (PageLimit 0)
     }

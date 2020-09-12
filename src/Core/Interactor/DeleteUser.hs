@@ -13,9 +13,9 @@ import Core.User
 
 data Handle m =
   Handle
-    { hDeleteUser :: UserId -> Page -> m (Either Failure ())
+    { hDeleteUser :: UserId -> PageSpec -> m (Either Failure ())
     , hAuthHandle :: AuthenticationHandle m
-    , hDefaultEntityListRange :: Page
+    , hDefaultEntityListRange :: PageSpec
     }
 
 run :: MonadThrow m => Handle m -> Maybe Credentials -> UserId -> m ()

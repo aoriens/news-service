@@ -41,9 +41,9 @@ spec =
       authors `shouldBe` expectedAuthors
     it "should pass page got from Pagination to the gateway" $ do
       passedPage <- newIORef undefined
-      let pageQuery = PageQuery (Just 1) (Just 1)
-          expectedPage = Page (PageOffset 1) (PageLimit 1)
-          unexpectedPage = Page (PageOffset 2) (PageLimit 2)
+      let pageQuery = PageSpecQuery (Just 1) (Just 1)
+          expectedPage = PageSpec (PageOffset 1) (PageLimit 1)
+          unexpectedPage = PageSpec (PageOffset 2) (PageLimit 2)
           h =
             defaultHandle
               { hGetAuthors = \p -> writeIORef passedPage p >> pure []
@@ -74,11 +74,11 @@ defaultHandle =
     , hPagerHandle = PagerHandle . const $ Right defaultPage
     }
 
-noPageQuery :: PageQuery
-noPageQuery = PageQuery Nothing Nothing
+noPageQuery :: PageSpecQuery
+noPageQuery = PageSpecQuery Nothing Nothing
 
-defaultPage :: Page
-defaultPage = Page (PageOffset 0) (PageLimit 0)
+defaultPage :: PageSpec
+defaultPage = PageSpec (PageOffset 0) (PageLimit 0)
 
 stubCredentials :: Maybe Credentials
 stubCredentials = Nothing

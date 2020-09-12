@@ -49,7 +49,7 @@ insertAuthor =
     ) returning author_id :: integer
     |]
 
-selectAuthors :: Statement Page (Vector Author)
+selectAuthors :: Statement PageSpec (Vector Author)
 selectAuthors =
   selectColumns
     D.rowVector
@@ -77,7 +77,7 @@ authorColumns = do
 authorsTable :: TableName
 authorsTable = "authors"
 
-selectAuthorsByUserId :: Statement (UserId, Page) (Vector AuthorId)
+selectAuthorsByUserId :: Statement (UserId, PageSpec) (Vector AuthorId)
 selectAuthorsByUserId =
   dimap
     (\(uid, page) ->

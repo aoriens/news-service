@@ -68,7 +68,7 @@ data Deps =
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     , dPagerHandle :: PagerHandle
-    , dDefaultEntityListRange :: Page
+    , dDefaultEntityListRange :: PageSpec
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
@@ -109,7 +109,7 @@ getDeps = do
         , dDatabaseConnectionConfig
         , dPagerHandle = Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
         , dDefaultEntityListRange =
-            Page (PageOffset 0) (Cf.cfMaxPageLimit dConfig)
+            PageSpec (PageOffset 0) (Cf.cfMaxPageLimit dConfig)
         , dJSONEncode
         , dLoadJSONRequestBody =
             RequestBodyLoader.loadJSONRequestBody

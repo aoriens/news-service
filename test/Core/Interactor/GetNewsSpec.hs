@@ -30,14 +30,14 @@ spec =
             I.Handle
               { hPagerHandle =
                   PagerHandle . const . Right $
-                  Page (PageOffset 0) (PageLimit 0)
+                  PageSpec (PageOffset 0) (PageLimit 0)
               , hGetNews = const (pure stubResults)
               }
       results <- I.getNews h noPageQuery
       results `shouldBe` stubResults
     it "should pass the page to the gateway" $ do
       passedPage <- newIORef undefined
-      let page = Page (PageOffset 1) (PageLimit 2)
+      let page = PageSpec (PageOffset 1) (PageLimit 2)
           h =
             I.Handle
               { hPagerHandle = PagerHandle . const $ Right page
@@ -49,9 +49,9 @@ spec =
       passedPage <- newIORef undefined
       let offset = 4
           limit = 3
-          pageQuery = PageQuery (Just offset) (Just limit)
-          expectedPage = Page (PageOffset offset) (PageLimit limit)
-          unexpectedPage = Page (PageOffset 0) (PageLimit 0)
+          pageQuery = PageSpecQuery (Just offset) (Just limit)
+          expectedPage = PageSpec (PageOffset offset) (PageLimit limit)
+          unexpectedPage = PageSpec (PageOffset 0) (PageLimit 0)
           h =
             I.Handle
               { hPagerHandle =
@@ -65,5 +65,5 @@ spec =
       _ <- I.getNews h pageQuery
       readIORef passedPage `shouldReturn` expectedPage
 
-noPageQuery :: PageQuery
-noPageQuery = PageQuery Nothing Nothing
+noPageQuery :: PageSpecQuery
+noPageQuery = PageSpecQuery Nothing Nothing

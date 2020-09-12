@@ -8,7 +8,7 @@ import Core.Pagination
 -- allowed.
 new :: PageLimit -> PagerHandle
 new maxLimit =
-  PagerHandle $ \PageQuery {..} -> do
+  PagerHandle $ \PageSpecQuery {..} -> do
     pageLimit <-
       case pageQueryLimit of
         Just limit
@@ -21,4 +21,4 @@ new maxLimit =
           | offset >= 0 -> Right $ PageOffset offset
           | otherwise -> Left "Pagination offset must not be negative"
         Nothing -> Right $ PageOffset 0
-    pure Page {..}
+    pure PageSpec {..}

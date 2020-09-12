@@ -11,10 +11,10 @@ import Data.Vector (Vector)
 import Database
 import qualified Hasql.TH as TH
 
-selectNews :: Statement Page (Vector GetNews.News)
+selectNews :: Statement PageSpec (Vector GetNews.News)
 selectNews =
   dimap
-    (\Page {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
+    (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
     (fmap $ \(newsId, newsTitle, newsDate, newsText) -> GetNews.News {..})
     [TH.vectorStatement|
     select news_id :: integer, title :: varchar, date :: date, body :: varchar

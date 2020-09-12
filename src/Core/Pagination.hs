@@ -1,10 +1,10 @@
 module Core.Pagination
-  ( Page(..)
-  , PageQuery(..)
+  ( PageSpec(..)
+  , PageSpecQuery(..)
   , PageLimit(..)
   , PageOffset(..)
   , PagerHandle(..)
-  , pageFromPageQueryM
+  , parsePageSpecM
   ) where
 
 import Control.Monad.Catch
@@ -13,17 +13,17 @@ import Data.Int
 import Data.Text
 
 -- | The part of data to be output in a response.
-data Page =
-  Page
+data PageSpec =
+  PageSpec
     { pageOffset :: PageOffset
     , pageLimit :: PageLimit
     }
   deriving (Eq, Show)
 
--- | A variant of 'Page' with unchecked, raw data from the user. It
+-- | A variant of 'PageSpec' with unchecked, raw data from the user. It
 -- may be used as an input type in interactors.
-data PageQuery =
-  PageQuery
+data PageSpecQuery =
+  PageSpecQuery
     { pageQueryOffset :: Maybe Int32
     , pageQueryLimit :: Maybe Int32
     }
@@ -45,13 +45,13 @@ newtype PageLimit =
 
 newtype PagerHandle =
   PagerHandle
-    { pageFromPageQuery :: PageQuery -> Either Text Page
+    { parsePageSpec :: PageSpecQuery -> Either Text PageSpec
     -- ^ Converts a page query to a page. Returns Left if the page
     -- query is incorrect.
     }
 
--- | Performs 'pageFromPageQuery and throws 'CoreException' in case of
--- incorrect 'PageQuery'.
-pageFromPageQueryM :: MonadThrow m => PagerHandle -> PageQuery -> m Page
-pageFromPageQueryM config pageQuery =
-  either (throwM . QueryException) pure (pageFromPageQuery config pageQuery)
+-- | Performs 'parsePageSpec and throws 'CoreException' in case of
+-- incorrect 'PageSpecQuery'.
+parsePageSpecM :: MonadThrow m => PagerHandle -> PageSpecQuery -> m PageSpec
+parsePageSpecM config pageQuery =
+  either (throwM . QueryException) pure (parsePageSpec config pageQuery)

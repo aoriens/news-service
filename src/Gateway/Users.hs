@@ -25,14 +25,15 @@ createUser h = runTransactionRW h . DUsers.createUser
 getUser :: DB.Handle -> UserId -> IO (Maybe User)
 getUser h = runTransaction h . statement DUsers.selectUserById
 
-getUsers :: DB.Handle -> Page -> IO [User]
+getUsers :: DB.Handle -> PageSpec -> IO [User]
 getUsers h page =
   toList <$> runTransaction h (statement DUsers.selectUsers page)
 
 getUserAuthData :: DB.Handle -> UserId -> IO (Maybe (SecretTokenHash, IsAdmin))
 getUserAuthData h = runTransaction h . statement DUsers.selectUserAuthData
 
-deleteUser :: DB.Handle -> UserId -> Page -> IO (Either IDeleteUser.Failure ())
+deleteUser ::
+     DB.Handle -> UserId -> PageSpec -> IO (Either IDeleteUser.Failure ())
 deleteUser h uid defaultRange =
   catchJustS'
     (isDatabaseResultErrorWithCode PE.foreign_key_violation)

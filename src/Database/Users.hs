@@ -72,7 +72,7 @@ selectUserById = selectColumns D.rowMaybe userColumns sqlSuffix encoder True
     sqlSuffix = "from users where user_id = $1"
     encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
-selectUsers :: Statement Page (Vector User)
+selectUsers :: Statement PageSpec (Vector User)
 selectUsers =
   selectColumns
     D.rowVector
