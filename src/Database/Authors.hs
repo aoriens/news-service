@@ -5,6 +5,7 @@ module Database.Authors
   ( createAuthor
   , selectAuthors
   , selectAuthorById
+  , selectAuthorsByUserId
   ) where
 
 import Control.Arrow
@@ -75,3 +76,18 @@ authorColumns = do
 
 authorsTable :: TableName
 authorsTable = "authors"
+
+selectAuthorsByUserId :: Statement (UserId, Page) (Vector AuthorId)
+selectAuthorsByUserId =
+  dimap
+    (\(uid, page) ->
+       ( getUserId uid
+       , getPageLimit $ pageLimit page
+       , getPageOffset $ pageOffset page))
+    (fmap AuthorId)
+    [TH.vectorStatement|
+       select author_id :: integer
+       from authors join users using (user_id)
+       where user_id = $1 :: integer
+       limit $2 :: integer offset $3 :: integer
+    |]

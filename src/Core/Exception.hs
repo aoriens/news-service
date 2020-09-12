@@ -7,6 +7,7 @@ module Core.Exception
   ) where
 
 import Control.Exception
+import Core.EntityId
 import Data.Text (Text)
 
 type Reason = Text
@@ -16,7 +17,8 @@ data CoreException
   = QueryException Reason
   | BadCredentialsException Reason
   | NoPermissionException Reason
-  deriving (Show)
+  | DependentEntitiesPreventDeletionException EntityId [EntityId]
+  deriving (Show, Eq)
 
 instance Exception CoreException
 

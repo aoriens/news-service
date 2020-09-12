@@ -25,6 +25,7 @@ library
     , Core.Authentication.Impl
     , Core.Author
     , Core.Authorization
+    , Core.EntityId
     , Core.Exception
     , Core.Image
     , Core.Interactor.CreateAuthor
@@ -107,6 +108,7 @@ library
     , memory
     , mtl
     , network
+    , postgresql-error-codes
     , profunctors
     , stm
     , text

@@ -14,6 +14,7 @@ module Database
   , runTransaction
   , runTransactionRW
   , DatabaseException(..)
+  , isDatabaseResultErrorWithCode
   ) where
 
 import Control.Exception
@@ -31,6 +32,7 @@ import qualified Hasql.Statement as HSt
 import qualified Hasql.Transaction as HT
 import qualified Hasql.Transaction.Sessions as HT
 import qualified Logger
+import qualified PostgreSQL.ErrorCodes as PE
 
 data Handle =
   Handle
@@ -106,3 +108,9 @@ newtype DatabaseException =
   deriving (Show)
 
 instance Exception DatabaseException
+
+isDatabaseResultErrorWithCode :: PE.ErrorCode -> DatabaseException -> Bool
+isDatabaseResultErrorWithCode code (DatabaseException exception)
+  | (HS.QueryError _ _ resultError) <- exception
+  , (HS.ResultError (HS.ServerError code' _ _ _)) <- resultError = code == code'
+  | otherwise = False

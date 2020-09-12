@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE LambdaCase #-}
@@ -69,6 +68,7 @@ data Deps =
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     , dPagerHandle :: PagerHandle
+    , dDefaultEntityListRange :: Page
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
@@ -108,6 +108,8 @@ getDeps = do
         , dLoggerHandle
         , dDatabaseConnectionConfig
         , dPagerHandle = Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
+        , dDefaultEntityListRange =
+            Page (PageOffset 0) (Cf.cfMaxPageLimit dConfig)
         , dJSONEncode
         , dLoadJSONRequestBody =
             RequestBodyLoader.loadJSONRequestBody
@@ -249,6 +251,7 @@ deleteUserHandlerHandle deps@Deps {..} session =
   IDeleteUser.Handle
     { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle deps session
     , hAuthHandle = dMakeAuthHandle session
+    , hDefaultEntityListRange = dDefaultEntityListRange
     }
 
 getUsersHandlerHandle :: Deps -> Web.Session -> HGetUsers.Handle

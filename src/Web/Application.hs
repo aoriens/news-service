@@ -138,6 +138,11 @@ exceptionToResponse h e
         stubErrorResponseWithReason Http.badRequest400 [] reason
       BadCredentialsException _ -> notFoundResponse
       NoPermissionException _ -> notFoundResponse
+      DependentEntitiesPreventDeletionException entityIdent depIds ->
+        stubErrorResponseWithReason Http.badRequest400 [] $
+        T.pack (show entityIdent) <>
+        " cannot be deleted because the following entities depend on it: " <>
+        (T.intercalate ", " . map (T.pack . show)) depIds
   | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
   | otherwise = Warp.defaultOnExceptionResponse e
 
