@@ -18,7 +18,8 @@ import qualified Data.Text as T
 import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
-import Web.Presenter.Author
+import Web.Representation.Author
+import Web.RepresentationBuilder
 
 data Handle =
   Handle
@@ -42,7 +43,7 @@ run Handle {..} request respond = do
     case result of
       Left I.UnknownUserId -> throwIO $ BadRequestException "Unknown UserId"
       Right a -> pure a
-  respond $ presentAuthor hPresenterHandle author
+  respond $ runRepBuilder hPresenterHandle $ authorRepresentation author
 
 data InAuthor =
   InAuthor

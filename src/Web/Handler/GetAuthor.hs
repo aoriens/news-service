@@ -11,7 +11,8 @@ import qualified Data.Text as T
 import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
-import Web.Presenter.Author
+import Web.Representation.Author
+import Web.RepresentationBuilder
 
 data Handle =
   Handle
@@ -20,15 +21,15 @@ data Handle =
     }
 
 run :: Handle -> Wai.Application
-run h request respond = do
+run Handle {..} request respond = do
   credentials <- getCredentialsFromRequest request
   authorIdent <-
     maybe (throwIO NotFoundException) pure $
     parseAuthorId (Wai.pathInfo request)
   author <-
     maybe (throwIO NotFoundException) pure =<<
-    I.run (hGetAuthorHandle h) credentials authorIdent
-  respond $ presentAuthor (hPresenterHandle h) author
+    I.run hGetAuthorHandle credentials authorIdent
+  respond $ runRepBuilder hPresenterHandle $ authorRepresentation author
 
 parseAuthorId :: [T.Text] -> Maybe AuthorId
 parseAuthorId [s] = AuthorId <$> readExactIntegral (T.unpack s)

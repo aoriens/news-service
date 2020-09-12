@@ -6,9 +6,10 @@ module Web.Handler.GetAuthors
 import qualified Core.Interactor.GetAuthors as I
 import qualified Network.Wai as Wai
 import Web.Credentials
-import Web.Presenter.Author
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
+import Web.Representation.Author
+import Web.RepresentationBuilder
 
 data Handle =
   Handle
@@ -17,8 +18,8 @@ data Handle =
     }
 
 run :: Handle -> Wai.Application
-run h request respond = do
+run Handle {..} request respond = do
   credentials <- getCredentialsFromRequest request
   pageQuery <- QP.parseQueryM (Wai.queryString request) QP.parsePageQuery
-  authors <- I.run (hGetAuthorsHandle h) credentials pageQuery
-  respond $ presentAuthors (hPresenterHandle h) authors
+  authors <- I.run hGetAuthorsHandle credentials pageQuery
+  respond $ runRepBuilder hPresenterHandle $ mapM authorRepresentation authors

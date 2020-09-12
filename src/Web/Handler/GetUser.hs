@@ -10,7 +10,8 @@ import Data.Integral.Exact
 import qualified Data.Text as T
 import qualified Network.Wai as Wai
 import Web.Exception
-import Web.Presenter.User
+import Web.Representation.User
+import Web.RepresentationBuilder
 
 data Handle =
   Handle
@@ -19,13 +20,12 @@ data Handle =
     }
 
 run :: Handle -> Wai.Application
-run h request respond = do
+run Handle {..} request respond = do
   userIdent <-
     maybe (throwIO NotFoundException) pure $ parseUserId (Wai.pathInfo request)
   user <-
-    maybe (throwIO NotFoundException) pure =<<
-    I.run (hGetUserHandle h) userIdent
-  respond $ presentUser (hPresenterHandle h) user Nothing
+    maybe (throwIO NotFoundException) pure =<< I.run hGetUserHandle userIdent
+  respond $ runRepBuilder hPresenterHandle $ userRepresentation Nothing user
 
 parseUserId :: [T.Text] -> Maybe UserId
 parseUserId [s] = UserId <$> readExactIntegral (T.unpack s)

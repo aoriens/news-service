@@ -14,8 +14,9 @@ import Data.List
 import Data.Maybe
 import Data.Text (Text)
 import qualified Network.Wai as Wai
-import Web.Presenter.User
 import Web.Representation.Base64
+import Web.Representation.User
+import Web.RepresentationBuilder
 
 data Handle =
   Handle
@@ -29,7 +30,8 @@ run :: Handle -> Wai.Application
 run Handle {..} request respond = do
   userEntity <- hLoadJSONRequestBody request
   (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)
-  respond $ presentUser hPresenterHandle user (Just credentials)
+  respond $
+    runRepBuilder hPresenterHandle $ userRepresentation (Just credentials) user
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =

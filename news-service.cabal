@@ -77,8 +77,6 @@ library
     , Web.Handler.GetUsers
     , Web.HTTP
     , Web.JSONEncoder
-    , Web.Presenter.Author
-    , Web.Presenter.User
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
     , Web.RepresentationBuilder
