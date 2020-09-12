@@ -6,27 +6,26 @@ module Gateway.Users
   , deleteUser
   ) where
 
-import qualified Core.Authentication as Auth
-import qualified Core.Interactor.CreateUser as I
+import Core.Authentication
+import Core.Interactor.CreateUser
 import Core.Pagination
 import Core.User
 import Data.Foldable
-import qualified Database as DB
+import Database as DB
 import qualified Database.Users as DUsers
 
-createUser :: DB.Handle -> I.CreateUserCommand -> IO I.CreateUserResult
-createUser h = DB.runTransactionRW h . DUsers.createUser
+createUser :: DB.Handle -> CreateUserCommand -> IO CreateUserResult
+createUser h = runTransactionRW h . DUsers.createUser
 
 getUser :: DB.Handle -> UserId -> IO (Maybe User)
-getUser h = DB.runTransaction h . DB.statement DUsers.selectUserById
+getUser h = runTransaction h . statement DUsers.selectUserById
 
 getUsers :: DB.Handle -> Page -> IO [User]
 getUsers h page =
-  toList <$> DB.runTransaction h (DB.statement DUsers.selectUsers page)
+  toList <$> runTransaction h (statement DUsers.selectUsers page)
 
-getUserAuthData ::
-     DB.Handle -> UserId -> IO (Maybe (Auth.SecretTokenHash, Auth.IsAdmin))
-getUserAuthData h = DB.runTransaction h . DB.statement DUsers.selectUserAuthData
+getUserAuthData :: DB.Handle -> UserId -> IO (Maybe (SecretTokenHash, IsAdmin))
+getUserAuthData h = runTransaction h . statement DUsers.selectUserAuthData
 
 deleteUser :: DB.Handle -> UserId -> IO ()
-deleteUser h = DB.runTransactionRW h . DB.statement DUsers.deleteUser
+deleteUser h = runTransactionRW h . statement DUsers.deleteUser
