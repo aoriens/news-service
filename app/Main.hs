@@ -15,6 +15,7 @@ import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateUser as ICreateUser
+import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetAuthor as IGetAuthor
 import qualified Core.Interactor.GetAuthors as IGetAuthors
@@ -45,6 +46,7 @@ import qualified Web.AppURL as U
 import qualified Web.Application
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateUser as HCreateUser
+import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetAuthor as HGetAuthor
 import qualified Web.Handler.GetAuthors as HGetAuthors
@@ -151,8 +153,9 @@ getWebAppHandle deps@Deps {..} = do
 router :: Deps -> R.Router
 router deps =
   R.new $ do
-    R.pathPrefix ["author"] $
+    R.pathPrefix ["author"] $ do
       R.get $ HGetAuthor.run . getAuthorHandlerHandle deps
+      R.delete $ HDeleteAuthor.run . deleteAuthorHandlerHandle deps
     R.path ["author", "create"] $
       R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
     R.path ["authors"] $ R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
@@ -202,6 +205,17 @@ getAuthorHandlerHandle deps@Deps {..} session =
           , hGetAuthor = GAuthors.getAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenterHandle = dRepresentationBuilderHandle
+    }
+
+deleteAuthorHandlerHandle :: Deps -> Web.Session -> HDeleteAuthor.Handle
+deleteAuthorHandlerHandle deps@Deps {..} session =
+  HDeleteAuthor.Handle
+    { hDeleteAuthorHandle =
+        IDeleteAuthor.Handle
+          { hAuthHandle = dMakeAuthHandle session
+          , hDeleteAuthor =
+              GAuthors.deleteAuthor $ sessionDatabaseHandle deps session
+          }
     }
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle

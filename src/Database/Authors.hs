@@ -6,6 +6,7 @@ module Database.Authors
   , selectAuthors
   , selectAuthorById
   , selectAuthorsByUserId
+  , deleteAuthorById
   ) where
 
 import Control.Arrow
@@ -90,4 +91,13 @@ selectAuthorsByUserId =
        from authors join users using (user_id)
        where user_id = $1 :: integer
        limit $2 :: integer offset $3 :: integer
+    |]
+
+deleteAuthorById :: Statement AuthorId ()
+deleteAuthorById =
+  lmap
+    getAuthorId
+    [TH.resultlessStatement|
+       delete from authors
+       where author_id = $1 :: integer
     |]

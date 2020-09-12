@@ -93,6 +93,11 @@ must not be negative.
 Creates an author. Accepts [InAuthor](#InAuthor) entity in the request body and
 returns [Author](#Author) entity. Requires the administrator privilege.
 
+### `DELETE /author/{author_id}`
+
+Deletes the specified [Author](#Author) and returns no content. Requires the
+administrator privilege.
+
 ### `GET /author/{author_id}`
 
 Returns the specified [Author](#Author). Requires the administrator privilege.

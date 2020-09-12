@@ -30,6 +30,7 @@ library
     , Core.Image
     , Core.Interactor.CreateAuthor
     , Core.Interactor.CreateUser
+    , Core.Interactor.DeleteAuthor
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
@@ -68,6 +69,7 @@ library
     , Web.Exception
     , Web.Handler.CreateAuthor
     , Web.Handler.CreateUser
+    , Web.Handler.DeleteAuthor
     , Web.Handler.DeleteUser
     , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
@@ -153,6 +155,7 @@ test-suite news-service-test
     , Core.AuthorizationSpec
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateUserSpec
+    , Core.Interactor.DeleteAuthorSpec
     , Core.Interactor.DeleteUserSpec
     , Core.Interactor.GetAuthorSpec
     , Core.Interactor.GetAuthorsSpec
