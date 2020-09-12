@@ -8,10 +8,8 @@ import qualified Core.Interactor.GetUser as I
 import Core.User
 import Data.Integral.Exact
 import qualified Data.Text as T
-import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Exception
-import qualified Web.HTTP as Http
 import Web.Presenter.User
 
 data Handle =
@@ -27,9 +25,7 @@ run h request respond = do
   user <-
     maybe (throwIO NotFoundException) pure =<<
     I.run (hGetUserHandle h) userIdent
-  respond $
-    Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    presentUser (hPresenterHandle h) user Nothing
+  respond $ presentUser (hPresenterHandle h) user Nothing
 
 parseUserId :: [T.Text] -> Maybe UserId
 parseUserId [s] = UserId <$> readExactIntegral (T.unpack s)

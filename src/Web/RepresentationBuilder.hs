@@ -14,7 +14,10 @@ import Control.Monad.Reader
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import Data.Text as T
+import qualified Network.HTTP.Types as Http
+import qualified Network.Wai as Wai
 import Web.AppURL
+import Web.HTTP
 
 data RepBuilderHandle =
   RepBuilderHandle
@@ -34,5 +37,7 @@ renderMaybeAppURL :: Maybe AppURL -> RepBuilder (Maybe T.Text)
 renderMaybeAppURL Nothing = pure Nothing
 renderMaybeAppURL (Just u) = Just <$> renderAppURL u
 
-runRepBuilder :: A.ToJSON a => RepBuilderHandle -> RepBuilder a -> BB.Builder
-runRepBuilder h (RepBuilder r) = hJSONEncode h $ runReader r (hRenderAppURL h)
+runRepBuilder :: A.ToJSON a => RepBuilderHandle -> RepBuilder a -> Wai.Response
+runRepBuilder h (RepBuilder r) =
+  Wai.responseBuilder Http.ok200 [hJSONContentType] . hJSONEncode h $
+  runReader r (hRenderAppURL h)

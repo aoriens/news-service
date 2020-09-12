@@ -13,9 +13,7 @@ import qualified Data.Aeson.TH as A
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
-import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Web.HTTP as Http
 import Web.Presenter.User
 import Web.Representation.Base64
 
@@ -31,9 +29,7 @@ run :: Handle -> Wai.Application
 run Handle {..} request respond = do
   userEntity <- hLoadJSONRequestBody request
   (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)
-  respond $
-    Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    presentUser hPresenterHandle user (Just credentials)
+  respond $ presentUser hPresenterHandle user (Just credentials)
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =

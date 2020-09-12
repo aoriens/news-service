@@ -8,11 +8,9 @@ import Core.Author
 import qualified Core.Interactor.GetAuthor as I
 import Data.Integral.Exact
 import qualified Data.Text as T
-import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
-import qualified Web.HTTP as Http
 import Web.Presenter.Author
 
 data Handle =
@@ -30,9 +28,7 @@ run h request respond = do
   author <-
     maybe (throwIO NotFoundException) pure =<<
     I.run (hGetAuthorHandle h) credentials authorIdent
-  respond $
-    Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    presentAuthor (hPresenterHandle h) author
+  respond $ presentAuthor (hPresenterHandle h) author
 
 parseAuthorId :: [T.Text] -> Maybe AuthorId
 parseAuthorId [s] = AuthorId <$> readExactIntegral (T.unpack s)

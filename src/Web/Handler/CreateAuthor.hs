@@ -15,11 +15,9 @@ import Data.Int
 import Data.List
 import Data.Maybe
 import qualified Data.Text as T
-import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
-import qualified Web.HTTP as Http
 import Web.Presenter.Author
 
 data Handle =
@@ -44,9 +42,7 @@ run Handle {..} request respond = do
     case result of
       Left I.UnknownUserId -> throwIO $ BadRequestException "Unknown UserId"
       Right a -> pure a
-  respond $
-    Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    presentAuthor hPresenterHandle author
+  respond $ presentAuthor hPresenterHandle author
 
 data InAuthor =
   InAuthor
