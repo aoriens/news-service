@@ -11,12 +11,9 @@ module Database
   , HT.IsolationLevel(..)
   , HT.Mode(..)
   , statement
-  , transaction
-  , transactionRW
-  , transactionWithMode
   , runTransaction
   , runTransactionRW
-  , QueryException(..)
+  , DatabaseException(..)
   ) where
 
 import Control.Exception
@@ -48,11 +45,11 @@ newtype Session a =
   Session (ReaderT (Logger.Handle IO) HS.Session a)
   deriving (Functor, Applicative, Monad, MonadIO)
 
--- | Runs a session. It can throw 'QueryException'.
+-- | Runs a session. It can throw 'DatabaseException'.
 runSession :: Handle -> Session a -> IO a
 runSession Handle {..} (Session session) =
   CM.withConnection hConnectionConfig $
-  HS.run hasqlSession >=> either (throwIO . QueryException) pure
+  HS.run hasqlSession >=> either (throwIO . DatabaseException) pure
   where
     hasqlSession = runReaderT session hLoggerHandle
 
@@ -95,17 +92,17 @@ transactionWithMode level mode (Transaction t) =
       T.intercalate "\n" (map ((<> ";") . T.decodeLatin1) $ DL.toList sqls)
 
 -- | Creates and runs a session from a single read-write transaction.
--- It can throw 'QueryException'.
+-- It can throw 'DatabaseException'.
 runTransactionRW :: Handle -> Transaction a -> IO a
 runTransactionRW h = runSession h . transactionRW
 
 -- | Creates and runs a session from a single read-only transaction.
--- It can throw 'QueryException'.
+-- It can throw 'DatabaseException'.
 runTransaction :: Handle -> Transaction a -> IO a
 runTransaction h = runSession h . transaction
 
-newtype QueryException =
-  QueryException HS.QueryError
+newtype DatabaseException =
+  DatabaseException HS.QueryError
   deriving (Show)
 
-instance Exception QueryException
+instance Exception DatabaseException
