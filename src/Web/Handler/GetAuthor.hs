@@ -13,12 +13,12 @@ import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
 import qualified Web.HTTP as Http
-import qualified Web.Presenter.Author as P
+import Web.Presenter.Author
 
 data Handle =
   Handle
     { hGetAuthorHandle :: I.Handle IO
-    , hPresenterHandle :: P.Handle
+    , hPresenterHandle :: RepBuilderHandle
     }
 
 run :: Handle -> Wai.Application
@@ -32,7 +32,7 @@ run h request respond = do
     I.run (hGetAuthorHandle h) credentials authorIdent
   respond $
     Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    P.presentAuthor (hPresenterHandle h) author
+    presentAuthor (hPresenterHandle h) author
 
 parseAuthorId :: [T.Text] -> Maybe AuthorId
 parseAuthorId [s] = AuthorId <$> readExactIntegral (T.unpack s)

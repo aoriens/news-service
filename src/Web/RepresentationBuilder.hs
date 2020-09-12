@@ -2,12 +2,12 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Web.RepresentationBuilder
-  ( Handle(..)
-  , Builder
+  ( RepBuilderHandle(..)
+  , RepBuilder
   , AppURL
   , renderAppURL
   , renderMaybeAppURL
-  , runBuilder
+  , runRepBuilder
   ) where
 
 import Control.Monad.Reader
@@ -16,23 +16,23 @@ import qualified Data.ByteString.Builder as BB
 import Data.Text as T
 import Web.AppURL
 
-data Handle =
-  Handle
+data RepBuilderHandle =
+  RepBuilderHandle
     { hJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , hRenderAppURL :: AppURL -> Text
     }
 
-newtype Builder a =
-  Builder (Reader (AppURL -> T.Text) a)
+newtype RepBuilder a =
+  RepBuilder (Reader (AppURL -> T.Text) a)
   deriving (Functor, Applicative, Monad)
 
-renderAppURL :: AppURL -> Builder T.Text
-renderAppURL url = Builder $ asks ($ url)
+renderAppURL :: AppURL -> RepBuilder T.Text
+renderAppURL url = RepBuilder $ asks ($ url)
 
-renderMaybeAppURL :: Maybe AppURL -> Builder (Maybe T.Text)
+renderMaybeAppURL :: Maybe AppURL -> RepBuilder (Maybe T.Text)
 renderMaybeAppURL Nothing = pure Nothing
 renderMaybeAppURL (Just u) = Just <$> renderAppURL u
 
-runBuilder :: A.ToJSON a => Handle -> Builder a -> BB.Builder
-runBuilder h (Builder r) = hJSONEncode h $ runReader r (hRenderAppURL h)
+runRepBuilder :: A.ToJSON a => RepBuilderHandle -> RepBuilder a -> BB.Builder
+runRepBuilder h (RepBuilder r) = hJSONEncode h $ runReader r (hRenderAppURL h)

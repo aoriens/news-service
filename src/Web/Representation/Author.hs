@@ -13,7 +13,7 @@ import Data.List
 import Data.Maybe
 import qualified Data.Text as T
 import Web.Representation.User
-import qualified Web.RepresentationBuilder as RB
+import Web.RepresentationBuilder
 
 data Author =
   Author
@@ -22,7 +22,7 @@ data Author =
     , authorDescription :: T.Text
     }
 
-authorRepresentation :: Core.Author -> RB.Builder Author
+authorRepresentation :: Core.Author -> RepBuilder Author
 authorRepresentation Core.Author {..} = do
   userR <- userRepresentation Nothing authorUser
   pure

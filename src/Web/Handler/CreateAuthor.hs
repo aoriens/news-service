@@ -20,14 +20,14 @@ import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
 import qualified Web.HTTP as Http
-import qualified Web.Presenter.Author as P
+import Web.Presenter.Author
 
 data Handle =
   Handle
     { hCreateAuthorHandle :: I.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Wai.Request -> IO a
-    , hPresenterHandle :: P.Handle
+    , hPresenterHandle :: RepBuilderHandle
     }
 
 run :: Handle -> Wai.Application
@@ -46,7 +46,7 @@ run Handle {..} request respond = do
       Right a -> pure a
   respond $
     Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    P.presentAuthor hPresenterHandle author
+    presentAuthor hPresenterHandle author
 
 data InAuthor =
   InAuthor

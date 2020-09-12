@@ -53,7 +53,7 @@ import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.JSONEncoder as JSONEncoder
-import qualified Web.RepresentationBuilder
+import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
 import qualified Web.Types as Web
@@ -75,7 +75,7 @@ data Deps =
                                           Wai.Request -> IO a
     , dSecretTokenIOState :: GSecretToken.IOState
     , dRenderAppURL :: U.AppURL -> T.Text
-    , dRepresentationBuilderHandle :: Web.RepresentationBuilder.Handle
+    , dRepresentationBuilderHandle :: RepBuilderHandle
     , dMakeAuthHandle :: Web.Session -> AuthenticationHandle IO
     }
 
@@ -119,7 +119,7 @@ getDeps = do
         , dSecretTokenIOState
         , dRenderAppURL
         , dRepresentationBuilderHandle =
-            Web.RepresentationBuilder.Handle
+            RepBuilderHandle
               {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
         , dMakeAuthHandle =
             \session ->

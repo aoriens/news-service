@@ -16,13 +16,13 @@ import Data.Text (Text)
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Web.HTTP as Http
-import qualified Web.Presenter.User as P
+import Web.Presenter.User
 import Web.Representation.Base64
 
 data Handle =
   Handle
     { hCreateUserHandle :: I.Handle IO
-    , hPresenterHandle :: P.Handle
+    , hPresenterHandle :: RepBuilderHandle
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Wai.Request -> IO a
     }
@@ -33,7 +33,7 @@ run Handle {..} request respond = do
   (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)
   respond $
     Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    P.presentUser hPresenterHandle user (Just credentials)
+    presentUser hPresenterHandle user (Just credentials)
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =

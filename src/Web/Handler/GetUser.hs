@@ -12,12 +12,12 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Exception
 import qualified Web.HTTP as Http
-import qualified Web.Presenter.User as P
+import Web.Presenter.User
 
 data Handle =
   Handle
     { hGetUserHandle :: I.Handle IO
-    , hPresenterHandle :: P.Handle
+    , hPresenterHandle :: RepBuilderHandle
     }
 
 run :: Handle -> Wai.Application
@@ -29,7 +29,7 @@ run h request respond = do
     I.run (hGetUserHandle h) userIdent
   respond $
     Wai.responseBuilder Http.ok200 [Http.hJSONContentType] $
-    P.presentUser (hPresenterHandle h) user Nothing
+    presentUser (hPresenterHandle h) user Nothing
 
 parseUserId :: [T.Text] -> Maybe UserId
 parseUserId [s] = UserId <$> readExactIntegral (T.unpack s)

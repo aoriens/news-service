@@ -1,16 +1,16 @@
 module Web.Presenter.Author
   ( presentAuthor
   , presentAuthors
-  , RB.Handle
+  , RepBuilderHandle
   ) where
 
 import qualified Core.Author as Core
 import qualified Data.ByteString.Builder as BB
 import Web.Representation.Author
-import qualified Web.RepresentationBuilder as RB
+import Web.RepresentationBuilder
 
-presentAuthor :: RB.Handle -> Core.Author -> BB.Builder
-presentAuthor h = RB.runBuilder h . authorRepresentation
+presentAuthor :: RepBuilderHandle -> Core.Author -> BB.Builder
+presentAuthor h = runRepBuilder h . authorRepresentation
 
-presentAuthors :: RB.Handle -> [Core.Author] -> BB.Builder
-presentAuthors h = RB.runBuilder h . mapM authorRepresentation
+presentAuthors :: RepBuilderHandle -> [Core.Author] -> BB.Builder
+presentAuthors h = runRepBuilder h . mapM authorRepresentation
