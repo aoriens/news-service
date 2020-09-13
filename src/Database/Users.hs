@@ -111,17 +111,13 @@ selectUserAuthData =
     |]
 
 deleteUser :: UserId -> PageSpec -> Session (Either IDeleteUser.Failure ())
-deleteUser uid defaultRange = deleteFast `onForeignKeyViolation` deleteWithCheck
-  where
-    deleteFast = Right <$> transactionRW (statement deleteUserSt uid)
-    deleteWithCheck =
-      transactionRW $ do
-        authors <- statement selectAuthorsByUserId (uid, defaultRange)
-        if null authors
-          then Right <$> statement deleteUserSt uid
-          else pure .
-               Left . DependentEntitiesPreventDeletion . map AuthorEntityId $
-               toList authors
+deleteUser uid defaultRange =
+  transactionRW $ do
+    authors <- statement selectAuthorsByUserId (uid, defaultRange)
+    if null authors
+      then Right <$> statement deleteUserSt uid
+      else pure . Left . DependentEntitiesPreventDeletion . map AuthorEntityId $
+           toList authors
 
 deleteUserSt :: Statement UserId ()
 deleteUserSt =
