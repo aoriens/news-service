@@ -3,6 +3,7 @@
 module Database.Images
   ( selectImage
   , createImage
+  , deleteImageIfNotReferenced
   ) where
 
 import Core.Image
@@ -44,4 +45,17 @@ createImageSt =
       $1 :: bytea,
       (select mime_type_id from mime_types where value = $2 :: varchar)
     ) returning image_id :: integer
+    |]
+
+deleteImageIfNotReferenced :: ImageId -> Session ()
+deleteImageIfNotReferenced =
+  ignoringForeignKeyViolation . transactionRW . statement deleteImage
+
+deleteImage :: Statement ImageId ()
+deleteImage =
+  lmap
+    getImageId
+    [TH.resultlessStatement|
+      delete from images
+      where image_id = $1 :: integer
     |]

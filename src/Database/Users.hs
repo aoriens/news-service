@@ -11,6 +11,7 @@ module Database.Users
   ) where
 
 import Control.Arrow
+import Control.Monad
 import qualified Core.Authentication as Auth
 import Core.EntityId
 import Core.Image
@@ -111,20 +112,26 @@ selectUserAuthData =
     |]
 
 deleteUser :: UserId -> PageSpec -> Session (Either IDeleteUser.Failure ())
-deleteUser uid defaultRange =
-  transactionRW $ do
-    authors <- statement selectAuthorsByUserId (uid, defaultRange)
-    if null authors
-      then Right <$> statement deleteUserSt uid
-      else pure . Left . DependentEntitiesPreventDeletion . map AuthorEntityId $
-           toList authors
+deleteUser uid defaultRange = do
+  eAvatarId <-
+    transactionRW $ do
+      authors <- statement selectAuthorsByUserId (uid, defaultRange)
+      if null authors
+        then Right <$> statement deleteUserSt uid
+        else pure . Left . DependentEntitiesPreventDeletion . map AuthorEntityId $
+             toList authors
+  case eAvatarId of
+    Right (Just avatarId) -> Right <$> deleteImageIfNotReferenced avatarId
+    Right Nothing -> pure $ Right ()
+    Left e -> pure $ Left e
 
-deleteUserSt :: Statement UserId ()
+deleteUserSt :: Statement UserId (Maybe ImageId)
 deleteUserSt =
   dimap
     getUserId
-    id
-    [TH.resultlessStatement|
+    (fmap ImageId . join)
+    [TH.maybeStatement|
     delete from users
     where user_id = $1 :: integer
+    returning avatar_id :: integer?
     |]

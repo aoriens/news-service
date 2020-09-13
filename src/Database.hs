@@ -20,6 +20,7 @@ module Database
   , HS.QueryError
   , isDatabaseResultErrorWithCode
   , onForeignKeyViolation
+  , ignoringForeignKeyViolation
   ) where
 
 import Control.Exception
@@ -138,3 +139,6 @@ onForeignKeyViolation action fallback =
     if isDatabaseResultErrorWithCode PE.foreign_key_violation e
       then fallback
       else throwError e
+
+ignoringForeignKeyViolation :: Session () -> Session ()
+ignoringForeignKeyViolation action = action `onForeignKeyViolation` pure ()
