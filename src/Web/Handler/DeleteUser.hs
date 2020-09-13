@@ -4,12 +4,10 @@ module Web.Handler.DeleteUser
   ) where
 
 import qualified Core.Interactor.DeleteUser as I
-import Core.User
-import Data.Integral.Exact
-import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Credentials
+import Web.PathParameter
 
 newtype Handle =
   Handle
@@ -18,13 +16,9 @@ newtype Handle =
 
 run :: Handle -> Wai.Application
 run h request respond = do
-  case parseUserId $ Wai.pathInfo request of
+  case userIdFromPath $ Wai.pathInfo request of
     Just uid -> do
       credentials <- getCredentialsFromRequest request
       I.run (hDeleteUserHandle h) credentials uid
     Nothing -> pure ()
   respond $ Wai.responseLBS Http.noContent204 [] mempty
-
-parseUserId :: [T.Text] -> Maybe UserId
-parseUserId [s] = UserId <$> readExactIntegral (T.unpack s)
-parseUserId _ = Nothing

@@ -79,6 +79,7 @@ library
     , Web.Handler.GetUsers
     , Web.HTTP
     , Web.JSONEncoder
+    , Web.PathParameter
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
     , Web.RepresentationBuilder
