@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | Database-related basic definitions. They may only be imported
 -- from database-related modules.
@@ -11,15 +12,19 @@ module Database
   , HT.IsolationLevel(..)
   , HT.Mode(..)
   , statement
+  , transaction
+  , transactionRW
   , runTransaction
   , runTransactionRW
   , DatabaseException(..)
+  , HS.QueryError
   , isDatabaseResultErrorWithCode
+  , onForeignKeyViolation
   ) where
 
 import Control.Exception
 import Control.Monad
-import Control.Monad.IO.Class
+import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Trans.State.Strict
 import qualified Data.ByteString as B
@@ -46,6 +51,16 @@ data Handle =
 newtype Session a =
   Session (ReaderT (Logger.Handle IO) HS.Session a)
   deriving (Functor, Applicative, Monad, MonadIO)
+
+instance MonadError HS.QueryError Session where
+  throwError = Session . lift . throwError
+  catchError (Session r) h =
+    Session $ do
+      env <- ask
+      lift $
+        catchError (runReaderT r env) $ \e ->
+          let (Session r') = h e
+           in runReaderT r' env
 
 -- | Runs a session. It can throw 'DatabaseException'.
 runSession :: Handle -> Session a -> IO a
@@ -109,8 +124,17 @@ newtype DatabaseException =
 
 instance Exception DatabaseException
 
-isDatabaseResultErrorWithCode :: PE.ErrorCode -> DatabaseException -> Bool
-isDatabaseResultErrorWithCode code (DatabaseException exception)
-  | (HS.QueryError _ _ resultError) <- exception
+isDatabaseResultErrorWithCode :: PE.ErrorCode -> HS.QueryError -> Bool
+isDatabaseResultErrorWithCode code queryError
+  | (HS.QueryError _ _ resultError) <- queryError
   , (HS.ResultError (HS.ServerError code' _ _ _)) <- resultError = code == code'
   | otherwise = False
+
+-- | Runs a fallback session if another session finished with the
+-- foreign key violation failure.
+onForeignKeyViolation :: Session a -> Session a -> Session a
+onForeignKeyViolation action fallback =
+  catchError action $ \e ->
+    if isDatabaseResultErrorWithCode PE.foreign_key_violation e
+      then fallback
+      else throwError e

@@ -3,6 +3,6 @@
 set -eu
 
 cd "$(git rev-parse --show-toplevel)"
-find . -name '*.hs' -print0 | xargs -0n100 hindent
+find . \( -name '*.hs' -o -name '*.hs-boot' \) -print0 | xargs -0n100 hindent
 stack build --test
 hlint .

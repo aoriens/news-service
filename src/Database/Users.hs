@@ -12,14 +12,18 @@ module Database.Users
 
 import Control.Arrow
 import qualified Core.Authentication as Auth
+import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateUser as I
+import Core.Interactor.DeleteUser as IDeleteUser
 import Core.Pagination
 import Core.User
+import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
 import Data.Vector (Vector)
 import Database
+import {-# SOURCE #-} Database.Authors
 import Database.Columns
 import Database.Images
 import Database.Pagination
@@ -106,8 +110,21 @@ selectUserAuthData =
     where user_id = $1 :: integer
     |]
 
-deleteUser :: Statement UserId ()
-deleteUser =
+deleteUser :: UserId -> PageSpec -> Session (Either IDeleteUser.Failure ())
+deleteUser uid defaultRange = deleteFast `onForeignKeyViolation` deleteWithCheck
+  where
+    deleteFast = Right <$> transactionRW (statement deleteUserSt uid)
+    deleteWithCheck =
+      transactionRW $ do
+        authors <- statement selectAuthorsByUserId (uid, defaultRange)
+        if null authors
+          then Right <$> statement deleteUserSt uid
+          else pure .
+               Left . DependentEntitiesPreventDeletion . map AuthorEntityId $
+               toList authors
+
+deleteUserSt :: Statement UserId ()
+deleteUserSt =
   dimap
     getUserId
     id
