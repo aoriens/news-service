@@ -8,4 +8,4 @@ then
 fi
 
 require_token
-run_curl -X DELETE -u "$TOKEN:" "$DOMAIN/author/$1"
+run_curl -X DELETE -u "$TOKEN:" "$DOMAIN/authors/$1"

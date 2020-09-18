@@ -2,7 +2,7 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-run_curl -X POST "$DOMAIN/user/create$1" -H "Content-Type: application/json" --data-binary @- <<'EOF'
+run_curl -X POST "$DOMAIN/users/create$1" -H "Content-Type: application/json" --data-binary @- <<'EOF'
 {
   "last_name": "Doe"
 }

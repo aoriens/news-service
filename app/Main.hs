@@ -154,18 +154,19 @@ getWebAppHandle deps@Deps {..} = do
 router :: Deps -> R.Router
 router deps =
   R.new $ do
-    R.pathPrefix ["author"] $ do
+    R.pathPrefix ["authors"] $ do
       R.get $ HGetAuthor.run . getAuthorHandlerHandle deps
       R.delete $ HDeleteAuthor.run . deleteAuthorHandlerHandle deps
       R.patch $ HPatchAuthor.run . patchAuthorHandlerHandle deps
-    R.path ["author", "create"] $
+    R.path ["authors", "create"] $
       R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
     R.path ["authors"] $ R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
     R.path ["news"] $ R.get $ HGetNews.run . newsHandlerHandle deps
-    R.pathPrefix ["user"] $ do
+    R.pathPrefix ["users"] $ do
       R.get $ HGetUser.run . getUserHandlerHandle deps
       R.delete $ HDeleteUser.run . deleteUserHandlerHandle deps
-    R.path ["user", "create"] $ R.post $ HCreateUser.run . createUserHandle deps
+    R.path ["users", "create"] $
+      R.post $ HCreateUser.run . createUserHandle deps
     R.path ["users"] $ R.get $ HGetUsers.run . getUsersHandlerHandle deps
     R.appURL $ \case
       (U.URLImage imageId) ->

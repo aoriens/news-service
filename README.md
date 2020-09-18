@@ -88,23 +88,23 @@ must not be negative.
 
 ## Endpoints
 
-### `POST /author/create`
+### `POST /authors/create`
 
 Creates an author. Accepts [InAuthor](#InAuthor) entity in the request body and
 returns [Author](#Author) entity. Requires the administrator privilege.
 
-### `DELETE /author/{author_id}`
+### `DELETE /authors/{author_id}`
 
 Deletes the specified [Author](#Author) and returns no content. Requires the
 administrator privilege.
 
-### `PATCH /author/{author_id}`
+### `PATCH /authors/{author_id}`
 
 Accepts [UpdatedAuthor](#UpdatedAuthor) entity, updates the corresponding
 [Author](#Author) entity and returns the updated representation. Requires the
 administrator privilege.
 
-### `GET /author/{author_id}`
+### `GET /authors/{author_id}`
 
 Returns the specified [Author](#Author). Requires the administrator privilege.
 
@@ -124,17 +124,17 @@ The response contains the image data with the corresponding MIME type.
 
 Returns a list of [News](#News) entities.
 
-### `POST /user/create`
+### `POST /users/create`
 
 Creates a user. Accepts [InUser](#InUser) entity in the request body and returns
 the created [User](#User) entity.
 
-### `DELETE /user/{user_id}`
+### `DELETE /users/{user_id}`
 
 Deletes the identified user and returns no content. Requires authentication of a
 user having administrator privilege.
 
-### `GET /user/{user_id}`
+### `GET /users/{user_id}`
 
 Returns the specified [User](#User).
 
