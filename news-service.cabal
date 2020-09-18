@@ -122,7 +122,7 @@ library
     , wai
     , warp
   default-language: Haskell2010
-  default-extensions: OverloadedStrings RecordWildCards
+  default-extensions: OverloadedStrings RecordWildCards NamedFieldPuns
 
 executable news-service-exe
   main-is: Main.hs
@@ -147,7 +147,7 @@ executable news-service-exe
     , wai
     , warp
   default-language: Haskell2010
-  default-extensions: OverloadedStrings RecordWildCards
+  default-extensions: OverloadedStrings RecordWildCards NamedFieldPuns
 
 test-suite news-service-test
   type: exitcode-stdio-1.0
@@ -190,7 +190,7 @@ test-suite news-service-test
     , unordered-containers
     , wai
   default-language: Haskell2010
-  default-extensions: OverloadedStrings RecordWildCards
+  default-extensions: OverloadedStrings RecordWildCards NamedFieldPuns
 
 benchmark news-service-bench
   type: exitcode-stdio-1.0
@@ -206,4 +206,4 @@ benchmark news-service-bench
     , criterion
     , news-service
   default-language: Haskell2010
-  default-extensions: OverloadedStrings
+  default-extensions: OverloadedStrings RecordWildCards NamedFieldPuns
