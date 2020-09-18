@@ -16,9 +16,7 @@ newtype Handle =
 
 run :: Handle -> Wai.Application
 run h request respond = do
-  case userIdFromPath $ Wai.pathInfo request of
-    Just uid -> do
-      credentials <- getCredentialsFromRequest request
-      I.run (hDeleteUserHandle h) credentials uid
-    Nothing -> pure ()
+  uid <- getUserIdFromPath $ Wai.pathInfo request
+  credentials <- getCredentialsFromRequest request
+  I.run (hDeleteUserHandle h) credentials uid
   respond $ Wai.responseLBS Http.noContent204 [] mempty

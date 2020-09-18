@@ -21,9 +21,7 @@ data Handle =
 run :: Handle -> Wai.Application
 run Handle {..} request respond = do
   credentials <- getCredentialsFromRequest request
-  authorIdent <-
-    maybe (throwIO NotFoundException) pure $
-    authorIdFromPath (Wai.pathInfo request)
+  authorIdent <- getAuthorIdFromPath (Wai.pathInfo request)
   author <-
     maybe (throwIO NotFoundException) pure =<<
     I.run hGetAuthorHandle credentials authorIdent

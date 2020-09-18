@@ -30,7 +30,7 @@ data Handle =
 run :: Handle -> Wai.Application
 run Handle {..} request respond = do
   creds <- getCredentialsFromRequest request
-  authorIdent <- authorIdFromPathM $ Wai.pathInfo request
+  authorIdent <- getAuthorIdFromPath $ Wai.pathInfo request
   InAuthor {inDescription} <- hLoadJSONRequestBody request
   newAuthor <- I.run hUpdateAuthorHandle creds authorIdent inDescription
   respond $ runRepBuilder hPresenterHandle $ authorRepresentation newAuthor

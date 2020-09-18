@@ -2,9 +2,8 @@
 -- assumed that leading path components before the data to be parsed
 -- are removed.
 module Web.PathParameter
-  ( userIdFromPath
-  , authorIdFromPathM
-  , authorIdFromPath
+  ( getUserIdFromPath
+  , getAuthorIdFromPath
   ) where
 
 import Control.Monad.Catch
@@ -16,13 +15,18 @@ import Web.Exception
 
 type Path = [T.Text]
 
-userIdFromPath :: Path -> Maybe UserId
-userIdFromPath [s] = UserId <$> readExactIntegral (T.unpack s)
-userIdFromPath _ = Nothing
+getUserIdFromPath :: MonadThrow m => Path -> m UserId
+getUserIdFromPath path =
+  notFoundIfNothing $ do
+    [s] <- pure path
+    UserId <$> readExactIntegral (T.unpack s)
 
-authorIdFromPathM :: MonadThrow m => Path -> m AuthorId
-authorIdFromPathM = maybe (throwM NotFoundException) pure . authorIdFromPath
+getAuthorIdFromPath :: MonadThrow m => Path -> m AuthorId
+getAuthorIdFromPath path =
+  notFoundIfNothing $ do
+    [s] <- pure path
+    AuthorId <$> readExactIntegral (T.unpack s)
 
-authorIdFromPath :: Path -> Maybe AuthorId
-authorIdFromPath [s] = AuthorId <$> readExactIntegral (T.unpack s)
-authorIdFromPath _ = Nothing
+notFoundIfNothing :: MonadThrow m => Maybe a -> m a
+notFoundIfNothing Nothing = throwM NotFoundException
+notFoundIfNothing (Just x) = pure x

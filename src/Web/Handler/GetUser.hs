@@ -19,9 +19,7 @@ data Handle =
 
 run :: Handle -> Wai.Application
 run Handle {..} request respond = do
-  userIdent <-
-    maybe (throwIO NotFoundException) pure $
-    userIdFromPath (Wai.pathInfo request)
+  userIdent <- getUserIdFromPath (Wai.pathInfo request)
   user <-
     maybe (throwIO NotFoundException) pure =<< I.run hGetUserHandle userIdent
   respond $ runRepBuilder hPresenterHandle $ userRepresentation Nothing user
