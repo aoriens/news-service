@@ -2,10 +2,9 @@ module Core.Interactor.GetAuthorsSpec
   ( spec
   ) where
 
-import Core.Authentication
-import Core.Authentication.Fakes
+import Control.Monad
+import Core.Authentication.Test
 import Core.Author
-import Core.Exception
 import Core.Interactor.GetAuthors
 import Core.Pagination
 import Core.User
@@ -16,28 +15,21 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
+    itShouldRequireAdminPermission $ \credentials authHandle onSuccess -> do
+      let h =
+            defaultHandle
+              { hGetAuthors = \_ -> onSuccess >> pure [stubAuthor]
+              , hAuthHandle = authHandle
+              }
+      void $ run h credentials noPageQuery
     it "should return authors from the gateway, if the actor is admin" $ do
-      let expectedAuthors =
-            [ Author
-                { authorId = AuthorId 9
-                , authorDescription = ""
-                , authorUser =
-                    User
-                      { userId = UserId 12
-                      , userFirstName = Nothing
-                      , userLastName = ""
-                      , userAvatarId = Nothing
-                      , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                      , userIsAdmin = False
-                      }
-                }
-            ]
+      let expectedAuthors = [stubAuthor {authorId = AuthorId 9}]
           h =
             defaultHandle
               { hGetAuthors = const $ pure expectedAuthors
               , hAuthHandle = stubAuthHandleReturningAdminUser
               }
-      authors <- run h stubCredentials noPageQuery
+      authors <- run h noCredentials noPageQuery
       authors `shouldBe` expectedAuthors
     it "should pass page got from Pagination to the gateway" $ do
       passedPage <- newIORef undefined
@@ -54,17 +46,8 @@ spec =
                       then expectedPage
                       else unexpectedPage
               }
-      _ <- run h stubCredentials pageQuery
+      _ <- run h noCredentials pageQuery
       readIORef passedPage `shouldReturn` expectedPage
-    it
-      "should throw NoPermissionException if the actor is an identified non-admin" $ do
-      let h =
-            defaultHandle
-              {hAuthHandle = stubAuthHandleReturningIdentifiedNonAdminUser}
-      run h stubCredentials noPageQuery `shouldThrow` isNoPermissionException
-    it "should throw NoPermissionException if the actor is anonymous" $ do
-      let h = defaultHandle {hAuthHandle = stubAuthHandleReturningAnonymousUser}
-      run h stubCredentials noPageQuery `shouldThrow` isNoPermissionException
 
 defaultHandle :: Handle IO
 defaultHandle =
@@ -80,5 +63,18 @@ noPageQuery = PageSpecQuery Nothing Nothing
 defaultPage :: PageSpec
 defaultPage = PageSpec (PageOffset 0) (PageLimit 0)
 
-stubCredentials :: Maybe Credentials
-stubCredentials = Nothing
+stubAuthor :: Author
+stubAuthor =
+  Author
+    { authorId = AuthorId 1
+    , authorDescription = ""
+    , authorUser =
+        User
+          { userId = UserId 1
+          , userFirstName = Nothing
+          , userLastName = ""
+          , userAvatarId = Nothing
+          , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+          , userIsAdmin = False
+          }
+    }

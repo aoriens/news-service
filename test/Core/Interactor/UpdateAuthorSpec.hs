@@ -2,8 +2,8 @@ module Core.Interactor.UpdateAuthorSpec
   ( spec
   ) where
 
-import qualified Core.Authentication as A
-import Core.Authentication.Fakes
+import Control.Monad
+import Core.Authentication.Test
 import Core.Author
 import Core.Exception
 import Core.Interactor.UpdateAuthor
@@ -17,36 +17,18 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    it
-      "should pass control to the gateway if the actor is administrator and the user exists" $ do
-      updateAuthorCommandIsIssued <- newIORef False
+    itShouldRequireAdminPermission $ \credentials authHandle successCont -> do
       let aid = AuthorId 1
           description = ""
           h =
             Handle
               { hUpdateAuthor =
                   \_ _ -> do
-                    writeIORef updateAuthorCommandIsIssued True
+                    successCont
                     pure $ Just stubAuthor
-              , hAuthHandle = stubAuthHandleReturningAdminUser
+              , hAuthHandle = authHandle
               }
-      _ <- run h stubCredentials aid description
-      readIORef updateAuthorCommandIsIssued `shouldReturn` True
-    it
-      "should throw NoPermissionException if the user is an identified non-admin" $ do
-      let aid = AuthorId 1
-          description = ""
-          h =
-            stubHandle
-              {hAuthHandle = stubAuthHandleReturningIdentifiedNonAdminUser}
-      run h stubCredentials aid description `shouldThrow`
-        isNoPermissionException
-    it "should throw NoPermissionException if the user is anonymous" $ do
-      let credentials = Nothing
-          aid = AuthorId 1
-          description = ""
-          h = stubHandle {hAuthHandle = stubAuthHandleReturningAnonymousUser}
-      run h credentials aid description `shouldThrow` isNoPermissionException
+      void $ run h credentials aid description
     it
       "should pass authorId and description data to the gateway in a normal case" $ do
       authorIdAndDescription <- newIORef undefined
@@ -59,7 +41,7 @@ spec
                     writeIORef authorIdAndDescription (aid, desc)
                     pure $ Just stubAuthor
               }
-      _ <- run h stubCredentials expectedAuthorId expectedDescription
+      _ <- run h noCredentials expectedAuthorId expectedDescription
       readIORef authorIdAndDescription `shouldReturn`
         (expectedAuthorId, expectedDescription)
     it "should return author returned from the gateway if updated successfully" $ do
@@ -67,13 +49,13 @@ spec
           description = "q"
           expectedAuthor = stubAuthor
           h = stubHandle {hUpdateAuthor = \_ _ -> pure $ Just expectedAuthor}
-      r <- run h stubCredentials aid description
+      r <- run h noCredentials aid description
       r `shouldBe` expectedAuthor
     it "should throw EntityNotFoundException if the gateway returned Nothing" $ do
       let aid = AuthorId 1
           description = "q"
           h = stubHandle {hUpdateAuthor = \_ _ -> pure Nothing}
-      run h stubCredentials aid description `shouldThrow`
+      run h noCredentials aid description `shouldThrow`
         isEntityNotFoundException
 
 stubHandle :: Handle IO
@@ -82,9 +64,6 @@ stubHandle =
     { hUpdateAuthor = \_ _ -> pure $ Just stubAuthor {authorId = AuthorId 99993}
     , hAuthHandle = stubAuthHandleReturningAdminUser
     }
-
-stubCredentials :: Maybe A.Credentials
-stubCredentials = Nothing
 
 stubAuthor :: Author
 stubAuthor =

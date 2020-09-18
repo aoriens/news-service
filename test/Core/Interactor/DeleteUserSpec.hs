@@ -3,8 +3,7 @@ module Core.Interactor.DeleteUserSpec
   ) where
 
 import Control.Exception
-import qualified Core.Authentication as A
-import Core.Authentication.Fakes
+import Core.Authentication.Test
 import Core.Author
 import Core.EntityId
 import Core.Exception
@@ -17,18 +16,14 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    it "should issue the delete command to the gateway if the actor is admin" $ do
-      deleteCommandIsIssued <- newIORef False
+    itShouldRequireAdminPermission $ \credentials authHandle onSuccess -> do
       let uid = UserId 1
           h =
             stubHandle
-              { hDeleteUser =
-                  \_ _ ->
-                    writeIORef deleteCommandIsIssued True >> pure (Right ())
-              , hAuthHandle = stubAuthHandleReturningAdminUser
+              { hDeleteUser = \_ _ -> onSuccess >> pure (Right ())
+              , hAuthHandle = authHandle
               }
-      run h stubCredentials uid
-      readIORef deleteCommandIsIssued `shouldReturn` True
+      run h credentials uid
     it
       "should throw DependentEntitiesPreventDeletionException if \
        \the gateway returned Left DependentEntitiesPreventDeletion" $ do
@@ -41,7 +36,7 @@ spec =
                     pure . Left $ DependentEntitiesPreventDeletion authorIds
               , hAuthHandle = stubAuthHandleReturningAdminUser
               }
-      r <- try $ run h stubCredentials uid
+      r <- try $ run h noCredentials uid
       r `shouldBe`
         Left
           (DependentEntitiesPreventDeletionException
@@ -55,35 +50,8 @@ spec =
               { hDeleteUser =
                   \uid _ -> writeIORef passedUserId uid >> pure (Right ())
               }
-      run h stubCredentials expectedUid
+      run h noCredentials expectedUid
       readIORef passedUserId `shouldReturn` expectedUid
-    it
-      "should throw NoPermissionException an exception if the actor is \
-      \authenticated, but not an admin" $ do
-      userIsDeleted <- newIORef False
-      let uid = UserId 1
-          h =
-            stubHandle
-              { hDeleteUser =
-                  \_ _ -> writeIORef userIsDeleted True >> pure (Right ())
-              , hAuthHandle = stubAuthHandleReturningIdentifiedNonAdminUser
-              }
-      run h stubCredentials uid `shouldThrow` isNoPermissionException
-      readIORef userIsDeleted `shouldReturn` False
-    it "should throw NoPermissionException for an anonymous actor" $ do
-      userIsDeleted <- newIORef False
-      let uid = UserId 1
-          h =
-            stubHandle
-              { hDeleteUser =
-                  \_ _ -> writeIORef userIsDeleted True >> pure (Right ())
-              , hAuthHandle = stubAuthHandleReturningAnonymousUser
-              }
-      run h stubCredentials uid `shouldThrow` isNoPermissionException
-      readIORef userIsDeleted `shouldReturn` False
-
-stubCredentials :: Maybe A.Credentials
-stubCredentials = Nothing
 
 stubHandle :: Handle IO
 stubHandle =

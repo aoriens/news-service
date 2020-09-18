@@ -153,8 +153,8 @@ test-suite news-service-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Core.Authentication.Fakes
-    , Core.Authentication.ImplSpec
+      Core.Authentication.ImplSpec
+    , Core.Authentication.Test
     , Core.AuthorizationSpec
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateUserSpec
