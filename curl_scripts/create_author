@@ -8,7 +8,7 @@ then
 fi
 
 require_token
-run_curl "$DOMAIN/authors/create" \
+run_curl "$DOMAIN/authors" \
          -X POST  \
          -H "Content-Type: application/json" \
          -u "$TOKEN:" \

@@ -88,7 +88,12 @@ must not be negative.
 
 ## Endpoints
 
-### `POST /authors/create`
+### `GET /authors`
+
+Returns a list of [Author](#Author) entities. Requires the administrator
+privilege.
+
+### `POST /authors`
 
 Creates an author. Accepts [InAuthor](#InAuthor) entity in the request body and
 returns [Author](#Author) entity. Requires the administrator privilege.
@@ -98,20 +103,15 @@ returns [Author](#Author) entity. Requires the administrator privilege.
 Deletes the specified [Author](#Author) and returns no content. Requires the
 administrator privilege.
 
+### `GET /authors/{author_id}`
+
+Returns the specified [Author](#Author). Requires the administrator privilege.
+
 ### `PATCH /authors/{author_id}`
 
 Accepts [UpdatedAuthor](#UpdatedAuthor) entity, updates the corresponding
 [Author](#Author) entity and returns the updated representation. Requires the
 administrator privilege.
-
-### `GET /authors/{author_id}`
-
-Returns the specified [Author](#Author). Requires the administrator privilege.
-
-### `GET /authors`
-
-Returns a list of [Author](#Author) entities. Requires the administrator
-privilege.
 
 ### `GET /image/{image_id}`
 
@@ -124,7 +124,11 @@ The response contains the image data with the corresponding MIME type.
 
 Returns a list of [News](#News) entities.
 
-### `POST /users/create`
+### `GET /users`
+
+Returns an array of [User](#User) entities.
+
+### `POST /users`
 
 Creates a user. Accepts [InUser](#InUser) entity in the request body and returns
 the created [User](#User) entity.
@@ -137,10 +141,6 @@ user having administrator privilege.
 ### `GET /users/{user_id}`
 
 Returns the specified [User](#User).
-
-### `GET /users`
-
-Returns an array of [User](#User) entities.
 
 ## Entities
 

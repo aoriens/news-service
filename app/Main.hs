@@ -158,16 +158,16 @@ router deps =
       R.get $ HGetAuthor.run . getAuthorHandlerHandle deps
       R.delete $ HDeleteAuthor.run . deleteAuthorHandlerHandle deps
       R.patch $ HPatchAuthor.run . patchAuthorHandlerHandle deps
-    R.path ["authors", "create"] $
+    R.path ["authors"] $ do
+      R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
       R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
-    R.path ["authors"] $ R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
     R.path ["news"] $ R.get $ HGetNews.run . newsHandlerHandle deps
     R.pathPrefix ["users"] $ do
       R.get $ HGetUser.run . getUserHandlerHandle deps
       R.delete $ HDeleteUser.run . deleteUserHandlerHandle deps
-    R.path ["users", "create"] $
+    R.path ["users"] $ do
+      R.get $ HGetUsers.run . getUsersHandlerHandle deps
       R.post $ HCreateUser.run . createUserHandle deps
-    R.path ["users"] $ R.get $ HGetUsers.run . getUsersHandlerHandle deps
     R.appURL $ \case
       (U.URLImage imageId) ->
         R.get $ \session ->
