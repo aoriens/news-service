@@ -38,6 +38,7 @@ library
     , Core.Interactor.GetNews
     , Core.Interactor.GetUser
     , Core.Interactor.GetUsers
+    , Core.Interactor.UpdateAuthor
     , Core.Pagination
     , Core.Pagination.Impl
     , Core.User
@@ -77,6 +78,7 @@ library
     , Web.Handler.GetNews
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
+    , Web.Handler.PatchAuthor
     , Web.HTTP
     , Web.JSONEncoder
     , Web.PathParameter
@@ -161,6 +163,7 @@ test-suite news-service-test
     , Core.Interactor.GetAuthorSpec
     , Core.Interactor.GetAuthorsSpec
     , Core.Interactor.GetNewsSpec
+    , Core.Interactor.UpdateAuthorSpec
     , Core.Pagination.ImplSpec
     , Data.Integral.ExactSpec
     , Gateway.SecretTokenSpec

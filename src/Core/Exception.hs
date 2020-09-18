@@ -4,6 +4,7 @@ module Core.Exception
   , isQueryException
   , isBadCredentialsException
   , isNoPermissionException
+  , isEntityNotFoundException
   ) where
 
 import Control.Exception
@@ -18,6 +19,7 @@ data CoreException
   | BadCredentialsException Reason
   | NoPermissionException Reason
   | DependentEntitiesPreventDeletionException EntityId [EntityId]
+  | EntityNotFoundException EntityId
   deriving (Show, Eq)
 
 instance Exception CoreException
@@ -33,3 +35,7 @@ isBadCredentialsException _ = False
 isNoPermissionException :: CoreException -> Bool
 isNoPermissionException NoPermissionException {} = True
 isNoPermissionException _ = False
+
+isEntityNotFoundException :: CoreException -> Bool
+isEntityNotFoundException EntityNotFoundException {} = True
+isEntityNotFoundException _ = False

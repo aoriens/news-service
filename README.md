@@ -98,6 +98,12 @@ returns [Author](#Author) entity. Requires the administrator privilege.
 Deletes the specified [Author](#Author) and returns no content. Requires the
 administrator privilege.
 
+### `PATCH /author/{author_id}`
+
+Accepts [UpdatedAuthor](#UpdatedAuthor) entity, updates the corresponding
+[Author](#Author) entity and returns the updated representation. Requires the
+administrator privilege.
+
 ### `GET /author/{author_id}`
 
 Returns the specified [Author](#Author). Requires the administrator privilege.
@@ -201,3 +207,9 @@ A user. Fields:
   required.
 - `secret_token` - the authentication token. The field is only output when
   creating a user, otherwise it is missing. A string, optional.
+
+### UpdatedAuthor
+
+An instruction to update an [Author](#Author). Fields:
+
+- `description` - the author's new description. A string, required.

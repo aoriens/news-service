@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test X"$2" = X
+then
+    die "Usage: $0 author_id new_author_description"
+fi
+
+require_token
+run_curl "$DOMAIN/author/$1" \
+         -X PATCH  \
+         -H "Content-Type: application/json" \
+         -u "$TOKEN:" \
+         --data-binary @- <<EOF
+{
+  "description": "$2"
+}
+EOF

@@ -14,6 +14,7 @@ module Web.Router
   , post
   , put
   , delete
+  , patch
   , route
   , Result(..)
   , isHandlerResult
@@ -223,7 +224,7 @@ method :: Http.Method -> EApplication -> MethodsSpec ()
 method m handler =
   MethodsSpec . tell . MethodsToHandlersMonoid $ HM.singleton m handler
 
-get, post, put, delete :: EApplication -> MethodsSpec ()
+get, post, put, delete, patch :: EApplication -> MethodsSpec ()
 get = method Http.methodGet
 
 post = method Http.methodPost
@@ -231,6 +232,8 @@ post = method Http.methodPost
 put = method Http.methodPut
 
 delete = method Http.methodDelete
+
+patch = method Http.methodPatch
 
 -- | The result of finding a route.
 data Result

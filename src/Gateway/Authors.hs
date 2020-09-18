@@ -3,6 +3,7 @@ module Gateway.Authors
   , getAuthors
   , getAuthor
   , deleteAuthor
+  , updateAuthor
   ) where
 
 import Core.Author
@@ -28,3 +29,9 @@ getAuthor h authorIdent =
 
 deleteAuthor :: DB.Handle -> AuthorId -> IO ()
 deleteAuthor h = runTransactionRW h . statement DAuthors.deleteAuthorById
+
+updateAuthor :: DB.Handle -> AuthorId -> T.Text -> IO (Maybe Author)
+updateAuthor h aid newDescription =
+  runTransactionRW h $ do
+    statement DAuthors.updateAuthor (aid, newDescription)
+    statement DAuthors.selectAuthorById aid

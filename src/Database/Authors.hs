@@ -5,6 +5,7 @@ module Database.Authors
   ( createAuthor
   , selectAuthors
   , selectAuthorById
+  , updateAuthor
   , selectAuthorsByUserId
   , deleteAuthorById
   ) where
@@ -17,6 +18,7 @@ import Core.User
 import Data.Functor.Contravariant
 import Data.Profunctor
 import qualified Data.Text as T
+import Data.Tuple
 import Data.Vector (Vector)
 import Database
 import Database.Columns
@@ -67,6 +69,16 @@ selectAuthorById =
     "from authors join users using (user_id) where author_id = $1"
     (getAuthorId >$< E.param (E.nonNullable E.int4))
     True
+
+updateAuthor :: Statement (AuthorId, T.Text) ()
+updateAuthor =
+  lmap
+    (swap . first getAuthorId)
+    [TH.resultlessStatement|
+       update authors
+       set description = $1 :: text
+       where author_id = $2 :: integer
+    |]
 
 authorColumns :: Columns Author
 authorColumns = do

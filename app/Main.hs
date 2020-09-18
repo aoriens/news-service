@@ -23,6 +23,7 @@ import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
+import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
 import Core.Pagination
 import qualified Core.Pagination.Impl
 import qualified Data.Aeson as A
@@ -54,6 +55,7 @@ import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
+import qualified Web.Handler.PatchAuthor as HPatchAuthor
 import qualified Web.JSONEncoder as JSONEncoder
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
@@ -156,6 +158,7 @@ router deps =
     R.pathPrefix ["author"] $ do
       R.get $ HGetAuthor.run . getAuthorHandlerHandle deps
       R.delete $ HDeleteAuthor.run . deleteAuthorHandlerHandle deps
+      R.patch $ HPatchAuthor.run . patchAuthorHandlerHandle deps
     R.path ["author", "create"] $
       R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
     R.path ["authors"] $ R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
@@ -194,6 +197,19 @@ getAuthorsHandlerHandle deps@Deps {..} session =
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenterHandle = dRepresentationBuilderHandle
+    }
+
+patchAuthorHandlerHandle :: Deps -> Web.Session -> HPatchAuthor.Handle
+patchAuthorHandlerHandle deps@Deps {..} session =
+  HPatchAuthor.Handle
+    { hUpdateAuthorHandle =
+        IUpdateAuthor.Handle
+          { hAuthHandle = dMakeAuthHandle session
+          , hUpdateAuthor =
+              GAuthors.updateAuthor $ sessionDatabaseHandle deps session
+          }
+    , hPresenterHandle = dRepresentationBuilderHandle
+    , hLoadJSONRequestBody = dLoadJSONRequestBody
     }
 
 getAuthorHandlerHandle :: Deps -> Web.Session -> HGetAuthor.Handle
