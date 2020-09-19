@@ -39,6 +39,7 @@ library
     , Core.Interactor.GetUser
     , Core.Interactor.GetUsers
     , Core.Interactor.UpdateAuthor
+    , Core.News
     , Core.Pagination
     , Core.Pagination.Impl
     , Core.User

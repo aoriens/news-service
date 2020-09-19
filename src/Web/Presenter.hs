@@ -15,7 +15,7 @@ module Web.Presenter
 import Core.Authentication
 import Core.Author
 import Core.Image
-import Core.Interactor.GetNews
+import Core.News
 import Core.User
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T

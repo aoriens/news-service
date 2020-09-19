@@ -6,6 +6,7 @@ module Web.Handler.GetNews
   ) where
 
 import qualified Core.Interactor.GetNews as I
+import Core.News
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Network.Wai as Wai
@@ -17,7 +18,7 @@ data Handle =
     { hGetNewsHandle :: I.Handle IO
     , hJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
-    , hPresenter :: [I.News] -> Wai.Response
+    , hPresenter :: [News] -> Wai.Response
     }
 
 run :: Handle -> Wai.Application

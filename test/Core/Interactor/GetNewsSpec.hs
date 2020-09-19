@@ -3,6 +3,7 @@ module Core.Interactor.GetNewsSpec
   ) where
 
 import Core.Interactor.GetNews as I
+import Core.News
 import Core.Pagination
 import Data.IORef
 import Data.Time.Calendar
@@ -13,17 +14,17 @@ spec =
   describe "getNews" $ do
     it "should pass data through from the gateway" $ do
       let stubResults =
-            [ I.News
-                { I.newsId = 1
-                , I.newsTitle = "A"
-                , I.newsDate = fromGregorian 2020 01 01
-                , I.newsText = "Text"
+            [ News
+                { newsId = 1
+                , newsTitle = "A"
+                , newsDate = fromGregorian 2020 01 01
+                , newsText = "Text"
                 }
-            , I.News
-                { I.newsId = 2
-                , I.newsTitle = "B"
-                , I.newsDate = fromGregorian 2020 01 02
-                , I.newsText = "Text2"
+            , News
+                { newsId = 2
+                , newsTitle = "B"
+                , newsDate = fromGregorian 2020 01 02
+                , newsText = "Text2"
                 }
             ]
           h =

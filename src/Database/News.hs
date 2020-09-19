@@ -4,18 +4,18 @@ module Database.News
   ( selectNews
   ) where
 
-import qualified Core.Interactor.GetNews as GetNews
+import Core.News
 import Core.Pagination
 import Data.Profunctor
 import Data.Vector (Vector)
 import Database
 import qualified Hasql.TH as TH
 
-selectNews :: Statement PageSpec (Vector GetNews.News)
+selectNews :: Statement PageSpec (Vector News)
 selectNews =
   dimap
     (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
-    (fmap $ \(newsId, newsTitle, newsDate, newsText) -> GetNews.News {..})
+    (fmap $ \(newsId, newsTitle, newsDate, newsText) -> News {..})
     [TH.vectorStatement|
     select news_id :: integer, title :: varchar, date :: date, body :: varchar
     from news

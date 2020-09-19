@@ -4,7 +4,7 @@ module Web.Representation.News
   ( newsRepresentation
   ) where
 
-import qualified Core.Interactor.GetNews as Core
+import qualified Core.News as Core
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import Data.Int
