@@ -64,7 +64,7 @@ library
     , Logger.Impl
     , Network.Wai.Util
     , Web.Application
-    , Web.AppURL
+    , Web.AppURI
     , Web.BasicAuth
     , Web.Credentials
     , Web.Exception
@@ -167,7 +167,7 @@ test-suite news-service-test
     , Core.Pagination.ImplSpec
     , Data.Integral.ExactSpec
     , Gateway.SecretTokenSpec
-    , Web.AppURLSpec
+    , Web.AppURISpec
     , Web.BasicAuthSpec
     , Web.CredentialsSpec
     , Web.QueryParameterSpec

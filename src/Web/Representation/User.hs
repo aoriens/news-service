@@ -15,7 +15,7 @@ import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Time
-import qualified Web.AppURL as U
+import qualified Web.AppURI as U
 import Web.Credentials
 import Web.RepresentationBuilder
 
@@ -32,7 +32,7 @@ data User =
 
 userRepresentation :: Maybe Core.Credentials -> Core.User -> RepBuilder User
 userRepresentation creds Core.User {..} = do
-  avatarURL <- renderMaybeAppURL (U.URLImage <$> userAvatarId)
+  avatarURL <- renderMaybeAppURI (U.URIImage <$> userAvatarId)
   pure
     User
       { userUserId = Core.getUserId userId

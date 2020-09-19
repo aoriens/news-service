@@ -8,7 +8,7 @@ module Web.Router
   , Spec
   , path
   , pathPrefix
-  , appURL
+  , appURI
   , method
   , get
   , post
@@ -30,15 +30,15 @@ import Data.List hiding (delete)
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Web.AppURL as U
+import qualified Web.AppURI as U
 import Web.Types
 
 -- | The router type is responsible for finding handlers for the given
--- URL paths and HTTP methods and for handling some exceptional cases.
+-- URI paths and HTTP methods and for handling some exceptional cases.
 data Router =
   Router
     { rPathTrie :: !PathTrie
-    , rAppURLHandler :: !(Maybe AppURLHandler)
+    , rAppURIHandler :: !(Maybe AppURIHandler)
     }
 
 data PathTrie =
@@ -50,7 +50,7 @@ data PathTrie =
 
 type PathComponent = T.Text
 
-type AppURLHandler = U.AppURL -> MethodsToHandlers
+type AppURIHandler = U.AppURI -> MethodsToHandlers
 
 type MethodsToHandlers = HM.HashMap Http.Method EApplication
 
@@ -137,7 +137,7 @@ is performed. In the following example:
 -}
 new :: Spec () -> Router
 new (Spec m) =
-  execState m Router {rPathTrie = emptyPathTrie, rAppURLHandler = Nothing}
+  execState m Router {rPathTrie = emptyPathTrie, rAppURIHandler = Nothing}
 
 emptyPathTrie :: PathTrie
 emptyPathTrie =
@@ -207,17 +207,17 @@ insertPrefixMatch path_ methodTable = insert_ path_
         }
 
 -- | Starts route specification for a URI path matching the specified
--- 'AppURL' exactly.
-appURL :: (U.AppURL -> MethodsSpec ()) -> Spec ()
-appURL f =
+-- 'AppURI' exactly.
+appURI :: (U.AppURI -> MethodsSpec ()) -> Spec ()
+appURI f =
   Spec . modify' $ \r@Router {..} ->
     r
-      { rAppURLHandler =
-          maybe (Just appURLHandler) (const errorDuplicateEntry) rAppURLHandler
+      { rAppURIHandler =
+          maybe (Just appURIHandler) (const errorDuplicateEntry) rAppURIHandler
       }
   where
-    appURLHandler = execMethodsSpec . f
-    errorDuplicateEntry = error "appURL clause is used more than once"
+    appURIHandler = execMethodsSpec . f
+    errorDuplicateEntry = error "appURI clause is used more than once"
 
 -- | Sets a handler for the specified HTTP method.
 method :: Http.Method -> EApplication -> MethodsSpec ()
@@ -261,12 +261,12 @@ route r@Router {..} request =
 
 lookupMethodTable :: Router -> Wai.Request -> Maybe PathMatch
 lookupMethodTable Router {..} request = do
-  (lookupByAppURL request =<< rAppURLHandler) <|> lookupByPath rPathTrie request
+  (lookupByAppURI request =<< rAppURIHandler) <|> lookupByPath rPathTrie request
 
-lookupByAppURL :: Wai.Request -> AppURLHandler -> Maybe PathMatch
-lookupByAppURL request appURLHandler =
-  (`PathMatch` Nothing) . appURLHandler <$>
-  U.fromRelativeURL (U.RelativeURL $ Wai.pathInfo request)
+lookupByAppURI :: Wai.Request -> AppURIHandler -> Maybe PathMatch
+lookupByAppURI request appURIHandler =
+  (`PathMatch` Nothing) . appURIHandler <$>
+  U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
 
 lookupByPath :: PathTrie -> Wai.Request -> Maybe PathMatch
 lookupByPath trie request = go Nothing trie (Wai.pathInfo request)

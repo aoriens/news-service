@@ -42,7 +42,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
-import qualified Web.AppURL as U
+import qualified Web.AppURI as U
 import qualified Web.Application
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateUser as HCreateUser
@@ -77,7 +77,7 @@ data Deps =
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Wai.Request -> IO a
     , dSecretTokenIOState :: GSecretToken.IOState
-    , dRenderAppURL :: U.AppURL -> T.Text
+    , dRenderAppURI :: U.AppURI -> T.Text
     , dRepresentationBuilderHandle :: RepBuilderHandle
     , dMakeAuthHandle :: Web.Session -> AuthenticationHandle IO
     }
@@ -103,7 +103,7 @@ getDeps = do
         JSONEncoder.encode
           JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
           a
-      dRenderAppURL = U.render (Cf.cfAppURLConfig dConfig)
+      dRenderAppURI = U.render (Cf.cfAppURIConfig dConfig)
   pure
     ( loggerWorker
     , Deps
@@ -120,10 +120,10 @@ getDeps = do
               RequestBodyLoader.Config
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
-        , dRenderAppURL
+        , dRenderAppURI
         , dRepresentationBuilderHandle =
             RepBuilderHandle
-              {hJSONEncode = dJSONEncode, hRenderAppURL = dRenderAppURL}
+              {hJSONEncode = dJSONEncode, hRenderAppURI = dRenderAppURI}
         , dMakeAuthHandle =
             \session ->
               AuthImpl.new
@@ -168,8 +168,8 @@ router deps =
     R.path ["users"] $ do
       R.get $ HGetUsers.run . getUsersHandlerHandle deps
       R.post $ HCreateUser.run . createUserHandle deps
-    R.appURL $ \case
-      (U.URLImage imageId) ->
+    R.appURI $ \case
+      (U.URIImage imageId) ->
         R.get $ \session ->
           HGetImage.run (getImageHandlerHandle deps session) imageId
 

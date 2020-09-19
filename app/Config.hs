@@ -20,7 +20,7 @@ import Data.Word
 import qualified Database.ConnectionManager as DB
 import qualified Logger
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Web.AppURL
+import qualified Web.AppURI
 
 -- | The high-level application configuration.
 data Config =
@@ -33,7 +33,7 @@ data Config =
     , cfMaxRequestJsonBodySize :: !Word64
     , cfSecretTokenLength :: !Int
     , cfAllowedImageMimeTypes :: HS.HashSet Text
-    , cfAppURLConfig :: Web.AppURL.Config
+    , cfAppURIConfig :: Web.AppURI.Config
     , cfShowInternalErrorInfoInResponse :: !Bool
     , cfJSONPrettyPrint :: !Bool
     }
@@ -91,8 +91,8 @@ makeConfig inConfig@InConfig {..} = do
       , cfShowInternalErrorInfoInResponse =
           Just True == inShowInternalErrorInfoInResponse
       , cfJSONPrettyPrint = Just True == inJSONPrettyPrint
-      , cfAppURLConfig =
-          Web.AppURL.Config
+      , cfAppURIConfig =
+          Web.AppURI.Config
             { cfUseHTTPS = Just True == inServerPublicURLsUseHTTPS
             , cfDomain = fromString inServerPublicDomain
             }

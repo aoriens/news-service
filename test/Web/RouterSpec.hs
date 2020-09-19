@@ -9,7 +9,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Internal as Wai
 import Test.Hspec
-import qualified Web.AppURL as U
+import qualified Web.AppURI as U
 import qualified Web.Router as R
 import Web.Types as Web
 import Web.Types.Internal.SessionId as Web
@@ -19,7 +19,7 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "route" $ do
-    it "should return a handler by URL path and HTTP method" $ do
+    it "should return a handler by URI path and HTTP method" $ do
       let path = ["my_path"]
           method = Http.methodPost
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
@@ -29,15 +29,15 @@ spec
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
     it
-      "should return a handler matching an AppURL if an AppURL-decodable path is passed" $ do
-      let appURL = U.URLImage (ImageId 1)
+      "should return a handler matching an AppURI if an AppURI-decodable path is passed" $ do
+      let appURI = U.URIImage (ImageId 1)
           method = Http.methodGet
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
           router =
-            R.new $ R.appURL $ \U.URLImage {} -> R.method method expectedHandler
+            R.new $ R.appURI $ \U.URIImage {} -> R.method method expectedHandler
           request =
             Wai.defaultRequest
-              { Wai.pathInfo = U.relativeURLPath $ U.toRelativeURL appURL
+              { Wai.pathInfo = U.relativeURIPath $ U.toRelativeURI appURI
               , Wai.requestMethod = method
               }
           (R.HandlerResult handler) = R.route router request
@@ -128,7 +128,7 @@ spec
     it "should return ResourceNotFoundRequest if no match found" $ do
       let router =
             R.new $ do
-              R.appURL $ \U.URLImage {} -> R.method "GET" noOpHandler
+              R.appURI $ \U.URIImage {} -> R.method "GET" noOpHandler
               R.path ["path"] $ R.method "GET" noOpHandler
               R.pathPrefix ["prefix"] $ R.method "GET" noOpHandler
           request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
