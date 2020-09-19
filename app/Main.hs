@@ -78,6 +78,7 @@ data Deps =
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Wai.Request -> IO a
     , dSecretTokenIOState :: GSecretToken.IOState
+    , dAppURIConfig :: AppURIConfig
     , dRenderAppURI :: AppURI -> T.Text
     , dRepresentationBuilderHandle :: RepBuilderHandle
     , dMakeAuthHandle :: Web.Session -> AuthenticationHandle IO
@@ -104,7 +105,8 @@ getDeps = do
         JSONEncoder.encode
           JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
           a
-      dRenderAppURI = Web.AppURI.renderAppURI (Cf.cfAppURIConfig dConfig)
+      dAppURIConfig = Cf.cfAppURIConfig dConfig
+      dRenderAppURI = Web.AppURI.renderAppURI dAppURIConfig
   pure
     ( loggerWorker
     , Deps
@@ -121,6 +123,7 @@ getDeps = do
               RequestBodyLoader.Config
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
+        , dAppURIConfig
         , dRenderAppURI
         , dRepresentationBuilderHandle =
             RepBuilderHandle
@@ -189,7 +192,8 @@ createAuthorHandlerHandle deps@Deps {..} session =
               GAuthors.createAuthor $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hPresenter = authorCreatedPresenter dRepresentationBuilderHandle
+    , hPresenter =
+        authorCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     }
 
 getAuthorsHandlerHandle :: Deps -> Web.Session -> HGetAuthors.Handle
@@ -259,7 +263,8 @@ createUserHandle :: Deps -> Web.Session -> HCreateUser.Handle
 createUserHandle deps@Deps {..} session =
   HCreateUser.Handle
     { hCreateUserHandle = interactorHandle
-    , hPresenter = userCreatedPresenter dRepresentationBuilderHandle
+    , hPresenter =
+        userCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     }
   where
