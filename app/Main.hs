@@ -170,7 +170,7 @@ router deps =
       R.get $ HGetUsers.run . getUsersHandlerHandle deps
       R.post $ HCreateUser.run . createUserHandle deps
     R.appURI $ \case
-      (URIImage imageId) ->
+      (ImageURI imageId) ->
         R.get $ \session ->
           HGetImage.run (getImageHandlerHandle deps session) imageId
 

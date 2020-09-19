@@ -30,11 +30,11 @@ spec
       handler `shouldEmitSameHeadersAs` expectedHandler
     it
       "should return a handler matching an AppURI if an AppURI-decodable path is passed" $ do
-      let appURI = U.URIImage (ImageId 1)
+      let appURI = U.ImageURI (ImageId 1)
           method = Http.methodGet
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
           router =
-            R.new $ R.appURI $ \U.URIImage {} -> R.method method expectedHandler
+            R.new $ R.appURI $ \U.ImageURI {} -> R.method method expectedHandler
           request =
             Wai.defaultRequest
               { Wai.pathInfo = U.relativeURIPath $ U.toRelativeURI appURI
@@ -128,7 +128,7 @@ spec
     it "should return ResourceNotFoundRequest if no match found" $ do
       let router =
             R.new $ do
-              R.appURI $ \U.URIImage {} -> R.method "GET" noOpHandler
+              R.appURI $ \U.ImageURI {} -> R.method "GET" noOpHandler
               R.path ["path"] $ R.method "GET" noOpHandler
               R.pathPrefix ["prefix"] $ R.method "GET" noOpHandler
           request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}

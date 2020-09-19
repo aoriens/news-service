@@ -32,7 +32,7 @@ data User =
 
 userRepresentation :: Maybe Core.Credentials -> Core.User -> RepBuilder User
 userRepresentation creds Core.User {..} = do
-  avatarURL <- renderMaybeAppURI (U.URIImage <$> userAvatarId)
+  avatarURL <- renderMaybeAppURI (U.ImageURI <$> userAvatarId)
   pure
     User
       { userUserId = Core.getUserId userId

@@ -33,7 +33,7 @@ newtype RelativeURI =
     }
 
 newtype AppURI =
-  URIImage ImageId
+  ImageURI ImageId
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -50,10 +50,10 @@ buildByteString :: BB.Builder -> B.ByteString
 buildByteString = LB.toStrict . BB.toLazyByteString
 
 toRelativeURI :: AppURI -> RelativeURI
-toRelativeURI (URIImage (ImageId imageId)) =
+toRelativeURI (ImageURI (ImageId imageId)) =
   RelativeURI ["image", T.pack $ show imageId]
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
 fromRelativeURI (RelativeURI ["image", ident]) =
-  URIImage . ImageId <$> readExactIntegral (T.unpack ident)
+  ImageURI . ImageId <$> readExactIntegral (T.unpack ident)
 fromRelativeURI _ = Nothing

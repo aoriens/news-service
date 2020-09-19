@@ -39,7 +39,7 @@ spec = do
       uriUserInfo <$> (uriAuthority =<< uri) `shouldBe` Just ""
 
 defaultAppURI :: AppURI
-defaultAppURI = URIImage $ I.ImageId 1
+defaultAppURI = ImageURI $ I.ImageId 1
 
 defaultConfig :: AppURIConfig
 defaultConfig = AppURIConfig {cfUseHTTPS = False, cfDomain = "example.com"}
