@@ -19,50 +19,51 @@ import Core.News
 import Core.User
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T
-import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Web.Representation.Author (authorRepresentation)
 import Web.Representation.News (newsRepresentation)
 import Web.Representation.User (userRepresentation)
 import Web.RepresentationBuilder
+import Web.Response
 
 authorCreatedPresenter :: RepBuilderHandle -> Author -> Wai.Response
-authorCreatedPresenter h = runRepBuilder h . authorRepresentation
+authorCreatedPresenter h = dataResponse . runRepBuilder h . authorRepresentation
 
 authorUpdatedPresenter :: RepBuilderHandle -> Author -> Wai.Response
-authorUpdatedPresenter h = runRepBuilder h . authorRepresentation
+authorUpdatedPresenter h = dataResponse . runRepBuilder h . authorRepresentation
 
 authorDeletedPresenter :: Wai.Response
-authorDeletedPresenter = noContent
+authorDeletedPresenter = noContentResponse
 
 authorPresenter :: RepBuilderHandle -> Author -> Wai.Response
-authorPresenter h = runRepBuilder h . authorRepresentation
+authorPresenter h = dataResponse . runRepBuilder h . authorRepresentation
 
 authorListPresenter :: RepBuilderHandle -> [Author] -> Wai.Response
-authorListPresenter h = runRepBuilder h . mapM authorRepresentation
+authorListPresenter h =
+  dataResponse . runRepBuilder h . mapM authorRepresentation
 
 userCreatedPresenter :: RepBuilderHandle -> User -> Credentials -> Wai.Response
 userCreatedPresenter h user creds =
-  runRepBuilder h $ userRepresentation (Just creds) user
+  dataResponse . runRepBuilder h $ userRepresentation (Just creds) user
 
 userDeletedPresenter :: Wai.Response
-userDeletedPresenter = noContent
+userDeletedPresenter = noContentResponse
 
 userPresenter :: RepBuilderHandle -> User -> Wai.Response
-userPresenter h = runRepBuilder h . userRepresentation Nothing
+userPresenter h = dataResponse . runRepBuilder h . userRepresentation Nothing
 
 userListPresenter :: RepBuilderHandle -> [User] -> Wai.Response
-userListPresenter h = runRepBuilder h . mapM (userRepresentation Nothing)
+userListPresenter h =
+  dataResponse . runRepBuilder h . mapM (userRepresentation Nothing)
 
 imagePresenter :: Image -> Wai.Response
 imagePresenter Image {..} =
-  Wai.responseBuilder
-    Http.ok200
-    [(Http.hContentType, T.encodeUtf8 imageContentType)]
-    (BB.byteString imageData)
+  dataResponse
+    ResourceRepresentation
+      { resourceRepresentationBody = BB.byteString imageData
+      , resourceRepresentationContentType =
+          contentType $ T.encodeUtf8 imageContentType
+      }
 
 newsListPresenter :: RepBuilderHandle -> [News] -> Wai.Response
-newsListPresenter h = runRepBuilder h . mapM newsRepresentation
-
-noContent :: Wai.Response
-noContent = Wai.responseLBS Http.noContent204 [] mempty
+newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRepresentation

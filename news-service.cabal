@@ -91,6 +91,7 @@ library
     , Web.Representation.News
     , Web.Representation.User
     , Web.RequestBodyLoader
+    , Web.Response
     , Web.Types
     , Web.Types.Internal.SessionId
     , Web.Router
