@@ -113,7 +113,7 @@ Accepts [UpdatedAuthor](#UpdatedAuthor) entity, updates the corresponding
 [Author](#Author) entity and returns the updated representation. Requires the
 administrator privilege.
 
-### `GET /image/{image_id}`
+### `GET /images/{image_id}`
 
 Returns an image at the specified URL. The endpoint is not considered as part of
 the public API, it is used for constructing URLs returned by other endpoints.

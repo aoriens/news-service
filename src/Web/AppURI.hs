@@ -55,14 +55,14 @@ buildByteString = LB.toStrict . BB.toLazyByteString
 
 toRelativeURI :: AppURI -> RelativeURI
 toRelativeURI (ImageURI (ImageId imageId)) =
-  RelativeURI ["image", T.pack $ show imageId]
+  RelativeURI ["images", T.pack $ show imageId]
 toRelativeURI (UserURI (UserId userId)) =
   RelativeURI ["users", T.pack $ show userId]
 toRelativeURI (AuthorURI (AuthorId authorId)) =
   RelativeURI ["authors", T.pack $ show authorId]
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
-fromRelativeURI (RelativeURI ["image", ident]) =
+fromRelativeURI (RelativeURI ["images", ident]) =
   ImageURI . ImageId <$> readExactIntegral (T.unpack ident)
 fromRelativeURI (RelativeURI ["users", ident]) =
   UserURI . UserId <$> readExactIntegral (T.unpack ident)
