@@ -42,7 +42,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
-import qualified Web.AppURI as U
+import Web.AppURI
 import qualified Web.Application
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateUser as HCreateUser
@@ -78,7 +78,7 @@ data Deps =
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Wai.Request -> IO a
     , dSecretTokenIOState :: GSecretToken.IOState
-    , dRenderAppURI :: U.AppURI -> T.Text
+    , dRenderAppURI :: AppURI -> T.Text
     , dRepresentationBuilderHandle :: RepBuilderHandle
     , dMakeAuthHandle :: Web.Session -> AuthenticationHandle IO
     }
@@ -104,7 +104,7 @@ getDeps = do
         JSONEncoder.encode
           JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
           a
-      dRenderAppURI = U.render (Cf.cfAppURIConfig dConfig)
+      dRenderAppURI = Web.AppURI.renderAppURI (Cf.cfAppURIConfig dConfig)
   pure
     ( loggerWorker
     , Deps
@@ -170,7 +170,7 @@ router deps =
       R.get $ HGetUsers.run . getUsersHandlerHandle deps
       R.post $ HCreateUser.run . createUserHandle deps
     R.appURI $ \case
-      (U.URIImage imageId) ->
+      (URIImage imageId) ->
         R.get $ \session ->
           HGetImage.run (getImageHandlerHandle deps session) imageId
 

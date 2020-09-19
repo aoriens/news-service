@@ -5,8 +5,8 @@
 module Web.AppURI
   ( AppURI(..)
   , RelativeURI(..)
-  , Config(..)
-  , render
+  , AppURIConfig(..)
+  , renderAppURI
   , toRelativeURI
   , fromRelativeURI
   ) where
@@ -21,8 +21,8 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Types as Http
 
-data Config =
-  Config
+data AppURIConfig =
+  AppURIConfig
     { cfUseHTTPS :: Bool
     , cfDomain :: T.Text
     }
@@ -36,8 +36,8 @@ newtype AppURI =
   URIImage ImageId
   deriving (Eq, Show)
 
-render :: Config -> AppURI -> T.Text
-render Config {..} appURI = scheme <> cfDomain <> path
+renderAppURI :: AppURIConfig -> AppURI -> T.Text
+renderAppURI AppURIConfig {..} appURI = scheme <> cfDomain <> path
   where
     scheme
       | cfUseHTTPS = "https://"

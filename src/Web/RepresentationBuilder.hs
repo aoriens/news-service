@@ -16,7 +16,7 @@ import qualified Data.ByteString.Builder as BB
 import Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import Web.AppURI
+import Web.AppURI hiding (renderAppURI)
 import Web.HTTP
 
 data RepBuilderHandle =
