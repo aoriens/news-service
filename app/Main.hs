@@ -155,24 +155,29 @@ getWebAppHandle deps@Deps {..} = do
 router :: Deps -> R.Router
 router deps =
   R.new $ do
-    R.pathPrefix ["authors"] $ do
-      R.get $ HGetAuthor.run . getAuthorHandlerHandle deps
-      R.delete $ HDeleteAuthor.run . deleteAuthorHandlerHandle deps
-      R.patch $ HPatchAuthor.run . patchAuthorHandlerHandle deps
     R.path ["authors"] $ do
       R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
       R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
     R.path ["news"] $ R.get $ HGetNews.run . newsHandlerHandle deps
-    R.pathPrefix ["users"] $ do
-      R.get $ HGetUser.run . getUserHandlerHandle deps
-      R.delete $ HDeleteUser.run . deleteUserHandlerHandle deps
     R.path ["users"] $ do
       R.get $ HGetUsers.run . getUsersHandlerHandle deps
       R.post $ HCreateUser.run . createUserHandle deps
     R.appURI $ \case
-      (ImageURI imageId) ->
+      ImageURI imageId ->
         R.get $ \session ->
           HGetImage.run (getImageHandlerHandle deps session) imageId
+      UserURI userId -> do
+        R.get $ \session ->
+          HGetUser.run (getUserHandlerHandle deps session) userId
+        R.delete $ \session ->
+          HDeleteUser.run (deleteUserHandlerHandle deps session) userId
+      AuthorURI authorId -> do
+        R.get $ \session ->
+          HGetAuthor.run (getAuthorHandlerHandle deps session) authorId
+        R.delete $ \session ->
+          HDeleteAuthor.run (deleteAuthorHandlerHandle deps session) authorId
+        R.patch $ \session ->
+          HPatchAuthor.run (patchAuthorHandlerHandle deps session) authorId
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =

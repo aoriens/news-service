@@ -9,7 +9,6 @@ import qualified Core.Interactor.GetAuthor as I
 import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
-import Web.PathParameter
 
 data Handle =
   Handle
@@ -17,10 +16,9 @@ data Handle =
     , hPresenter :: Author -> Wai.Response
     }
 
-run :: Handle -> Wai.Application
-run Handle {..} request respond = do
+run :: Handle -> AuthorId -> Wai.Application
+run Handle {..} authorIdent request respond = do
   credentials <- getCredentialsFromRequest request
-  authorIdent <- getAuthorIdFromPath (Wai.pathInfo request)
   author <-
     maybe (throwIO NotFoundException) pure =<<
     I.run hGetAuthorHandle credentials authorIdent

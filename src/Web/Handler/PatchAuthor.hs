@@ -15,7 +15,6 @@ import Data.Maybe
 import qualified Data.Text as T
 import qualified Network.Wai as Wai
 import Web.Credentials
-import Web.PathParameter
 
 data Handle =
   Handle
@@ -25,10 +24,9 @@ data Handle =
     , hPresenter :: Author -> Wai.Response
     }
 
-run :: Handle -> Wai.Application
-run Handle {..} request respond = do
+run :: Handle -> AuthorId -> Wai.Application
+run Handle {..} authorIdent request respond = do
   creds <- getCredentialsFromRequest request
-  authorIdent <- getAuthorIdFromPath $ Wai.pathInfo request
   InAuthor {inDescription} <- hLoadJSONRequestBody request
   newAuthor <- I.run hUpdateAuthorHandle creds authorIdent inDescription
   respond $ hPresenter newAuthor

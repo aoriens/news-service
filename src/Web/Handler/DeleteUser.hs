@@ -4,9 +4,9 @@ module Web.Handler.DeleteUser
   ) where
 
 import qualified Core.Interactor.DeleteUser as I
+import Core.User
 import qualified Network.Wai as Wai
 import Web.Credentials
-import Web.PathParameter
 
 data Handle =
   Handle
@@ -14,9 +14,8 @@ data Handle =
     , hPresenter :: Wai.Response
     }
 
-run :: Handle -> Wai.Application
-run Handle {..} request respond = do
-  uid <- getUserIdFromPath $ Wai.pathInfo request
+run :: Handle -> UserId -> Wai.Application
+run Handle {..} uid request respond = do
   credentials <- getCredentialsFromRequest request
   I.run hDeleteUserHandle credentials uid
   respond hPresenter

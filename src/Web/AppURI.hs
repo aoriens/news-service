@@ -11,7 +11,9 @@ module Web.AppURI
   , fromRelativeURI
   ) where
 
+import Core.Author
 import Core.Image
+import Core.User
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LB
@@ -32,8 +34,10 @@ newtype RelativeURI =
     { relativeURIPath :: [Text]
     }
 
-newtype AppURI =
-  ImageURI ImageId
+data AppURI
+  = ImageURI ImageId
+  | UserURI UserId
+  | AuthorURI AuthorId
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -52,8 +56,16 @@ buildByteString = LB.toStrict . BB.toLazyByteString
 toRelativeURI :: AppURI -> RelativeURI
 toRelativeURI (ImageURI (ImageId imageId)) =
   RelativeURI ["image", T.pack $ show imageId]
+toRelativeURI (UserURI (UserId userId)) =
+  RelativeURI ["users", T.pack $ show userId]
+toRelativeURI (AuthorURI (AuthorId authorId)) =
+  RelativeURI ["authors", T.pack $ show authorId]
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
 fromRelativeURI (RelativeURI ["image", ident]) =
   ImageURI . ImageId <$> readExactIntegral (T.unpack ident)
+fromRelativeURI (RelativeURI ["users", ident]) =
+  UserURI . UserId <$> readExactIntegral (T.unpack ident)
+fromRelativeURI (RelativeURI ["authors", ident]) =
+  AuthorURI . AuthorId <$> readExactIntegral (T.unpack ident)
 fromRelativeURI _ = Nothing

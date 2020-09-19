@@ -1,8 +1,12 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Web.AppURISpec
   ( spec
   ) where
 
-import qualified Core.Image as I
+import Core.Author
+import Core.Image
+import Core.User
 import Data.String
 import qualified Data.Text as T
 import Network.URI
@@ -12,11 +16,17 @@ import Web.AppURI
 spec :: Spec
 spec = do
   describe "toRelativeURI" $ do
-    it "should return something that fromRelativeURI should decode back" $ do
-      let appURI = defaultAppURI
-          r = fromRelativeURI $ toRelativeURI appURI
-      r `shouldBe` Just appURI
-  describe "render'" $ do
+    it "should parse back all supported URIs after rendering them" $ do
+      let appURIs =
+            [ImageURI $ ImageId 1, UserURI $ UserId 1, AuthorURI $ AuthorId 1]
+          _addNewElementToTheListAboveIfDoesNotCompile =
+            \case
+              ImageURI _ -> ()
+              UserURI _ -> ()
+              AuthorURI _ -> ()
+          results = map (fromRelativeURI . toRelativeURI) appURIs
+      results `shouldBe` map Just appURIs
+  describe "render" $ do
     it "should return https URI if cfUseHTTPS is True" $ do
       let config = defaultConfig {cfUseHTTPS = True}
           r = renderAppURI config defaultAppURI
@@ -39,7 +49,7 @@ spec = do
       uriUserInfo <$> (uriAuthority =<< uri) `shouldBe` Just ""
 
 defaultAppURI :: AppURI
-defaultAppURI = ImageURI $ I.ImageId 1
+defaultAppURI = ImageURI $ ImageId 1
 
 defaultConfig :: AppURIConfig
 defaultConfig = AppURIConfig {cfUseHTTPS = False, cfDomain = "example.com"}

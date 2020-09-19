@@ -82,7 +82,6 @@ library
     , Web.Handler.PatchAuthor
     , Web.HTTP
     , Web.JSONEncoder
-    , Web.PathParameter
     , Web.Presenter
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
