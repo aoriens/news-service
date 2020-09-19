@@ -218,7 +218,8 @@ patchAuthorHandlerHandle deps@Deps {..} session =
           , hUpdateAuthor =
               GAuthors.updateAuthor $ sessionDatabaseHandle deps session
           }
-    , hPresenter = authorUpdatedPresenter dRepresentationBuilderHandle
+    , hPresenter =
+        authorUpdatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     }
 

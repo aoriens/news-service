@@ -5,6 +5,7 @@ module Web.Response
   , dataResponse
   , noContentResponse
   , resourceCreatedAndReturnedResponse
+  , resourceModifiedAndReturnedResponse
   ) where
 
 import qualified Data.ByteString as B
@@ -30,25 +31,39 @@ data ResourceRepresentation =
     , resourceRepresentationContentType :: ContentType
     }
 
+-- | A generic response containing data - 200 OK.
 dataResponse :: ResourceRepresentation -> Wai.Response
-dataResponse ResourceRepresentation {..} =
-  Wai.responseBuilder
-    Http.ok200
-    [contentTypeHeaderWith resourceRepresentationContentType]
-    resourceRepresentationBody
+dataResponse = responseWithContent Http.ok200 []
 
+-- | A response indicating no data in the body.
 noContentResponse :: Wai.Response
 noContentResponse = Wai.responseLBS Http.noContent204 [] mempty
 
+-- | Create a response indicating that a resource has just been
+-- created and returned in the response body (e.g. POST).
 resourceCreatedAndReturnedResponse ::
      AppURIConfig -> AppURI -> ResourceRepresentation -> Wai.Response
-resourceCreatedAndReturnedResponse uriConfig appURI ResourceRepresentation {..} =
-  Wai.responseBuilder
+resourceCreatedAndReturnedResponse uriConfig appURI =
+  responseWithContent
     Http.created201
-    [ contentTypeHeaderWith resourceRepresentationContentType
-    , locationHeaderWith uriConfig appURI
+    [ locationHeaderWith uriConfig appURI
     , contentLocationHeaderWith uriConfig appURI
     ]
+
+-- | Create a response indicating that a resource has just been
+-- updated and returned in the response body (PUT, PATCH, or sometimes
+-- POST).
+resourceModifiedAndReturnedResponse ::
+     AppURIConfig -> AppURI -> ResourceRepresentation -> Wai.Response
+resourceModifiedAndReturnedResponse uriConfig appURI =
+  responseWithContent Http.ok200 [contentLocationHeaderWith uriConfig appURI]
+
+responseWithContent ::
+     Http.Status -> [Http.Header] -> ResourceRepresentation -> Wai.Response
+responseWithContent status headers ResourceRepresentation {..} =
+  Wai.responseBuilder
+    status
+    (contentTypeHeaderWith resourceRepresentationContentType : headers)
     resourceRepresentationBody
 
 contentTypeHeaderWith :: ContentType -> Http.Header

@@ -30,13 +30,19 @@ import Web.Response
 authorCreatedPresenter ::
      AppURIConfig -> RepBuilderHandle -> Author -> Wai.Response
 authorCreatedPresenter uriConfig h author =
-  resourceCreatedAndReturnedResponse uriConfig uri . runRepBuilder h $
+  resourceCreatedAndReturnedResponse uriConfig (authorURI author) .
+  runRepBuilder h $
   authorRepresentation author
-  where
-    uri = AuthorURI $ authorId author
 
-authorUpdatedPresenter :: RepBuilderHandle -> Author -> Wai.Response
-authorUpdatedPresenter h = dataResponse . runRepBuilder h . authorRepresentation
+authorUpdatedPresenter ::
+     AppURIConfig -> RepBuilderHandle -> Author -> Wai.Response
+authorUpdatedPresenter uriConfig h author =
+  resourceModifiedAndReturnedResponse uriConfig (authorURI author) .
+  runRepBuilder h $
+  authorRepresentation author
+
+authorURI :: Author -> AppURI
+authorURI = AuthorURI . authorId
 
 authorDeletedPresenter :: Wai.Response
 authorDeletedPresenter = noContentResponse
