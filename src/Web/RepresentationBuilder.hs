@@ -26,6 +26,8 @@ data RepBuilderHandle =
     , hRenderAppURI :: AppURI -> Text
     }
 
+-- | A monad type which is parameterized with the representation type
+--  it can generate.
 newtype RepBuilder a =
   RepBuilder (Reader (AppURI -> T.Text) a)
   deriving (Functor, Applicative, Monad)

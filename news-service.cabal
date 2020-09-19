@@ -82,11 +82,13 @@ library
     , Web.HTTP
     , Web.JSONEncoder
     , Web.PathParameter
+    , Web.Presenter
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
     , Web.RepresentationBuilder
     , Web.Representation.Author
     , Web.Representation.Base64
+    , Web.Representation.News
     , Web.Representation.User
     , Web.RequestBodyLoader
     , Web.Types

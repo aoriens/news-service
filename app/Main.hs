@@ -56,6 +56,7 @@ import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PatchAuthor as HPatchAuthor
 import qualified Web.JSONEncoder as JSONEncoder
+import Web.Presenter
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
@@ -183,7 +184,7 @@ createAuthorHandlerHandle deps@Deps {..} session =
               GAuthors.createAuthor $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hPresenterHandle = dRepresentationBuilderHandle
+    , hPresenter = authorCreatedPresenter dRepresentationBuilderHandle
     }
 
 getAuthorsHandlerHandle :: Deps -> Web.Session -> HGetAuthors.Handle
@@ -196,7 +197,7 @@ getAuthorsHandlerHandle deps@Deps {..} session =
               GAuthors.getAuthors $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
-    , hPresenterHandle = dRepresentationBuilderHandle
+    , hPresenter = authorListPresenter dRepresentationBuilderHandle
     }
 
 patchAuthorHandlerHandle :: Deps -> Web.Session -> HPatchAuthor.Handle
@@ -208,7 +209,7 @@ patchAuthorHandlerHandle deps@Deps {..} session =
           , hUpdateAuthor =
               GAuthors.updateAuthor $ sessionDatabaseHandle deps session
           }
-    , hPresenterHandle = dRepresentationBuilderHandle
+    , hPresenter = authorUpdatedPresenter dRepresentationBuilderHandle
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     }
 
@@ -220,7 +221,7 @@ getAuthorHandlerHandle deps@Deps {..} session =
           { hAuthHandle = dMakeAuthHandle session
           , hGetAuthor = GAuthors.getAuthor $ sessionDatabaseHandle deps session
           }
-    , hPresenterHandle = dRepresentationBuilderHandle
+    , hPresenter = authorPresenter dRepresentationBuilderHandle
     }
 
 deleteAuthorHandlerHandle :: Deps -> Web.Session -> HDeleteAuthor.Handle
@@ -232,11 +233,16 @@ deleteAuthorHandlerHandle deps@Deps {..} session =
           , hDeleteAuthor =
               GAuthors.deleteAuthor $ sessionDatabaseHandle deps session
           }
+    , hPresenter = authorDeletedPresenter
     }
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
 newsHandlerHandle deps@Deps {..} session =
-  HGetNews.Handle {hGetNewsHandle = interactorHandle, hJSONEncode = dJSONEncode}
+  HGetNews.Handle
+    { hGetNewsHandle = interactorHandle
+    , hJSONEncode = dJSONEncode
+    , hPresenter = newsListPresenter dRepresentationBuilderHandle
+    }
   where
     interactorHandle =
       IGetNews.Handle
@@ -248,7 +254,7 @@ createUserHandle :: Deps -> Web.Session -> HCreateUser.Handle
 createUserHandle deps@Deps {..} session =
   HCreateUser.Handle
     { hCreateUserHandle = interactorHandle
-    , hPresenterHandle = dRepresentationBuilderHandle
+    , hPresenter = userCreatedPresenter dRepresentationBuilderHandle
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     }
   where
@@ -265,24 +271,30 @@ createUserHandle deps@Deps {..} session =
 
 getImageHandlerHandle :: Deps -> Web.Session -> HGetImage.Handle
 getImageHandlerHandle deps@Deps {..} session =
-  HGetImage.Handle $
-  IGetImage.Handle $ GImages.getImage $ sessionDatabaseHandle deps session
+  HGetImage.Handle
+    { hGetImageHandle =
+        IGetImage.Handle $ GImages.getImage $ sessionDatabaseHandle deps session
+    , hPresenter = imagePresenter
+    }
 
 getUserHandlerHandle :: Deps -> Web.Session -> HGetUser.Handle
 getUserHandlerHandle deps@Deps {..} session =
   HGetUser.Handle
     { hGetUserHandle =
         IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle deps session
-    , hPresenterHandle = dRepresentationBuilderHandle
+    , hPresenter = userPresenter dRepresentationBuilderHandle
     }
 
 deleteUserHandlerHandle :: Deps -> Web.Session -> HDeleteUser.Handle
 deleteUserHandlerHandle deps@Deps {..} session =
-  HDeleteUser.Handle $
-  IDeleteUser.Handle
-    { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle deps session
-    , hAuthHandle = dMakeAuthHandle session
-    , hDefaultEntityListRange = dDefaultEntityListRange
+  HDeleteUser.Handle
+    { hDeleteUserHandle =
+        IDeleteUser.Handle
+          { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle deps session
+          , hAuthHandle = dMakeAuthHandle session
+          , hDefaultEntityListRange = dDefaultEntityListRange
+          }
+    , hPresenter = userDeletedPresenter
     }
 
 getUsersHandlerHandle :: Deps -> Web.Session -> HGetUsers.Handle
@@ -293,7 +305,7 @@ getUsersHandlerHandle deps@Deps {..} session =
           { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
-    , hPresenterHandle = dRepresentationBuilderHandle
+    , hPresenter = userListPresenter dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be
