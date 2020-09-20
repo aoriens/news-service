@@ -4,6 +4,7 @@ module Core.Interactor.DeleteAuthorSpec
 
 import Core.Authentication.Test
 import Core.Author
+import Core.Exception
 import Core.Interactor.DeleteAuthor
 import Data.IORef
 import Test.Hspec
@@ -15,7 +16,7 @@ spec =
       let authorIdent = AuthorId 1
           h =
             stubHandle
-              { hDeleteAuthor = \_ -> onSuccess >> pure ()
+              { hDeleteAuthor = \_ -> onSuccess >> pure True
               , hAuthHandle = authHandle
               }
       run h credentials authorIdent
@@ -26,14 +27,18 @@ spec =
             stubHandle
               { hDeleteAuthor =
                   \authorIdent ->
-                    writeIORef passedAuthorId authorIdent >> pure ()
+                    writeIORef passedAuthorId authorIdent >> pure True
               }
       run h noCredentials expectedAuthorId
       readIORef passedAuthorId `shouldReturn` expectedAuthorId
+    it "should throw EntityNotFoundException if the gateway returned False" $ do
+      let authorId = AuthorId 8
+          h = stubHandle {hDeleteAuthor = \_ -> pure False}
+      run h noCredentials authorId `shouldThrow` isEntityNotFoundException
 
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    { hDeleteAuthor = const $ pure ()
+    { hDeleteAuthor = const $ pure True
     , hAuthHandle = stubAuthHandleReturningAdminUser
     }

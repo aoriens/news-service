@@ -22,11 +22,14 @@ run :: MonadThrow m => Handle m -> Maybe Credentials -> UserId -> m ()
 run Handle {..} credentials userIdent = do
   actor <- authenticate hAuthHandle credentials
   requireAdminPermission actor "deleting user"
-  either throwAsException pure =<< hDeleteUser userIdent hDefaultEntityListRange
+  either (throwM . failureToException) pure =<<
+    hDeleteUser userIdent hDefaultEntityListRange
   where
-    throwAsException (DependentEntitiesPreventDeletion ids) =
-      throwM $
+    failureToException (DependentEntitiesPreventDeletion ids) =
       DependentEntitiesPreventDeletionException (UserEntityId userIdent) ids
+    failureToException UnknownUser =
+      EntityNotFoundException $ UserEntityId userIdent
 
-newtype Failure =
-  DependentEntitiesPreventDeletion [EntityId]
+data Failure
+  = DependentEntitiesPreventDeletion [EntityId]
+  | UnknownUser

@@ -42,6 +42,17 @@ spec =
           (DependentEntitiesPreventDeletionException
              (UserEntityId uid)
              authorIds)
+    it
+      "should throw EntityNotFoundException if \
+       \the gateway returned Left UnknownUser" $ do
+      let uid = UserId 1
+          h =
+            stubHandle
+              { hDeleteUser = \_ _ -> pure $ Left UnknownUser
+              , hAuthHandle = stubAuthHandleReturningAdminUser
+              }
+      r <- try $ run h noCredentials uid
+      r `shouldBe` Left (EntityNotFoundException $ UserEntityId uid)
     it "should pass the UserId argument to the gateway delete command" $ do
       passedUserId <- newIORef undefined
       let expectedUid = UserId 8

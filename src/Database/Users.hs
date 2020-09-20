@@ -11,7 +11,8 @@ module Database.Users
   ) where
 
 import Control.Arrow
-import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.Except
 import qualified Core.Authentication as Auth
 import Core.EntityId
 import Core.Image
@@ -112,24 +113,31 @@ selectUserAuthData =
     |]
 
 deleteUser :: UserId -> PageSpec -> Session (Either IDeleteUser.Failure ())
-deleteUser uid defaultRange = do
-  eAvatarId <-
-    transactionRW $ do
-      authors <- statement selectAuthorsByUserId (uid, defaultRange)
-      if null authors
-        then Right <$> statement deleteUserSt uid
-        else pure . Left . DependentEntitiesPreventDeletion . map AuthorEntityId $
-             toList authors
-  case eAvatarId of
-    Right (Just avatarId) -> Right <$> deleteImageIfNotReferenced avatarId
-    Right Nothing -> pure $ Right ()
-    Left e -> pure $ Left e
+deleteUser uid defaultRange =
+  runExceptT $ do
+    optAvatarId <- ExceptT deleteUserReturningAvatarId
+    case optAvatarId of
+      Nothing -> throwE UnknownUser
+      Just Nothing -> pure ()
+      Just (Just avatarId) -> lift $ deleteImageIfNotReferenced avatarId
+  where
+    deleteUserReturningAvatarId =
+      transactionRW $ do
+        authors <- statement selectAuthorsByUserId (uid, defaultRange)
+        if null authors
+          then Right <$> statement deleteUserSt uid
+          else pure $ dependencyFailure authors
+    dependencyFailure =
+      Left . DependentEntitiesPreventDeletion . map AuthorEntityId . toList
 
-deleteUserSt :: Statement UserId (Maybe ImageId)
+-- | Returns @Nothing@ if no users found; @Just Nothing@ if a user is
+-- deleted and it did not have an avatar; @Just (Just avatarId)@
+-- otherwise.
+deleteUserSt :: Statement UserId (Maybe (Maybe ImageId))
 deleteUserSt =
   dimap
     getUserId
-    (fmap ImageId . join)
+    (fmap (fmap ImageId))
     [TH.maybeStatement|
     delete from users
     where user_id = $1 :: integer

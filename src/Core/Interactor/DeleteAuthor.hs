@@ -3,18 +3,24 @@ module Core.Interactor.DeleteAuthor
   , Handle(..)
   ) where
 
+import Control.Monad
 import Control.Monad.Catch
 import Core.Author
 import Core.Authorization
+import Core.EntityId
+import Core.Exception
 
 data Handle m =
   Handle
-    { hDeleteAuthor :: AuthorId -> m ()
+    { hDeleteAuthor :: AuthorId -> m Success
     , hAuthHandle :: AuthenticationHandle m
     }
+
+type Success = Bool
 
 run :: MonadThrow m => Handle m -> Maybe Credentials -> AuthorId -> m ()
 run Handle {..} credentials authorIdent = do
   actor <- authenticate hAuthHandle credentials
   requireAdminPermission actor "deleting author"
-  hDeleteAuthor authorIdent
+  ok <- hDeleteAuthor authorIdent
+  unless ok $ throwM . EntityNotFoundException $ AuthorEntityId authorIdent

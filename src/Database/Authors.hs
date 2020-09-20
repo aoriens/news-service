@@ -16,6 +16,7 @@ import qualified Core.Interactor.CreateAuthor as I
 import Core.Pagination
 import Core.User
 import Data.Functor.Contravariant
+import Data.Int
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Tuple
@@ -105,11 +106,11 @@ selectAuthorsByUserId =
        limit $2 :: integer offset $3 :: integer
     |]
 
-deleteAuthorById :: Statement AuthorId ()
+deleteAuthorById :: Statement AuthorId Int64
 deleteAuthorById =
   lmap
     getAuthorId
-    [TH.resultlessStatement|
+    [TH.rowsAffectedStatement|
        delete from authors
        where author_id = $1 :: integer
     |]

@@ -27,8 +27,9 @@ getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
 getAuthor h authorIdent =
   runTransaction h (statement DAuthors.selectAuthorById authorIdent)
 
-deleteAuthor :: DB.Handle -> AuthorId -> IO ()
-deleteAuthor h = runTransactionRW h . statement DAuthors.deleteAuthorById
+deleteAuthor :: DB.Handle -> AuthorId -> IO Bool
+deleteAuthor h =
+  runTransactionRW h . fmap (0 /=) . statement DAuthors.deleteAuthorById
 
 updateAuthor :: DB.Handle -> AuthorId -> T.Text -> IO (Maybe Author)
 updateAuthor h aid newDescription =
