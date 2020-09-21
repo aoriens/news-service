@@ -13,6 +13,7 @@ import Control.Exception.Sync
 import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
+import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteUser as IDeleteUser
@@ -31,6 +32,7 @@ import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Gateway.Authors as GAuthors
+import qualified Gateway.Categories as GCategories
 import Gateway.CurrentTime as GCurrentTime
 import qualified Gateway.Images as GImages
 import qualified Gateway.News as GNews
@@ -45,6 +47,7 @@ import System.IO hiding (Handle)
 import Web.AppURI
 import qualified Web.Application
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
+import qualified Web.Handler.CreateCategory as HCreateCategory
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteUser as HDeleteUser
@@ -161,6 +164,8 @@ router deps =
     R.path ["authors"] $ do
       R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
       R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
+    R.path ["categories"] $
+      R.post $ HCreateCategory.run . createCategoryHandlerHandle deps
     R.path ["news"] $ R.get $ HGetNews.run . newsHandlerHandle deps
     R.path ["users"] $ do
       R.get $ HGetUsers.run . getUsersHandlerHandle deps
@@ -244,6 +249,19 @@ deleteAuthorHandlerHandle deps@Deps {..} session =
               GAuthors.deleteAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter = authorDeletedPresenter
+    }
+
+createCategoryHandlerHandle :: Deps -> Web.Session -> HCreateCategory.Handle
+createCategoryHandlerHandle deps@Deps {..} session =
+  HCreateCategory.Handle
+    { hCreateCategoryHandle =
+        ICreateCategory.Handle
+          { hAuthHandle = dMakeAuthHandle session
+          , hCreateCategory =
+              GCategories.createCategory $ sessionDatabaseHandle deps session
+          }
+    , hLoadJSONRequestBody = dLoadJSONRequestBody
+    , hPresenter = categoryCreatedPresenter dRepresentationBuilderHandle
     }
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle

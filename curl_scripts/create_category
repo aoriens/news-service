@@ -1,0 +1,34 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test -z "${1+X}"
+then
+    die "Usage: $0 category-name[.category-name]... [parent-category-id]"
+fi
+
+if test -z "$1"
+then
+    names_json_array="[]"
+else
+    names_json_array='["'$(echo "$1" | sed -e 's/\./", "/g')'"]'
+fi
+
+if test -n "$2"
+then
+    parent_fragment=', "parent_category_item_id": '$2
+else
+    parent_fragment=
+fi
+
+require_token
+run_curl "$DOMAIN/categories" \
+         -X POST  \
+         -H "Content-Type: application/json" \
+         -u "$TOKEN:" \
+         --data-binary @- <<EOF
+{
+  "names": $names_json_array
+  $parent_fragment
+}
+EOF

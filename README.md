@@ -113,6 +113,12 @@ Accepts [UpdatedAuthor](#UpdatedAuthor) entity, updates the corresponding
 [Author](#Author) entity and returns the updated representation. Requires the
 administrator privilege.
 
+### `POST /categories`
+
+Creates a (possibly nested) category. Accepts [InCategory](#InCategory) entity
+in the request body and returns [Category](#Category) entity. Requires the
+administrator privilege.
+
 ### `GET /images/{image_id}`
 
 Returns an image at the specified URL. The endpoint is not considered as part of
@@ -152,6 +158,20 @@ An author of news. Fields:
 - `user` - the corresponding user. A [User](#User), required.
 - `description` - the author description. A string, required.
 
+### Category
+
+A news category. This is a non-empty array of [CategoryItem](#CategoryItem)
+objects, logically nested, starting from the most significant one.
+
+### CategoryItem
+
+A part of a hierarchical news category. Each category item has either a parent
+item or no one, which is represented by the parent-to-child order of elements in
+[Category](#Category). Fields:
+
+- `category_item_id` - the identifier of a category item. An integer, required.
+- `name` - the name. A string, required.
+
 ### Day
 
 A string in `YYYY-mm-dd` format to specify a calendar day.
@@ -162,6 +182,19 @@ A request to create an author. Fields:
 
 - `user_id` - the identifier of existing [User](#User). An integer, required.
 - `description` - the description of the author. A string, required.
+
+### InCategory
+
+A request to create categories. Fields:
+
+- `names` - names of categories to create and nest subsequently in the
+  parent-to-child order. This is an array of strings, required. It must contain
+  at least one element. Example: `["fp", "haskell", "ghc"]` will result in
+  creating `fp` category containing just created `haskell` category containing
+  just created `ghc` category.
+- `parent_category_item_id` - the identifier of an existing
+  [CategoryItem](#CategoryItem) where a new category will be created. When no
+  one specified, a new root category will be created. An integer, optional.
 
 ### InImage
 

@@ -10,10 +10,12 @@ module Web.Presenter
   , userListPresenter
   , imagePresenter
   , newsListPresenter
+  , categoryCreatedPresenter
   ) where
 
 import Core.Authentication
 import Core.Author
+import Core.Category
 import Core.Image
 import Core.News
 import Core.User
@@ -22,6 +24,7 @@ import qualified Data.Text.Encoding as T
 import qualified Network.Wai as Wai
 import Web.AppURI
 import Web.Representation.Author (authorRepresentation)
+import Web.Representation.Category
 import Web.Representation.News (newsRepresentation)
 import Web.Representation.User (userRepresentation)
 import Web.RepresentationBuilder
@@ -83,3 +86,7 @@ imagePresenter Image {..} =
 
 newsListPresenter :: RepBuilderHandle -> [News] -> Wai.Response
 newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRepresentation
+
+categoryCreatedPresenter :: RepBuilderHandle -> Category -> Wai.Response
+categoryCreatedPresenter h =
+  dataResponse . runRepBuilder h . categoryRepresentation

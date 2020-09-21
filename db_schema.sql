@@ -45,4 +45,10 @@ create table authors (
        description varchar not null
 );
 
+create table categories (
+       category_id serial not null primary key,
+       parent_id integer references categories,
+       name varchar not null
+);
+
 commit;

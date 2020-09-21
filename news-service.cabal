@@ -25,10 +25,12 @@ library
     , Core.Authentication.Impl
     , Core.Author
     , Core.Authorization
+    , Core.Category
     , Core.EntityId
     , Core.Exception
     , Core.Image
     , Core.Interactor.CreateAuthor
+    , Core.Interactor.CreateCategory
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteAuthor
     , Core.Interactor.DeleteUser
@@ -48,6 +50,7 @@ library
     , Data.Integral.Exact
     , Database
     , Database.Authors
+    , Database.Categories
     , Database.Columns
     , Database.ConnectionManager
     , Database.Images
@@ -56,6 +59,7 @@ library
     , Database.Pagination
     , Database.Users
     , Gateway.Authors
+    , Gateway.Categories
     , Gateway.CurrentTime
     , Gateway.Images
     , Gateway.News
@@ -64,12 +68,14 @@ library
     , Logger
     , Logger.Impl
     , Network.Wai.Util
-    , Web.Application
     , Web.AppURI
+    , Web.Application
     , Web.BasicAuth
     , Web.Credentials
     , Web.Exception
+    , Web.HTTP
     , Web.Handler.CreateAuthor
+    , Web.Handler.CreateCategory
     , Web.Handler.CreateUser
     , Web.Handler.DeleteAuthor
     , Web.Handler.DeleteUser
@@ -80,21 +86,21 @@ library
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
     , Web.Handler.PatchAuthor
-    , Web.HTTP
     , Web.JSONEncoder
     , Web.Presenter
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
-    , Web.RepresentationBuilder
     , Web.Representation.Author
     , Web.Representation.Base64
+    , Web.Representation.Category
     , Web.Representation.News
     , Web.Representation.User
+    , Web.RepresentationBuilder
     , Web.RequestBodyLoader
     , Web.Response
+    , Web.Router
     , Web.Types
     , Web.Types.Internal.SessionId
-    , Web.Router
   hs-source-dirs:
       src
   build-depends:
