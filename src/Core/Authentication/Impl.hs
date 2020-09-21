@@ -4,7 +4,7 @@ module Core.Authentication.Impl
   ) where
 
 import Control.Monad.Catch
-import Core.Authentication
+import Core.Authentication hiding (authenticate)
 import Core.Exception
 import Core.User
 import qualified Data.Text as T
@@ -18,12 +18,12 @@ data Handle m =
     }
 
 new :: Handle m -> AuthenticationHandle m
-new h = AuthenticationHandle $ authenticate' h
+new h = AuthenticationHandle $ authenticate h
 
-authenticate' ::
+authenticate ::
      MonadThrow m => Handle m -> Maybe Credentials -> m AuthenticatedUser
-authenticate' _ Nothing = pure AnonymousUser
-authenticate' h (Just (TokenCredentials userIdent token)) = do
+authenticate _ Nothing = pure AnonymousUser
+authenticate h (Just (TokenCredentials userIdent token)) = do
   optData <- hGetUserAuthData h userIdent
   case optData of
     Nothing ->
