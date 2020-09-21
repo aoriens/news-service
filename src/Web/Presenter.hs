@@ -88,9 +88,15 @@ imagePresenter Image {..} =
 newsListPresenter :: RepBuilderHandle -> [News] -> Wai.Response
 newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRepresentation
 
-categoryCreatedPresenter :: RepBuilderHandle -> Category -> Wai.Response
-categoryCreatedPresenter h =
-  dataResponse . runRepBuilder h . categoryRepresentation
+categoryCreatedPresenter ::
+     AppURIConfig -> RepBuilderHandle -> Category -> Wai.Response
+categoryCreatedPresenter uriConfig h category =
+  resourceCreatedAndReturnedResponse uriConfig (categoryURI category) .
+  runRepBuilder h $
+  categoryRepresentation category
 
 categoryPresenter :: RepBuilderHandle -> Category -> Wai.Response
 categoryPresenter h = dataResponse . runRepBuilder h . categoryRepresentation
+
+categoryURI :: Category -> AppURI
+categoryURI cat = CategoryURI $ categoryId cat

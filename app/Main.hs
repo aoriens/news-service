@@ -266,7 +266,8 @@ createCategoryHandlerHandle deps@Deps {..} session =
               GCategories.createCategory $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hPresenter = categoryCreatedPresenter dRepresentationBuilderHandle
+    , hPresenter =
+        categoryCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     }
 
 getCategoryHandlerHandle :: Deps -> Web.Session -> HGetCategory.Handle
