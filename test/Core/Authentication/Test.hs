@@ -37,12 +37,40 @@ itShouldRequireAdminPermission test = do
             "The action to authorize must not invoke the success continuation for an anonymous user"
         h = stubAuthHandleReturningAnonymousUser
     test noCredentials h successCont `shouldThrow` isNoPermissionException
+  it "should succeed if authenticated successfully" $ do
+    (successCont, expectationCheck) <-
+      makeExpectationMustBeInvokedOnce "Continuation must be invoked"
+    let h = stubAuthHandleReturningAdminUser
+    test noCredentials h successCont
+    expectationCheck
   it "should throw BadCredentialsException in case of bad credentials" $ do
     let successCont =
           expectationFailure
             "The action to authorize must not invoke the success continuation for incorrect credentials"
         h = stubAuthHandleThrowingBadCredentialsException
     test noCredentials h successCont `shouldThrow` isBadCredentialsException
+  itShouldPassCredentialsToAuthenticationHandle Nothing test
+  itShouldPassCredentialsToAuthenticationHandle (Just someTokenCredentials) test
+
+itShouldPassCredentialsToAuthenticationHandle ::
+     Maybe Credentials
+  -> (Maybe Credentials -> AuthenticationHandle IO -> IO () -> IO ())
+  -> Spec
+itShouldPassCredentialsToAuthenticationHandle credentials test =
+  it
+    ("should pass credentials to the authentication handle: " ++
+     show credentials) $ do
+    passedCredentials <- newIORef Nothing
+    let h =
+          AuthenticationHandle $ \creds -> do
+            writeIORef passedCredentials (Just creds)
+            pure $ IdentifiedUser (UserId 276194) True -- todo: replace with a simpler user
+    test credentials h (pure ())
+    readIORef passedCredentials `shouldReturn` Just credentials
+
+someTokenCredentials :: Credentials
+someTokenCredentials =
+  TokenCredentials (UserId 85265) (SecretToken "fjeskdfjgoi3h")
 
 makeExpectationMustBeInvokedOnce :: String -> IO (IO (), IO ())
 makeExpectationMustBeInvokedOnce = makeExpectationMustBeInvokedTimes 1
