@@ -1,22 +1,32 @@
 module Core.Authorization
-  ( requireAdminPermission
-  , hasAdminPermission
+  ( module Core.Permission
+  , AuthorizationHandle(..)
+  , requireAdminPermission
   , module Core.Authentication
   ) where
 
 import Control.Monad.Catch
 import Core.Authentication
 import Core.Exception
+import Core.Permission
 import qualified Data.Text as T
 
-requireAdminPermission :: MonadThrow m => AuthenticatedUser -> T.Text -> m ()
-requireAdminPermission user actionDescription
-  | hasAdminPermission user = pure ()
-  | otherwise =
-    throwM . NoPermissionException $
-    "Requires admin permission: " <> actionDescription
+newtype AuthorizationHandle =
+  AuthorizationHandle
+    { hHasPermission :: Permission -> AuthenticatedUser -> Bool
+    }
 
-hasAdminPermission :: AuthenticatedUser -> Bool
-hasAdminPermission (IdentifiedUser _ True) = True
-hasAdminPermission (IdentifiedUser _ False) = False
-hasAdminPermission AnonymousUser = False
+requireAdminPermission ::
+     MonadThrow m => AuthorizationHandle -> AuthenticatedUser -> T.Text -> m ()
+requireAdminPermission h = requirePermission h AdminPermission
+
+requirePermission ::
+     MonadThrow m
+  => AuthorizationHandle
+  -> Permission
+  -> AuthenticatedUser
+  -> T.Text
+  -> m ()
+requirePermission h perm user actionDescription
+  | hHasPermission h perm user = pure ()
+  | otherwise = throwM $ NoPermissionException actionDescription perm

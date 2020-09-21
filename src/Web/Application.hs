@@ -137,7 +137,7 @@ exceptionToResponse h e
       QueryException reason ->
         stubErrorResponseWithReason Http.badRequest400 [] reason
       BadCredentialsException _ -> notFoundResponse
-      NoPermissionException _ -> notFoundResponse
+      NoPermissionException _ _ -> notFoundResponse
       DependentEntitiesPreventDeletionException entityIdent depIds ->
         stubErrorResponseWithReason Http.badRequest400 [] $
         T.pack (show entityIdent) <>

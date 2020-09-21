@@ -14,6 +14,7 @@ data Handle m =
   Handle
     { hAuthHandle :: AuthenticationHandle m
     , hCreateCategory :: Maybe CategoryId -> NonEmpty T.Text -> m (Either Failure Category)
+    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 data Failure =
@@ -28,5 +29,5 @@ run ::
   -> m (Either Failure Category)
 run Handle {..} creds parentCatId catName = do
   actor <- authenticate hAuthHandle creds
-  requireAdminPermission actor "create category"
+  requireAdminPermission hAuthorizationHandle actor "create category"
   hCreateCategory parentCatId catName

@@ -4,6 +4,7 @@ module Core.Interactor.DeleteAuthorSpec
 
 import Core.Authentication.Test
 import Core.Author
+import qualified Core.Authorization.Impl
 import Core.Exception
 import Core.Interactor.DeleteAuthor
 import Data.IORef
@@ -41,4 +42,5 @@ stubHandle =
   Handle
     { hDeleteAuthor = const $ pure True
     , hAuthHandle = stubAuthHandleReturningAdminUser
+    , hAuthorizationHandle = Core.Authorization.Impl.new
     }

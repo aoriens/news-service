@@ -15,13 +15,14 @@ data Handle m =
   Handle
     { hDeleteUser :: UserId -> PageSpec -> m (Either Failure ())
     , hAuthHandle :: AuthenticationHandle m
+    , hAuthorizationHandle :: AuthorizationHandle
     , hDefaultEntityListRange :: PageSpec
     }
 
 run :: MonadThrow m => Handle m -> Maybe Credentials -> UserId -> m ()
 run Handle {..} credentials userIdent = do
   actor <- authenticate hAuthHandle credentials
-  requireAdminPermission actor "deleting user"
+  requireAdminPermission hAuthorizationHandle actor "deleting user"
   either (throwM . failureToException) pure =<<
     hDeleteUser userIdent hDefaultEntityListRange
   where

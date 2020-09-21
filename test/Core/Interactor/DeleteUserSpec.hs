@@ -5,6 +5,7 @@ module Core.Interactor.DeleteUserSpec
 import Control.Exception
 import Core.Authentication.Test
 import Core.Author
+import qualified Core.Authorization.Impl
 import Core.EntityId
 import Core.Exception
 import Core.Interactor.DeleteUser
@@ -70,4 +71,5 @@ stubHandle =
     { hDeleteUser = \_ _ -> pure (Right ())
     , hAuthHandle = stubAuthHandleReturningAdminUser
     , hDefaultEntityListRange = PageSpec (PageOffset 0) (PageLimit 0)
+    , hAuthorizationHandle = Core.Authorization.Impl.new
     }

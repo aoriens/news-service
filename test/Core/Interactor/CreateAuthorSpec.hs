@@ -5,6 +5,7 @@ module Core.Interactor.CreateAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import qualified Core.Authorization.Impl
 import Core.Interactor.CreateAuthor
 import Core.User
 import Data.IORef
@@ -20,7 +21,7 @@ spec
       let uid = UserId 1
           description = ""
           h =
-            Handle
+            stubHandle
               { hCreateAuthor = \_ _ -> onSuccess >> pure (Right stubAuthor)
               , hAuthHandle = authHandle
               }
@@ -30,12 +31,11 @@ spec
       let expectedUid = UserId 1
           expectedDescription = "q"
           h =
-            Handle
+            stubHandle
               { hCreateAuthor =
                   \uid desc -> do
                     writeIORef userIdAndDescription (uid, desc)
                     pure $ Right stubAuthor
-              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       _ <- run h noCredentials expectedUid expectedDescription
       readIORef userIdAndDescription `shouldReturn`
@@ -44,22 +44,14 @@ spec
       let uid = UserId 1
           description = "q"
           expectedResult = Right stubAuthor
-          h =
-            Handle
-              { hCreateAuthor = \_ _ -> pure expectedResult
-              , hAuthHandle = stubAuthHandleReturningAdminUser
-              }
+          h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
       r <- run h noCredentials uid description
       r `shouldBe` expectedResult
     it "should return failure returned from the gateway if any" $ do
       let uid = UserId 1
           description = "q"
           expectedResult = Left UnknownUserId
-          h =
-            Handle
-              { hCreateAuthor = \_ _ -> pure expectedResult
-              , hAuthHandle = stubAuthHandleReturningAdminUser
-              }
+          h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
       r <- run h noCredentials uid description
       r `shouldBe` expectedResult
 
@@ -77,4 +69,12 @@ stubAuthor =
           , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
           , userIsAdmin = False
           }
+    }
+
+stubHandle :: Handle IO
+stubHandle =
+  Handle
+    { hCreateAuthor = undefined
+    , hAuthHandle = stubAuthHandleReturningAdminUser
+    , hAuthorizationHandle = Core.Authorization.Impl.new
     }

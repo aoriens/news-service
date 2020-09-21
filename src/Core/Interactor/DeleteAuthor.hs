@@ -14,6 +14,7 @@ data Handle m =
   Handle
     { hDeleteAuthor :: AuthorId -> m Success
     , hAuthHandle :: AuthenticationHandle m
+    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 type Success = Bool
@@ -21,6 +22,6 @@ type Success = Bool
 run :: MonadThrow m => Handle m -> Maybe Credentials -> AuthorId -> m ()
 run Handle {..} credentials authorIdent = do
   actor <- authenticate hAuthHandle credentials
-  requireAdminPermission actor "deleting author"
+  requireAdminPermission hAuthorizationHandle actor "deleting author"
   ok <- hDeleteAuthor authorIdent
   unless ok $ throwM . EntityNotFoundException $ AuthorEntityId authorIdent

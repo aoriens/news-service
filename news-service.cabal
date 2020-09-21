@@ -25,6 +25,7 @@ library
     , Core.Authentication.Impl
     , Core.Author
     , Core.Authorization
+    , Core.Authorization.Impl
     , Core.Category
     , Core.EntityId
     , Core.Exception
@@ -45,6 +46,7 @@ library
     , Core.News
     , Core.Pagination
     , Core.Pagination.Impl
+    , Core.Permission
     , Core.User
     , Data.ByteString.Util
     , Data.Either.Util
@@ -166,7 +168,7 @@ test-suite news-service-test
   other-modules:
       Core.Authentication.ImplSpec
     , Core.Authentication.Test
-    , Core.AuthorizationSpec
+    , Core.Authorization.ImplSpec
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteAuthorSpec

@@ -9,15 +9,18 @@ module Core.Exception
 
 import Control.Exception
 import Core.EntityId
+import Core.Permission
 import Data.Text (Text)
 
 type Reason = Text
+
+type ActionName = Text
 
 -- | An exception to designate incorrect input data to an interactor.
 data CoreException
   = QueryException Reason
   | BadCredentialsException Reason
-  | NoPermissionException Reason
+  | NoPermissionException ActionName Permission
   | DependentEntitiesPreventDeletionException EntityId [EntityId]
   | EntityNotFoundException EntityId
   deriving (Show, Eq)

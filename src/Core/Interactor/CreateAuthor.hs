@@ -14,6 +14,7 @@ data Handle m =
   Handle
     { hAuthHandle :: AuthenticationHandle m
     , hCreateAuthor :: UserId -> T.Text -> m (Either Failure Author)
+    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 run ::
@@ -23,10 +24,10 @@ run ::
   -> UserId
   -> T.Text
   -> m (Either Failure Author)
-run h credentials uid description = do
-  actor <- authenticate (hAuthHandle h) credentials
-  requireAdminPermission actor "create an author"
-  hCreateAuthor h uid description
+run Handle {..} credentials uid description = do
+  actor <- authenticate hAuthHandle credentials
+  requireAdminPermission hAuthorizationHandle actor "create an author"
+  hCreateAuthor uid description
 
 data Failure =
   UnknownUserId

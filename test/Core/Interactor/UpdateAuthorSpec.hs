@@ -5,6 +5,7 @@ module Core.Interactor.UpdateAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import qualified Core.Authorization.Impl
 import Core.Exception
 import Core.Interactor.UpdateAuthor
 import Core.User
@@ -21,7 +22,7 @@ spec
       let aid = AuthorId 1
           description = ""
           h =
-            Handle
+            stubHandle
               { hUpdateAuthor =
                   \_ _ -> do
                     successCont
@@ -63,6 +64,7 @@ stubHandle =
   Handle
     { hUpdateAuthor = \_ _ -> pure $ Just stubAuthor {authorId = AuthorId 99993}
     , hAuthHandle = stubAuthHandleReturningAdminUser
+    , hAuthorizationHandle = Core.Authorization.Impl.new
     }
 
 stubAuthor :: Author

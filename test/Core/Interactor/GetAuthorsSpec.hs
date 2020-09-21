@@ -5,6 +5,7 @@ module Core.Interactor.GetAuthorsSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import qualified Core.Authorization.Impl
 import Core.Interactor.GetAuthors
 import Core.Pagination
 import Core.User
@@ -55,6 +56,7 @@ defaultHandle =
     { hGetAuthors = const $ pure []
     , hAuthHandle = stubAuthHandleReturningAdminUser
     , hPageSpecParserHandle = PageSpecParserHandle . const $ Right defaultPage
+    , hAuthorizationHandle = Core.Authorization.Impl.new
     }
 
 noPageQuery :: PageSpecQuery

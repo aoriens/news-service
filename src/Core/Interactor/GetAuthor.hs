@@ -10,6 +10,7 @@ import Core.Authorization
 data Handle m =
   Handle
     { hGetAuthor :: AuthorId -> m (Maybe Author)
+    , hAuthorizationHandle :: AuthorizationHandle
     , hAuthHandle :: AuthenticationHandle m
     }
 
@@ -21,5 +22,5 @@ run ::
   -> m (Maybe Author)
 run Handle {..} credentials authorIdent = do
   actor <- authenticate hAuthHandle credentials
-  requireAdminPermission actor "get an author"
+  requireAdminPermission hAuthorizationHandle actor "get an author"
   hGetAuthor authorIdent

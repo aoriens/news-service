@@ -5,6 +5,7 @@ module Core.Interactor.GetAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import qualified Core.Authorization.Impl
 import Core.Interactor.GetAuthor
 import Core.User
 import Data.IORef
@@ -44,6 +45,7 @@ defaultHandle =
   Handle
     { hGetAuthor = const $ pure Nothing
     , hAuthHandle = stubAuthHandleReturningAdminUser
+    , hAuthorizationHandle = Core.Authorization.Impl.new
     }
 
 stubAuthorId :: AuthorId

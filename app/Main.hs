@@ -12,6 +12,7 @@ import Control.Exception
 import Control.Exception.Sync
 import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
+import qualified Core.Authorization.Impl
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateUser as ICreateUser
@@ -198,6 +199,7 @@ createAuthorHandlerHandle deps@Deps {..} session =
     { hCreateAuthorHandle =
         ICreateAuthor.Handle
           { hAuthHandle = dMakeAuthHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateAuthor =
               GAuthors.createAuthor $ sessionDatabaseHandle deps session
           }
@@ -212,6 +214,7 @@ getAuthorsHandlerHandle deps@Deps {..} session =
     { hGetAuthorsHandle =
         IGetAuthors.Handle
           { hAuthHandle = dMakeAuthHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
           , hGetAuthors =
               GAuthors.getAuthors $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
@@ -225,6 +228,7 @@ patchAuthorHandlerHandle deps@Deps {..} session =
     { hUpdateAuthorHandle =
         IUpdateAuthor.Handle
           { hAuthHandle = dMakeAuthHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
           , hUpdateAuthor =
               GAuthors.updateAuthor $ sessionDatabaseHandle deps session
           }
@@ -239,6 +243,7 @@ getAuthorHandlerHandle deps@Deps {..} session =
     { hGetAuthorHandle =
         IGetAuthor.Handle
           { hAuthHandle = dMakeAuthHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
           , hGetAuthor = GAuthors.getAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter = authorPresenter dRepresentationBuilderHandle
@@ -250,6 +255,7 @@ deleteAuthorHandlerHandle deps@Deps {..} session =
     { hDeleteAuthorHandle =
         IDeleteAuthor.Handle
           { hAuthHandle = dMakeAuthHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
           , hDeleteAuthor =
               GAuthors.deleteAuthor $ sessionDatabaseHandle deps session
           }
@@ -262,6 +268,7 @@ createCategoryHandlerHandle deps@Deps {..} session =
     { hCreateCategoryHandle =
         ICreateCategory.Handle
           { hAuthHandle = dMakeAuthHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateCategory =
               GCategories.createCategory $ sessionDatabaseHandle deps session
           }
@@ -338,6 +345,7 @@ deleteUserHandlerHandle deps@Deps {..} session =
         IDeleteUser.Handle
           { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle deps session
           , hAuthHandle = dMakeAuthHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
           , hDefaultEntityListRange = dDefaultEntityListRange
           }
     , hPresenter = userDeletedPresenter
