@@ -3,6 +3,7 @@
 
 module Database.Categories
   ( createCategory
+  , selectCategory
   ) where
 
 import Control.Arrow

@@ -19,6 +19,7 @@ import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetAuthor as IGetAuthor
 import qualified Core.Interactor.GetAuthors as IGetAuthors
+import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetUser as IGetUser
@@ -53,6 +54,7 @@ import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetAuthor as HGetAuthor
 import qualified Web.Handler.GetAuthors as HGetAuthors
+import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetUser as HGetUser
@@ -186,6 +188,9 @@ router deps =
           HDeleteAuthor.run (deleteAuthorHandlerHandle deps session) authorId
         R.patch $ \session ->
           HPatchAuthor.run (patchAuthorHandlerHandle deps session) authorId
+      CategoryURI categoryId ->
+        R.get $ \session ->
+          HGetCategory.run (getCategoryHandlerHandle deps session) categoryId
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =
@@ -262,6 +267,17 @@ createCategoryHandlerHandle deps@Deps {..} session =
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter = categoryCreatedPresenter dRepresentationBuilderHandle
+    }
+
+getCategoryHandlerHandle :: Deps -> Web.Session -> HGetCategory.Handle
+getCategoryHandlerHandle deps@Deps {..} session =
+  HGetCategory.Handle
+    { hGetCategoryHandle =
+        IGetCategory.Handle
+          { hGetCategory =
+              GCategories.getCategory $ sessionDatabaseHandle deps session
+          }
+    , hPresenter = categoryPresenter dRepresentationBuilderHandle
     }
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle

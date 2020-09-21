@@ -119,6 +119,11 @@ Creates a (possibly nested) category. Accepts [InCategory](#InCategory) entity
 in the request body and returns [Category](#Category) entity. Requires the
 administrator privilege.
 
+### `GET /categories/{category_item_id}`
+
+Returns a [Category](#Category) comprising hierarchy of [category
+items](#CategoryItem) up to the item with the specified identifier.
+
 ### `GET /images/{image_id}`
 
 Returns an image at the specified URL. The endpoint is not considered as part of

@@ -12,6 +12,7 @@ module Web.AppURI
   ) where
 
 import Core.Author
+import Core.Category
 import Core.Image
 import Core.User
 import qualified Data.ByteString as B
@@ -38,6 +39,7 @@ data AppURI
   = ImageURI ImageId
   | UserURI UserId
   | AuthorURI AuthorId
+  | CategoryURI CategoryId
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -60,6 +62,8 @@ toRelativeURI (UserURI (UserId userId)) =
   RelativeURI ["users", T.pack $ show userId]
 toRelativeURI (AuthorURI (AuthorId authorId)) =
   RelativeURI ["authors", T.pack $ show authorId]
+toRelativeURI (CategoryURI (CategoryId catId)) =
+  RelativeURI ["categories", T.pack $ show catId]
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
 fromRelativeURI (RelativeURI ["images", ident]) =
@@ -68,4 +72,6 @@ fromRelativeURI (RelativeURI ["users", ident]) =
   UserURI . UserId <$> readExactIntegral (T.unpack ident)
 fromRelativeURI (RelativeURI ["authors", ident]) =
   AuthorURI . AuthorId <$> readExactIntegral (T.unpack ident)
+fromRelativeURI (RelativeURI ["categories", ident]) =
+  CategoryURI . CategoryId <$> readExactIntegral (T.unpack ident)
 fromRelativeURI _ = Nothing

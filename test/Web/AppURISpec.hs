@@ -5,6 +5,7 @@ module Web.AppURISpec
   ) where
 
 import Core.Author
+import Core.Category
 import Core.Image
 import Core.User
 import Data.String
@@ -18,12 +19,17 @@ spec = do
   describe "toRelativeURI" $ do
     it "should parse back all supported URIs after rendering them" $ do
       let appURIs =
-            [ImageURI $ ImageId 1, UserURI $ UserId 1, AuthorURI $ AuthorId 1]
+            [ ImageURI $ ImageId 1
+            , UserURI $ UserId 1
+            , AuthorURI $ AuthorId 1
+            , CategoryURI $ CategoryId 1
+            ]
           _addNewElementToTheListAboveIfDoesNotCompile =
             \case
               ImageURI _ -> ()
               UserURI _ -> ()
               AuthorURI _ -> ()
+              CategoryURI _ -> ()
           results = map (fromRelativeURI . toRelativeURI) appURIs
       results `shouldBe` map Just appURIs
   describe "render" $ do

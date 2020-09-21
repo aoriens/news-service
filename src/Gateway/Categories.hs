@@ -1,5 +1,6 @@
 module Gateway.Categories
   ( createCategory
+  , getCategory
   ) where
 
 import Core.Category
@@ -16,3 +17,6 @@ createCategory ::
   -> IO (Either CreateCategory.Failure Category)
 createCategory h parentId =
   runTransactionRW h . DCategories.createCategory parentId
+
+getCategory :: Database.Handle -> CategoryId -> IO (Maybe Category)
+getCategory h = runTransaction h . statement DCategories.selectCategory

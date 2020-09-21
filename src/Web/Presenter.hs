@@ -11,6 +11,7 @@ module Web.Presenter
   , imagePresenter
   , newsListPresenter
   , categoryCreatedPresenter
+  , categoryPresenter
   ) where
 
 import Core.Authentication
@@ -90,3 +91,6 @@ newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRepresentation
 categoryCreatedPresenter :: RepBuilderHandle -> Category -> Wai.Response
 categoryCreatedPresenter h =
   dataResponse . runRepBuilder h . categoryRepresentation
+
+categoryPresenter :: RepBuilderHandle -> Category -> Wai.Response
+categoryPresenter h = dataResponse . runRepBuilder h . categoryRepresentation

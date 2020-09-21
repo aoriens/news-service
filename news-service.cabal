@@ -36,6 +36,7 @@ library
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
+    , Core.Interactor.GetCategory
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetUser
@@ -81,6 +82,7 @@ library
     , Web.Handler.DeleteUser
     , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
+    , Web.Handler.GetCategory
     , Web.Handler.GetImage
     , Web.Handler.GetNews
     , Web.Handler.GetUser
