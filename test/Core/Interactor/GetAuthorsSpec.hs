@@ -5,7 +5,7 @@ module Core.Interactor.GetAuthorsSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
-import qualified Core.Authorization.Impl
+import Core.Authorization.Test
 import Core.Interactor.GetAuthors
 import Core.Pagination
 import Core.User
@@ -16,7 +16,7 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldRequireAdminPermission $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
       let h =
             defaultHandle
               { hGetAuthors = \_ -> onSuccess >> pure [stubAuthor]
@@ -25,11 +25,7 @@ spec =
       void $ run h credentials noPageQuery
     it "should return authors from the gateway, if the actor is admin" $ do
       let expectedAuthors = [stubAuthor {authorId = AuthorId 9}]
-          h =
-            defaultHandle
-              { hGetAuthors = const $ pure expectedAuthors
-              , hAuthHandle = stubAuthHandleReturningAdminUser
-              }
+          h = defaultHandle {hGetAuthors = const $ pure expectedAuthors}
       authors <- run h noCredentials noPageQuery
       authors `shouldBe` expectedAuthors
     it "should pass page got from Pagination to the gateway" $ do
@@ -54,9 +50,9 @@ defaultHandle :: Handle IO
 defaultHandle =
   Handle
     { hGetAuthors = const $ pure []
-    , hAuthHandle = stubAuthHandleReturningAdminUser
+    , hAuthHandle = noOpAuthenticationHandle
     , hPageSpecParserHandle = PageSpecParserHandle . const $ Right defaultPage
-    , hAuthorizationHandle = Core.Authorization.Impl.new
+    , hAuthorizationHandle = noOpAuthorizationHandle
     }
 
 noPageQuery :: PageSpecQuery

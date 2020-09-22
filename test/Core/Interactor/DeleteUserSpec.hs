@@ -5,7 +5,7 @@ module Core.Interactor.DeleteUserSpec
 import Control.Exception
 import Core.Authentication.Test
 import Core.Author
-import qualified Core.Authorization.Impl
+import Core.Authorization.Test
 import Core.EntityId
 import Core.Exception
 import Core.Interactor.DeleteUser
@@ -17,7 +17,7 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldRequireAdminPermission $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
       let uid = UserId 1
           h =
             stubHandle
@@ -35,7 +35,6 @@ spec =
               { hDeleteUser =
                   \_ _ ->
                     pure . Left $ DependentEntitiesPreventDeletion authorIds
-              , hAuthHandle = stubAuthHandleReturningAdminUser
               }
       r <- try $ run h noCredentials uid
       r `shouldBe`
@@ -47,11 +46,7 @@ spec =
       "should throw EntityNotFoundException if \
        \the gateway returned Left UnknownUser" $ do
       let uid = UserId 1
-          h =
-            stubHandle
-              { hDeleteUser = \_ _ -> pure $ Left UnknownUser
-              , hAuthHandle = stubAuthHandleReturningAdminUser
-              }
+          h = stubHandle {hDeleteUser = \_ _ -> pure $ Left UnknownUser}
       r <- try $ run h noCredentials uid
       r `shouldBe` Left (EntityNotFoundException $ UserEntityId uid)
     it "should pass the UserId argument to the gateway delete command" $ do
@@ -69,7 +64,7 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hDeleteUser = \_ _ -> pure (Right ())
-    , hAuthHandle = stubAuthHandleReturningAdminUser
+    , hAuthHandle = noOpAuthenticationHandle
     , hDefaultEntityListRange = PageSpec (PageOffset 0) (PageLimit 0)
-    , hAuthorizationHandle = Core.Authorization.Impl.new
+    , hAuthorizationHandle = noOpAuthorizationHandle
     }

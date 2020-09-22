@@ -4,7 +4,7 @@ module Core.Interactor.DeleteAuthorSpec
 
 import Core.Authentication.Test
 import Core.Author
-import qualified Core.Authorization.Impl
+import Core.Authorization.Test
 import Core.Exception
 import Core.Interactor.DeleteAuthor
 import Data.IORef
@@ -13,7 +13,7 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldRequireAdminPermission $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
       let authorIdent = AuthorId 1
           h =
             stubHandle
@@ -41,6 +41,6 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hDeleteAuthor = const $ pure True
-    , hAuthHandle = stubAuthHandleReturningAdminUser
-    , hAuthorizationHandle = Core.Authorization.Impl.new
+    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthorizationHandle = noOpAuthorizationHandle
     }

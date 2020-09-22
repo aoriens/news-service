@@ -1,7 +1,7 @@
 module Core.Authentication.Test
-  ( itShouldRequireAdminPermission
-  , stubAuthHandleReturningAdminUser
+  ( itShouldAuthenticateBeforeOperation
   , noCredentials
+  , noOpAuthenticationHandle
   ) where
 
 import Control.Exception
@@ -16,38 +16,20 @@ import Test.Hspec
 -- authentication handle, and the success continuation to the tested
 -- action. The success continuation must be invoked from within the
 -- action to indicate operation success.
-itShouldRequireAdminPermission ::
+itShouldAuthenticateBeforeOperation ::
      (Maybe Credentials -> AuthenticationHandle IO -> IO () -> IO ()) -> Spec
-itShouldRequireAdminPermission test = do
-  it "should succeed if the actor is an administrator" $ do
-    (successCont, expectationCheck) <-
-      makeExpectationMustBeInvokedOnce "Continuation must be invoked"
-    let h = stubAuthHandleReturningAdminUser
-    test noCredentials h successCont
-    expectationCheck
-  it "should throw NoPermissionException if the user is an identified non-admin" $ do
-    let successCont =
-          expectationFailure
-            "The action to authorize must not invoke the success continuation for an identified non-admin user"
-        h = stubAuthHandleReturningIdentifiedNonAdminUser
-    test noCredentials h successCont `shouldThrow` isNoPermissionException
-  it "should throw NoPermissionException if the user is anonymous" $ do
-    let successCont =
-          expectationFailure
-            "The action to authorize must not invoke the success continuation for an anonymous user"
-        h = stubAuthHandleReturningAnonymousUser
-    test noCredentials h successCont `shouldThrow` isNoPermissionException
+itShouldAuthenticateBeforeOperation test = do
   it "should succeed if authenticated successfully" $ do
     (successCont, expectationCheck) <-
       makeExpectationMustBeInvokedOnce "Continuation must be invoked"
-    let h = stubAuthHandleReturningAdminUser
+    let h = noOpAuthenticationHandle
     test noCredentials h successCont
     expectationCheck
   it "should throw BadCredentialsException in case of bad credentials" $ do
     let successCont =
           expectationFailure
             "The action to authorize must not invoke the success continuation for incorrect credentials"
-        h = stubAuthHandleThrowingBadCredentialsException
+        h = AuthenticationHandle $ \_ -> throwIO $ BadCredentialsException ""
     test noCredentials h successCont `shouldThrow` isBadCredentialsException
   itShouldPassCredentialsToAuthenticationHandle Nothing test
   itShouldPassCredentialsToAuthenticationHandle (Just someTokenCredentials) test
@@ -63,8 +45,11 @@ itShouldPassCredentialsToAuthenticationHandle credentials test =
     passedCredentials <- newIORef Nothing
     let h =
           AuthenticationHandle $ \creds -> do
-            writeIORef passedCredentials (Just creds)
-            pure $ IdentifiedUser (UserId 276194) True -- todo: replace with a simpler user
+            modifyIORef' passedCredentials $
+              maybe
+                (Just creds)
+                (error "Authentication is invoked more than once")
+            pure AnonymousUser
     test credentials h (pure ())
     readIORef passedCredentials `shouldReturn` Just credentials
 
@@ -97,21 +82,8 @@ makeExpectationMustBeInvokedTimes expected name = do
       " is invoked " ++
       show current ++ " times, while " ++ show expected ++ " expected"
 
-stubAuthHandleReturningAdminUser :: AuthenticationHandle IO
-stubAuthHandleReturningAdminUser =
-  AuthenticationHandle $ \_ -> pure $ IdentifiedUser (UserId 276194) True
-
-stubAuthHandleReturningIdentifiedNonAdminUser :: AuthenticationHandle IO
-stubAuthHandleReturningIdentifiedNonAdminUser =
-  AuthenticationHandle $ \_ -> pure $ IdentifiedUser (UserId 276194) False
-
-stubAuthHandleReturningAnonymousUser :: AuthenticationHandle IO
-stubAuthHandleReturningAnonymousUser =
-  AuthenticationHandle $ \_ -> pure AnonymousUser
-
-stubAuthHandleThrowingBadCredentialsException :: AuthenticationHandle IO
-stubAuthHandleThrowingBadCredentialsException =
-  AuthenticationHandle $ \_ -> throwIO $ BadCredentialsException ""
+noOpAuthenticationHandle :: AuthenticationHandle IO
+noOpAuthenticationHandle = AuthenticationHandle $ \_ -> pure AnonymousUser
 
 noCredentials :: Maybe Credentials
 noCredentials = Nothing

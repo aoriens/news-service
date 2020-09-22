@@ -5,7 +5,7 @@ module Core.Interactor.CreateAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
-import qualified Core.Authorization.Impl
+import Core.Authorization.Test
 import Core.Interactor.CreateAuthor
 import Core.User
 import Data.IORef
@@ -17,7 +17,7 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldRequireAdminPermission $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
       let uid = UserId 1
           description = ""
           h =
@@ -75,6 +75,6 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hCreateAuthor = undefined
-    , hAuthHandle = stubAuthHandleReturningAdminUser
-    , hAuthorizationHandle = Core.Authorization.Impl.new
+    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthorizationHandle = noOpAuthorizationHandle
     }

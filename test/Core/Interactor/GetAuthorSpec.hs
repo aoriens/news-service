@@ -5,7 +5,7 @@ module Core.Interactor.GetAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
-import qualified Core.Authorization.Impl
+import Core.Authorization.Test
 import Core.Interactor.GetAuthor
 import Core.User
 import Data.IORef
@@ -15,7 +15,7 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldRequireAdminPermission $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
       let h =
             defaultHandle
               { hGetAuthor = \_ -> onSuccess >> pure (Just stubAuthor)
@@ -24,11 +24,7 @@ spec =
       void $ run h credentials stubAuthorId
     it "should return gateway output if the actor is admin" $ do
       let expectedAuthor = Just stubAuthor {authorId = AuthorId 9}
-          h =
-            defaultHandle
-              { hGetAuthor = const $ pure expectedAuthor
-              , hAuthHandle = stubAuthHandleReturningAdminUser
-              }
+          h = defaultHandle {hGetAuthor = const $ pure expectedAuthor}
       author <- run h noCredentials stubAuthorId
       author `shouldBe` expectedAuthor
     it "should pass author id to the gateway" $ do
@@ -44,8 +40,8 @@ defaultHandle :: Handle IO
 defaultHandle =
   Handle
     { hGetAuthor = const $ pure Nothing
-    , hAuthHandle = stubAuthHandleReturningAdminUser
-    , hAuthorizationHandle = Core.Authorization.Impl.new
+    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthorizationHandle = noOpAuthorizationHandle
     }
 
 stubAuthorId :: AuthorId
