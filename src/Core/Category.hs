@@ -18,3 +18,4 @@ data Category =
     , categoryName :: Text
     , categoryParent :: Maybe Category
     }
+  deriving (Eq, Show)

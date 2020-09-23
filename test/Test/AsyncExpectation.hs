@@ -1,5 +1,6 @@
 module Test.AsyncExpectation
   ( shouldInvokeOnce
+  , shouldPassValue
   ) where
 
 import Control.Monad
@@ -10,9 +11,9 @@ import Test.Hspec
 -- once.
 --
 -- > it "should invoke hAuthenticate exactly once" $ do
--- >   assertIsInvokedOnce "hAuthenticate invocation" $ \onSuccess -> do
--- >     handle = Handle { hAuthenticate = \_ _ -> onSuccess }
--- >     testedCode handle
+-- >   shouldInvokeOnce "hAuthenticate invocation" $ \onSuccess -> do
+-- >     let handle = Handle { hAuthenticate = \_ _ -> onSuccess }
+-- >     testedCodeWithHandle handle
 shouldInvokeOnce :: HasCallStack => String -> (IO () -> IO ()) -> IO ()
 shouldInvokeOnce = shouldInvokeTimes 1
 
@@ -36,3 +37,44 @@ shouldInvokeTimes expected name test = do
       show name ++
       " is invoked " ++
       show current ++ " times, while " ++ show expected ++ " expected"
+
+-- | Asserts that the tested action passed an expected data to a
+-- continuation function.
+--
+-- > it "should pass accepted credentials to hAuthenticate" $ do
+-- >   let expectedCredentials = ("user", "password")
+-- >   shouldPassValue expectedCredentials "hAuthenticate" $ \pass -> do
+-- >     let handle = Handle { hAuthenticate = \creds _ -> pass creds >> pure True }
+-- >     testedCodeWithHandle handle expectedCredentials
+shouldPassValue ::
+     (HasCallStack, Show a, Eq a)
+  => a -- ^ An expected value
+  -> String -- ^ A name of function that passes a value
+  -> ((a -> IO ()) -> IO ()) -- ^ The tested action to be invoked with the continuation
+  -> IO ()
+shouldPassValue expectedValue =
+  shouldPassValueSatisfying (`shouldBe` expectedValue)
+
+shouldPassValueSatisfying ::
+     (HasCallStack, Show a)
+  => (a -> Expectation)
+  -> String
+  -> ((a -> IO ()) -> IO ())
+  -> IO ()
+shouldPassValueSatisfying expectation name test = do
+  acc <- newIORef False
+  test $ passValue acc
+  check acc
+  where
+    passValue acc newValue = do
+      isPassed <- readIORef acc
+      if isPassed
+        then expectationFailure $ "'" ++ name ++ "' is invoked more than once"
+        else do
+          writeIORef acc True
+          expectation newValue
+    check acc = do
+      isPassed <- readIORef acc
+      unless isPassed $
+        expectationFailure $
+        "'" ++ name ++ "' is not invoked, although it should have been"

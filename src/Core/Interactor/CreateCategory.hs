@@ -19,6 +19,7 @@ data Handle m =
 
 data Failure =
   UnknownParentCategoryId
+  deriving (Show, Eq)
 
 run ::
      MonadThrow m
