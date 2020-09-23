@@ -9,6 +9,7 @@ import Core.Authentication
 import Core.Exception
 import Core.User
 import Data.IORef
+import Test.AsyncExpectation
 import Test.Hspec
 
 -- | Tests that the given action succeds only when the authenticated
@@ -17,25 +18,26 @@ import Test.Hspec
 -- action. The success continuation must be invoked from within the
 -- action to indicate operation success.
 itShouldAuthenticateBeforeOperation ::
-     (Maybe Credentials -> AuthenticationHandle IO -> IO () -> IO ()) -> Spec
+     HasCallStack
+  => (Maybe Credentials -> AuthenticationHandle IO -> IO () -> IO ())
+  -> Spec
 itShouldAuthenticateBeforeOperation test = do
   it "should succeed if authenticated successfully" $ do
-    (successCont, expectationCheck) <-
-      makeExpectationMustBeInvokedOnce "Continuation must be invoked"
-    let h = noOpAuthenticationHandle
-    test noCredentials h successCont
-    expectationCheck
+    shouldInvokeOnce "Continuation must be invoked" $ \onSuccess -> do
+      let h = noOpAuthenticationHandle
+      test noCredentials h onSuccess
   it "should throw BadCredentialsException in case of bad credentials" $ do
-    let successCont =
+    let onSuccess =
           expectationFailure
             "The action to authorize must not invoke the success continuation for incorrect credentials"
         h = AuthenticationHandle $ \_ -> throwIO $ BadCredentialsException ""
-    test noCredentials h successCont `shouldThrow` isBadCredentialsException
+    test noCredentials h onSuccess `shouldThrow` isBadCredentialsException
   itShouldPassCredentialsToAuthenticationHandle Nothing test
   itShouldPassCredentialsToAuthenticationHandle (Just someTokenCredentials) test
 
 itShouldPassCredentialsToAuthenticationHandle ::
-     Maybe Credentials
+     HasCallStack
+  => Maybe Credentials
   -> (Maybe Credentials -> AuthenticationHandle IO -> IO () -> IO ())
   -> Spec
 itShouldPassCredentialsToAuthenticationHandle credentials test =
@@ -56,31 +58,6 @@ itShouldPassCredentialsToAuthenticationHandle credentials test =
 someTokenCredentials :: Credentials
 someTokenCredentials =
   TokenCredentials (UserId 85265) (SecretToken "fjeskdfjgoi3h")
-
-makeExpectationMustBeInvokedOnce :: String -> IO (IO (), IO ())
-makeExpectationMustBeInvokedOnce = makeExpectationMustBeInvokedTimes 1
-
-makeExpectationMustBeInvokedTimes :: Int -> String -> IO (IO (), IO ())
-makeExpectationMustBeInvokedTimes expected name = do
-  counter <- newIORef 0
-  let expectation = do
-        current <- readIORef counter
-        if current == expected
-          then failure $ succ current
-          else writeIORef counter $ succ current
-      assertion = do
-        current <- readIORef counter
-        if current /= expected
-          then failure current
-          else pure ()
-  pure (expectation, assertion)
-  where
-    failure current =
-      expectationFailure $
-      "Expectation " ++
-      show name ++
-      " is invoked " ++
-      show current ++ " times, while " ++ show expected ++ " expected"
 
 noOpAuthenticationHandle :: AuthenticationHandle IO
 noOpAuthenticationHandle = AuthenticationHandle $ \_ -> pure AnonymousUser

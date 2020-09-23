@@ -5,6 +5,7 @@ module Core.Interactor.GetAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import Core.Authorization
 import Core.Authorization.Test
 import Core.Interactor.GetAuthor
 import Core.User
@@ -15,11 +16,12 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
       let h =
             defaultHandle
               { hGetAuthor = \_ -> onSuccess >> pure (Just stubAuthor)
               , hAuthHandle = authHandle
+              , hAuthorizationHandle = authorizationHandle
               }
       void $ run h credentials stubAuthorId
     it "should return gateway output if the actor is admin" $ do

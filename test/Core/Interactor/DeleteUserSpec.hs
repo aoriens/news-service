@@ -5,6 +5,7 @@ module Core.Interactor.DeleteUserSpec
 import Control.Exception
 import Core.Authentication.Test
 import Core.Author
+import Core.Authorization
 import Core.Authorization.Test
 import Core.EntityId
 import Core.Exception
@@ -17,12 +18,13 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
       let uid = UserId 1
           h =
             stubHandle
               { hDeleteUser = \_ _ -> onSuccess >> pure (Right ())
               , hAuthHandle = authHandle
+              , hAuthorizationHandle = authorizationHandle
               }
       run h credentials uid
     it

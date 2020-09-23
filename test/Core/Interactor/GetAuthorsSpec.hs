@@ -5,6 +5,7 @@ module Core.Interactor.GetAuthorsSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import Core.Authorization
 import Core.Authorization.Test
 import Core.Interactor.GetAuthors
 import Core.Pagination
@@ -16,11 +17,12 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
       let h =
             defaultHandle
               { hGetAuthors = \_ -> onSuccess >> pure [stubAuthor]
               , hAuthHandle = authHandle
+              , hAuthorizationHandle = authorizationHandle
               }
       void $ run h credentials noPageQuery
     it "should return authors from the gateway, if the actor is admin" $ do

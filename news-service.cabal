@@ -181,6 +181,7 @@ test-suite news-service-test
     , Core.Pagination.ImplSpec
     , Data.Integral.ExactSpec
     , Gateway.SecretTokenSpec
+    , Test.AsyncExpectation
     , Web.AppURISpec
     , Web.BasicAuthSpec
     , Web.CredentialsSpec

@@ -4,6 +4,7 @@ module Core.Interactor.DeleteAuthorSpec
 
 import Core.Authentication.Test
 import Core.Author
+import Core.Authorization
 import Core.Authorization.Test
 import Core.Exception
 import Core.Interactor.DeleteAuthor
@@ -13,12 +14,13 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
       let authorIdent = AuthorId 1
           h =
             stubHandle
               { hDeleteAuthor = \_ -> onSuccess >> pure True
               , hAuthHandle = authHandle
+              , hAuthorizationHandle = authorizationHandle
               }
       run h credentials authorIdent
     it "should pass the AuthorId argument to the gateway delete command" $ do

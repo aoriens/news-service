@@ -5,6 +5,7 @@ module Core.Interactor.UpdateAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import Core.Authorization
 import Core.Authorization.Test
 import Core.Exception
 import Core.Interactor.UpdateAuthor
@@ -18,16 +19,17 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthenticateBeforeOperation $ \credentials authHandle successCont -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
       let aid = AuthorId 1
           description = ""
           h =
             stubHandle
               { hUpdateAuthor =
                   \_ _ -> do
-                    successCont
+                    onSuccess
                     pure $ Just stubAuthor
               , hAuthHandle = authHandle
+              , hAuthorizationHandle = authorizationHandle
               }
       void $ run h credentials aid description
     it

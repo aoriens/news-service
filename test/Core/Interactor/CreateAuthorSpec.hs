@@ -5,6 +5,7 @@ module Core.Interactor.CreateAuthorSpec
 import Control.Monad
 import Core.Authentication.Test
 import Core.Author
+import Core.Authorization
 import Core.Authorization.Test
 import Core.Interactor.CreateAuthor
 import Core.User
@@ -17,13 +18,14 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthenticateBeforeOperation $ \credentials authHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
       let uid = UserId 1
           description = ""
           h =
             stubHandle
               { hCreateAuthor = \_ _ -> onSuccess >> pure (Right stubAuthor)
               , hAuthHandle = authHandle
+              , hAuthorizationHandle = authorizationHandle
               }
       void $ run h credentials uid description
     it "should pass userId and description data to the gateway in a normal case" $ do
