@@ -2,6 +2,7 @@
 *~
 .vscode
 .history
+TAGS
 
 # Configuration and other files containing sensitive data
 /*.private
