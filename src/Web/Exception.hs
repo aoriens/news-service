@@ -15,6 +15,7 @@ type MaxPayloadSize = Word64
 
 data WebException
   = BadRequestException Reason
+  | IncorrectParameterException Reason
   | UnsupportedMediaTypeException SupportedMediaTypes
   | PayloadTooLargeException MaxPayloadSize
   | NotFoundException

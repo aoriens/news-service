@@ -40,7 +40,8 @@ run Handle {..} request respond = do
       (iaDescription inAuthor)
   author <-
     case result of
-      Left I.UnknownUserId -> throwIO $ BadRequestException "Unknown UserId"
+      Left I.UnknownUserId ->
+        throwIO $ IncorrectParameterException "Unknown UserId"
       Right a -> pure a
   respond $ hPresenter author
 

@@ -123,6 +123,8 @@ exceptionToResponse h e
     case webException of
       BadRequestException reason ->
         stubErrorResponseWithReason Http.badRequest400 [] reason
+      IncorrectParameterException reason ->
+        stubErrorResponseWithReason Http.badRequest400 [] reason
       NotFoundException -> notFoundResponse
       UnsupportedMediaTypeException supportedTypes ->
         stubErrorResponseWithReason Http.unsupportedMediaType415 [] $

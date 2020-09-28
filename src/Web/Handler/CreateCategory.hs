@@ -33,7 +33,9 @@ run Handle {..} request respond = do
   credentials <- getCredentialsFromRequest request
   InCategory {inNames, inParentCategoryItemId} <- hLoadJSONRequestBody request
   names <-
-    maybe (throwIO $ BadRequestException "'names' array must not be empty") pure $
+    maybe
+      (throwIO $ IncorrectParameterException "'names' array must not be empty")
+      pure $
     nonEmpty inNames
   r <-
     ICreateCategory.run
@@ -44,7 +46,7 @@ run Handle {..} request respond = do
   case r of
     Right category -> respond $ hPresenter category
     Left ICreateCategory.UnknownParentCategoryId ->
-      throwIO $ BadRequestException "Unknown parent category identifier"
+      throwIO $ IncorrectParameterException "Unknown parent category identifier"
 
 data InCategory =
   InCategory

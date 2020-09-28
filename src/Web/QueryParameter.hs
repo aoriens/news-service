@@ -92,11 +92,11 @@ parseQueryM query parser =
   either (throwM . formatException) pure $ parseQuery query parser
   where
     formatException (MissingKey key) =
-      E.BadRequestException $
+      E.IncorrectParameterException $
       "Parameter '" <>
       T.decodeLatin1 key <> "' is missing from the request query"
     formatException (BadValue key value) =
-      E.BadRequestException $
+      E.IncorrectParameterException $
       mconcat
         [ "Wrong value of parameter '"
         , T.decodeLatin1 key
