@@ -1,10 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Web.Representation.News
-  ( newsRepresentation
+  ( newsRep
   ) where
 
-import qualified Core.News as Core
+import Core.News
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import Data.Int
@@ -14,11 +14,11 @@ import Data.Text (Text)
 import Data.Time
 import Web.RepresentationBuilder
 
-newsRepresentation :: Core.News -> RepBuilder News
-newsRepresentation Core.News {..} = pure News {newsNewsId = newsId, ..}
+newsRep :: News -> RepBuilder NewsRep
+newsRep News {..} = pure NewsRep {newsNewsId = newsId, ..}
 
-data News =
-  News
+data NewsRep =
+  NewsRep
     { newsNewsId :: Int32
     , newsTitle :: Text
     , newsDate :: Day
@@ -28,4 +28,4 @@ data News =
 $(A.deriveToJSON
     A.defaultOptions
       {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "news"}
-    ''News)
+    ''NewsRep)

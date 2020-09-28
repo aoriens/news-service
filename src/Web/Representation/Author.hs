@@ -1,11 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Web.Representation.Author
-  ( Author
-  , authorRepresentation
+  ( AuthorRep
+  , authorRep
   ) where
 
-import qualified Core.Author as Core
+import Core.Author
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import Data.Int
@@ -15,19 +15,19 @@ import qualified Data.Text as T
 import Web.Representation.User
 import Web.RepresentationBuilder
 
-data Author =
-  Author
+data AuthorRep =
+  AuthorRep
     { authorAuthorId :: Int32
-    , authorUser :: User
+    , authorUser :: UserRep
     , authorDescription :: T.Text
     }
 
-authorRepresentation :: Core.Author -> RepBuilder Author
-authorRepresentation Core.Author {..} = do
-  userR <- userRepresentation Nothing authorUser
+authorRep :: Author -> RepBuilder AuthorRep
+authorRep Author {..} = do
+  userR <- userRep Nothing authorUser
   pure
-    Author
-      { authorAuthorId = Core.getAuthorId authorId
+    AuthorRep
+      { authorAuthorId = getAuthorId authorId
       , authorUser = userR
       , authorDescription = authorDescription
       }
@@ -37,4 +37,4 @@ $(A.deriveToJSON
       { A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "author"
       , A.omitNothingFields = True
       }
-    ''Author)
+    ''AuthorRep)

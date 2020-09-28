@@ -1,12 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Web.Representation.User
-  ( User
-  , userRepresentation
+  ( UserRep
+  , userRep
   ) where
 
 import Core.Authentication as Core
-import qualified Core.User as Core
+import Core.User
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import Data.Int
@@ -19,8 +19,8 @@ import qualified Web.AppURI as U
 import Web.Credentials
 import Web.RepresentationBuilder
 
-data User =
-  User
+data UserRep =
+  UserRep
     { userUserId :: Int32
     , userFirstName :: Maybe T.Text
     , userLastName :: T.Text
@@ -30,12 +30,12 @@ data User =
     , userSecretToken :: Maybe T.Text
     }
 
-userRepresentation :: Maybe Core.Credentials -> Core.User -> RepBuilder User
-userRepresentation creds Core.User {..} = do
+userRep :: Maybe Core.Credentials -> User -> RepBuilder UserRep
+userRep creds User {..} = do
   avatarURL <- renderMaybeAppURI (U.ImageURI <$> userAvatarId)
   pure
-    User
-      { userUserId = Core.getUserId userId
+    UserRep
+      { userUserId = getUserId userId
       , userFirstName = userFirstName
       , userLastName = userLastName
       , userAvatarURL = avatarURL
@@ -50,4 +50,4 @@ $(A.deriveToJSON
       { A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "user"
       , A.omitNothingFields = True
       }
-    ''User)
+    ''UserRep)

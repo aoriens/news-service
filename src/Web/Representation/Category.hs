@@ -3,7 +3,7 @@
 
 module Web.Representation.Category
   ( Category
-  , categoryRepresentation
+  , categoryRep
   ) where
 
 import Control.Arrow
@@ -24,8 +24,8 @@ data CategoryItemRep =
     , itemName :: T.Text
     }
 
-categoryRepresentation :: Category -> RepBuilder CategoryRep
-categoryRepresentation = pure . reverse . unfoldr f . Just
+categoryRep :: Category -> RepBuilder CategoryRep
+categoryRep = pure . reverse . unfoldr f . Just
   where
     f = fmap (makeItem &&& categoryParent)
     makeItem Category {..} =
