@@ -29,4 +29,4 @@ requirePermission ::
   -> m ()
 requirePermission h perm user actionDescription
   | hHasPermission h perm user = pure ()
-  | otherwise = throwM $ NoPermissionException actionDescription perm
+  | otherwise = throwM $ NoPermissionException perm actionDescription

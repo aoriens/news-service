@@ -20,7 +20,7 @@ type ActionName = Text
 data CoreException
   = QueryException Reason
   | BadCredentialsException Reason
-  | NoPermissionException ActionName Permission
+  | NoPermissionException Permission ActionName
   | DependentEntitiesPreventDeletionException EntityId [EntityId]
   | EntityNotFoundException EntityId
   deriving (Show, Eq)
