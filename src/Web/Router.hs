@@ -1,13 +1,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE BangPatterns #-}
 
 -- | The module describes a path-driven routing machinery of the web server.
 module Web.Router
   ( Router
   , new
   , Spec
-  , path
-  , pathPrefix
   , appURI
   , method
   , get
@@ -22,7 +19,6 @@ module Web.Router
   , isMethodNotSupportedResult
   ) where
 
-import Control.Applicative
 import Control.Monad.State.Strict hiding (get, put)
 import Control.Monad.Writer.Strict
 import qualified Data.HashMap.Strict as HM
@@ -35,17 +31,9 @@ import Web.Types
 
 -- | The router type is responsible for finding handlers for the given
 -- URI paths and HTTP methods and for handling some exceptional cases.
-data Router =
+newtype Router =
   Router
-    { rPathTrie :: !PathTrie
-    , rAppURIHandler :: !(Maybe AppURIHandler)
-    }
-
-data PathTrie =
-  PathTrie
-    { trieSubtries :: !(HM.HashMap PathComponent PathTrie)
-    , trieMethodTableForExactMatch :: !MethodsToHandlers
-    , trieMethodTableForPrefixMatch :: !MethodsToHandlers
+    { rAppURIHandler :: Maybe AppURIHandler
     }
 
 type PathComponent = T.Text
@@ -136,75 +124,7 @@ is performed. In the following example:
 
 -}
 new :: Spec () -> Router
-new (Spec m) =
-  execState m Router {rPathTrie = emptyPathTrie, rAppURIHandler = Nothing}
-
-emptyPathTrie :: PathTrie
-emptyPathTrie =
-  PathTrie
-    { trieSubtries = mempty
-    , trieMethodTableForExactMatch = mempty
-    , trieMethodTableForPrefixMatch = mempty
-    }
-
--- | Starts route specification for a URI path matching exactly to the
--- argument.
-path :: Path -> MethodsSpec () -> Spec ()
-path p methodsSpec
-  | HM.null methodsToHandlers = error ("Empty entry for path " ++ show p)
-  | otherwise =
-    Spec . modify' $ \r@Router {..} ->
-      r {rPathTrie = insertExactMatch p methodsToHandlers rPathTrie}
-  where
-    methodsToHandlers = execMethodsSpec methodsSpec
-
-insertExactMatch :: Path -> MethodsToHandlers -> PathTrie -> PathTrie
-insertExactMatch path_ methodTable = insert_ path_
-  where
-    insert_ [] t@PathTrie {..}
-      | HM.null trieMethodTableForExactMatch =
-        t {trieMethodTableForExactMatch = methodTable}
-      | otherwise = error $ "Duplicate entry for path " ++ show path_
-    insert_ (k:ks) t@PathTrie {..} =
-      t
-        { trieSubtries =
-            HM.insertWith
-              (\_new -> insert_ ks)
-              k
-              (insert_ ks emptyPathTrie)
-              trieSubtries
-        }
-
--- | Starts route specification for a URI path starting with the
--- specified path prefix. If matching succeeds, the handler will be
--- passed a request with the path prefix removed from 'Wai.pathInfo'.
-pathPrefix :: Path -> MethodsSpec () -> Spec ()
-pathPrefix prefix methodsSpec
-  | null prefix = error "Empty path prefix"
-  | HM.null methodsToHandlers =
-    error ("Empty entry for path prefix " ++ show prefix)
-  | otherwise =
-    Spec . modify' $ \r@Router {..} ->
-      r {rPathTrie = insertPrefixMatch prefix methodsToHandlers rPathTrie}
-  where
-    methodsToHandlers = execMethodsSpec methodsSpec
-
-insertPrefixMatch :: Path -> MethodsToHandlers -> PathTrie -> PathTrie
-insertPrefixMatch path_ methodTable = insert_ path_
-  where
-    insert_ [] t@PathTrie {..}
-      | HM.null trieMethodTableForPrefixMatch =
-        t {trieMethodTableForPrefixMatch = methodTable}
-      | otherwise = error $ "Duplicate entry for path prefix " ++ show path_
-    insert_ (k:ks) t@PathTrie {..} =
-      t
-        { trieSubtries =
-            HM.insertWith
-              (\_new -> insert_ ks)
-              k
-              (insert_ ks emptyPathTrie)
-              trieSubtries
-        }
+new (Spec m) = execState m $ Router Nothing
 
 -- | Starts route specification for a URI path matching the specified
 -- 'AppURI' exactly.
@@ -260,30 +180,13 @@ route r@Router {..} request =
             handler session req {Wai.pathInfo = newPath}
 
 lookupMethodTable :: Router -> Wai.Request -> Maybe PathMatch
-lookupMethodTable Router {..} request = do
-  (lookupByAppURI request =<< rAppURIHandler) <|> lookupByPath rPathTrie request
+lookupMethodTable Router {..} request =
+  lookupByAppURI request =<< rAppURIHandler
 
 lookupByAppURI :: Wai.Request -> AppURIHandler -> Maybe PathMatch
 lookupByAppURI request appURIHandler =
   (`PathMatch` Nothing) . appURIHandler <$>
   U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
-
-lookupByPath :: PathTrie -> Wai.Request -> Maybe PathMatch
-lookupByPath trie request = go Nothing trie (Wai.pathInfo request)
-  where
-    go !nearestPrefixMatch t []
-      | HM.null $ trieMethodTableForExactMatch t = nearestPrefixMatch
-      | otherwise = Just $! PathMatch (trieMethodTableForExactMatch t) Nothing
-    go !nearestPrefixMatch oldTrie (k:suffix)
-      | Just newTrie <- HM.lookup k $ trieSubtries oldTrie =
-        let nearestPrefixMatch' =
-              if null $ trieMethodTableForPrefixMatch newTrie
-                then nearestPrefixMatch
-                else Just $!
-                     PathMatch (trieMethodTableForPrefixMatch newTrie) $
-                     Just suffix
-         in go nearestPrefixMatch' newTrie suffix
-      | otherwise = nearestPrefixMatch
 
 data PathMatch =
   PathMatch
