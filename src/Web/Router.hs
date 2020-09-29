@@ -32,9 +32,7 @@ import Web.Types
 -- | The router type is responsible for finding handlers for the given
 -- URI paths and HTTP methods and for handling some exceptional cases.
 newtype Router =
-  Router
-    { rAppURIHandler :: Maybe AppURIHandler
-    }
+  Router (Maybe AppURIHandler)
 
 type PathComponent = T.Text
 
@@ -130,11 +128,8 @@ new (Spec m) = execState m $ Router Nothing
 -- 'AppURI' exactly.
 appURI :: (U.AppURI -> MethodsSpec ()) -> Spec ()
 appURI f =
-  Spec . modify' $ \r@Router {..} ->
-    r
-      { rAppURIHandler =
-          maybe (Just appURIHandler) (const errorDuplicateEntry) rAppURIHandler
-      }
+  Spec . modify' $ \(Router handler) ->
+    Router $ maybe (Just appURIHandler) (const errorDuplicateEntry) handler
   where
     appURIHandler = execMethodsSpec . f
     errorDuplicateEntry = error "appURI clause is used more than once"
@@ -168,7 +163,7 @@ data Result
 
 -- | Find a handler for the specified request.
 route :: Router -> Wai.Request -> Result
-route r@Router {..} request =
+route r request =
   case lookupMethodTable r request of
     Nothing -> ResourceNotFoundResult
     Just (PathMatch methodTable optNewPath) ->
@@ -180,8 +175,7 @@ route r@Router {..} request =
             handler session req {Wai.pathInfo = newPath}
 
 lookupMethodTable :: Router -> Wai.Request -> Maybe PathMatch
-lookupMethodTable Router {..} request =
-  lookupByAppURI request =<< rAppURIHandler
+lookupMethodTable (Router handler) request = lookupByAppURI request =<< handler
 
 lookupByAppURI :: Wai.Request -> AppURIHandler -> Maybe PathMatch
 lookupByAppURI request appURIHandler =
