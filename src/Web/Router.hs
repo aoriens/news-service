@@ -29,11 +29,9 @@ import Web.Types
 -- | The router type is responsible for finding handlers for the given
 -- URI paths and HTTP methods and for handling some exceptional cases.
 newtype Router =
-  Router (Maybe AppURIHandler)
+  Router (U.AppURI -> MethodsToHandlers)
 
 type PathComponent = T.Text
-
-type AppURIHandler = U.AppURI -> MethodsToHandlers
 
 type MethodsToHandlers = HM.HashMap Http.Method EApplication
 
@@ -114,7 +112,7 @@ is performed. In the following example:
 
 -}
 new :: (U.AppURI -> MethodsSpec ()) -> Router
-new f = Router $ Just (execMethodsSpec . f)
+new f = Router $ execMethodsSpec . f
 
 -- | Sets a handler for the specified HTTP method.
 method :: Http.Method -> EApplication -> MethodsSpec ()
@@ -146,7 +144,7 @@ data Result
 -- | Find a handler for the specified request.
 route :: Router -> Wai.Request -> Result
 route r request =
-  case lookupMethodTable r request of
+  case lookupMethod r request of
     Nothing -> ResourceNotFoundResult
     Just (PathMatch methodTable optNewPath) ->
       case (HM.lookup (Wai.requestMethod request) methodTable, optNewPath) of
@@ -156,12 +154,9 @@ route r request =
           HandlerResult $ \session req ->
             handler session req {Wai.pathInfo = newPath}
 
-lookupMethodTable :: Router -> Wai.Request -> Maybe PathMatch
-lookupMethodTable (Router handler) request = lookupByAppURI request =<< handler
-
-lookupByAppURI :: Wai.Request -> AppURIHandler -> Maybe PathMatch
-lookupByAppURI request appURIHandler =
-  (`PathMatch` Nothing) . appURIHandler <$>
+lookupMethod :: Router -> Wai.Request -> Maybe PathMatch
+lookupMethod (Router handler) request =
+  (`PathMatch` Nothing) . handler <$>
   U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
 
 data PathMatch =
