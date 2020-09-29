@@ -37,9 +37,13 @@ newtype RelativeURI =
 
 data AppURI
   = ImageURI ImageId
+  | UsersURI
   | UserURI UserId
+  | AuthorsURI
   | AuthorURI AuthorId
+  | CategoriesURI
   | CategoryURI CategoryId
+  | NewsURI
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -60,18 +64,26 @@ toRelativeURI uri =
   RelativeURI $
   case uri of
     ImageURI (ImageId imageId) -> ["images", T.pack $ show imageId]
+    UsersURI -> ["users"]
     UserURI (UserId userId) -> ["users", T.pack $ show userId]
+    AuthorsURI -> ["authors"]
     AuthorURI (AuthorId authorId) -> ["authors", T.pack $ show authorId]
+    CategoriesURI -> ["categories"]
     CategoryURI (CategoryId catId) -> ["categories", T.pack $ show catId]
+    NewsURI -> ["news"]
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
 fromRelativeURI (RelativeURI path) =
   case path of
     ["images", ident] ->
       ImageURI . ImageId <$> readExactIntegral (T.unpack ident)
+    ["users"] -> Just UsersURI
     ["users", ident] -> UserURI . UserId <$> readExactIntegral (T.unpack ident)
+    ["authors"] -> Just AuthorsURI
     ["authors", ident] ->
       AuthorURI . AuthorId <$> readExactIntegral (T.unpack ident)
+    ["categories"] -> Just CategoriesURI
     ["categories", ident] ->
       CategoryURI . CategoryId <$> readExactIntegral (T.unpack ident)
+    ["news"] -> Just NewsURI
     _ -> Nothing

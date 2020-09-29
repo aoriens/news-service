@@ -20,16 +20,24 @@ spec = do
     it "should parse back all supported URIs after rendering them" $ do
       let appURIs =
             [ ImageURI $ ImageId 1
+            , UsersURI
             , UserURI $ UserId 1
+            , AuthorsURI
             , AuthorURI $ AuthorId 1
+            , CategoriesURI
             , CategoryURI $ CategoryId 1
+            , NewsURI
             ]
           _addNewElementToTheListAboveIfDoesNotCompile =
             \case
               ImageURI _ -> ()
+              UsersURI -> ()
               UserURI _ -> ()
+              AuthorsURI -> ()
               AuthorURI _ -> ()
+              CategoriesURI -> ()
               CategoryURI _ -> ()
+              NewsURI -> ()
           results = map (fromRelativeURI . toRelativeURI) appURIs
       results `shouldBe` map Just appURIs
   describe "render" $ do
