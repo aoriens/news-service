@@ -95,8 +95,8 @@ privilege.
 
 ### `POST /authors`
 
-Creates an author. Accepts [InAuthor](#InAuthor) entity in the request body and
-returns [Author](#Author) entity. Requires the administrator privilege.
+Creates an author. Accepts [CreateAuthor](#CreateAuthor) entity in the request
+body and returns [Author](#Author) entity. Requires the administrator privilege.
 
 ### `DELETE /authors/{author_id}`
 
@@ -109,15 +109,15 @@ Returns the specified [Author](#Author). Requires the administrator privilege.
 
 ### `PATCH /authors/{author_id}`
 
-Accepts [UpdatedAuthor](#UpdatedAuthor) entity, updates the corresponding
-[Author](#Author) entity and returns the updated representation. Requires the
+Accepts [UpdateAuthor](#UpdateAuthor) entity, updates the corresponding author
+entity and returns the updated [Author](#Author) representation. Requires the
 administrator privilege.
 
 ### `POST /categories`
 
-Creates a (possibly nested) category. Accepts [InCategory](#InCategory) entity
-in the request body and returns [Category](#Category) entity. Requires the
-administrator privilege.
+Creates a (possibly nested) category. Accepts [CreateCategory](#CreateCategory)
+entity in the request body and returns [Category](#Category) entity. Requires
+the administrator privilege.
 
 ### `GET /categories/{category_item_id}`
 
@@ -141,8 +141,8 @@ Returns an array of [User](#User) entities.
 
 ### `POST /users`
 
-Creates a user. Accepts [InUser](#InUser) entity in the request body and returns
-the created [User](#User) entity.
+Creates a user. Accepts [CreateUser](#CreateUser) entity in the request body and
+returns the created [User](#User) entity.
 
 ### `DELETE /users/{user_id}`
 
@@ -181,14 +181,14 @@ item or no one, which is represented by the parent-to-child order of elements in
 
 A string in `YYYY-mm-dd` format to specify a calendar day.
 
-### InAuthor
+### CreateAuthor
 
 A request to create an author. Fields:
 
 - `user_id` - the identifier of existing [User](#User). An integer, required.
 - `description` - the description of the author. A string, required.
 
-### InCategory
+### CreateCategory
 
 A request to create categories. Fields:
 
@@ -201,21 +201,21 @@ A request to create categories. Fields:
   [CategoryItem](#CategoryItem) where a new category will be created. When no
   one specified, a new root category will be created. An integer, optional.
 
-### InImage
+### CreateImage
 
 A request to create an image. Fields:
 
 - `base64_data` - a base64-encoded image data. A string, required.
 - `content_type` - a MIME content type of the image. A string, required.
 
-### InUser
+### CreateUser
 
 An request to create a user. Fields:
 
 - `first_name` - the user's first name. A string, optional.
 - `last_name` - the user's last name. This is to be used in case of a
   single-component name. A string, required.
-- `avatar` - the user's avatar image. An [InImage](#InImage), optional.
+- `avatar` - the user's avatar image. A [CreateImage](#CreateImage), optional.
 
 ### News
 
@@ -246,7 +246,7 @@ A user. Fields:
 - `secret_token` - the authentication token. The field is only output when
   creating a user, otherwise it is missing. A string, optional.
 
-### UpdatedAuthor
+### UpdateAuthor
 
 An instruction to update an [Author](#Author). Fields:
 
