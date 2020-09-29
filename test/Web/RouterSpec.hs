@@ -24,8 +24,7 @@ spec
       let appURI = U.ImageURI (ImageId 1)
           method = Http.methodGet
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
-          router =
-            R.new $ R.appURI $ \U.ImageURI {} -> R.method method expectedHandler
+          router = R.new $ \U.ImageURI {} -> R.method method expectedHandler
           request =
             Wai.defaultRequest
               { Wai.pathInfo = U.relativeURIPath $ U.toRelativeURI appURI
@@ -34,13 +33,12 @@ spec
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
     it "should return ResourceNotFoundRequest for an empty router" $ do
-      let router = R.new $ pure ()
+      let router = R.new $ \U.ImageURI {} -> pure ()
           request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it "should return ResourceNotFoundRequest if no match found" $ do
-      let router =
-            R.new . R.appURI $ \U.ImageURI {} -> R.method "GET" noOpHandler
+      let router = R.new $ \U.ImageURI {} -> R.method "GET" noOpHandler
           request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
@@ -50,7 +48,7 @@ spec
           U.RelativeURI path = U.toRelativeURI uri
           unknownMethod = "UNKNOWN"
           router =
-            R.new . R.appURI $ \U.ImageURI {} -> do
+            R.new $ \U.ImageURI {} -> do
               R.method Http.methodPost noOpHandler
               R.method Http.methodPut noOpHandler
               R.method Http.methodDelete noOpHandler

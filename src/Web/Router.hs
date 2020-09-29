@@ -4,8 +4,6 @@
 module Web.Router
   ( Router
   , new
-  , Spec
-  , appURI
   , method
   , get
   , post
@@ -19,7 +17,6 @@ module Web.Router
   , isMethodNotSupportedResult
   ) where
 
-import Control.Monad.State.Strict hiding (get, put)
 import Control.Monad.Writer.Strict
 import qualified Data.HashMap.Strict as HM
 import Data.List hiding (delete)
@@ -41,11 +38,6 @@ type AppURIHandler = U.AppURI -> MethodsToHandlers
 type MethodsToHandlers = HM.HashMap Http.Method EApplication
 
 type Path = [PathComponent]
-
--- | A monad type to make it easier to specify route configuration.
-newtype Spec a =
-  Spec (State Router a)
-  deriving (Functor, Applicative, Monad)
 
 -- | A monad type to make it easier to specify HTTP method to handler
 -- mappings.
@@ -121,18 +113,8 @@ is performed. In the following example:
 - @GET "\/a"@ and @GET "\/a\/q"@ will match @h3@
 
 -}
-new :: Spec () -> Router
-new (Spec m) = execState m $ Router Nothing
-
--- | Starts route specification for a URI path matching the specified
--- 'AppURI' exactly.
-appURI :: (U.AppURI -> MethodsSpec ()) -> Spec ()
-appURI f =
-  Spec . modify' $ \(Router handler) ->
-    Router $ maybe (Just appURIHandler) (const errorDuplicateEntry) handler
-  where
-    appURIHandler = execMethodsSpec . f
-    errorDuplicateEntry = error "appURI clause is used more than once"
+new :: (U.AppURI -> MethodsSpec ()) -> Router
+new f = Router $ Just (execMethodsSpec . f)
 
 -- | Sets a handler for the specified HTTP method.
 method :: Http.Method -> EApplication -> MethodsSpec ()
