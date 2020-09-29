@@ -47,6 +47,8 @@ run Handle {..} request respond = do
     Right category -> respond $ hPresenter category
     Left ICreateCategory.UnknownParentCategoryId ->
       throwIO $ IncorrectParameterException "Unknown parent category identifier"
+    Left (ICreateCategory.IncorrectParameter reason) ->
+      throwIO $ IncorrectParameterException reason
 
 data InCategory =
   InCategory

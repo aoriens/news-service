@@ -14,7 +14,7 @@ createCategory ::
      Database.Handle
   -> Maybe CategoryId
   -> NonEmpty Text
-  -> IO (Either CreateCategory.Failure Category)
+  -> IO (Either CreateCategory.CreateCategoryFailure Category)
 createCategory h parentId =
   runTransactionRW h . DCategories.createCategory parentId
 

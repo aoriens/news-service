@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Core.Interactor.CreateCategorySpec
   ( spec
   ) where
@@ -49,13 +51,33 @@ spec
           h = stubHandle {hCreateCategory = \_ _ -> pure expectedResult}
       r <- run h noCredentials parentId names
       r `shouldBe` expectedResult
-    it "should return failure returned from the gateway if any" $ do
+    it
+      "should return UnknownParentCategoryId if the gateway returns CCFUnknownParentCategoryId" $ do
       let parentId = Just $ CategoryId 0
           names = "a" :| ["b"]
-          expectedResult = Left UnknownParentCategoryId
-          h = stubHandle {hCreateCategory = \_ _ -> pure expectedResult}
+          h =
+            stubHandle
+              {hCreateCategory = \_ _ -> pure $ Left CCFUnknownParentCategoryId}
       r <- run h noCredentials parentId names
-      r `shouldBe` expectedResult
+      r `shouldBe` Left UnknownParentCategoryId
+    it
+      "should return IncorrectParameter if the least significant category name is empty" $ do
+      let parentId = Nothing
+          names = "" :| []
+          h = stubHandle {hCreateCategory = \_ _ -> pure $ Right stubCategory}
+      r <- run h noCredentials parentId names
+      r `shouldSatisfy` \case
+        Left (IncorrectParameter _) -> True
+        _ -> False
+    it
+      "should return IncorrectParameter if a non-least significant category name is empty" $ do
+      let parentId = Nothing
+          names = "nonempty" :| [""]
+          h = stubHandle {hCreateCategory = \_ _ -> pure $ Right stubCategory}
+      r <- run h noCredentials parentId names
+      r `shouldSatisfy` \case
+        Left (IncorrectParameter _) -> True
+        _ -> False
 
 stubCategory :: Category
 stubCategory =

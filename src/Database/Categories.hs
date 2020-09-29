@@ -19,14 +19,14 @@ import qualified Hasql.TH as TH
 createCategory ::
      Maybe CategoryId
   -> NonEmpty T.Text
-  -> Transaction (Either CreateCategory.Failure Category)
+  -> Transaction (Either CreateCategory.CreateCategoryFailure Category)
 createCategory Nothing names = Right <$> createCategoriesInRoot names
 createCategory (Just parentId) names = do
   optParentCat <- statement selectCategory parentId
   case optParentCat of
     Just parentCat ->
       Right <$> createCategoriesInParent parentCat (toList names)
-    Nothing -> pure $ Left CreateCategory.UnknownParentCategoryId
+    Nothing -> pure $ Left CreateCategory.CCFUnknownParentCategoryId
 
 createCategoriesInRoot :: NonEmpty T.Text -> Transaction Category
 createCategoriesInRoot (name :| names) = do

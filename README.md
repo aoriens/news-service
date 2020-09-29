@@ -193,10 +193,10 @@ A request to create an author. Fields:
 A request to create categories. Fields:
 
 - `names` - names of categories to create and nest subsequently in the
-  parent-to-child order. This is an array of strings, required. It must contain
-  at least one element. Example: `["fp", "haskell", "ghc"]` will result in
-  creating `fp` category containing just created `haskell` category containing
-  just created `ghc` category.
+  parent-to-child order. This is an array of non-empty strings, required. It
+  must contain at least one element. Example: `["fp", "haskell", "ghc"]` will
+  result in creating `fp` category containing just created `haskell` category
+  containing just created `ghc` category.
 - `parent_category_item_id` - the identifier of an existing
   [CategoryItem](#CategoryItem) where a new category will be created. When no
   one specified, a new root category will be created. An integer, optional.
