@@ -12,7 +12,7 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthHandle :: AuthenticationHandle m
+    { hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
     , hUpdateAuthor :: AuthorId -> T.Text -> m (Maybe Author)
     }
@@ -25,7 +25,7 @@ run ::
   -> T.Text
   -> m Author
 run Handle {..} credentials aid newDescription = do
-  actor <- authenticate hAuthHandle credentials
+  actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "update author"
   optAuthor' <- hUpdateAuthor aid newDescription
   case optAuthor' of

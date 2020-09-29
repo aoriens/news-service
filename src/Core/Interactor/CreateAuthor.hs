@@ -12,7 +12,7 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthHandle :: AuthenticationHandle m
+    { hAuthenticationHandle :: AuthenticationHandle m
     , hCreateAuthor :: UserId -> T.Text -> m (Either Failure Author)
     , hAuthorizationHandle :: AuthorizationHandle
     }
@@ -25,7 +25,7 @@ run ::
   -> T.Text
   -> m (Either Failure Author)
 run Handle {..} credentials uid description = do
-  actor <- authenticate hAuthHandle credentials
+  actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "create an author"
   hCreateAuthor uid description
 

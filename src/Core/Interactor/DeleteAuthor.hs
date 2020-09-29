@@ -13,7 +13,7 @@ import Core.Exception
 data Handle m =
   Handle
     { hDeleteAuthor :: AuthorId -> m Success
-    , hAuthHandle :: AuthenticationHandle m
+    , hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
     }
 
@@ -21,7 +21,7 @@ type Success = Bool
 
 run :: MonadThrow m => Handle m -> Maybe Credentials -> AuthorId -> m ()
 run Handle {..} credentials authorIdent = do
-  actor <- authenticate hAuthHandle credentials
+  actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "deleting author"
   ok <- hDeleteAuthor authorIdent
   unless ok $ throwM . EntityNotFoundException $ AuthorEntityId authorIdent

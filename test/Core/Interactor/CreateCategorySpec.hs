@@ -19,13 +19,13 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
       let parentId = Just $ CategoryId 0
           names = "a" :| ["b"]
           h =
             stubHandle
               { hCreateCategory = \_ _ -> onSuccess >> pure (Right stubCategory)
-              , hAuthHandle = authHandle
+              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
       void $ run h credentials parentId names
@@ -97,6 +97,6 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hCreateCategory = undefined
-    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     }

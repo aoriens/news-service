@@ -20,8 +20,8 @@ itShouldAuthenticateAndAuthorizeBeforeOperation ::
   -> (Maybe Credentials -> AuthenticationHandle IO -> AuthorizationHandle -> OnSuccess -> IO ())
   -> Spec
 itShouldAuthenticateAndAuthorizeBeforeOperation expectedPerm test = do
-  itShouldAuthenticateBeforeOperation $ \creds authH ->
-    test creds authH noOpAuthorizationHandle
+  itShouldAuthenticateBeforeOperation $ \creds authenticationH ->
+    test creds authenticationH noOpAuthorizationHandle
   itShouldAuthorizeBeforeOperation expectedPerm $ test Nothing
 
 itShouldAuthorizeBeforeOperation ::

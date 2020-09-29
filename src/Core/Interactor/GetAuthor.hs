@@ -11,7 +11,7 @@ data Handle m =
   Handle
     { hGetAuthor :: AuthorId -> m (Maybe Author)
     , hAuthorizationHandle :: AuthorizationHandle
-    , hAuthHandle :: AuthenticationHandle m
+    , hAuthenticationHandle :: AuthenticationHandle m
     }
 
 run ::
@@ -21,6 +21,6 @@ run ::
   -> AuthorId
   -> m (Maybe Author)
 run Handle {..} credentials authorIdent = do
-  actor <- authenticate hAuthHandle credentials
+  actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "get an author"
   hGetAuthor authorIdent

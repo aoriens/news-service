@@ -17,11 +17,11 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
       let h =
             defaultHandle
               { hGetAuthors = \_ -> onSuccess >> pure [stubAuthor]
-              , hAuthHandle = authHandle
+              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
       void $ run h credentials noPageQuery
@@ -52,7 +52,7 @@ defaultHandle :: Handle IO
 defaultHandle =
   Handle
     { hGetAuthors = const $ pure []
-    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthenticationHandle = noOpAuthenticationHandle
     , hPageSpecParserHandle = PageSpecParserHandle . const $ Right defaultPage
     , hAuthorizationHandle = noOpAuthorizationHandle
     }

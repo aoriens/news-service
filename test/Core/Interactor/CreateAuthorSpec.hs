@@ -18,13 +18,13 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
       let uid = UserId 1
           description = ""
           h =
             stubHandle
               { hCreateAuthor = \_ _ -> onSuccess >> pure (Right stubAuthor)
-              , hAuthHandle = authHandle
+              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
       void $ run h credentials uid description
@@ -77,6 +77,6 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hCreateAuthor = undefined
-    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     }

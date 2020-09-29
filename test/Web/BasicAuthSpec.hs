@@ -14,69 +14,77 @@ spec =
   describe "credentialsFromRequest" $ do
     it "should decode canonically encoded correct header" $ do
       let request =
-            requestWithAuthHeader $ "Basic " <> encodeBase64' "user:password"
+            requestWithAuthenticationHeader $
+            "Basic " <> encodeBase64' "user:password"
           r = credentialsFromRequest request
       r `shouldBe` Right (Just ("user", "password"))
     it "should decode correct header with an unusual case in Basic prefix" $ do
       let request =
-            requestWithAuthHeader $ "bASic " <> encodeBase64' "user:password"
+            requestWithAuthenticationHeader $
+            "bASic " <> encodeBase64' "user:password"
           r = credentialsFromRequest request
       r `shouldBe` Right (Just ("user", "password"))
     it "should decode correct header with extra spaces" $ do
       let request =
-            requestWithAuthHeader $
+            requestWithAuthenticationHeader $
             " \v \n  Basic    \t \v  " <>
             encodeBase64' "user:password" <> " \n "
           r = credentialsFromRequest request
       r `shouldBe` Right (Just ("user", "password"))
     it "should decode correct header with an empty user" $ do
       let request =
-            requestWithAuthHeader $ "Basic " <> encodeBase64' ":password"
+            requestWithAuthenticationHeader $
+            "Basic " <> encodeBase64' ":password"
           r = credentialsFromRequest request
       r `shouldBe` Right (Just ("", "password"))
     it "should decode correct header with an empty password" $ do
-      let request = requestWithAuthHeader $ "Basic " <> encodeBase64' "user:"
+      let request =
+            requestWithAuthenticationHeader $ "Basic " <> encodeBase64' "user:"
           r = credentialsFromRequest request
       r `shouldBe` Right (Just ("user", ""))
     it "should decode correct header with an empty user and a password" $ do
-      let request = requestWithAuthHeader $ "Basic " <> encodeBase64' ":"
+      let request =
+            requestWithAuthenticationHeader $ "Basic " <> encodeBase64' ":"
           r = credentialsFromRequest request
       r `shouldBe` Right (Just ("", ""))
     it "should decode correct header with a password containing a colon" $ do
-      let request = requestWithAuthHeader $ "Basic " <> encodeBase64' "a:b:c"
+      let request =
+            requestWithAuthenticationHeader $ "Basic " <> encodeBase64' "a:b:c"
           r = credentialsFromRequest request
       r `shouldBe` Right (Just ("a", "b:c"))
     it "should return Right Nothing if no Authorization header found" $ do
       let r = credentialsFromRequest defaultRequest
       r `shouldBe` Right Nothing
     it "should return Left () for header consising of spaces only" $ do
-      let request = requestWithAuthHeader "  \t  \n\f\r  \t "
+      let request = requestWithAuthenticationHeader "  \t  \n\f\r  \t "
           r = credentialsFromRequest request
       r `shouldSatisfy` isLeft
     it "should return Left () for a single-word header" $ do
-      let request = requestWithAuthHeader "Basic "
+      let request = requestWithAuthenticationHeader "Basic "
           r = credentialsFromRequest request
       r `shouldSatisfy` isLeft
     it "should return Left () for a triple-word header" $ do
       let request =
-            requestWithAuthHeader $
+            requestWithAuthenticationHeader $
             "Basic " <> correctToken <> " " <> correctToken
           correctToken = encodeBase64' "a:b"
           r = credentialsFromRequest request
       r `shouldSatisfy` isLeft
     it "should return Left () for a non-basic auth" $ do
-      let request = requestWithAuthHeader $ "Digest " <> encodeBase64' "a:b"
+      let request =
+            requestWithAuthenticationHeader $ "Digest " <> encodeBase64' "a:b"
           r = credentialsFromRequest request
       r `shouldSatisfy` isLeft
     it "should return Left () for an incorrect base64" $ do
-      let request = requestWithAuthHeader "Basic Og=!"
+      let request = requestWithAuthenticationHeader "Basic Og=!"
           r = credentialsFromRequest request
       r `shouldSatisfy` isLeft
     it "should return Left () when credentials does not contain a colon" $ do
-      let request = requestWithAuthHeader $ "Basic " <> encodeBase64' "ab"
+      let request =
+            requestWithAuthenticationHeader $ "Basic " <> encodeBase64' "ab"
           r = credentialsFromRequest request
       r `shouldSatisfy` isLeft
 
-requestWithAuthHeader :: B.ByteString -> Wai.Request
-requestWithAuthHeader value =
+requestWithAuthenticationHeader :: B.ByteString -> Wai.Request
+requestWithAuthenticationHeader value =
   Wai.defaultRequest {requestHeaders = [("Authorization", value)]}

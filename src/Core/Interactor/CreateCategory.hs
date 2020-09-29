@@ -14,7 +14,7 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthHandle :: AuthenticationHandle m
+    { hAuthenticationHandle :: AuthenticationHandle m
     , hCreateCategory :: Maybe CategoryId -> NonEmpty T.Text -> m (Either CreateCategoryFailure Category)
     , hAuthorizationHandle :: AuthorizationHandle
     }
@@ -41,7 +41,7 @@ run Handle {..} creds parentCatId catNames
   | any T.null catNames =
     pure . Left $ IncorrectParameter "Category name must not be empty"
   | otherwise = do
-    actor <- authenticate hAuthHandle creds
+    actor <- authenticate hAuthenticationHandle creds
     requireAdminPermission hAuthorizationHandle actor "create category"
     first toFailure <$> hCreateCategory parentCatId catNames
   where

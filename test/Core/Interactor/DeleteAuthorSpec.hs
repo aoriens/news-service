@@ -14,12 +14,12 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
       let authorIdent = AuthorId 1
           h =
             stubHandle
               { hDeleteAuthor = \_ -> onSuccess >> pure True
-              , hAuthHandle = authHandle
+              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
       run h credentials authorIdent
@@ -43,6 +43,6 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hDeleteAuthor = const $ pure True
-    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     }

@@ -18,12 +18,12 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authHandle authorizationHandle onSuccess -> do
+    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
       let uid = UserId 1
           h =
             stubHandle
               { hDeleteUser = \_ _ -> onSuccess >> pure (Right ())
-              , hAuthHandle = authHandle
+              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
       run h credentials uid
@@ -66,7 +66,7 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hDeleteUser = \_ _ -> pure (Right ())
-    , hAuthHandle = noOpAuthenticationHandle
+    , hAuthenticationHandle = noOpAuthenticationHandle
     , hDefaultEntityListRange = PageSpec (PageOffset 0) (PageLimit 0)
     , hAuthorizationHandle = noOpAuthorizationHandle
     }
