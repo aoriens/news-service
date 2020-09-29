@@ -56,22 +56,22 @@ buildByteString :: BB.Builder -> B.ByteString
 buildByteString = LB.toStrict . BB.toLazyByteString
 
 toRelativeURI :: AppURI -> RelativeURI
-toRelativeURI (ImageURI (ImageId imageId)) =
-  RelativeURI ["images", T.pack $ show imageId]
-toRelativeURI (UserURI (UserId userId)) =
-  RelativeURI ["users", T.pack $ show userId]
-toRelativeURI (AuthorURI (AuthorId authorId)) =
-  RelativeURI ["authors", T.pack $ show authorId]
-toRelativeURI (CategoryURI (CategoryId catId)) =
-  RelativeURI ["categories", T.pack $ show catId]
+toRelativeURI uri =
+  RelativeURI $
+  case uri of
+    ImageURI (ImageId imageId) -> ["images", T.pack $ show imageId]
+    UserURI (UserId userId) -> ["users", T.pack $ show userId]
+    AuthorURI (AuthorId authorId) -> ["authors", T.pack $ show authorId]
+    CategoryURI (CategoryId catId) -> ["categories", T.pack $ show catId]
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
-fromRelativeURI (RelativeURI ["images", ident]) =
-  ImageURI . ImageId <$> readExactIntegral (T.unpack ident)
-fromRelativeURI (RelativeURI ["users", ident]) =
-  UserURI . UserId <$> readExactIntegral (T.unpack ident)
-fromRelativeURI (RelativeURI ["authors", ident]) =
-  AuthorURI . AuthorId <$> readExactIntegral (T.unpack ident)
-fromRelativeURI (RelativeURI ["categories", ident]) =
-  CategoryURI . CategoryId <$> readExactIntegral (T.unpack ident)
-fromRelativeURI _ = Nothing
+fromRelativeURI (RelativeURI path) =
+  case path of
+    ["images", ident] ->
+      ImageURI . ImageId <$> readExactIntegral (T.unpack ident)
+    ["users", ident] -> UserURI . UserId <$> readExactIntegral (T.unpack ident)
+    ["authors", ident] ->
+      AuthorURI . AuthorId <$> readExactIntegral (T.unpack ident)
+    ["categories", ident] ->
+      CategoryURI . CategoryId <$> readExactIntegral (T.unpack ident)
+    _ -> Nothing
