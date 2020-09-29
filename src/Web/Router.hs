@@ -20,7 +20,6 @@ module Web.Router
 import Control.Monad.Writer.Strict
 import qualified Data.HashMap.Strict as HM
 import Data.List hiding (delete)
-import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Web.AppURI as U
@@ -31,11 +30,7 @@ import Web.Types
 newtype Router =
   Router (U.AppURI -> MethodsToHandlers)
 
-type PathComponent = T.Text
-
 type MethodsToHandlers = HM.HashMap Http.Method EApplication
-
-type Path = [PathComponent]
 
 -- | A monad type to make it easier to specify HTTP method to handler
 -- mappings.
@@ -146,24 +141,14 @@ route :: Router -> Wai.Request -> Result
 route r request =
   case lookupMethod r request of
     Nothing -> ResourceNotFoundResult
-    Just (PathMatch methodTable optNewPath) ->
-      case (HM.lookup (Wai.requestMethod request) methodTable, optNewPath) of
-        (Nothing, _) -> MethodNotSupportedResult (sort (HM.keys methodTable))
-        (Just handler, Nothing) -> HandlerResult handler
-        (Just handler, Just newPath) ->
-          HandlerResult $ \session req ->
-            handler session req {Wai.pathInfo = newPath}
+    Just methodTable ->
+      case HM.lookup (Wai.requestMethod request) methodTable of
+        Nothing -> MethodNotSupportedResult (sort (HM.keys methodTable))
+        Just handler -> HandlerResult handler
 
-lookupMethod :: Router -> Wai.Request -> Maybe PathMatch
+lookupMethod :: Router -> Wai.Request -> Maybe MethodsToHandlers
 lookupMethod (Router handler) request =
-  (`PathMatch` Nothing) . handler <$>
-  U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
-
-data PathMatch =
-  PathMatch
-    !MethodsToHandlers
-    !(Maybe Path) -- ^ A new path info to set to the request for
-                  -- passing to the handler
+  handler <$> U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
 
 isHandlerResult :: Result -> Bool
 isHandlerResult (HandlerResult _) = True
