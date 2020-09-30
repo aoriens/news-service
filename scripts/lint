@@ -4,6 +4,8 @@ set -eu
 
 cd "$(git rev-parse --show-toplevel)"
 
+find . \( -name '*.hs' -o -name '*.hs-boot' \) -print0 | xargs -0n100 hindent
+
 if which fast-tags &> /dev/null
 then
     fast-tags --emacs --nomerge --no-module-tags -R .
@@ -11,6 +13,5 @@ else
     echo "fast-tags not found, not updating tags"
 fi
 
-find . \( -name '*.hs' -o -name '*.hs-boot' \) -print0 | xargs -0n100 hindent
 stack build --test
 hlint .
