@@ -37,7 +37,7 @@ dataResponse = responseWithContent Http.ok200 []
 
 -- | A response indicating no data in the body.
 noContentResponse :: Response
-noContentResponse = responseLBS Http.noContent204 [] mempty
+noContentResponse = responseBuilder Http.noContent204 [] mempty
 
 -- | Create a response indicating that a resource has just been
 -- created and returned in the response body (e.g. POST).

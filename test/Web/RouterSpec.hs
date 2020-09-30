@@ -59,7 +59,8 @@ spec
         sort [Http.methodPost, Http.methodPut, Http.methodDelete]
 
 stubHandlerWithHeader :: Http.Header -> EApplication
-stubHandlerWithHeader header _ _ = ($ responseLBS Http.ok200 [header] "")
+stubHandlerWithHeader header _ _ =
+  ($ responseBuilder Http.ok200 [header] mempty)
 
 shouldEmitSameHeadersAs ::
      HasCallStack => EApplication -> EApplication -> Expectation
@@ -79,7 +80,7 @@ getHeaders app request = do
   readIORef result
 
 noOpHandler :: EApplication
-noOpHandler _ _ = ($ responseLBS Http.ok200 [] "")
+noOpHandler _ _ = ($ responseBuilder Http.ok200 [] mempty)
 
 stubSession :: Session
 stubSession = Session {sessionId = SessionId 0}

@@ -15,7 +15,6 @@ module Web.Types
   , Wai.defaultRequest
   , Wai.Response
   , Wai.ResponseReceived
-  , Wai.responseLBS
   , Wai.responseBuilder
   , Wai.RequestBodyLength(..)
   , Wai.strictRequestBody
@@ -35,4 +34,3 @@ newtype Session =
   Session
     { sessionId :: SessionId
     }
-
