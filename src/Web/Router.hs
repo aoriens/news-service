@@ -59,51 +59,18 @@ execMethodsSpec (MethodsSpec w) =
 
 {- |
 
-Creates a router. It is possible to use Spec monad for path
-configuration:
+Creates a router. It is possible to use 'MethodSpec' monad to
+configure HTTP method selection.
 
-> new $ do
->   path ["path", "to", "resource"] $ do
->     get    handleGetForPath
->     post   handlePostForPath
->     put    handlePutForPath
->   path ["another", "path"] $ do
->     get    handleGetForPath2
->     delete handleDeleteForPath2
->   pathPrefix ["user"] $ do
->     get    handleGetUser
+> new $ \uri -> case uri of
+>   UserURI userId -> do
+>     get    handleGetForUserId userId
+>     put    handlePutForUserId userId
+>   UsersURI -> do
+>     post handlePostForUser
 
-Each 'path' clause must be passed a unique path, as well as
-'pathPrefix'. But using the same path in both 'path' and 'pathPrefix'
-is allowed. Path prefixes are allowed to be prefixes of other path
-prefixes:
-
-> new $ do
->   pathPrefix ["a"] $ ...
->   pathPrefix ["a", "b"] $ ... -- OK to have pathPrefix ["a", "b"], although ["a"] is its prefix
->   path       ["a", "b"] $ ... -- OK: same path for path & pathPrefix
->   pathPrefix ["a", "b"] $ ... -- Error: duplicate prefix
->   path       ["q"] $ ...      -- OK
->   path       ["q"] $ ...      -- Error: duplicate path
-
-When matching, a 'path' entry is always preferred over 'pathPrefix'
-entries, and the longest (in the number of components) 'pathPrefix'
-entry is preferred over shorter ones. If the found entry does not
-contain a subentry for the request method, it is reported as
-'MethodNotSupportedResult' and no attempt to find other prefix matches
-is performed. In the following example:
-
-> new $ do
->   path ["a", "b", "c"]  $ get  h1
->   pathPrefix ["a", "b"] $ post h2
->   pathPrefix ["a"]      $ get  h3
-
-- @GET "\/a\/b\/c"@ will match @h1@
-- @POST "\/a\/b\/c"@ will result in 'MethodNotSupportedResult',
-  although @h2@ also supports @POST \/a\/b\/*"@.
-- @POST "\/a\/b"@, @POST "\/a\/b\/c\/d"@, and @POST "\/a\/b\/k"@ will
-  match @h2@
-- @GET "\/a"@ and @GET "\/a\/q"@ will match @h3@
+If the found entry does not contain a subentry for the request method,
+it is reported as 'MethodNotSupportedResult'.
 
 -}
 new :: (U.AppURI -> MethodsSpec ()) -> Router
