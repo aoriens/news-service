@@ -17,9 +17,9 @@ import Data.Either.Util
 import Data.Integral.Exact
 import Data.String
 import qualified Data.Text as T
-import qualified Network.Wai as Wai
 import qualified Web.BasicAuth as BasicAuth
 import Web.Exception
+import Web.Types
 
 -- | Web-specific representation of core credentials. It depends from
 -- the way of passing credentials via web.
@@ -46,7 +46,7 @@ readCredentials (WebToken webToken) = do
 -- | Returns Nothing if no credentials found, but throws
 -- 'MalformedAuthDataException in case of malformed credentials.
 getCredentialsFromRequest ::
-     MonadThrow m => Wai.Request -> m (Maybe Core.Credentials)
+     MonadThrow m => Request -> m (Maybe Core.Credentials)
 getCredentialsFromRequest request =
   either (throwM . MalformedAuthDataException) pure $ do
     optCreds <-

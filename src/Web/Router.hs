@@ -21,8 +21,8 @@ import Control.Monad.Writer.Strict
 import qualified Data.HashMap.Strict as HM
 import Data.List hiding (delete)
 import qualified Network.HTTP.Types as Http
-import qualified Network.Wai as Wai
 import qualified Web.AppURI as U
+import Web.Types
 
 -- | The router type is responsible for finding handlers for the given
 -- URI paths and HTTP methods and for handling some exceptional cases.
@@ -104,19 +104,19 @@ data Result handler
   | MethodNotSupportedResult [Http.Method]
 
 -- | Find a handler for the specified request.
-route :: Router handler -> Wai.Request -> Result handler
+route :: Router handler -> Request -> Result handler
 route r request =
   case lookupMethodTable r request of
     Nothing -> ResourceNotFoundResult
     Just methodTable ->
-      case HM.lookup (Wai.requestMethod request) methodTable of
+      case HM.lookup (requestMethod request) methodTable of
         Nothing -> MethodNotSupportedResult (sort (HM.keys methodTable))
         Just handler -> HandlerResult handler
 
 lookupMethodTable ::
-     Router handler -> Wai.Request -> Maybe (MethodsToHandlers handler)
+     Router handler -> Request -> Maybe (MethodsToHandlers handler)
 lookupMethodTable (Router handler) request =
-  handler <$> U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
+  handler <$> U.fromRelativeURI (U.RelativeURI $ pathInfo request)
 
 isHandlerResult :: Result h -> Bool
 isHandlerResult (HandlerResult _) = True

@@ -3,6 +3,24 @@ module Web.Types
   , EMiddleware
   , Session(..)
   , SessionId
+  , Wai.Application
+  , Wai.Request
+  , Wai.requestMethod
+  , Wai.pathInfo
+  , Wai.requestBodyLength
+  , Wai.requestHeaders
+  , Wai.queryString
+  , Wai.remoteHost
+  , Wai.rawPathInfo
+  , Wai.defaultRequest
+  , Wai.Response
+  , Wai.ResponseReceived
+  , Wai.responseLBS
+  , Wai.responseBuilder
+  , Wai.RequestBodyLength(..)
+  , Wai.strictRequestBody
+  , Wai.getRequestBodyChunk
+  , Wai.responseToStream
   ) where
 
 import qualified Network.Wai as Wai
@@ -17,3 +35,4 @@ newtype Session =
   Session
     { sessionId :: SessionId
     }
+

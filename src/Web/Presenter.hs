@@ -22,7 +22,6 @@ import Core.News
 import Core.User
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T
-import qualified Network.Wai as Wai
 import Web.AppURI
 import Web.Representation.Author
 import Web.Representation.Category
@@ -30,16 +29,15 @@ import Web.Representation.News
 import Web.Representation.User
 import Web.RepresentationBuilder
 import Web.Response
+import Web.Types
 
-authorCreatedPresenter ::
-     AppURIConfig -> RepBuilderHandle -> Author -> Wai.Response
+authorCreatedPresenter :: AppURIConfig -> RepBuilderHandle -> Author -> Response
 authorCreatedPresenter uriConfig h author =
   resourceCreatedAndReturnedResponse uriConfig (authorURI author) .
   runRepBuilder h $
   authorRep author
 
-authorUpdatedPresenter ::
-     AppURIConfig -> RepBuilderHandle -> Author -> Wai.Response
+authorUpdatedPresenter :: AppURIConfig -> RepBuilderHandle -> Author -> Response
 authorUpdatedPresenter uriConfig h author =
   resourceModifiedAndReturnedResponse uriConfig (authorURI author) .
   runRepBuilder h $
@@ -48,33 +46,33 @@ authorUpdatedPresenter uriConfig h author =
 authorURI :: Author -> AppURI
 authorURI = AuthorURI . authorId
 
-authorDeletedPresenter :: Wai.Response
+authorDeletedPresenter :: Response
 authorDeletedPresenter = noContentResponse
 
-authorPresenter :: RepBuilderHandle -> Author -> Wai.Response
+authorPresenter :: RepBuilderHandle -> Author -> Response
 authorPresenter h = dataResponse . runRepBuilder h . authorRep
 
-authorListPresenter :: RepBuilderHandle -> [Author] -> Wai.Response
+authorListPresenter :: RepBuilderHandle -> [Author] -> Response
 authorListPresenter h = dataResponse . runRepBuilder h . mapM authorRep
 
 userCreatedPresenter ::
-     AppURIConfig -> RepBuilderHandle -> User -> Credentials -> Wai.Response
+     AppURIConfig -> RepBuilderHandle -> User -> Credentials -> Response
 userCreatedPresenter uriConfig h user creds =
   resourceCreatedAndReturnedResponse uriConfig uri . runRepBuilder h $
   userRep (Just creds) user
   where
     uri = UserURI $ userId user
 
-userDeletedPresenter :: Wai.Response
+userDeletedPresenter :: Response
 userDeletedPresenter = noContentResponse
 
-userPresenter :: RepBuilderHandle -> User -> Wai.Response
+userPresenter :: RepBuilderHandle -> User -> Response
 userPresenter h = dataResponse . runRepBuilder h . userRep Nothing
 
-userListPresenter :: RepBuilderHandle -> [User] -> Wai.Response
+userListPresenter :: RepBuilderHandle -> [User] -> Response
 userListPresenter h = dataResponse . runRepBuilder h . mapM (userRep Nothing)
 
-imagePresenter :: Image -> Wai.Response
+imagePresenter :: Image -> Response
 imagePresenter Image {..} =
   dataResponse
     ResourceRepresentation
@@ -83,17 +81,17 @@ imagePresenter Image {..} =
           contentType $ T.encodeUtf8 imageContentType
       }
 
-newsListPresenter :: RepBuilderHandle -> [News] -> Wai.Response
+newsListPresenter :: RepBuilderHandle -> [News] -> Response
 newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRep
 
 categoryCreatedPresenter ::
-     AppURIConfig -> RepBuilderHandle -> Category -> Wai.Response
+     AppURIConfig -> RepBuilderHandle -> Category -> Response
 categoryCreatedPresenter uriConfig h category =
   resourceCreatedAndReturnedResponse uriConfig (categoryURI category) .
   runRepBuilder h $
   categoryRep category
 
-categoryPresenter :: RepBuilderHandle -> Category -> Wai.Response
+categoryPresenter :: RepBuilderHandle -> Category -> Response
 categoryPresenter h = dataResponse . runRepBuilder h . categoryRep
 
 categoryURI :: Category -> AppURI

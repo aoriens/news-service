@@ -85,6 +85,6 @@ spec =
           r = credentialsFromRequest request
       r `shouldSatisfy` isLeft
 
-requestWithAuthenticationHeader :: B.ByteString -> Wai.Request
+requestWithAuthenticationHeader :: B.ByteString -> Request
 requestWithAuthenticationHeader value =
-  Wai.defaultRequest {requestHeaders = [("Authorization", value)]}
+  defaultRequest {requestHeaders = [("Authorization", value)]}

@@ -15,18 +15,18 @@ import qualified Data.Aeson.TH as A
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
-import qualified Network.Wai as Wai
 import Web.Representation.Base64
+import Web.Types
 
 data Handle =
   Handle
     { hCreateUserHandle :: I.Handle IO
-    , hPresenter :: User -> Credentials -> Wai.Response
+    , hPresenter :: User -> Credentials -> Response
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Wai.Request -> IO a
+                                          Request -> IO a
     }
 
-run :: Handle -> Wai.Application
+run :: Handle -> Application
 run Handle {..} request respond = do
   userEntity <- hLoadJSONRequestBody request
   (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)

@@ -6,16 +6,16 @@ module Web.Handler.GetCategory
 import Control.Exception
 import Core.Category
 import qualified Core.Interactor.GetCategory as IGetCategory
-import qualified Network.Wai as Wai
 import Web.Exception
+import Web.Types
 
 data Handle =
   Handle
     { hGetCategoryHandle :: IGetCategory.Handle IO
-    , hPresenter :: Category -> Wai.Response
+    , hPresenter :: Category -> Response
     }
 
-run :: Handle -> CategoryId -> Wai.Application
+run :: Handle -> CategoryId -> Application
 run Handle {..} catId _ respond = do
   category <-
     maybe (throwIO NotFoundException) pure =<<

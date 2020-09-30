@@ -16,19 +16,19 @@ import Data.Int
 import Data.List
 import Data.Maybe
 import qualified Data.Text as T
-import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
+import Web.Types
 
 data Handle =
   Handle
     { hCreateAuthorHandle :: I.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Wai.Request -> IO a
-    , hPresenter :: Author -> Wai.Response
+                                          Request -> IO a
+    , hPresenter :: Author -> Response
     }
 
-run :: Handle -> Wai.Application
+run :: Handle -> Application
 run Handle {..} request respond = do
   creds <- getCredentialsFromRequest request
   inAuthor <- hLoadJSONRequestBody request

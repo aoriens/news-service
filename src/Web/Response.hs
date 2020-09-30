@@ -12,8 +12,8 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Types as Http
-import qualified Network.Wai as Wai
 import Web.AppURI
+import Web.Types
 
 -- | A value of @Content-Type@ header. It may be extended with content
 -- type parameters in future.
@@ -32,17 +32,17 @@ data ResourceRepresentation =
     }
 
 -- | A generic response containing data - 200 OK.
-dataResponse :: ResourceRepresentation -> Wai.Response
+dataResponse :: ResourceRepresentation -> Response
 dataResponse = responseWithContent Http.ok200 []
 
 -- | A response indicating no data in the body.
-noContentResponse :: Wai.Response
-noContentResponse = Wai.responseLBS Http.noContent204 [] mempty
+noContentResponse :: Response
+noContentResponse = responseLBS Http.noContent204 [] mempty
 
 -- | Create a response indicating that a resource has just been
 -- created and returned in the response body (e.g. POST).
 resourceCreatedAndReturnedResponse ::
-     AppURIConfig -> AppURI -> ResourceRepresentation -> Wai.Response
+     AppURIConfig -> AppURI -> ResourceRepresentation -> Response
 resourceCreatedAndReturnedResponse uriConfig appURI =
   responseWithContent
     Http.created201
@@ -54,14 +54,14 @@ resourceCreatedAndReturnedResponse uriConfig appURI =
 -- updated and returned in the response body (PUT, PATCH, or sometimes
 -- POST).
 resourceModifiedAndReturnedResponse ::
-     AppURIConfig -> AppURI -> ResourceRepresentation -> Wai.Response
+     AppURIConfig -> AppURI -> ResourceRepresentation -> Response
 resourceModifiedAndReturnedResponse uriConfig appURI =
   responseWithContent Http.ok200 [contentLocationHeaderWith uriConfig appURI]
 
 responseWithContent ::
-     Http.Status -> [Http.Header] -> ResourceRepresentation -> Wai.Response
+     Http.Status -> [Http.Header] -> ResourceRepresentation -> Response
 responseWithContent status headers ResourceRepresentation {..} =
-  Wai.responseBuilder
+  responseBuilder
     status
     (contentTypeHeaderWith resourceRepresentationContentType : headers)
     resourceRepresentationBody

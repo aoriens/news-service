@@ -5,16 +5,16 @@ module Web.Handler.DeleteUser
 
 import qualified Core.Interactor.DeleteUser as I
 import Core.User
-import qualified Network.Wai as Wai
 import Web.Credentials
+import Web.Types
 
 data Handle =
   Handle
     { hDeleteUserHandle :: I.Handle IO
-    , hPresenter :: Wai.Response
+    , hPresenter :: Response
     }
 
-run :: Handle -> UserId -> Wai.Application
+run :: Handle -> UserId -> Application
 run Handle {..} uid request respond = do
   credentials <- getCredentialsFromRequest request
   I.run hDeleteUserHandle credentials uid

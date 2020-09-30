@@ -4,19 +4,19 @@ module Network.Wai.Util
 
 import Data.IORef
 import qualified Network.HTTP.Types as Http
-import qualified Network.Wai as Wai
+import Web.Types
 
 -- | Runs the application and returns its HTTP status after finish.
 runApplicationAndGetStatus ::
-     Wai.Application
-  -> Wai.Request
-  -> (Wai.Response -> IO Wai.ResponseReceived)
-  -> IO (Wai.ResponseReceived, Http.Status)
+     Application
+  -> Request
+  -> (Response -> IO ResponseReceived)
+  -> IO (ResponseReceived, Http.Status)
 runApplicationAndGetStatus app request respond = do
   statusRef <- newIORef (error "The response status must be set here")
   r <-
     app request $ \response -> do
-      let (status, _, _) = Wai.responseToStream response
+      let (status, _, _) = responseToStream response
       writeIORef statusRef status
       respond response
   status <- readIORef statusRef

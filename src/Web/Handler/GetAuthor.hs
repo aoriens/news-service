@@ -6,17 +6,17 @@ module Web.Handler.GetAuthor
 import Control.Exception
 import Core.Author
 import qualified Core.Interactor.GetAuthor as I
-import qualified Network.Wai as Wai
 import Web.Credentials
 import Web.Exception
+import Web.Types
 
 data Handle =
   Handle
     { hGetAuthorHandle :: I.Handle IO
-    , hPresenter :: Author -> Wai.Response
+    , hPresenter :: Author -> Response
     }
 
-run :: Handle -> AuthorId -> Wai.Application
+run :: Handle -> AuthorId -> Application
 run Handle {..} authorIdent request respond = do
   credentials <- getCredentialsFromRequest request
   author <-

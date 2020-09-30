@@ -42,7 +42,6 @@ import qualified Gateway.SecretToken as GSecretToken
 import qualified Gateway.Users as GUsers
 import qualified Logger
 import qualified Logger.Impl
-import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
@@ -66,6 +65,7 @@ import Web.Presenter
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
+import Web.Types
 import qualified Web.Types as Web
 
 -- Some common module dependencies. Its purpose is to be passed to
@@ -82,7 +82,7 @@ data Deps =
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Wai.Request -> IO a
+                                          Request -> IO a
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
     , dRenderAppURI :: AppURI -> T.Text

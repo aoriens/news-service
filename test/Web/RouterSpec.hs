@@ -6,12 +6,11 @@ import Core.Image
 import Data.IORef
 import Data.List
 import qualified Network.HTTP.Types as Http
-import qualified Network.Wai as Wai
 import qualified Network.Wai.Internal as Wai
 import Test.Hspec
 import qualified Web.AppURI as U
 import qualified Web.Router as R
-import Web.Types as Web
+import Web.Types
 import Web.Types.Internal.SessionId as Web
 
 spec :: Spec
@@ -26,20 +25,20 @@ spec
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
           router = R.new $ \U.ImageURI {} -> R.method method expectedHandler
           request =
-            Wai.defaultRequest
-              { Wai.pathInfo = U.relativeURIPath $ U.toRelativeURI appURI
-              , Wai.requestMethod = method
+            defaultRequest
+              { pathInfo = U.relativeURIPath $ U.toRelativeURI appURI
+              , requestMethod = method
               }
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
     it "should return ResourceNotFoundRequest for an empty router" $ do
       let router = R.new $ \U.ImageURI {} -> pure ()
-          request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
+          request = defaultRequest {pathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it "should return ResourceNotFoundRequest if no match found" $ do
       let router = R.new $ \U.ImageURI {} -> R.method "GET" noOpHandler
-          request = Wai.defaultRequest {Wai.pathInfo = ["unknown_path"]}
+          request = defaultRequest {pathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it
@@ -53,35 +52,34 @@ spec
               R.method Http.methodPut noOpHandler
               R.method Http.methodDelete noOpHandler
           request =
-            Wai.defaultRequest
-              {Wai.pathInfo = path, Wai.requestMethod = unknownMethod}
+            defaultRequest {pathInfo = path, requestMethod = unknownMethod}
           result@(R.MethodNotSupportedResult methods) = R.route router request
       result `shouldSatisfy` R.isMethodNotSupportedResult
       methods `shouldBe`
         sort [Http.methodPost, Http.methodPut, Http.methodDelete]
 
 stubHandlerWithHeader :: Http.Header -> EApplication
-stubHandlerWithHeader header _ _ = ($ Wai.responseLBS Http.ok200 [header] "")
+stubHandlerWithHeader header _ _ = ($ responseLBS Http.ok200 [header] "")
 
 shouldEmitSameHeadersAs ::
      HasCallStack => EApplication -> EApplication -> Expectation
 shouldEmitSameHeadersAs a1 a2 = do
-  headers1 <- getHeaders (a1 stubSession) Wai.defaultRequest
-  headers2 <- getHeaders (a2 stubSession) Wai.defaultRequest
+  headers1 <- getHeaders (a1 stubSession) defaultRequest
+  headers2 <- getHeaders (a2 stubSession) defaultRequest
   headers1 `shouldBe` headers2
 
-getHeaders :: Wai.Application -> Wai.Request -> IO Http.ResponseHeaders
+getHeaders :: Application -> Request -> IO Http.ResponseHeaders
 getHeaders app request = do
   result <- newIORef (error "The response continuation must be invoked")
   _ <-
     app request $ \response -> do
-      let (_, headers, _) = Wai.responseToStream response
+      let (_, headers, _) = responseToStream response
       writeIORef result headers
       pure Wai.ResponseReceived
   readIORef result
 
-noOpHandler :: Web.EApplication
-noOpHandler _ _ = ($ Wai.responseLBS Http.ok200 [] "")
+noOpHandler :: EApplication
+noOpHandler _ _ = ($ responseLBS Http.ok200 [] "")
 
-stubSession :: Web.Session
-stubSession = Web.Session {sessionId = Web.SessionId 0}
+stubSession :: Session
+stubSession = Session {sessionId = SessionId 0}

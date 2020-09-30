@@ -6,16 +6,16 @@ module Web.Handler.GetImage
 import Control.Exception
 import Core.Image
 import qualified Core.Interactor.GetImage as I
-import qualified Network.Wai as Wai
 import qualified Web.Exception as E
+import Web.Types
 
 data Handle =
   Handle
     { hGetImageHandle :: I.Handle IO
-    , hPresenter :: Image -> Wai.Response
+    , hPresenter :: Image -> Response
     }
 
-run :: Handle -> ImageId -> Wai.Application
+run :: Handle -> ImageId -> Application
 run Handle {..} imageId _ respond = do
   optImage <- I.run hGetImageHandle imageId
   image <- maybe (throwIO E.NotFoundException) pure optImage

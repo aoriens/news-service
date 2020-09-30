@@ -22,7 +22,6 @@ import qualified Logger
 import qualified Network.HTTP.Types as Http
 import Network.HTTP.Types.Status as Http
 import qualified Network.Socket as Socket
-import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Util as Wai
 import Text.Printf
@@ -52,14 +51,14 @@ makeState = do
   stSessionIdRef <- newIORef (SessionId 0)
   pure State {..}
 
-application :: Handle -> Wai.Application
+application :: Handle -> Application
 application h =
   createSessionMiddleware h .
   logEnterAndExit h .
   convertExceptionsToErrorResponse h . logUncaughtExceptions h $
   routerApplication h
 
-createSessionMiddleware :: Handle -> EApplication -> Wai.Application
+createSessionMiddleware :: Handle -> EApplication -> Application
 createSessionMiddleware h eapp request respond = do
   session <- Session <$> generateSessionId h
   eapp session request respond
@@ -76,9 +75,9 @@ logEnterAndExit h eapp session@Session {..} req respond = do
       T.intercalate
         " "
         [ "Request"
-        , T.pack (formatPeerAddr (Wai.remoteHost req))
-        , T.decodeLatin1 (Wai.requestMethod req)
-        , T.decodeLatin1 (Wai.rawPathInfo req)
+        , T.pack (formatPeerAddr (remoteHost req))
+        , T.decodeLatin1 (requestMethod req)
+        , T.decodeLatin1 (rawPathInfo req)
         ]
     exitMessage status =
       T.intercalate
@@ -117,7 +116,7 @@ convertExceptionsToErrorResponse h eapp session request respond =
       | Just (_ :: SomeAsyncException) <- fromException e = Nothing
       | otherwise = Just e
 
-exceptionToResponse :: Handle -> SomeException -> Wai.Response
+exceptionToResponse :: Handle -> SomeException -> Response
 exceptionToResponse h e
   | Just webException <- fromException e =
     case webException of
@@ -176,17 +175,17 @@ routerApplication Handle {..} session request respond =
       stubErrorResponse Http.methodNotAllowed405 [makeAllowHeader knownMethods]
     makeAllowHeader methods = ("Allow", B.intercalate ", " methods)
 
-notFoundResponse :: Wai.Response
+notFoundResponse :: Response
 notFoundResponse = stubErrorResponse Http.notFound404 []
 
-stubErrorResponse :: Http.Status -> [Http.Header] -> Wai.Response
+stubErrorResponse :: Http.Status -> [Http.Header] -> Response
 stubErrorResponse status additionalHeaders =
   stubErrorResponseWithReason status additionalHeaders ""
 
 stubErrorResponseWithReason ::
-     Http.Status -> [Http.Header] -> T.Text -> Wai.Response
+     Http.Status -> [Http.Header] -> T.Text -> Response
 stubErrorResponseWithReason status additionalHeaders reason =
-  Wai.responseBuilder
+  responseBuilder
     status
     ((Http.hContentType, "text/html") : additionalHeaders)
     body

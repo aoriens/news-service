@@ -5,16 +5,16 @@ module Web.Handler.DeleteAuthor
 
 import Core.Author
 import qualified Core.Interactor.DeleteAuthor as I
-import qualified Network.Wai as Wai
 import Web.Credentials
+import Web.Types
 
 data Handle =
   Handle
     { hDeleteAuthorHandle :: I.Handle IO
-    , hPresenter :: Wai.Response
+    , hPresenter :: Response
     }
 
-run :: Handle -> AuthorId -> Wai.Application
+run :: Handle -> AuthorId -> Application
 run Handle {..} authorIdent request respond = do
   credentials <- getCredentialsFromRequest request
   I.run hDeleteAuthorHandle credentials authorIdent

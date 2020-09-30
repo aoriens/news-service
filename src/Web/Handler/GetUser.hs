@@ -6,16 +6,16 @@ module Web.Handler.GetUser
 import Control.Exception
 import qualified Core.Interactor.GetUser as I
 import Core.User
-import qualified Network.Wai as Wai
 import Web.Exception
+import Web.Types
 
 data Handle =
   Handle
     { hGetUserHandle :: I.Handle IO
-    , hPresenter :: User -> Wai.Response
+    , hPresenter :: User -> Response
     }
 
-run :: Handle -> UserId -> Wai.Application
+run :: Handle -> UserId -> Application
 run Handle {..} userIdent _ respond = do
   user <-
     maybe (throwIO NotFoundException) pure =<< I.run hGetUserHandle userIdent

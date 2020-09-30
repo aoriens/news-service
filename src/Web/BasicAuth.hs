@@ -12,14 +12,14 @@ import Data.Char
 import Data.Either.Util
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
-import qualified Network.Wai as Wai
+import Web.Types
 
 -- | Returns Left in case of malformed credentials, Right Nothing if
 -- no credentials found, or Right (Just _) if credentials are found.
 credentialsFromRequest ::
-     Wai.Request -> Either T.Text (Maybe (B.ByteString, B.ByteString))
+     Request -> Either T.Text (Maybe (B.ByteString, B.ByteString))
 credentialsFromRequest request = do
-  case lookup Http.hAuthorization $ Wai.requestHeaders request of
+  case lookup Http.hAuthorization $ requestHeaders request of
     Nothing -> Right Nothing
     Just value -> second Just $ credentialsFromAuthorizationHeader value
 
