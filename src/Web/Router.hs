@@ -139,15 +139,15 @@ data Result
 -- | Find a handler for the specified request.
 route :: Router -> Wai.Request -> Result
 route r request =
-  case lookupMethod r request of
+  case lookupMethodTable r request of
     Nothing -> ResourceNotFoundResult
     Just methodTable ->
       case HM.lookup (Wai.requestMethod request) methodTable of
         Nothing -> MethodNotSupportedResult (sort (HM.keys methodTable))
         Just handler -> HandlerResult handler
 
-lookupMethod :: Router -> Wai.Request -> Maybe MethodsToHandlers
-lookupMethod (Router handler) request =
+lookupMethodTable :: Router -> Wai.Request -> Maybe MethodsToHandlers
+lookupMethodTable (Router handler) request =
   handler <$> U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
 
 isHandlerResult :: Result -> Bool
