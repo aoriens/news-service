@@ -23,25 +23,25 @@ import Data.List hiding (delete)
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Web.AppURI as U
-import Web.Types
 
 -- | The router type is responsible for finding handlers for the given
 -- URI paths and HTTP methods and for handling some exceptional cases.
-newtype Router =
-  Router (U.AppURI -> MethodsToHandlers)
+-- It is parameterized with the request handler type.
+newtype Router handler =
+  Router (U.AppURI -> MethodsToHandlers handler)
 
-type MethodsToHandlers = HM.HashMap Http.Method EApplication
+type MethodsToHandlers = HM.HashMap Http.Method
 
 -- | A monad type to make it easier to specify HTTP method to handler
 -- mappings.
-newtype MethodsSpec a =
-  MethodsSpec (Writer MethodsToHandlersMonoid a)
+newtype MethodsSpec handler a =
+  MethodsSpec (Writer (MethodsToHandlersMonoid handler) a)
   deriving (Functor, Applicative, Monad)
 
-newtype MethodsToHandlersMonoid =
-  MethodsToHandlersMonoid MethodsToHandlers
+newtype MethodsToHandlersMonoid handler =
+  MethodsToHandlersMonoid (MethodsToHandlers handler)
 
-instance Semigroup MethodsToHandlersMonoid where
+instance Semigroup (MethodsToHandlersMonoid h) where
   (MethodsToHandlersMonoid hm1) <> (MethodsToHandlersMonoid hm2) =
     MethodsToHandlersMonoid $
     HM.unionWithKey
@@ -49,10 +49,10 @@ instance Semigroup MethodsToHandlersMonoid where
       hm1
       hm2
 
-instance Monoid MethodsToHandlersMonoid where
+instance Monoid (MethodsToHandlersMonoid h) where
   mempty = MethodsToHandlersMonoid mempty
 
-execMethodsSpec :: MethodsSpec () -> MethodsToHandlers
+execMethodsSpec :: MethodsSpec handler () -> MethodsToHandlers handler
 execMethodsSpec (MethodsSpec w) =
   let (MethodsToHandlersMonoid table) = execWriter w
    in table
@@ -73,15 +73,15 @@ If the found entry does not contain a subentry for the request method,
 it is reported as 'MethodNotSupportedResult'.
 
 -}
-new :: (U.AppURI -> MethodsSpec ()) -> Router
+new :: (U.AppURI -> MethodsSpec handler ()) -> Router handler
 new f = Router $ execMethodsSpec . f
 
 -- | Sets a handler for the specified HTTP method.
-method :: Http.Method -> EApplication -> MethodsSpec ()
+method :: Http.Method -> handler -> MethodsSpec handler ()
 method m handler =
   MethodsSpec . tell . MethodsToHandlersMonoid $ HM.singleton m handler
 
-get, post, put, delete, patch :: EApplication -> MethodsSpec ()
+get, post, put, delete, patch :: handler -> MethodsSpec handler ()
 get = method Http.methodGet
 
 post = method Http.methodPost
@@ -93,9 +93,9 @@ delete = method Http.methodDelete
 patch = method Http.methodPatch
 
 -- | The result of finding a route.
-data Result
+data Result handler
   -- | A handler is found for the specified request.
-  = HandlerResult EApplication
+  = HandlerResult handler
   -- | No handler is found. This is typically output as HTTP 404.
   | ResourceNotFoundResult
   -- | The requested resource does not support a specified method. The
@@ -104,7 +104,7 @@ data Result
   | MethodNotSupportedResult [Http.Method]
 
 -- | Find a handler for the specified request.
-route :: Router -> Wai.Request -> Result
+route :: Router handler -> Wai.Request -> Result handler
 route r request =
   case lookupMethodTable r request of
     Nothing -> ResourceNotFoundResult
@@ -113,23 +113,24 @@ route r request =
         Nothing -> MethodNotSupportedResult (sort (HM.keys methodTable))
         Just handler -> HandlerResult handler
 
-lookupMethodTable :: Router -> Wai.Request -> Maybe MethodsToHandlers
+lookupMethodTable ::
+     Router handler -> Wai.Request -> Maybe (MethodsToHandlers handler)
 lookupMethodTable (Router handler) request =
   handler <$> U.fromRelativeURI (U.RelativeURI $ Wai.pathInfo request)
 
-isHandlerResult :: Result -> Bool
+isHandlerResult :: Result h -> Bool
 isHandlerResult (HandlerResult _) = True
 isHandlerResult _ = False
 
-isResourceNotFoundResult :: Result -> Bool
+isResourceNotFoundResult :: Result h -> Bool
 isResourceNotFoundResult ResourceNotFoundResult = True
 isResourceNotFoundResult _ = False
 
-isMethodNotSupportedResult :: Result -> Bool
+isMethodNotSupportedResult :: Result h -> Bool
 isMethodNotSupportedResult (MethodNotSupportedResult _) = True
 isMethodNotSupportedResult _ = False
 
-instance Show Result where
+instance Show (Result h) where
   show r =
     case r of
       HandlerResult _ -> "HandlerResult <handler>"

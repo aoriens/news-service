@@ -161,7 +161,7 @@ getWebAppHandle deps@Deps {..} = do
           Cf.cfShowInternalErrorInfoInResponse dConfig
       }
 
-router :: Deps -> R.Router
+router :: Deps -> R.Router Web.EApplication
 router deps =
   R.new $ \case
     ImageURI imageId ->

@@ -34,7 +34,7 @@ import Web.Types.Internal.SessionId
 data Handle =
   Handle
     { hLogger :: Session -> Logger.Handle IO
-    , hRouter :: R.Router
+    , hRouter :: R.Router EApplication
     , hState :: State
     , hShowInternalExceptionInfoInResponses :: Bool
     }
