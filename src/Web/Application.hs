@@ -20,7 +20,6 @@ import Data.IORef
 import qualified Data.Text as T
 import Data.Word
 import qualified Network.HTTP.Types as Http
-import qualified Network.Socket
 import Web.Application.Internal.ResponseReceived
 import Web.Application.Internal.SessionId
 
@@ -34,7 +33,7 @@ data Request =
     , requestPathInfo :: RequestPath
     , requestRawPathInfo :: B.ByteString
     , requestQueryString :: Http.Query
-    , remoteHost :: Network.Socket.SockAddr
+    , requestRemoteHostAddressString :: T.Text
     , requestLoadBodyNoLonger :: Word64 -> IO (Maybe LB.ByteString)
     -- ^ Loads the request body no longer than the specified amount of
     -- octets. Returns Nothing in case of a too large body.
@@ -65,7 +64,7 @@ defaultRequest =
     , requestPathInfo = []
     , requestRawPathInfo = mempty
     , requestQueryString = []
-    , remoteHost = Network.Socket.SockAddrInet 0 0
+    , requestRemoteHostAddressString = "<localhost>"
     , requestLoadBodyNoLonger = \_ -> pure $ Just mempty
     }
 

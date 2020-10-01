@@ -15,14 +15,11 @@ import Core.Exception
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
-import Data.List
 import qualified Data.Text as T
 import Data.Text.Encoding as T
 import qualified Logger
 import qualified Network.HTTP.Types as Http
 import Network.HTTP.Types.Status as Http
-import qualified Network.Socket as Socket
-import Text.Printf
 import Web.Application
 import Web.Application.Internal.SessionId
 import Web.Exception
@@ -73,7 +70,7 @@ logEnterAndExit h eapp session@Session {..} req respond = do
       T.intercalate
         " "
         [ "Request"
-        , T.pack (formatPeerAddr (remoteHost req))
+        , requestRemoteHostAddressString req
         , T.decodeLatin1 (requestMethod req)
         , T.decodeLatin1 (requestRawPathInfo req)
         ]
@@ -84,18 +81,6 @@ logEnterAndExit h eapp session@Session {..} req respond = do
         , T.pack (show (Http.statusCode status))
         , T.decodeLatin1 (Http.statusMessage status)
         ]
-
--- Not so fast, though simple.
-formatPeerAddr :: Socket.SockAddr -> String
-formatPeerAddr (Socket.SockAddrInet _ ip4) =
-  intercalate "." $ map show [b1, b2, b3, b4]
-  where
-    (b1, b2, b3, b4) = Socket.hostAddressToTuple ip4
-formatPeerAddr (Socket.SockAddrInet6 _ _ ip6 _) =
-  printf "%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X" b1 b2 b3 b4 b5 b6 b7 b8
-  where
-    (b1, b2, b3, b4, b5, b6, b7, b8) = Socket.hostAddress6ToTuple ip6
-formatPeerAddr (Socket.SockAddrUnix s) = s
 
 generateSessionId :: Handle -> IO SessionId
 generateSessionId Handle {..} =

@@ -6,8 +6,12 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import Data.IORef
+import Data.List
+import qualified Data.Text as T
 import Data.Word
+import qualified Network.Socket as Socket
 import qualified Network.Wai as Wai
+import Text.Printf
 import Web.Application
 import Web.Application.Internal.ResponseReceived
 
@@ -29,7 +33,7 @@ fromWaiRequest r =
     , requestPathInfo = Wai.pathInfo r
     , requestRawPathInfo = Wai.rawPathInfo r
     , requestQueryString = Wai.queryString r
-    , remoteHost = Wai.remoteHost r
+    , requestRemoteHostAddressString = formatPeerAddr $ Wai.remoteHost r
     , requestLoadBodyNoLonger = loadRequestBodyNoLonger r
     }
 
@@ -48,6 +52,20 @@ loadRequestBodyNoLonger request maxLen =
         if B.null chunk
           then pure . Just $ LB.fromChunks (DL.toList chunks)
           else go (len + fromIntegral (B.length chunk)) (chunks `DL.snoc` chunk)
+
+-- Not so fast, though simple.
+formatPeerAddr :: Socket.SockAddr -> T.Text
+formatPeerAddr addr =
+  T.pack $
+  case addr of
+    Socket.SockAddrInet _ ip4 ->
+      let (b1, b2, b3, b4) = Socket.hostAddressToTuple ip4
+       in intercalate "." $ map show [b1, b2, b3, b4]
+    Socket.SockAddrInet6 _ _ ip6 _ ->
+      let (b1, b2, b3, b4, b5, b6, b7, b8) = Socket.hostAddress6ToTuple ip6
+          format = "%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X"
+       in printf format b1 b2 b3 b4 b5 b6 b7 b8
+    Socket.SockAddrUnix s -> s
 
 toWaiResponse :: Response -> Wai.Response
 toWaiResponse (Response status headers builder) =
