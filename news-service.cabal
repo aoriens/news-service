@@ -72,9 +72,9 @@ library
     , Logger
     , Logger.Impl
     , Web.AppURI
-    , Web.Application
     , Web.BasicAuth
     , Web.Credentials
+    , Web.EntryPoint
     , Web.Exception
     , Web.HTTP
     , Web.Handler.CreateAuthor

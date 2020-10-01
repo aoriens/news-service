@@ -47,7 +47,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
 import Web.AppURI
-import qualified Web.Application
+import qualified Web.EntryPoint
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateCategory as HCreateCategory
 import qualified Web.Handler.CreateUser as HCreateUser
@@ -99,7 +99,7 @@ main = do
     Logger.info dLoggerHandle "Starting Warp"
     Warp.runSettings
       (Cf.cfWarpSettings dConfig)
-      (FrontEnd.Wai.toWaiApplication $ Web.Application.application webHandle)
+      (FrontEnd.Wai.toWaiApplication $ Web.EntryPoint.application webHandle)
 
 getDeps :: IO (Logger.Impl.Worker, Deps)
 getDeps = do
@@ -150,11 +150,11 @@ getDeps = do
                   }
         })
 
-getWebAppHandle :: Deps -> IO Web.Application.Handle
+getWebAppHandle :: Deps -> IO Web.EntryPoint.Handle
 getWebAppHandle deps@Deps {..} = do
-  hState <- Web.Application.makeState
+  hState <- Web.EntryPoint.makeState
   pure
-    Web.Application.Handle
+    Web.EntryPoint.Handle
       { hState
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
       , hRouter = router deps

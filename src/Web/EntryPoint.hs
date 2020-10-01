@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | The web application entry point.
-module Web.Application
+module Web.EntryPoint
   ( application
   , Handle(..)
   , State
