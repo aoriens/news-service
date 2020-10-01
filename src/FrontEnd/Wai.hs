@@ -26,7 +26,7 @@ fromWaiRequest r =
   Request
     { requestMethod = Wai.requestMethod r
     , requestHeaders = Wai.requestHeaders r
-    , pathInfo = Wai.pathInfo r
+    , requestPathInfo = Wai.pathInfo r
     , rawPathInfo = Wai.rawPathInfo r
     , queryString = Wai.queryString r
     , remoteHost = Wai.remoteHost r

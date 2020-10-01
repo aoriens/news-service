@@ -26,19 +26,19 @@ spec
           router = R.new $ \U.ImageURI {} -> R.method method expectedHandler
           request =
             defaultRequest
-              { pathInfo = U.relativeURIPath $ U.toRelativeURI appURI
+              { requestPathInfo = U.relativeURIPath $ U.toRelativeURI appURI
               , requestMethod = method
               }
           (R.HandlerResult handler) = R.route router request
       handler `shouldEmitSameHeadersAs` expectedHandler
     it "should return ResourceNotFoundRequest for an empty router" $ do
       let router = R.new $ \U.ImageURI {} -> pure ()
-          request = defaultRequest {pathInfo = ["unknown_path"]}
+          request = defaultRequest {requestPathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it "should return ResourceNotFoundRequest if no match found" $ do
       let router = R.new $ \U.ImageURI {} -> R.method "GET" noOpHandler
-          request = defaultRequest {pathInfo = ["unknown_path"]}
+          request = defaultRequest {requestPathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it
@@ -52,7 +52,8 @@ spec
               R.method Http.methodPut noOpHandler
               R.method Http.methodDelete noOpHandler
           request =
-            defaultRequest {pathInfo = path, requestMethod = unknownMethod}
+            defaultRequest
+              {requestPathInfo = path, requestMethod = unknownMethod}
           result@(R.MethodNotSupportedResult methods) = R.route router request
       result `shouldSatisfy` R.isMethodNotSupportedResult
       methods `shouldBe`

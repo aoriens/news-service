@@ -116,7 +116,7 @@ route r request =
 lookupMethodTable ::
      Router handler -> Request -> Maybe (MethodsToHandlers handler)
 lookupMethodTable (Router handler) request =
-  handler <$> U.fromRelativeURI (U.RelativeURI $ pathInfo request)
+  handler <$> U.fromRelativeURI (U.RelativeURI $ requestPathInfo request)
 
 isHandlerResult :: Result h -> Bool
 isHandlerResult (HandlerResult _) = True

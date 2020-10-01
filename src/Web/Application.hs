@@ -31,7 +31,7 @@ data Request =
   Request
     { requestMethod :: Http.Method
     , requestHeaders :: [Http.Header]
-    , pathInfo :: RequestPath
+    , requestPathInfo :: RequestPath
     , rawPathInfo :: B.ByteString
     , queryString :: Http.Query
     , remoteHost :: Network.Socket.SockAddr
@@ -62,7 +62,7 @@ defaultRequest =
   Request
     { requestMethod = Http.methodGet
     , requestHeaders = []
-    , pathInfo = []
+    , requestPathInfo = []
     , rawPathInfo = mempty
     , queryString = []
     , remoteHost = Network.Socket.SockAddrInet 0 0
