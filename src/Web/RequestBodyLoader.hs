@@ -9,7 +9,6 @@ import Control.Monad
 import qualified Data.Aeson as A
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
-import qualified Data.DList as DL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Word
@@ -47,16 +46,5 @@ expectedContentType = Http.jsonContentType
 
 loadRequestBodyNoLonger :: Word64 -> Request -> IO LB.ByteString
 loadRequestBodyNoLonger maxLen request =
-  case requestBodyLength request of
-    KnownLength len
-      | len > maxLen -> throwIO $ E.PayloadTooLargeException maxLen
-      | otherwise -> strictRequestBody request
-    ChunkedBody -> go 0 DL.empty
-  where
-    go len chunks
-      | len > maxLen = throwIO $ E.PayloadTooLargeException maxLen
-      | otherwise = do
-        chunk <- getRequestBodyChunk request
-        if B.null chunk
-          then pure $ LB.fromChunks (DL.toList chunks)
-          else go (len + fromIntegral (B.length chunk)) (chunks `DL.snoc` chunk)
+  requestLoadBodyNoLonger request maxLen >>=
+  maybe (throwIO $ E.PayloadTooLargeException maxLen) pure

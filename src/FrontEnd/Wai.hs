@@ -6,6 +6,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import Data.IORef
+import Data.Word
 import qualified Network.Wai as Wai
 import Web.Application
 import Web.Application.Internal.ResponseReceived
@@ -27,24 +28,26 @@ fromWaiRequest r =
     , requestHeaders = Wai.requestHeaders r
     , pathInfo = Wai.pathInfo r
     , rawPathInfo = Wai.rawPathInfo r
-    , requestBodyLength =
-        case Wai.requestBodyLength r of
-          Wai.KnownLength s -> KnownLength s
-          Wai.ChunkedBody -> ChunkedBody
     , queryString = Wai.queryString r
     , remoteHost = Wai.remoteHost r
-    , getRequestBodyChunk = Wai.getRequestBodyChunk r
-    , strictRequestBody = loadFullRequestBody $ Wai.getRequestBodyChunk r
+    , requestLoadBodyNoLonger = loadRequestBodyNoLonger r
     }
 
-loadFullRequestBody :: IO B.ByteString -> IO LB.ByteString
-loadFullRequestBody loadChunk = go DL.empty
+loadRequestBodyNoLonger :: Wai.Request -> Word64 -> IO (Maybe LB.ByteString)
+loadRequestBodyNoLonger request maxLen =
+  case Wai.requestBodyLength request of
+    Wai.KnownLength len
+      | len > maxLen -> pure Nothing
+      | otherwise -> Just <$> Wai.strictRequestBody request
+    Wai.ChunkedBody -> go 0 DL.empty
   where
-    go chunks = do
-      chunk <- loadChunk
-      if B.null chunk
-        then pure $ LB.fromChunks $ DL.toList chunks
-        else go (chunks `DL.snoc` chunk)
+    go len chunks
+      | len > maxLen = pure Nothing
+      | otherwise = do
+        chunk <- Wai.getRequestBodyChunk request
+        if B.null chunk
+          then pure . Just $ LB.fromChunks (DL.toList chunks)
+          else go (len + fromIntegral (B.length chunk)) (chunks `DL.snoc` chunk)
 
 toWaiResponse :: Response -> Wai.Response
 toWaiResponse (Response status headers builder) =

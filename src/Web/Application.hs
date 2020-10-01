@@ -9,7 +9,6 @@ module Web.Application
   , Response(..)
   , ResponseReceived
   , responseBuilder
-  , RequestBodyLength(..)
   , responseStatusAndHeaders
   , runApplicationAndGetStatus
   ) where
@@ -34,20 +33,16 @@ data Request =
     , requestHeaders :: [Http.Header]
     , pathInfo :: RequestPath
     , rawPathInfo :: B.ByteString
-    , requestBodyLength :: RequestBodyLength
     , queryString :: Http.Query
     , remoteHost :: Network.Socket.SockAddr
-    , strictRequestBody :: IO LB.ByteString
-    , getRequestBodyChunk :: IO B.ByteString
+    , requestLoadBodyNoLonger :: Word64 -> IO (Maybe LB.ByteString)
+    -- ^ Loads the request body no longer than the specified amount of
+    -- octets. Returns Nothing in case of a too large body.
     }
 
 type RequestPath = [RequestPathComponent]
 
 type RequestPathComponent = T.Text
-
-data RequestBodyLength
-  = KnownLength Word64
-  | ChunkedBody
 
 data Response =
   Response Http.Status [Http.Header] BB.Builder
@@ -69,11 +64,9 @@ defaultRequest =
     , requestHeaders = []
     , pathInfo = []
     , rawPathInfo = mempty
-    , requestBodyLength = KnownLength 0
     , queryString = []
     , remoteHost = Network.Socket.SockAddrInet 0 0
-    , strictRequestBody = pure mempty
-    , getRequestBodyChunk = pure mempty
+    , requestLoadBodyNoLonger = \_ -> pure $ Just mempty
     }
 
 responseBuilder :: Http.Status -> [Http.Header] -> BB.Builder -> Response
