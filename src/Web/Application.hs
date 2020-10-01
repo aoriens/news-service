@@ -32,7 +32,7 @@ data Request =
     { requestMethod :: Http.Method
     , requestHeaders :: [Http.Header]
     , requestPathInfo :: RequestPath
-    , rawPathInfo :: B.ByteString
+    , requestRawPathInfo :: B.ByteString
     , queryString :: Http.Query
     , remoteHost :: Network.Socket.SockAddr
     , requestLoadBodyNoLonger :: Word64 -> IO (Maybe LB.ByteString)
@@ -63,7 +63,7 @@ defaultRequest =
     { requestMethod = Http.methodGet
     , requestHeaders = []
     , requestPathInfo = []
-    , rawPathInfo = mempty
+    , requestRawPathInfo = mempty
     , queryString = []
     , remoteHost = Network.Socket.SockAddrInet 0 0
     , requestLoadBodyNoLonger = \_ -> pure $ Just mempty

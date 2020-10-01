@@ -75,7 +75,7 @@ logEnterAndExit h eapp session@Session {..} req respond = do
         [ "Request"
         , T.pack (formatPeerAddr (remoteHost req))
         , T.decodeLatin1 (requestMethod req)
-        , T.decodeLatin1 (rawPathInfo req)
+        , T.decodeLatin1 (requestRawPathInfo req)
         ]
     exitMessage status =
       T.intercalate
