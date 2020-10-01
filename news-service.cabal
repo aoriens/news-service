@@ -61,6 +61,7 @@ library
     , Database.News
     , Database.Pagination
     , Database.Users
+    , FrontEnd.Wai
     , Gateway.Authors
     , Gateway.Categories
     , Gateway.CurrentTime
@@ -104,6 +105,7 @@ library
     , Web.Response
     , Web.Router
     , Web.Types
+    , Web.Types.Internal.ResponseReceived
     , Web.Types.Internal.SessionId
   hs-source-dirs:
       src
@@ -204,7 +206,6 @@ test-suite news-service-test
     , text
     , time
     , unordered-containers
-    , wai
   default-language: Haskell2010
   default-extensions: OverloadedStrings RecordWildCards NamedFieldPuns
 

@@ -16,7 +16,7 @@ runApplicationAndGetStatus app request respond = do
   statusRef <- newIORef (error "The response status must be set here")
   r <-
     app request $ \response -> do
-      let (status, _, _) = responseToStream response
+      let (status, _) = responseStatusAndHeaders response
       writeIORef statusRef status
       respond response
   status <- readIORef statusRef

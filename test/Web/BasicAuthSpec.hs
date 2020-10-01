@@ -5,9 +5,9 @@ module Web.BasicAuthSpec
 import qualified Data.ByteString as B
 import Data.ByteString.Base64
 import Data.Either
-import Network.Wai as Wai
 import Test.Hspec
 import Web.BasicAuth
+import Web.Types
 
 spec :: Spec
 spec =

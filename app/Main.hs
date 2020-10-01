@@ -33,6 +33,7 @@ import qualified Data.ByteString.Builder as BB
 import qualified Data.Text as T
 import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
+import qualified FrontEnd.Wai
 import qualified Gateway.Authors as GAuthors
 import qualified Gateway.Categories as GCategories
 import Gateway.CurrentTime as GCurrentTime
@@ -98,7 +99,7 @@ main = do
     Logger.info dLoggerHandle "Starting Warp"
     Warp.runSettings
       (Cf.cfWarpSettings dConfig)
-      (Web.Application.application webHandle)
+      (FrontEnd.Wai.toWaiApplication $ Web.Application.application webHandle)
 
 getDeps :: IO (Logger.Impl.Worker, Deps)
 getDeps = do

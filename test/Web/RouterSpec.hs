@@ -6,11 +6,11 @@ import Core.Image
 import Data.IORef
 import Data.List
 import qualified Network.HTTP.Types as Http
-import qualified Network.Wai.Internal as Wai
 import Test.Hspec
 import qualified Web.AppURI as U
 import qualified Web.Router as R
 import Web.Types
+import Web.Types.Internal.ResponseReceived
 import Web.Types.Internal.SessionId as Web
 
 spec :: Spec
@@ -74,9 +74,9 @@ getHeaders app request = do
   result <- newIORef (error "The response continuation must be invoked")
   _ <-
     app request $ \response -> do
-      let (_, headers, _) = responseToStream response
+      let (_, headers) = responseStatusAndHeaders response
       writeIORef result headers
-      pure Wai.ResponseReceived
+      pure ResponseReceived
   readIORef result
 
 noOpHandler :: EApplication

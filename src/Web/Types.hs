@@ -3,29 +3,54 @@ module Web.Types
   , EMiddleware
   , Session(..)
   , SessionId
-  , Wai.Application
-  , Wai.Request
-  , Wai.requestMethod
-  , Wai.pathInfo
-  , Wai.requestBodyLength
-  , Wai.requestHeaders
-  , Wai.queryString
-  , Wai.remoteHost
-  , Wai.rawPathInfo
-  , Wai.defaultRequest
-  , Wai.Response
-  , Wai.ResponseReceived
-  , Wai.responseBuilder
-  , Wai.RequestBodyLength(..)
-  , Wai.strictRequestBody
-  , Wai.getRequestBodyChunk
-  , Wai.responseToStream
+  , Application
+  , Request(..)
+  , defaultRequest
+  , Response(..)
+  , ResponseReceived
+  , responseBuilder
+  , RequestBodyLength(..)
+  , responseStatusAndHeaders
   ) where
 
-import qualified Network.Wai as Wai
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Lazy as LB
+import qualified Data.Text as T
+import Data.Word
+import qualified Network.HTTP.Types as Http
+import qualified Network.Socket
+import Web.Types.Internal.ResponseReceived
 import Web.Types.Internal.SessionId
 
-type EApplication = Session -> Wai.Application
+type Application
+   = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
+
+data Request =
+  Request
+    { requestMethod :: Http.Method
+    , requestHeaders :: [Http.Header]
+    , pathInfo :: RequestPath
+    , rawPathInfo :: B.ByteString
+    , requestBodyLength :: RequestBodyLength
+    , queryString :: Http.Query
+    , remoteHost :: Network.Socket.SockAddr
+    , strictRequestBody :: IO LB.ByteString
+    , getRequestBodyChunk :: IO B.ByteString
+    }
+
+type RequestPath = [RequestPathComponent]
+
+type RequestPathComponent = T.Text
+
+data RequestBodyLength
+  = KnownLength Word64
+  | ChunkedBody
+
+data Response =
+  Response Http.Status [Http.Header] BB.Builder
+
+type EApplication = Session -> Application
 
 type EMiddleware = EApplication -> EApplication
 
@@ -34,3 +59,23 @@ newtype Session =
   Session
     { sessionId :: SessionId
     }
+
+defaultRequest :: Request
+defaultRequest =
+  Request
+    { requestMethod = Http.methodGet
+    , requestHeaders = []
+    , pathInfo = []
+    , rawPathInfo = mempty
+    , requestBodyLength = KnownLength 0
+    , queryString = []
+    , remoteHost = Network.Socket.SockAddrInet 0 0
+    , strictRequestBody = pure mempty
+    , getRequestBodyChunk = pure mempty
+    }
+
+responseBuilder :: Http.Status -> [Http.Header] -> BB.Builder -> Response
+responseBuilder = Response
+
+responseStatusAndHeaders :: Response -> (Http.Status, [Http.Header])
+responseStatusAndHeaders (Response status headers _) = (status, headers)
