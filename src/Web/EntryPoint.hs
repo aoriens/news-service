@@ -23,10 +23,10 @@ import qualified Network.HTTP.Types as Http
 import Network.HTTP.Types.Status as Http
 import qualified Network.Socket as Socket
 import Text.Printf
+import Web.Application
+import Web.Application.Internal.SessionId
 import Web.Exception
 import qualified Web.Router as R
-import Web.Types
-import Web.Types.Internal.SessionId
 
 data Handle =
   Handle

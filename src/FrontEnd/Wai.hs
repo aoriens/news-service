@@ -7,8 +7,8 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import Data.IORef
 import qualified Network.Wai as Wai
-import Web.Types
-import Web.Types.Internal.ResponseReceived
+import Web.Application
+import Web.Application.Internal.ResponseReceived
 
 toWaiApplication :: Application -> Wai.Application
 toWaiApplication app waiRequest waiSendResponse = do

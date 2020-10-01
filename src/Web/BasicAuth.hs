@@ -12,7 +12,7 @@ import Data.Char
 import Data.Either.Util
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
-import Web.Types
+import Web.Application
 
 -- | Returns Left in case of malformed credentials, Right Nothing if
 -- no credentials found, or Right (Just _) if credentials are found.

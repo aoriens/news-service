@@ -1,4 +1,4 @@
-module Web.Types
+module Web.Application
   ( EApplication
   , EMiddleware
   , Session(..)
@@ -22,8 +22,8 @@ import qualified Data.Text as T
 import Data.Word
 import qualified Network.HTTP.Types as Http
 import qualified Network.Socket
-import Web.Types.Internal.ResponseReceived
-import Web.Types.Internal.SessionId
+import Web.Application.Internal.ResponseReceived
+import Web.Application.Internal.SessionId
 
 type Application
    = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived

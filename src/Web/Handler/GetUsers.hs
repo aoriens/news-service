@@ -5,9 +5,9 @@ module Web.Handler.GetUsers
 
 import qualified Core.Interactor.GetUsers as I
 import Core.User
+import Web.Application
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
-import Web.Types
 
 data Handle =
   Handle

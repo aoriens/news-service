@@ -9,9 +9,9 @@ import qualified Core.Interactor.GetNews as I
 import Core.News
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
+import Web.Application
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
-import Web.Types
 
 data Handle =
   Handle

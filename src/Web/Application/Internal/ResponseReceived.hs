@@ -1,4 +1,4 @@
-module Web.Types.Internal.ResponseReceived
+module Web.Application.Internal.ResponseReceived
   ( ResponseReceived(..)
   ) where
 

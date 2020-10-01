@@ -1,7 +1,7 @@
 -- | The session identifier module. The module exposes API to create a
 -- session id, so it's not recommended to use. Import 'Web.Session'
 -- instead.
-module Web.Types.Internal.SessionId
+module Web.Application.Internal.SessionId
   ( SessionId(..)
   ) where
 

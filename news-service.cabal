@@ -72,6 +72,9 @@ library
     , Logger
     , Logger.Impl
     , Web.AppURI
+    , Web.Application
+    , Web.Application.Internal.ResponseReceived
+    , Web.Application.Internal.SessionId
     , Web.BasicAuth
     , Web.Credentials
     , Web.EntryPoint
@@ -103,9 +106,6 @@ library
     , Web.RequestBodyLoader
     , Web.Response
     , Web.Router
-    , Web.Types
-    , Web.Types.Internal.ResponseReceived
-    , Web.Types.Internal.SessionId
   hs-source-dirs:
       src
   build-depends:

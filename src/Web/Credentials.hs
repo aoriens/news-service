@@ -17,9 +17,9 @@ import Data.Either.Util
 import Data.Integral.Exact
 import Data.String
 import qualified Data.Text as T
+import Web.Application
 import qualified Web.BasicAuth as BasicAuth
 import Web.Exception
-import Web.Types
 
 -- | Web-specific representation of core credentials. It depends from
 -- the way of passing credentials via web.

@@ -15,8 +15,8 @@ import qualified Data.Aeson.TH as A
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
+import Web.Application
 import Web.Representation.Base64
-import Web.Types
 
 data Handle =
   Handle

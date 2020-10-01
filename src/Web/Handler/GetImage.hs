@@ -6,8 +6,8 @@ module Web.Handler.GetImage
 import Control.Exception
 import Core.Image
 import qualified Core.Interactor.GetImage as I
+import Web.Application
 import qualified Web.Exception as E
-import Web.Types
 
 data Handle =
   Handle

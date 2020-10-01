@@ -5,8 +5,8 @@ module Web.Handler.DeleteUser
 
 import qualified Core.Interactor.DeleteUser as I
 import Core.User
+import Web.Application
 import Web.Credentials
-import Web.Types
 
 data Handle =
   Handle

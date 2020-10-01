@@ -23,13 +23,13 @@ import Core.User
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T
 import Web.AppURI
+import Web.Application
 import Web.Representation.Author
 import Web.Representation.Category
 import Web.Representation.News
 import Web.Representation.User
 import Web.RepresentationBuilder
 import Web.Response
-import Web.Types
 
 authorCreatedPresenter :: AppURIConfig -> RepBuilderHandle -> Author -> Response
 authorCreatedPresenter uriConfig h author =

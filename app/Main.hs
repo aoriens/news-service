@@ -47,6 +47,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 import System.Exit
 import System.IO hiding (Handle)
 import Web.AppURI
+import qualified Web.Application as Web
 import qualified Web.EntryPoint
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateCategory as HCreateCategory
@@ -66,7 +67,6 @@ import Web.Presenter
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
-import qualified Web.Types as Web
 
 -- Some common module dependencies. Its purpose is to be passed to
 -- functions **in this module**, keeping extensibility in the number

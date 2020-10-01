@@ -6,8 +6,8 @@ module Web.Handler.GetCategory
 import Control.Exception
 import Core.Category
 import qualified Core.Interactor.GetCategory as IGetCategory
+import Web.Application
 import Web.Exception
-import Web.Types
 
 data Handle =
   Handle

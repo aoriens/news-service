@@ -8,10 +8,10 @@ import Data.List
 import qualified Network.HTTP.Types as Http
 import Test.Hspec
 import qualified Web.AppURI as U
+import Web.Application
+import Web.Application.Internal.ResponseReceived
+import Web.Application.Internal.SessionId as Web
 import qualified Web.Router as R
-import Web.Types
-import Web.Types.Internal.ResponseReceived
-import Web.Types.Internal.SessionId as Web
 
 spec :: Spec
 spec

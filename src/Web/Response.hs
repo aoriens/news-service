@@ -13,7 +13,7 @@ import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Types as Http
 import Web.AppURI
-import Web.Types
+import Web.Application
 
 -- | A value of @Content-Type@ header. It may be extended with content
 -- type parameters in future.

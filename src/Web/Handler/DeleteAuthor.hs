@@ -5,8 +5,8 @@ module Web.Handler.DeleteAuthor
 
 import Core.Author
 import qualified Core.Interactor.DeleteAuthor as I
+import Web.Application
 import Web.Credentials
-import Web.Types
 
 data Handle =
   Handle

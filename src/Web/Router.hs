@@ -22,7 +22,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.List hiding (delete)
 import qualified Network.HTTP.Types as Http
 import qualified Web.AppURI as U
-import Web.Types
+import Web.Application
 
 -- | The router type is responsible for finding handlers for the given
 -- URI paths and HTTP methods and for handling some exceptional cases.

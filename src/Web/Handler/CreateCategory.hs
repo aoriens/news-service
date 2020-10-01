@@ -16,9 +16,9 @@ import Data.List
 import Data.List.NonEmpty
 import Data.Maybe
 import qualified Data.Text as T
+import Web.Application
 import Web.Credentials
 import Web.Exception
-import Web.Types
 
 data Handle =
   Handle

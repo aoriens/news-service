@@ -5,10 +5,10 @@ module Web.Handler.GetAuthors
 
 import Core.Author
 import qualified Core.Interactor.GetAuthors as I
+import Web.Application
 import Web.Credentials
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
-import Web.Types
 
 data Handle =
   Handle

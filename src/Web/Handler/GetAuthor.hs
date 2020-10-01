@@ -6,9 +6,9 @@ module Web.Handler.GetAuthor
 import Control.Exception
 import Core.Author
 import qualified Core.Interactor.GetAuthor as I
+import Web.Application
 import Web.Credentials
 import Web.Exception
-import Web.Types
 
 data Handle =
   Handle

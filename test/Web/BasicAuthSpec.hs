@@ -6,8 +6,8 @@ import qualified Data.ByteString as B
 import Data.ByteString.Base64
 import Data.Either
 import Test.Hspec
+import Web.Application
 import Web.BasicAuth
-import Web.Types
 
 spec :: Spec
 spec =

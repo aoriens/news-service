@@ -6,8 +6,8 @@ module Web.Handler.GetUser
 import Control.Exception
 import qualified Core.Interactor.GetUser as I
 import Core.User
+import Web.Application
 import Web.Exception
-import Web.Types
 
 data Handle =
   Handle

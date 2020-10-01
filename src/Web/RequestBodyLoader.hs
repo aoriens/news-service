@@ -14,9 +14,9 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Word
 import qualified Network.HTTP.Types as Http
+import Web.Application
 import qualified Web.Exception as E
 import qualified Web.HTTP as Http
-import Web.Types
 
 newtype Config =
   Config
