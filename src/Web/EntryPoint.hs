@@ -109,7 +109,7 @@ convertExceptionsToErrorResponse h eapp session request respond =
 
 exceptionToResponse :: Handle -> SomeException -> Maybe Response
 exceptionToResponse h e
-  | Just (_ :: SomeAsyncException) <- fromException e = Nothing
+  | isAsyncException e = Nothing
   | Just webException <- fromException e =
     Just $
     case webException of
@@ -150,11 +150,16 @@ logUncaughtExceptions h eapp session request respond =
   catchJustS testException (eapp session request respond) logAndRethrow
   where
     testException e
-      | Just (_ :: AsyncException) <- fromException e = Nothing
+      | isAsyncException e = Nothing
       | otherwise = Just e
     logAndRethrow e = do
       Logger.error (hLogger h session) $ T.pack (displayException e)
       throwIO e
+
+isAsyncException :: SomeException -> Bool
+isAsyncException e
+  | Just (_ :: SomeAsyncException) <- fromException e = True
+  | otherwise = False
 
 routerApplication :: Handle -> EApplication
 routerApplication Handle {..} session request respond =
