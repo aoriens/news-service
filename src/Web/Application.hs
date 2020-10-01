@@ -22,7 +22,6 @@ import qualified Logger
 import qualified Network.HTTP.Types as Http
 import Network.HTTP.Types.Status as Http
 import qualified Network.Socket as Socket
-import qualified Network.Wai.Util as Wai
 import Text.Printf
 import Web.Exception
 import qualified Web.Router as R
@@ -65,7 +64,7 @@ createSessionMiddleware h eapp request respond = do
 logEnterAndExit :: Handle -> EMiddleware
 logEnterAndExit h eapp session@Session {..} req respond = do
   Logger.info loggerH enterMessage
-  (r, status) <- Wai.runApplicationAndGetStatus (eapp session) req respond
+  (r, status) <- runApplicationAndGetStatus (eapp session) req respond
   Logger.info loggerH (exitMessage status)
   pure r
   where

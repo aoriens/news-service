@@ -71,7 +71,6 @@ library
     , Gateway.Users
     , Logger
     , Logger.Impl
-    , Network.Wai.Util
     , Web.AppURI
     , Web.Application
     , Web.BasicAuth

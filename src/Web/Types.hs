@@ -11,11 +11,13 @@ module Web.Types
   , responseBuilder
   , RequestBodyLength(..)
   , responseStatusAndHeaders
+  , runApplicationAndGetStatus
   ) where
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as LB
+import Data.IORef
 import qualified Data.Text as T
 import Data.Word
 import qualified Network.HTTP.Types as Http
@@ -79,3 +81,19 @@ responseBuilder = Response
 
 responseStatusAndHeaders :: Response -> (Http.Status, [Http.Header])
 responseStatusAndHeaders (Response status headers _) = (status, headers)
+
+-- | Runs the application and returns its HTTP status after finish.
+runApplicationAndGetStatus ::
+     Application
+  -> Request
+  -> (Response -> IO ResponseReceived)
+  -> IO (ResponseReceived, Http.Status)
+runApplicationAndGetStatus app request respond = do
+  statusRef <- newIORef (error "The response status must be set here")
+  r <-
+    app request $ \response -> do
+      let (status, _) = responseStatusAndHeaders response
+      writeIORef statusRef status
+      respond response
+  status <- readIORef statusRef
+  pure (r, status)
