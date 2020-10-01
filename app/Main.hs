@@ -66,7 +66,6 @@ import Web.Presenter
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
-import Web.Types
 import qualified Web.Types as Web
 
 -- Some common module dependencies. Its purpose is to be passed to
@@ -83,7 +82,7 @@ data Deps =
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Web.Request -> IO a
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
     , dRenderAppURI :: AppURI -> T.Text
