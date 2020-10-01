@@ -22,7 +22,6 @@ import qualified Logger
 import qualified Network.HTTP.Types as Http
 import Network.HTTP.Types.Status as Http
 import qualified Network.Socket as Socket
-import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Util as Wai
 import Text.Printf
 import Web.Exception
@@ -107,18 +106,13 @@ generateSessionId Handle {..} =
 
 convertExceptionsToErrorResponse :: Handle -> EMiddleware
 convertExceptionsToErrorResponse h eapp session request respond =
-  catchJustS
-    testException
-    (eapp session request respond)
-    (respond . exceptionToResponse h)
-  where
-    testException e
-      | Just (_ :: SomeAsyncException) <- fromException e = Nothing
-      | otherwise = Just e
+  catchJustS (exceptionToResponse h) (eapp session request respond) respond
 
-exceptionToResponse :: Handle -> SomeException -> Response
+exceptionToResponse :: Handle -> SomeException -> Maybe Response
 exceptionToResponse h e
+  | Just (_ :: SomeAsyncException) <- fromException e = Nothing
   | Just webException <- fromException e =
+    Just $
     case webException of
       BadRequestException reason ->
         stubErrorResponseWithReason Http.badRequest400 [] reason
@@ -134,6 +128,7 @@ exceptionToResponse h e
         T.pack (show maxPayloadSize) <> " bytes"
       MalformedAuthDataException _ -> notFoundResponse
   | Just coreException <- fromException e =
+    Just $
     case coreException of
       QueryException reason ->
         stubErrorResponseWithReason Http.badRequest400 [] reason
@@ -145,16 +140,19 @@ exceptionToResponse h e
         " cannot be deleted because the following entities depend on it: " <>
         (T.intercalate ", " . map (T.pack . show)) depIds
       EntityNotFoundException _ -> notFoundResponse
-  | hShowInternalExceptionInfoInResponses h = Warp.exceptionResponseForDebug e
-  | otherwise = Warp.defaultOnExceptionResponse e
+  | hShowInternalExceptionInfoInResponses h =
+    Just $
+    stubErrorResponseWithReason Http.internalServerError500 [] $
+    "<pre>" <> T.pack (show e) <> "</pre>"
+  | otherwise = Nothing
 
 logUncaughtExceptions :: Handle -> EMiddleware
 logUncaughtExceptions h eapp session request respond =
   catchJustS testException (eapp session request respond) logAndRethrow
   where
     testException e
-      | Warp.defaultShouldDisplayException e = Just e
-      | otherwise = Nothing
+      | Just (_ :: AsyncException) <- fromException e = Nothing
+      | otherwise = Just e
     logAndRethrow e = do
       Logger.error (hLogger h session) $ T.pack (displayException e)
       throwIO e
