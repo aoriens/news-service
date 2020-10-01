@@ -19,6 +19,6 @@ data Handle =
 run :: Handle -> Application
 run Handle {..} request respond = do
   credentials <- getCredentialsFromRequest request
-  pageQuery <- QP.parseQueryM (queryString request) QP.parsePageQuery
+  pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
   authors <- I.run hGetAuthorsHandle credentials pageQuery
   respond $ hPresenter authors

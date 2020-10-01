@@ -23,6 +23,6 @@ data Handle =
 
 run :: Handle -> Application
 run Handle {..} request respond = do
-  pageQuery <- QP.parseQueryM (queryString request) QP.parsePageQuery
+  pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
   news <- I.getNews hGetNewsHandle pageQuery
   respond $ hPresenter news

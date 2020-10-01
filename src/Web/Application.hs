@@ -33,7 +33,7 @@ data Request =
     , requestHeaders :: [Http.Header]
     , requestPathInfo :: RequestPath
     , requestRawPathInfo :: B.ByteString
-    , queryString :: Http.Query
+    , requestQueryString :: Http.Query
     , remoteHost :: Network.Socket.SockAddr
     , requestLoadBodyNoLonger :: Word64 -> IO (Maybe LB.ByteString)
     -- ^ Loads the request body no longer than the specified amount of
@@ -64,7 +64,7 @@ defaultRequest =
     , requestHeaders = []
     , requestPathInfo = []
     , requestRawPathInfo = mempty
-    , queryString = []
+    , requestQueryString = []
     , remoteHost = Network.Socket.SockAddrInet 0 0
     , requestLoadBodyNoLonger = \_ -> pure $ Just mempty
     }

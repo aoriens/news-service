@@ -17,6 +17,6 @@ data Handle =
 
 run :: Handle -> Application
 run Handle {..} request respond = do
-  pageQuery <- QP.parseQueryM (queryString request) QP.parsePageQuery
+  pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
   users <- I.run hGetUsersHandle pageQuery
   respond $ hPresenter users
