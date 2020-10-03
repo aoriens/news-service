@@ -113,6 +113,10 @@ Accepts [UpdateAuthor](#UpdateAuthor) entity, updates the corresponding author
 entity and returns the updated [Author](#Author) representation. Requires the
 administrator privilege.
 
+### `GET /categories`
+
+Returns a list of [Category](#Category) entities.
+
 ### `POST /categories`
 
 Creates a (possibly nested) category. Accepts [CreateCategory](#CreateCategory)

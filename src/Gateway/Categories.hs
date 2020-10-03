@@ -1,10 +1,12 @@
 module Gateway.Categories
   ( createCategory
   , getCategory
+  , getCategories
   ) where
 
 import Core.Category
 import qualified Core.Interactor.CreateCategory as CreateCategory
+import Core.Pagination
 import Data.List.NonEmpty
 import Data.Text (Text)
 import Database
@@ -20,3 +22,6 @@ createCategory h parentId =
 
 getCategory :: Database.Handle -> CategoryId -> IO (Maybe Category)
 getCategory h = runTransaction h . statement DCategories.selectCategory
+
+getCategories :: Database.Handle -> PageSpec -> IO [Category]
+getCategories h = runTransaction h . statement DCategories.selectCategories

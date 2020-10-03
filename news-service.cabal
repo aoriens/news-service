@@ -38,6 +38,7 @@ library
     , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
     , Core.Interactor.GetCategory
+    , Core.Interactor.GetCategories
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetUser
@@ -88,6 +89,7 @@ library
     , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
     , Web.Handler.GetCategory
+    , Web.Handler.GetCategories
     , Web.Handler.GetImage
     , Web.Handler.GetNews
     , Web.Handler.GetUser
@@ -114,6 +116,7 @@ library
     , base >=4.7 && <5
     , base64
     , bytestring
+    , containers
     , cryptonite
     , deepseq
     , dlist

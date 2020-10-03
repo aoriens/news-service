@@ -8,6 +8,8 @@ module Database.Columns
   , TableName
   , column
   , selectColumns
+  , statementWithColumns
+  , surroundColumns
   ) where
 
 import qualified Data.ByteString.Char8 as B

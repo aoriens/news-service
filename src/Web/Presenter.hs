@@ -12,6 +12,7 @@ module Web.Presenter
   , newsListPresenter
   , categoryCreatedPresenter
   , categoryPresenter
+  , categoryListPresenter
   ) where
 
 import Core.Authentication
@@ -93,6 +94,9 @@ categoryCreatedPresenter uriConfig h category =
 
 categoryPresenter :: RepBuilderHandle -> Category -> Response
 categoryPresenter h = dataResponse . runRepBuilder h . categoryRep
+
+categoryListPresenter :: RepBuilderHandle -> [Category] -> Response
+categoryListPresenter h = dataResponse . runRepBuilder h . mapM categoryRep
 
 categoryURI :: Category -> AppURI
 categoryURI cat = CategoryURI $ categoryId cat

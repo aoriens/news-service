@@ -20,6 +20,7 @@ import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetAuthor as IGetAuthor
 import qualified Core.Interactor.GetAuthors as IGetAuthors
+import qualified Core.Interactor.GetCategories as IGetCategories
 import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
@@ -56,6 +57,7 @@ import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetAuthor as HGetAuthor
 import qualified Web.Handler.GetAuthors as HGetAuthors
+import qualified Web.Handler.GetCategories as HGetCategories
 import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
@@ -185,7 +187,8 @@ router deps =
         HDeleteAuthor.run (deleteAuthorHandlerHandle deps session) authorId
       R.patch $ \session ->
         HPatchAuthor.run (patchAuthorHandlerHandle deps session) authorId
-    CategoriesURI ->
+    CategoriesURI -> do
+      R.get $ HGetCategories.run . getCategoriesHandlerHandle deps
       R.post $ HCreateCategory.run . createCategoryHandlerHandle deps
     CategoryURI categoryId ->
       R.get $ \session ->
@@ -285,6 +288,18 @@ getCategoryHandlerHandle deps@Deps {..} session =
               GCategories.getCategory $ sessionDatabaseHandle deps session
           }
     , hPresenter = categoryPresenter dRepresentationBuilderHandle
+    }
+
+getCategoriesHandlerHandle :: Deps -> Web.Session -> HGetCategories.Handle
+getCategoriesHandlerHandle deps@Deps {..} session =
+  HGetCategories.Handle
+    { hGetCategoriesHandle =
+        IGetCategories.Handle
+          { hGetCategories =
+              GCategories.getCategories $ sessionDatabaseHandle deps session
+          , hPageSpecParserHandle = dPageSpecParserHandle
+          }
+    , hPresenter = categoryListPresenter dRepresentationBuilderHandle
     }
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
