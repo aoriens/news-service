@@ -55,20 +55,20 @@ insertAuthor =
 
 selectAuthors :: Statement PageSpec (Vector Author)
 selectAuthors =
-  selectColumns
-    D.rowVector
-    authorColumns
-    "from authors join users using (user_id) limit $1 offset $2"
+  statementWithColumns
+    "select $COLUMNS from authors join users using (user_id) limit $1 offset $2"
     pageToLimitOffsetEncoder
+    authorColumns
+    D.rowVector
     True
 
 selectAuthorById :: Statement AuthorId (Maybe Author)
 selectAuthorById =
-  selectColumns
-    D.rowMaybe
-    authorColumns
-    "from authors join users using (user_id) where author_id = $1"
+  statementWithColumns
+    "select $COLUMNS from authors join users using (user_id) where author_id = $1"
     (getAuthorId >$< E.param (E.nonNullable E.int4))
+    authorColumns
+    D.rowMaybe
     True
 
 updateAuthor :: Statement (AuthorId, T.Text) ()

@@ -7,9 +7,7 @@ module Database.Columns
   ( Columns
   , TableName
   , column
-  , selectColumns
   , statementWithColumns
-  , surroundColumns
   ) where
 
 import qualified Data.ByteString.Char8 as B
@@ -58,37 +56,38 @@ column table name = Columns (DL.singleton (table, name)) nativeSQLDecoder
 columnsNames :: Columns a -> [QualifiedColumnName]
 columnsNames = DL.toList . columnsNamesDList
 
-surroundColumns :: SQL -> SQL -> Columns a -> SQL
-surroundColumns prefix suffix columns =
-  prefix <> " " <> renderColumns columns <> " " <> suffix
-
 renderColumns :: Columns a -> SQL
 renderColumns = B.intercalate ", " . map renderQualifiedName . columnsNames
 
 renderQualifiedName :: QualifiedColumnName -> SQL
 renderQualifiedName (table, name) = getTableName table <> "." <> name
 
+-- Creates statement with 'Columns'. SQL strings may contain
+-- @$COLUMNS@ token that will be replaced with the comma-separated
+-- columns.
 statementWithColumns ::
-     (D.Row b -> D.Result c)
-  -> Columns b
-  -> (forall x. Columns x -> SQL)
+     SQL
   -> E.Params a
+  -> Columns b
+  -> (D.Row b -> D.Result c)
   -> Bool
   -> S.Statement a c
-statementWithColumns resultMaker columns sqlMaker encoder =
-  S.Statement (sqlMaker columns) encoder decoder
+statementWithColumns sqlTemplate encoder columns resultMaker =
+  S.Statement sql encoder decoder
   where
     decoder = resultMaker $ columnsRow columns
+    sql =
+      replaceAllSubstrings
+        (" " <> renderColumns columns <> " ")
+        "$COLUMNS"
+        sqlTemplate
 
--- | Creates a SELECT statement for the given set of columns. The
--- "SELECT <column_list>" part is generated automatically, but the
--- rest of SQL statement is provided by the caller.
-selectColumns ::
-     (D.Row b -> D.Result c)
-  -> Columns b
-  -> SQL
-  -> E.Params a
-  -> Bool
-  -> S.Statement a c
-selectColumns resultMaker columns sqlSuffix =
-  statementWithColumns resultMaker columns $ surroundColumns "select" sqlSuffix
+replaceAllSubstrings ::
+     B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
+replaceAllSubstrings new old = go
+  where
+    go s =
+      let (prefix, suffix) = B.breakSubstring old s
+       in if B.null suffix
+            then prefix
+            else prefix <> new <> go (B.drop (B.length old) suffix)

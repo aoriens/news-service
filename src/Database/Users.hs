@@ -73,18 +73,18 @@ insertUser =
     |]
 
 selectUserById :: Statement UserId (Maybe User)
-selectUserById = selectColumns D.rowMaybe userColumns sqlSuffix encoder True
+selectUserById = statementWithColumns sql encoder userColumns D.rowMaybe True
   where
-    sqlSuffix = "from users where user_id = $1"
+    sql = "select $COLUMNS from users where user_id = $1"
     encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
 selectUsers :: Statement PageSpec (Vector User)
 selectUsers =
-  selectColumns
-    D.rowVector
-    userColumns
-    "from users limit $1 offset $2"
+  statementWithColumns
+    "select $COLUMNS from users limit $1 offset $2"
     pageToLimitOffsetEncoder
+    userColumns
+    D.rowVector
     True
 
 userColumns :: Columns User
