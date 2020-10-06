@@ -13,6 +13,7 @@ module Web.Presenter
   , categoryCreatedPresenter
   , categoryPresenter
   , categoryListPresenter
+  , categoryDeletedPresenter
   ) where
 
 import Core.Authentication
@@ -100,3 +101,6 @@ categoryListPresenter h = dataResponse . runRepBuilder h . mapM categoryRep
 
 categoryURI :: Category -> AppURI
 categoryURI cat = CategoryURI $ categoryId cat
+
+categoryDeletedPresenter :: Response
+categoryDeletedPresenter = noContentResponse

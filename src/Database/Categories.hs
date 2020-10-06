@@ -5,12 +5,17 @@ module Database.Categories
   ( createCategory
   , selectCategory
   , selectCategories
+  , deleteCategory
   ) where
 
 import Control.Arrow
 import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.Except
 import Core.Category
+import Core.EntityId
 import qualified Core.Interactor.CreateCategory as CreateCategory
+import qualified Core.Interactor.DeleteCategory as DeleteCategory
 import Core.Pagination
 import Data.Foldable
 import Data.Int
@@ -124,3 +129,39 @@ categoriesFromRows rows = map toCategory finalRows
     insertToMap amap row =
       let category = toCategory row
        in Map.insert (getCategoryId $ categoryId category) category amap
+
+deleteCategory ::
+     CategoryId -> PageSpec -> Transaction (Either DeleteCategory.Failure ())
+deleteCategory catId defaultRange =
+  runExceptT $ do
+    dependentCategoryIds <-
+      lift $ statement selectChildCategoryIdsOf (catId, defaultRange)
+    unless (null dependentCategoryIds) $
+      throwE
+        (DeleteCategory.DependentEntitiesPreventDeletion $
+         map CategoryEntityId dependentCategoryIds)
+    isDeleted <- lift $ statement deleteCategorySt catId
+    unless isDeleted $ throwE DeleteCategory.UnknownCategory
+
+selectChildCategoryIdsOf :: Statement (CategoryId, PageSpec) [CategoryId]
+selectChildCategoryIdsOf =
+  dimap
+    (\(CategoryId catId, PageSpec {..}) ->
+       (catId, getPageLimit pageLimit, getPageOffset pageOffset))
+    (map CategoryId . toList)
+    [TH.vectorStatement|
+      select category_id :: integer
+      from categories
+      where parent_id = $1 :: integer
+      limit $2 :: integer offset $3 :: integer
+    |]
+
+deleteCategorySt :: Statement CategoryId Bool
+deleteCategorySt =
+  dimap
+    getCategoryId
+    (> 0)
+    [TH.rowsAffectedStatement|
+      delete from categories
+      where category_id = $1 :: integer
+    |]

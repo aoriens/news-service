@@ -34,6 +34,7 @@ library
     , Core.Interactor.CreateCategory
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteAuthor
+    , Core.Interactor.DeleteCategory
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
@@ -85,6 +86,7 @@ library
     , Web.Handler.CreateCategory
     , Web.Handler.CreateUser
     , Web.Handler.DeleteAuthor
+    , Web.Handler.DeleteCategory
     , Web.Handler.DeleteUser
     , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
@@ -178,6 +180,7 @@ test-suite news-service-test
     , Core.Interactor.CreateCategorySpec
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteAuthorSpec
+    , Core.Interactor.DeleteCategorySpec
     , Core.Interactor.DeleteUserSpec
     , Core.Interactor.GetAuthorSpec
     , Core.Interactor.GetAuthorsSpec

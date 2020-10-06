@@ -17,6 +17,7 @@ import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
+import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetAuthor as IGetAuthor
 import qualified Core.Interactor.GetAuthors as IGetAuthors
@@ -54,6 +55,7 @@ import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateCategory as HCreateCategory
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
+import qualified Web.Handler.DeleteCategory as HDeleteCategory
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetAuthor as HGetAuthor
 import qualified Web.Handler.GetAuthors as HGetAuthors
@@ -190,9 +192,13 @@ router deps =
     CategoriesURI -> do
       R.get $ HGetCategories.run . getCategoriesHandlerHandle deps
       R.post $ HCreateCategory.run . createCategoryHandlerHandle deps
-    CategoryURI categoryId ->
+    CategoryURI categoryId -> do
       R.get $ \session ->
         HGetCategory.run (getCategoryHandlerHandle deps session) categoryId
+      R.delete $ \session ->
+        HDeleteCategory.run
+          (deleteCategoryHandlerHandle deps session)
+          categoryId
     NewsURI -> R.get $ HGetNews.run . newsHandlerHandle deps
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
@@ -300,6 +306,20 @@ getCategoriesHandlerHandle deps@Deps {..} session =
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = categoryListPresenter dRepresentationBuilderHandle
+    }
+
+deleteCategoryHandlerHandle :: Deps -> Web.Session -> HDeleteCategory.Handle
+deleteCategoryHandlerHandle deps@Deps {..} session =
+  HDeleteCategory.Handle
+    { hDeleteCategoryHandle =
+        IDeleteCategory.Handle
+          { hDeleteCategory =
+              GCategories.deleteCategory $ sessionDatabaseHandle deps session
+          , hAuthenticationHandle = dMakeAuthenticationHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
+          , hDefaultEntityListRange = dDefaultEntityListRange
+          }
+    , hPresenter = categoryDeletedPresenter
     }
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle

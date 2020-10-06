@@ -2,10 +2,12 @@ module Gateway.Categories
   ( createCategory
   , getCategory
   , getCategories
+  , deleteCategory
   ) where
 
 import Core.Category
 import qualified Core.Interactor.CreateCategory as CreateCategory
+import qualified Core.Interactor.DeleteCategory as DeleteCategory
 import Core.Pagination
 import Data.List.NonEmpty
 import Data.Text (Text)
@@ -25,3 +27,10 @@ getCategory h = runTransaction h . statement DCategories.selectCategory
 
 getCategories :: Database.Handle -> PageSpec -> IO [Category]
 getCategories h = runTransaction h . statement DCategories.selectCategories
+
+deleteCategory ::
+     Database.Handle
+  -> CategoryId
+  -> PageSpec
+  -> IO (Either DeleteCategory.Failure ())
+deleteCategory h = (runTransactionRW h .) . DCategories.deleteCategory

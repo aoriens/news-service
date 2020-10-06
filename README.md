@@ -128,6 +128,12 @@ the administrator privilege.
 Returns a [Category](#Category) comprising hierarchy of [category
 items](#CategoryItem) up to the item with the specified identifier.
 
+### `DELETE /categories/{category_id}`
+
+Deletes the identified category and returns no content. Only the least
+significant [CategoryItem](#CategoryItem) of the category will be deleted.
+Requires authentication of a user having the administrator privilege.
+
 ### `GET /images/{image_id}`
 
 Returns an image at the specified URL. The endpoint is not considered as part of
