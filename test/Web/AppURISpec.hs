@@ -7,6 +7,7 @@ module Web.AppURISpec
 import Core.Author
 import Core.Category
 import Core.Image
+import Core.Tag
 import Core.User
 import Data.String
 import qualified Data.Text as T
@@ -27,6 +28,8 @@ spec = do
             , CategoriesURI
             , CategoryURI $ CategoryId 1
             , NewsURI
+            , TagsURI
+            , TagURI $ TagId 1
             ]
           _addNewElementToTheListAboveIfDoesNotCompile =
             \case
@@ -38,6 +41,8 @@ spec = do
               CategoriesURI -> ()
               CategoryURI _ -> ()
               NewsURI -> ()
+              TagsURI -> ()
+              TagURI _ -> ()
           results = map (fromRelativeURI . toRelativeURI) appURIs
       results `shouldBe` map Just appURIs
   describe "render" $ do

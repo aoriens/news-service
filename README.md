@@ -145,6 +145,11 @@ The response contains the image data with the corresponding MIME type.
 
 Returns a list of [News](#News) entities.
 
+### `POST /tags`
+
+Creates a tag. Accepts [CreateTag](#CreateTag) entity in the request body and
+returns either a created or existing [Tag](#Tag) entity.
+
 ### `GET /users`
 
 Returns an array of [User](#User) entities.
@@ -218,6 +223,12 @@ A request to create an image. Fields:
 - `base64_data` - a base64-encoded image data. A string, required.
 - `content_type` - a MIME content type of the image. A string, required.
 
+### CreateTag
+
+An request to create a tag. Fields:
+
+- `name` - the tag name. A string, required.
+
 ### CreateUser
 
 An request to create a user. Fields:
@@ -236,6 +247,13 @@ A news entry. Fields:
 - `date` - the issue date. A [Day](#Day), required.
 - `text` - the news body text. It is considered as a plain Unicode text.
   A string, required.
+
+### Tag
+
+A news tag. Fields:
+
+- `tag_id` - the entity identifier. An integer, required.
+- `name` - the tag name. A string, required.
 
 ### UTCTime
 

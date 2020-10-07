@@ -14,13 +14,16 @@ module Web.Presenter
   , categoryPresenter
   , categoryListPresenter
   , categoryDeletedPresenter
+  , tagCreatedPresenter
   ) where
 
 import Core.Authentication
 import Core.Author
 import Core.Category
 import Core.Image
+import Core.Interactor.CreateTag as ICreateTag
 import Core.News
+import Core.Tag
 import Core.User
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text.Encoding as T
@@ -29,6 +32,7 @@ import Web.Application
 import Web.Representation.Author
 import Web.Representation.Category
 import Web.Representation.News
+import Web.Representation.Tag
 import Web.Representation.User
 import Web.RepresentationBuilder
 import Web.Response
@@ -104,3 +108,18 @@ categoryURI cat = CategoryURI $ categoryId cat
 
 categoryDeletedPresenter :: Response
 categoryDeletedPresenter = noContentResponse
+
+tagCreatedPresenter ::
+     AppURIConfig -> RepBuilderHandle -> ICreateTag.Result -> Response
+tagCreatedPresenter uriConfig h result =
+  case result of
+    ICreateTag.TagCreated tag ->
+      resourceCreatedAndReturnedResponse uriConfig (tagURI tag) .
+      runRepBuilder h $
+      tagRep tag
+    ICreateTag.ExistingTagFound tag ->
+      anotherResourceReturnedResponse uriConfig (tagURI tag) . runRepBuilder h $
+      tagRep tag
+
+tagURI :: Tag -> AppURI
+tagURI = TagURI . tagId

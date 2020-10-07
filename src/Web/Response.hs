@@ -6,6 +6,7 @@ module Web.Response
   , noContentResponse
   , resourceCreatedAndReturnedResponse
   , resourceModifiedAndReturnedResponse
+  , anotherResourceReturnedResponse
   ) where
 
 import qualified Data.ByteString as B
@@ -49,6 +50,13 @@ resourceCreatedAndReturnedResponse uriConfig appURI =
     [ locationHeaderWith uriConfig appURI
     , contentLocationHeaderWith uriConfig appURI
     ]
+
+-- | Create a response containing a representation of a different
+-- resource, with the resource URI.
+anotherResourceReturnedResponse ::
+     AppURIConfig -> AppURI -> ResourceRepresentation -> Response
+anotherResourceReturnedResponse uriConfig appURI =
+  responseWithContent Http.ok200 [contentLocationHeaderWith uriConfig appURI]
 
 -- | Create a response indicating that a resource has just been
 -- updated and returned in the response body (PUT, PATCH, or sometimes

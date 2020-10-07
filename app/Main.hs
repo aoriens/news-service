@@ -15,6 +15,7 @@ import Core.Authentication.Impl as AuthImpl
 import qualified Core.Authorization.Impl
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
+import qualified Core.Interactor.CreateTag as ICreateTag
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
@@ -42,6 +43,7 @@ import Gateway.CurrentTime as GCurrentTime
 import qualified Gateway.Images as GImages
 import qualified Gateway.News as GNews
 import qualified Gateway.SecretToken as GSecretToken
+import qualified Gateway.Tags as GTags
 import qualified Gateway.Users as GUsers
 import qualified Logger
 import qualified Logger.Impl
@@ -53,6 +55,7 @@ import qualified Web.Application as Web
 import qualified Web.EntryPoint
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateCategory as HCreateCategory
+import qualified Web.Handler.CreateTag as HCreateTag
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteCategory as HDeleteCategory
@@ -200,6 +203,8 @@ router deps =
           (deleteCategoryHandlerHandle deps session)
           categoryId
     NewsURI -> R.get $ HGetNews.run . newsHandlerHandle deps
+    TagsURI -> R.post $ HCreateTag.run . createTagHandlerHandle deps
+    TagURI _ -> pure ()
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =
@@ -394,6 +399,23 @@ getUsersHandlerHandle deps@Deps {..} session =
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = userListPresenter dRepresentationBuilderHandle
+    }
+
+createTagHandlerHandle :: Deps -> Web.Session -> HCreateTag.Handle
+createTagHandlerHandle deps@Deps {..} session =
+  HCreateTag.Handle
+    { hCreateTagHandle =
+        ICreateTag.Handle
+          { hAuthenticationHandle = dMakeAuthenticationHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
+          , hCreateTagNamed =
+              GTags.createTagNamed $ sessionDatabaseHandle deps session
+          , hFindTagByName =
+              GTags.findTagByName $ sessionDatabaseHandle deps session
+          }
+    , hLoadJSONRequestBody = dLoadJSONRequestBody
+    , hPresenter =
+        tagCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be

@@ -32,6 +32,7 @@ library
     , Core.Image
     , Core.Interactor.CreateAuthor
     , Core.Interactor.CreateCategory
+    , Core.Interactor.CreateTag
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteAuthor
     , Core.Interactor.DeleteCategory
@@ -49,6 +50,7 @@ library
     , Core.Pagination
     , Core.Pagination.Impl
     , Core.Permission
+    , Core.Tag
     , Core.User
     , Data.ByteString.Util
     , Data.Either.Util
@@ -62,6 +64,7 @@ library
     , Database.NativeSQLDecodable
     , Database.News
     , Database.Pagination
+    , Database.Tags
     , Database.Users
     , FrontEnd.Wai
     , Gateway.Authors
@@ -70,6 +73,7 @@ library
     , Gateway.Images
     , Gateway.News
     , Gateway.SecretToken
+    , Gateway.Tags
     , Gateway.Users
     , Logger
     , Logger.Impl
@@ -85,6 +89,7 @@ library
     , Web.Handler.CreateAuthor
     , Web.Handler.CreateCategory
     , Web.Handler.CreateUser
+    , Web.Handler.CreateTag
     , Web.Handler.DeleteAuthor
     , Web.Handler.DeleteCategory
     , Web.Handler.DeleteUser
@@ -105,6 +110,7 @@ library
     , Web.Representation.Base64
     , Web.Representation.Category
     , Web.Representation.News
+    , Web.Representation.Tag
     , Web.Representation.User
     , Web.RepresentationBuilder
     , Web.RequestBodyLoader
@@ -178,6 +184,7 @@ test-suite news-service-test
     , Core.Authorization.Test
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateCategorySpec
+    , Core.Interactor.CreateTagSpec
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteAuthorSpec
     , Core.Interactor.DeleteCategorySpec

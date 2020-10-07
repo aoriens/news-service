@@ -14,6 +14,7 @@ module Web.AppURI
 import Core.Author
 import Core.Category
 import Core.Image
+import Core.Tag
 import Core.User
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
@@ -44,6 +45,8 @@ data AppURI
   | CategoriesURI
   | CategoryURI CategoryId
   | NewsURI
+  | TagsURI
+  | TagURI TagId
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -71,6 +74,8 @@ toRelativeURI uri =
     CategoriesURI -> ["categories"]
     CategoryURI (CategoryId catId) -> ["categories", T.pack $ show catId]
     NewsURI -> ["news"]
+    TagsURI -> ["tags"]
+    TagURI (TagId tid) -> ["tags", T.pack $ show tid]
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
 fromRelativeURI (RelativeURI path) =
@@ -86,4 +91,6 @@ fromRelativeURI (RelativeURI path) =
     ["categories", ident] ->
       CategoryURI . CategoryId <$> readExactIntegral (T.unpack ident)
     ["news"] -> Just NewsURI
+    ["tags"] -> Just TagsURI
+    ["tags", ident] -> TagURI . TagId <$> readExactIntegral (T.unpack ident)
     _ -> Nothing
