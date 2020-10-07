@@ -1,5 +1,6 @@
 module Test.AsyncExpectation
   ( shouldInvokeOnce
+  , shouldInvokeAtLeastOnce
   , shouldPassValue
   ) where
 
@@ -18,25 +19,35 @@ shouldInvokeOnce :: HasCallStack => String -> (IO () -> IO ()) -> IO ()
 shouldInvokeOnce = shouldInvokeTimes 1
 
 shouldInvokeTimes :: HasCallStack => Int -> String -> (IO () -> IO ()) -> IO ()
-shouldInvokeTimes expected name test = do
+shouldInvokeTimes count =
+  shouldInvokeTimesSatisfying (== count) ("Expected " ++ show count ++ " times")
+
+shouldInvokeAtLeastOnce :: HasCallStack => String -> (IO () -> IO ()) -> IO ()
+shouldInvokeAtLeastOnce = shouldInvokeAtLeastTimes 1
+
+shouldInvokeAtLeastTimes ::
+     HasCallStack => Int -> String -> (IO () -> IO ()) -> IO ()
+shouldInvokeAtLeastTimes count =
+  shouldInvokeTimesSatisfying
+    (>= count)
+    ("Expected at least " ++ show count ++ " times")
+
+shouldInvokeTimesSatisfying ::
+     HasCallStack
+  => (Int -> Bool)
+  -> String
+  -> String
+  -> (IO () -> IO ())
+  -> IO ()
+shouldInvokeTimesSatisfying predicate predicateDescription name test = do
   counter <- newIORef 0
-  test $ onSuccess counter
-  check counter
-  where
-    onSuccess counter = do
-      current <- readIORef counter
-      if current == expected
-        then failure $ succ current
-        else modifyIORef' counter succ
-    check counter = do
-      current <- readIORef counter
-      when (current /= expected) $ failure current
-    failure current =
-      expectationFailure $
-      "Expectation " ++
-      show name ++
-      " is invoked " ++
-      show current ++ " times, while " ++ show expected ++ " expected"
+  test $ modifyIORef' counter succ
+  count <- readIORef counter
+  unless (predicate count) $
+    expectationFailure
+      ("Expectation " ++
+       show name ++
+       " is invoked " ++ show count ++ " times. " ++ predicateDescription)
 
 -- | Asserts that the tested action passed an expected data to a
 -- continuation function.

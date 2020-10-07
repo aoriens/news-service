@@ -33,7 +33,7 @@ itShouldAuthorizeBeforeOperation expectedPerm test = do
   it "should perform action if authorization succeeds" $ do
     let authenticationH = noOpAuthenticationHandle
         authorizationH = noOpAuthorizationHandle
-    shouldInvokeOnce "authorization" $ \onSuccess ->
+    shouldInvokeAtLeastOnce "authorization" $ \onSuccess ->
       test authenticationH authorizationH onSuccess
   it
     "should throw NoPermissionException if AuthorizationHandle.hHasPermission returns False" $ do

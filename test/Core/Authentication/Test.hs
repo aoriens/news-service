@@ -23,7 +23,7 @@ itShouldAuthenticateBeforeOperation ::
   -> Spec
 itShouldAuthenticateBeforeOperation test = do
   it "should succeed if authenticated successfully" $ do
-    shouldInvokeOnce "Continuation must be invoked" $ \onSuccess -> do
+    shouldInvokeAtLeastOnce "Continuation must be invoked" $ \onSuccess -> do
       let h = noOpAuthenticationHandle
       test noCredentials h onSuccess
   it "should throw BadCredentialsException in case of bad credentials" $ do
