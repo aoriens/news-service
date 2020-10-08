@@ -150,6 +150,10 @@ Returns a list of [News](#News) entities.
 Creates a tag. Accepts [CreateTag](#CreateTag) entity in the request body and
 returns either a created or existing [Tag](#Tag) entity.
 
+### `GET /tags/{tag_id}`
+
+Returns the specified [Tag](#Tag).
+
 ### `GET /users`
 
 Returns an array of [User](#User) entities.

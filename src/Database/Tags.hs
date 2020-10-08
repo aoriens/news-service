@@ -2,6 +2,7 @@
 
 module Database.Tags
   ( findTagByName
+  , findTagById
   , createTagNamed
   ) where
 
@@ -35,4 +36,15 @@ createTagNamedSt =
       insert into tags (name) values (
         $1 :: varchar
       ) returning tag_id :: integer
+    |]
+
+findTagById :: Statement TagId (Maybe Tag)
+findTagById =
+  dimap
+    getTagId
+    (fmap $ \(tid, tagName) -> Tag {tagId = TagId tid, tagName})
+    [H.maybeStatement|
+      select tag_id :: integer, name :: varchar
+      from tags
+      where tag_id = $1 :: integer
     |]

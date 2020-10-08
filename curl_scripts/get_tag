@@ -1,0 +1,5 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+run_curl "$DOMAIN/tags/${1?Pass a user ID as an argument}"

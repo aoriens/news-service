@@ -26,6 +26,7 @@ import qualified Core.Interactor.GetCategories as IGetCategories
 import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
+import qualified Core.Interactor.GetTag as IGetTag
 import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
 import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
@@ -66,6 +67,7 @@ import qualified Web.Handler.GetCategories as HGetCategories
 import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
+import qualified Web.Handler.GetTag as HGetTag
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PatchAuthor as HPatchAuthor
@@ -204,7 +206,9 @@ router deps =
           categoryId
     NewsURI -> R.get $ HGetNews.run . newsHandlerHandle deps
     TagsURI -> R.post $ HCreateTag.run . createTagHandlerHandle deps
-    TagURI _ -> pure ()
+    TagURI tagIdent ->
+      R.get $ \session ->
+        HGetTag.run (getTagHandlerHandle deps session) tagIdent
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =
@@ -416,6 +420,14 @@ createTagHandlerHandle deps@Deps {..} session =
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
         tagCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+    }
+
+getTagHandlerHandle :: Deps -> Web.Session -> HGetTag.Handle
+getTagHandlerHandle deps@Deps {..} session =
+  HGetTag.Handle
+    { hGetTagHandle =
+        IGetTag.Handle $ GTags.findTagById $ sessionDatabaseHandle deps session
+    , hPresenter = tagPresenter dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be

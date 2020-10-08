@@ -15,6 +15,7 @@ module Web.Presenter
   , categoryListPresenter
   , categoryDeletedPresenter
   , tagCreatedPresenter
+  , tagPresenter
   ) where
 
 import Core.Authentication
@@ -123,3 +124,6 @@ tagCreatedPresenter uriConfig h result =
 
 tagURI :: Tag -> AppURI
 tagURI = TagURI . tagId
+
+tagPresenter :: RepBuilderHandle -> Tag -> Response
+tagPresenter h = dataResponse . runRepBuilder h . tagRep
