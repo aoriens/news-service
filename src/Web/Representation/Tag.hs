@@ -16,12 +16,12 @@ import Web.RepresentationBuilder
 
 data TagRep =
   TagRep
-    { tagId :: Int32
+    { tagTagId :: Int32
     , tagName :: T.Text
     }
 
 tagRep :: Tag -> RepBuilder TagRep
-tagRep Tag {..} = pure TagRep {tagId = getTagId tagId, tagName}
+tagRep Tag {..} = pure TagRep {tagTagId = getTagId tagId, tagName}
 
 $(A.deriveToJSON
     A.defaultOptions
