@@ -32,18 +32,23 @@ itShouldAuthenticateBeforeOperation test = do
             "The action to authorize must not invoke the success continuation for incorrect credentials"
         h = AuthenticationHandle $ \_ -> throwIO $ BadCredentialsException ""
     test noCredentials h onSuccess `shouldThrow` isBadCredentialsException
-  itShouldPassCredentialsToAuthenticationHandle Nothing test
-  itShouldPassCredentialsToAuthenticationHandle (Just someTokenCredentials) test
+  itShouldPassCredentialsToAuthenticationHandle
+    "should pass Nothing credentials to the authentication handle"
+    Nothing
+    test
+  itShouldPassCredentialsToAuthenticationHandle
+    "should pass Just _ credentials to the authentication handle"
+    (Just someTokenCredentials)
+    test
 
 itShouldPassCredentialsToAuthenticationHandle ::
      HasCallStack
-  => Maybe Credentials
+  => String
+  -> Maybe Credentials
   -> (Maybe Credentials -> AuthenticationHandle IO -> IO () -> IO ())
   -> Spec
-itShouldPassCredentialsToAuthenticationHandle credentials test =
-  it
-    ("should pass credentials to the authentication handle: " ++
-     show credentials) $ do
+itShouldPassCredentialsToAuthenticationHandle description credentials test =
+  it description $ do
     passedCredentials <- newIORef Nothing
     let h =
           AuthenticationHandle $ \creds -> do
