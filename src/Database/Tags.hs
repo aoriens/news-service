@@ -5,14 +5,18 @@ module Database.Tags
   ( findTagByName
   , findTagById
   , createTagNamed
+  , getTags
   ) where
 
+import Core.Pagination
 import Core.Tag
+import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
 import qualified Data.Text as T
 import Database
 import Database.Columns
+import Database.Pagination
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as H
@@ -43,6 +47,13 @@ findTagById = statementWithColumns sql encoder tagColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from tags where tag_id = $1"
     encoder = getTagId >$< E.param (E.nonNullable E.int4)
+
+getTags :: Statement PageSpec [Tag]
+getTags =
+  statementWithColumns sql pageToLimitOffsetEncoder tagColumns decoder True
+  where
+    sql = "select $COLUMNS from tags limit $1 offset $2"
+    decoder = fmap toList . D.rowVector
 
 tagColumns :: Columns Tag
 tagColumns = do

@@ -44,6 +44,7 @@ library
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetTag
+    , Core.Interactor.GetTags
     , Core.Interactor.GetUser
     , Core.Interactor.GetUsers
     , Core.Interactor.UpdateAuthor
@@ -101,6 +102,7 @@ library
     , Web.Handler.GetImage
     , Web.Handler.GetNews
     , Web.Handler.GetTag
+    , Web.Handler.GetTags
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
     , Web.Handler.PatchAuthor

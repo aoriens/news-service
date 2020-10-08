@@ -145,6 +145,10 @@ The response contains the image data with the corresponding MIME type.
 
 Returns a list of [News](#News) entities.
 
+### `GET /tags`
+
+Returns a list of [Tag](#Tag) entities.
+
 ### `POST /tags`
 
 Creates a tag. Accepts [CreateTag](#CreateTag) entity in the request body and

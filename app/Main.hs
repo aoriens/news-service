@@ -27,6 +27,7 @@ import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetTag as IGetTag
+import qualified Core.Interactor.GetTags as IGetTags
 import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
 import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
@@ -68,6 +69,7 @@ import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetTag as HGetTag
+import qualified Web.Handler.GetTags as HGetTags
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PatchAuthor as HPatchAuthor
@@ -205,7 +207,9 @@ router deps =
           (deleteCategoryHandlerHandle deps session)
           categoryId
     NewsURI -> R.get $ HGetNews.run . newsHandlerHandle deps
-    TagsURI -> R.post $ HCreateTag.run . createTagHandlerHandle deps
+    TagsURI -> do
+      R.get $ HGetTags.run . getTagsHandlerHandle deps
+      R.post $ HCreateTag.run . createTagHandlerHandle deps
     TagURI tagIdent ->
       R.get $ \session ->
         HGetTag.run (getTagHandlerHandle deps session) tagIdent
@@ -428,6 +432,17 @@ getTagHandlerHandle deps@Deps {..} session =
     { hGetTagHandle =
         IGetTag.Handle $ GTags.findTagById $ sessionDatabaseHandle deps session
     , hPresenter = tagPresenter dRepresentationBuilderHandle
+    }
+
+getTagsHandlerHandle :: Deps -> Web.Session -> HGetTags.Handle
+getTagsHandlerHandle deps@Deps {..} session =
+  HGetTags.Handle
+    { hGetTagsHandle =
+        IGetTags.Handle
+          { hGetTags = GTags.getTags $ sessionDatabaseHandle deps session
+          , hPageSpecParserHandle = dPageSpecParserHandle
+          }
+    , hPresenter = tagListPresenter dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be

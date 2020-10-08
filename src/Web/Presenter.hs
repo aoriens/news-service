@@ -16,6 +16,7 @@ module Web.Presenter
   , categoryDeletedPresenter
   , tagCreatedPresenter
   , tagPresenter
+  , tagListPresenter
   ) where
 
 import Core.Authentication
@@ -127,3 +128,6 @@ tagURI = TagURI . tagId
 
 tagPresenter :: RepBuilderHandle -> Tag -> Response
 tagPresenter h = dataResponse . runRepBuilder h . tagRep
+
+tagListPresenter :: RepBuilderHandle -> [Tag] -> Response
+tagListPresenter h = dataResponse . runRepBuilder h . mapM tagRep
