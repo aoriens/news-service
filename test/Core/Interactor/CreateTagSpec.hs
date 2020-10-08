@@ -6,6 +6,7 @@ import Control.Monad
 import Core.Authentication.Test
 import Core.Authorization
 import Core.Authorization.Test
+import Core.Exception
 import Core.Interactor.CreateTag
 import Core.Tag
 import Data.IORef
@@ -75,6 +76,10 @@ spec
               }
       r <- run h noCredentials name
       r `shouldBe` expectedResult
+    it "should throw CoreException if the tag name is empty" $ do
+      let name = ""
+          h = stubHandle
+      run h noCredentials name `shouldThrow` isQueryException
 
 stubTag :: Tag
 stubTag = Tag {tagName = "q", tagId = TagId 1}

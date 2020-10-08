@@ -227,7 +227,7 @@ A request to create an image. Fields:
 
 An request to create a tag. Fields:
 
-- `name` - the tag name. A string, required.
+- `name` - the tag name, which must not be empty. A string, required.
 
 ### CreateUser
 

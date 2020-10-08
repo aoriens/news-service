@@ -4,8 +4,10 @@ module Core.Interactor.CreateTag
   , Result(..)
   ) where
 
+import Control.Monad
 import Control.Monad.Catch
 import Core.Authorization
+import Core.Exception
 import Core.Tag
 import qualified Data.Text as T
 
@@ -26,6 +28,8 @@ run :: MonadThrow m => Handle m -> Maybe Credentials -> T.Text -> m Result
 run Handle {..} credentials newTagName = do
   actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "create a tag"
+  when (T.null newTagName) $
+    throwM (QueryException "The tag name must not be empty")
   optExistingTag <- hFindTagByName newTagName
   case optExistingTag of
     Just tag -> pure $ ExistingTagFound tag
