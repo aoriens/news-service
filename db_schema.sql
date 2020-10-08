@@ -9,7 +9,7 @@ create table config (
 );
 
 -- The schema version is to be incremented on every schema change.
-insert into config values ('schema_version', '7');
+insert into config values ('schema_version', '8');
 
 create table news (
        news_id serial not null primary key,
@@ -53,7 +53,7 @@ create table categories (
 
 create table tags (
        tag_id serial not null primary key,
-       name varchar not null
+       name varchar unique not null
 );
 
 commit;
