@@ -42,6 +42,14 @@ spec
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it
+      "should return ResourceNotFoundRequest if a URI match is found, but no methods available" $ do
+      let uri = U.ImageURI (ImageId 0)
+          U.RelativeURI path = U.toRelativeURI uri
+          router = R.new $ \U.ImageURI {} -> pure ()
+          request = defaultRequest {requestPathInfo = path}
+          result = R.route router request
+      result `shouldSatisfy` R.isResourceNotFoundResult
+    it
       "should return MethodNotSupportedResult with sorted known methods for known path but unknown method" $ do
       let uri = U.ImageURI (ImageId 0)
           U.RelativeURI path = U.toRelativeURI uri

@@ -110,7 +110,9 @@ route r request =
     Nothing -> ResourceNotFoundResult
     Just methodTable ->
       case HM.lookup (requestMethod request) methodTable of
-        Nothing -> MethodNotSupportedResult (sort (HM.keys methodTable))
+        Nothing
+          | HM.null methodTable -> ResourceNotFoundResult
+          | otherwise -> MethodNotSupportedResult (sort (HM.keys methodTable))
         Just handler -> HandlerResult handler
 
 lookupMethodTable ::
