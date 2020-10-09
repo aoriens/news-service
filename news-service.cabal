@@ -197,6 +197,7 @@ test-suite news-service-test
     , Core.Interactor.GetAuthorsSpec
     , Core.Interactor.GetCategoriesSpec
     , Core.Interactor.GetNewsSpec
+    , Core.Interactor.GetTagsSpec
     , Core.Interactor.UpdateAuthorSpec
     , Core.Pagination.ImplSpec
     , Core.Pagination.Test
