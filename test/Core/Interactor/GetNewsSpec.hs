@@ -2,10 +2,11 @@ module Core.Interactor.GetNewsSpec
   ( spec
   ) where
 
+import Control.Monad
 import Core.Interactor.GetNews as I
 import Core.News
 import Core.Pagination
-import Data.IORef
+import Core.Pagination.Test
 import Data.Time.Calendar
 import Test.Hspec
 
@@ -36,36 +37,13 @@ spec =
               }
       results <- I.getNews h noPageQuery
       results `shouldBe` stubResults
-    it "should pass the page to the gateway" $ do
-      passedPage <- newIORef undefined
-      let page = PageSpec (PageOffset 1) (PageLimit 2)
-          h =
+    itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
+      let h =
             I.Handle
-              { hPageSpecParserHandle =
-                  PageSpecParserHandle . const $ Right page
-              , hGetNews = \p -> writeIORef passedPage p >> pure []
+              { hGetNews = \pageQuery -> onSuccess pageQuery >> pure []
+              , hPageSpecParserHandle
               }
-      _ <- I.getNews h noPageQuery
-      readIORef passedPage `shouldReturn` page
-    it "should pass the page query to the pager" $ do
-      passedPage <- newIORef undefined
-      let offset = 4
-          limit = 3
-          pageQuery = PageSpecQuery (Just offset) (Just limit)
-          expectedPage = PageSpec (PageOffset offset) (PageLimit limit)
-          unexpectedPage = PageSpec (PageOffset 0) (PageLimit 0)
-          h =
-            I.Handle
-              { hPageSpecParserHandle =
-                  PageSpecParserHandle $ \p ->
-                    Right $
-                    if p == pageQuery
-                      then expectedPage
-                      else unexpectedPage
-              , hGetNews = \p -> writeIORef passedPage p >> pure []
-              }
-      _ <- I.getNews h pageQuery
-      readIORef passedPage `shouldReturn` expectedPage
+      void $ I.getNews h pageSpecQuery
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing

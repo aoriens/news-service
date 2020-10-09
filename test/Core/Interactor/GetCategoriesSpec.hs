@@ -2,10 +2,11 @@ module Core.Interactor.GetCategoriesSpec
   ( spec
   ) where
 
+import Control.Monad
 import Core.Category
 import Core.Interactor.GetCategories as IGetCategories
 import Core.Pagination
-import Data.IORef
+import Core.Pagination.Test
 import Test.Hspec
 
 spec :: Spec
@@ -16,36 +17,13 @@ spec =
           h = stubHandle {hGetCategories = const (pure stubResults)}
       results <- IGetCategories.run h noPageQuery
       results `shouldBe` stubResults
-    it "should pass the page spec to the gateway" $ do
-      passedPage <- newIORef Nothing
-      let page = PageSpec (PageOffset 1) (PageLimit 2)
-          h =
+    itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
+      let h =
             stubHandle
-              { hPageSpecParserHandle =
-                  PageSpecParserHandle . const $ Right page
-              , hGetCategories = \p -> writeIORef passedPage (Just p) >> pure []
+              { hGetCategories = \pageQuery -> onSuccess pageQuery >> pure []
+              , hPageSpecParserHandle
               }
-      _ <- IGetCategories.run h noPageQuery
-      readIORef passedPage `shouldReturn` Just page
-    it "should pass the page query spec to the page spec parser" $ do
-      passedPage <- newIORef Nothing
-      let offset = 4
-          limit = 3
-          pageQuery = PageSpecQuery (Just offset) (Just limit)
-          expectedPage = PageSpec (PageOffset offset) (PageLimit limit)
-          unexpectedPage = PageSpec (PageOffset 0) (PageLimit 0)
-          h =
-            stubHandle
-              { hPageSpecParserHandle =
-                  PageSpecParserHandle $ \p ->
-                    Right $
-                    if p == pageQuery
-                      then expectedPage
-                      else unexpectedPage
-              , hGetCategories = \p -> writeIORef passedPage (Just p) >> pure []
-              }
-      _ <- IGetCategories.run h pageQuery
-      readIORef passedPage `shouldReturn` Just expectedPage
+      void $ IGetCategories.run h pageSpecQuery
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing

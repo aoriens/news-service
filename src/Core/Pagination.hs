@@ -12,7 +12,7 @@ import Core.Exception
 import Data.Int
 import Data.Text
 
--- | The part of data to be output in a response.
+-- | The part of a data list to be output in a response.
 data PageSpec =
   PageSpec
     { pageOffset :: PageOffset

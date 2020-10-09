@@ -9,8 +9,8 @@ import Core.Authorization
 import Core.Authorization.Test
 import Core.Interactor.GetAuthors
 import Core.Pagination
+import Core.Pagination.Test
 import Core.User
-import Data.IORef
 import Data.Time
 import Test.Hspec
 
@@ -30,23 +30,13 @@ spec =
           h = defaultHandle {hGetAuthors = const $ pure expectedAuthors}
       authors <- run h noCredentials noPageQuery
       authors `shouldBe` expectedAuthors
-    it "should pass page got from Pagination to the gateway" $ do
-      passedPage <- newIORef undefined
-      let pageQuery = PageSpecQuery (Just 1) (Just 1)
-          expectedPage = PageSpec (PageOffset 1) (PageLimit 1)
-          unexpectedPage = PageSpec (PageOffset 2) (PageLimit 2)
-          h =
+    itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
+      let h =
             defaultHandle
-              { hGetAuthors = \p -> writeIORef passedPage p >> pure []
-              , hPageSpecParserHandle =
-                  PageSpecParserHandle $ \pq ->
-                    Right $
-                    if pq == pageQuery
-                      then expectedPage
-                      else unexpectedPage
+              { hGetAuthors = \pageQuery -> onSuccess pageQuery >> pure []
+              , hPageSpecParserHandle
               }
-      _ <- run h noCredentials pageQuery
-      readIORef passedPage `shouldReturn` expectedPage
+      void $ run h noCredentials pageSpecQuery
 
 defaultHandle :: Handle IO
 defaultHandle =
