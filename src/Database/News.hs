@@ -18,7 +18,7 @@ selectNews =
     (fmap $ \(newsId, newsTitle, newsDate, newsText) -> News {..})
     [TH.vectorStatement|
     select news_id :: integer, title :: varchar, date :: date, body :: varchar
-    from news
+    from news join news_versions using (news_version_id)
     order by date desc, news_id desc
     limit $1 :: integer offset $2 :: integer
   |]
