@@ -11,18 +11,6 @@ create table config (
 -- The schema version is to be incremented on every schema change.
 insert into config values ('schema_version', '9');
 
-create table news_versions (
-       news_version_id serial not null primary key,
-       title varchar not null,
-       body varchar not null
-);
-
-create table news (
-       news_id serial not null primary key,
-       news_version_id integer not null references news_versions,
-       "date" date not null
-);
-
 create table mime_types (
        mime_type_id serial not null primary key,
        value varchar not null unique
@@ -59,6 +47,18 @@ create table categories (
 create table tags (
        tag_id serial not null primary key,
        name varchar unique not null
+);
+
+create table news_versions (
+       news_version_id serial not null primary key,
+       title varchar not null,
+       body varchar not null
+);
+
+create table news (
+       news_id serial not null primary key,
+       news_version_id integer not null references news_versions,
+       "date" date not null
 );
 
 commit;
