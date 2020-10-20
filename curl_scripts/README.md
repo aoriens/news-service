@@ -5,7 +5,7 @@ curl to be installed.
 
 # Usage
 
-Normally, scripts does not require parameters, although some of them may do it.
+Normally, scripts do not require parameters, although some of them may do it.
 The following command sends `GET <DOMAIN>/news`:
 
     ./get_news
