@@ -8,7 +8,7 @@ module Database
   , Session
   , runSession
   , Transaction
-  , HSt.Statement(..)
+  , St.Statement(..)
   , HT.IsolationLevel(..)
   , HT.Mode(..)
   , statement
@@ -17,7 +17,7 @@ module Database
   , runTransaction
   , runTransactionRW
   , DatabaseException(..)
-  , HS.QueryError
+  , S.QueryError
   , isDatabaseResultErrorWithCode
   , onForeignKeyViolation
   , ignoringForeignKeyViolation
@@ -33,8 +33,8 @@ import qualified Data.DList as DL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Database.ConnectionManager as CM
-import qualified Hasql.Session as HS
-import qualified Hasql.Statement as HSt
+import qualified Hasql.Session as S
+import qualified Hasql.Statement as St
 import qualified Hasql.Transaction as HT
 import qualified Hasql.Transaction.Sessions as HT
 import qualified Logger
@@ -47,13 +47,13 @@ data Handle =
     }
 
 -- | The SQL session - a monad containing SQL statements and optional
--- IO actions. It supersedes 'HS.Session' to perform additional
+-- IO actions. It supersedes 'S.Session' to perform additional
 -- processing when producing sessions from statements.
 newtype Session a =
-  Session (ReaderT (Logger.Handle IO) HS.Session a)
+  Session (ReaderT (Logger.Handle IO) S.Session a)
   deriving (Functor, Applicative, Monad, MonadIO)
 
-instance MonadError HS.QueryError Session where
+instance MonadError S.QueryError Session where
   throwError = Session . lift . throwError
   catchError (Session r) h =
     Session $ do
@@ -67,7 +67,7 @@ instance MonadError HS.QueryError Session where
 runSession :: Handle -> Session a -> IO a
 runSession Handle {..} (Session session) =
   CM.withConnection hConnectionConfig $
-  HS.run hasqlSession >=> either (throwIO . DatabaseException) pure
+  S.run hasqlSession >=> either (throwIO . DatabaseException) pure
   where
     hasqlSession = runReaderT session hLoggerHandle
 
@@ -82,8 +82,8 @@ newtype Transaction a =
   deriving (Functor, Applicative, Monad)
 
 -- | Creates a composable transaction from a statement.
-statement :: HSt.Statement a b -> a -> Transaction b
-statement st@(HSt.Statement sql _ _ _) params =
+statement :: St.Statement a b -> a -> Transaction b
+statement st@(St.Statement sql _ _ _) params =
   Transaction $ do
     modify' (`DL.snoc` sql)
     lift $ HT.statement params st
@@ -120,15 +120,15 @@ runTransaction :: Handle -> Transaction a -> IO a
 runTransaction h = runSession h . transaction
 
 newtype DatabaseException =
-  DatabaseException HS.QueryError
+  DatabaseException S.QueryError
   deriving (Show)
 
 instance Exception DatabaseException
 
-isDatabaseResultErrorWithCode :: PE.ErrorCode -> HS.QueryError -> Bool
+isDatabaseResultErrorWithCode :: PE.ErrorCode -> S.QueryError -> Bool
 isDatabaseResultErrorWithCode code queryError
-  | (HS.QueryError _ _ resultError) <- queryError
-  , (HS.ResultError (HS.ServerError code' _ _ _)) <- resultError = code == code'
+  | (S.QueryError _ _ resultError) <- queryError
+  , (S.ResultError (S.ServerError code' _ _ _)) <- resultError = code == code'
   | otherwise = False
 
 -- | Runs a fallback session if another session finished with the
