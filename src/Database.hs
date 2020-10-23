@@ -68,7 +68,7 @@ instance MonadError S.QueryError Session where
 runSession :: Handle -> Session a -> IO a
 runSession Handle {..} (Session session) =
   CM.withConnection hConnectionConfig $
-  S.run hasqlSession >=> either (throwIO . DatabaseException) pure
+  either (throwIO . DatabaseException) pure <=< S.run hasqlSession
   where
     hasqlSession = runReaderT session $ SessionEnv hLoggerHandle
 
