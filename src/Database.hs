@@ -9,8 +9,6 @@ module Database
   , runSession
   , Transaction
   , St.Statement(..)
-  , HT.IsolationLevel(..)
-  , HT.Mode(..)
   , statement
   , transaction
   , transactionRW
@@ -27,18 +25,16 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
-import Control.Monad.Trans.State.Strict
 import qualified Data.ByteString as B
-import qualified Data.DList as DL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Database.ConnectionManager as CM
+import qualified Hasql.Decoders as D
 import qualified Hasql.Session as S
 import qualified Hasql.Statement as St
-import qualified Hasql.Transaction as HT
-import qualified Hasql.Transaction.Sessions as HT
 import qualified Logger
 import qualified PostgreSQL.ErrorCodes as PE
+import Prelude hiding (log)
 
 data Handle =
   Handle
@@ -46,9 +42,9 @@ data Handle =
     , hLoggerHandle :: Logger.Handle IO
     }
 
--- | The SQL session - a monad containing SQL statements and optional
--- IO actions. It supersedes 'S.Session' to perform additional
--- processing when producing sessions from statements.
+-- | The SQL session - a monad containing SQL statements,
+--  transactions, and IO actions. It supersedes 'S.Session' to perform
+--  additional processing when producing sessions from statements.
 newtype Session a =
   Session (ReaderT (Logger.Handle IO) S.Session a)
   deriving (Functor, Applicative, Monad, MonadIO)
@@ -74,40 +70,66 @@ runSession Handle {..} (Session session) =
 type SQL = B.ByteString
 
 -- | The SQL transaction - a composable group of SQL statements that
--- are followed with an implicit transaction commit statement. In case
--- of a transaction conflict, it will restart automatically until
--- success.
+-- are followed with an implicit transaction commit or rollback
+-- statement.
 newtype Transaction a =
-  Transaction (StateT (DL.DList SQL) HT.Transaction a)
+  Transaction (Session a)
   deriving (Functor, Applicative, Monad)
 
 -- | Creates a composable transaction from a statement.
 statement :: St.Statement a b -> a -> Transaction b
-statement st@(St.Statement sql _ _ _) params =
-  Transaction $ do
-    modify' (`DL.snoc` sql)
-    lift $ HT.statement params st
+statement st = Transaction . freeStatement st
+
+freeStatement :: St.Statement a b -> a -> Session b
+freeStatement st@(St.Statement sql _ _ _) params = do
+  log Logger.Debug $ "Run SQL: " <> T.decodeLatin1 sql
+  Session . lift $ S.statement params st
+
+log :: Logger.Level -> T.Text -> Session ()
+log level text =
+  Session $ do
+    loggerH <- ask
+    liftIO $ Logger.log loggerH level text
 
 transactionRW :: Transaction a -> Session a
-transactionRW = transactionWithMode HT.Serializable HT.Write
+transactionRW = transactionWithMode ReadWrite
 
 transaction :: Transaction a -> Session a
-transaction = transactionWithMode HT.Serializable HT.Read
+transaction = transactionWithMode ReadOnly
+
+data ReadWriteMode
+  = ReadOnly
+  | ReadWrite
 
 -- | Creates a session of a single, atomic transaction. Thus, several
 -- transactions can be composed into a single session.
-transactionWithMode ::
-     HT.IsolationLevel -> HT.Mode -> Transaction a -> Session a
-transactionWithMode level mode (Transaction t) =
-  Session $ do
-    (r, sqls) <- lift $ HT.transaction level mode (runStateT t DL.empty)
-    loggerH <- ask
-    liftIO $ Logger.debug loggerH (logSQLs sqls)
-    pure r
+transactionWithMode :: ReadWriteMode -> Transaction a -> Session a
+transactionWithMode rwMode (Transaction transactionSession) =
+  catchError doTransaction $ \e -> rollback >> throwError e
   where
-    logSQLs sqls =
-      "Executed SQL transaction:\n" <>
-      T.intercalate "\n" (map ((<> ";") . T.decodeLatin1) $ DL.toList sqls)
+    doTransaction = do
+      startTransaction rwMode
+      r <- transactionSession
+      commit
+      pure r
+
+startTransaction :: ReadWriteMode -> Session ()
+startTransaction rwMode = simplePreparedStatement sql
+  where
+    sql =
+      case rwMode of
+        ReadWrite -> "start transaction isolation level serializable read write"
+        ReadOnly -> "start transaction isolation level serializable read only"
+
+commit :: Session ()
+commit = simplePreparedStatement "commit"
+
+rollback :: Session ()
+rollback = simplePreparedStatement "rollback"
+
+simplePreparedStatement :: SQL -> Session ()
+simplePreparedStatement sql =
+  St.Statement sql mempty D.noResult True `freeStatement` ()
 
 -- | Creates and runs a session from a single read-write transaction.
 -- It can throw 'DatabaseException'.
