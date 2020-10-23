@@ -46,8 +46,13 @@ data Handle =
 --  transactions, and IO actions. It supersedes 'S.Session' to perform
 --  additional processing when producing sessions from statements.
 newtype Session a =
-  Session (ReaderT (Logger.Handle IO) S.Session a)
+  Session (ReaderT SessionEnv S.Session a)
   deriving (Functor, Applicative, Monad, MonadIO)
+
+newtype SessionEnv =
+  SessionEnv
+    { envLoggerHandle :: Logger.Handle IO
+    }
 
 instance MonadError S.QueryError Session where
   throwError = Session . lift . throwError
@@ -65,7 +70,7 @@ runSession Handle {..} (Session session) =
   CM.withConnection hConnectionConfig $
   S.run hasqlSession >=> either (throwIO . DatabaseException) pure
   where
-    hasqlSession = runReaderT session hLoggerHandle
+    hasqlSession = runReaderT session $ SessionEnv hLoggerHandle
 
 type SQL = B.ByteString
 
@@ -88,7 +93,7 @@ freeStatement st@(St.Statement sql _ _ _) params = do
 log :: Logger.Level -> T.Text -> Session ()
 log level text =
   Session $ do
-    loggerH <- ask
+    loggerH <- asks envLoggerHandle
     liftIO $ Logger.log loggerH level text
 
 transactionRW :: Transaction a -> Session a
