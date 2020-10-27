@@ -233,13 +233,13 @@ A request to create an image. Fields:
 
 ### CreateTag
 
-An request to create a tag. Fields:
+A request to create a tag. Fields:
 
 - `name` - the tag name, which must not be empty. A string, required.
 
 ### CreateUser
 
-An request to create a user. Fields:
+A request to create a user. Fields:
 
 - `first_name` - the user's first name. A string, optional.
 - `last_name` - the user's last name. This is to be used in case of a
@@ -275,7 +275,7 @@ A user. Fields:
 - `user_id` - the user's identifier. An integer, required.
 - `first_name` - the first name. A string, optional.
 - `last_name` - the last name. A string, required.
-- `avatar_url` - the avatar image URL. An string, optional.
+- `avatar_url` - the avatar image URL. a string, optional.
 - `created_at` - the time the user was created. A [UTCTime](#UTCTime), required.
 - `is_admin` - whether the user has administrator privilege. A boolean,
   required.
