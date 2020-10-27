@@ -10,9 +10,9 @@ module Database
   , Transaction
   , St.Statement(..)
   , statement
-  , transaction
+  , transactionRO
   , transactionRW
-  , runTransaction
+  , runTransactionRO
   , runTransactionRW
   , DatabaseException(..)
   , S.QueryError
@@ -107,8 +107,8 @@ log level text =
 transactionRW :: Transaction a -> Session a
 transactionRW = transactionWithMode ReadWrite
 
-transaction :: Transaction a -> Session a
-transaction = transactionWithMode ReadOnly
+transactionRO :: Transaction a -> Session a
+transactionRO = transactionWithMode ReadOnly
 
 data ReadWriteMode
   = ReadOnly
@@ -149,8 +149,8 @@ runTransactionRW h = runSession h . transactionRW
 
 -- | Creates and runs a session from a single read-only transaction.
 -- It can throw 'DatabaseException'.
-runTransaction :: Handle -> Transaction a -> IO a
-runTransaction h = runSession h . transaction
+runTransactionRO :: Handle -> Transaction a -> IO a
+runTransactionRO h = runSession h . transactionRO
 
 newtype DatabaseException =
   DatabaseException S.QueryError

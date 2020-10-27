@@ -23,10 +23,10 @@ createCategory h parentId =
   runTransactionRW h . DCategories.createCategory parentId
 
 getCategory :: Database.Handle -> CategoryId -> IO (Maybe Category)
-getCategory h = runTransaction h . statement DCategories.selectCategory
+getCategory h = runTransactionRO h . statement DCategories.selectCategory
 
 getCategories :: Database.Handle -> PageSpec -> IO [Category]
-getCategories h = runTransaction h . statement DCategories.selectCategories
+getCategories h = runTransactionRO h . statement DCategories.selectCategories
 
 deleteCategory ::
      Database.Handle

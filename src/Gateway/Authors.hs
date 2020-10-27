@@ -21,11 +21,11 @@ createAuthor h uid description =
 
 getAuthors :: DB.Handle -> PageSpec -> IO [Author]
 getAuthors h page =
-  toList <$> runTransaction h (statement DAuthors.selectAuthors page)
+  toList <$> runTransactionRO h (statement DAuthors.selectAuthors page)
 
 getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
 getAuthor h authorIdent =
-  runTransaction h (statement DAuthors.selectAuthorById authorIdent)
+  runTransactionRO h (statement DAuthors.selectAuthorById authorIdent)
 
 deleteAuthor :: DB.Handle -> AuthorId -> IO Bool
 deleteAuthor h =
