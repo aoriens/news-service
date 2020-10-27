@@ -49,12 +49,12 @@ createCategoriesInParent = foldM (insertCategory . Just)
 
 insertCategory :: Maybe Category -> T.Text -> Transaction Category
 insertCategory categoryParent categoryName = do
-  categoryId <- insertCategorySt (categoryId <$> categoryParent, categoryName)
+  categoryId <- insertCategorySt (categoryId <$> categoryParent) categoryName
   pure Category {..}
 
-insertCategorySt :: (Maybe CategoryId, T.Text) -> Transaction CategoryId
+insertCategorySt :: Maybe CategoryId -> T.Text -> Transaction CategoryId
 insertCategorySt =
-  statement $
+  curry . statement $
   dimap
     (first (fmap getCategoryId))
     CategoryId
@@ -136,8 +136,7 @@ deleteCategory ::
      CategoryId -> PageSpec -> Transaction (Either DeleteCategory.Failure ())
 deleteCategory catId defaultRange =
   runExceptT $ do
-    dependentCategoryIds <-
-      lift $ selectChildCategoryIdsOf (catId, defaultRange)
+    dependentCategoryIds <- lift $ selectChildCategoryIdsOf catId defaultRange
     unless (null dependentCategoryIds) $
       throwE
         (DeleteCategory.DependentEntitiesPreventDeletion $
@@ -145,9 +144,9 @@ deleteCategory catId defaultRange =
     isDeleted <- lift $ deleteCategorySt catId
     unless isDeleted $ throwE DeleteCategory.UnknownCategory
 
-selectChildCategoryIdsOf :: (CategoryId, PageSpec) -> Transaction [CategoryId]
+selectChildCategoryIdsOf :: CategoryId -> PageSpec -> Transaction [CategoryId]
 selectChildCategoryIdsOf =
-  statement $
+  curry . statement $
   dimap
     (\(CategoryId catId, PageSpec {..}) ->
        (catId, getPageLimit pageLimit, getPageOffset pageOffset))
