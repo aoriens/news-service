@@ -29,6 +29,7 @@ import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Database.ConnectionManager as CM
+import qualified Hasql.Connection as C
 import qualified Hasql.Decoders as D
 import qualified Hasql.Session as S
 import qualified Hasql.Statement as St
@@ -66,11 +67,16 @@ instance MonadError S.QueryError Session where
 
 -- | Runs a session. It can throw 'DatabaseException'.
 runSession :: Handle -> Session a -> IO a
-runSession Handle {..} (Session session) =
-  CM.withConnection hConnectionConfig $
+runSession Handle {..} session =
+  CM.withConnection hConnectionConfig $ \connection ->
+    let env = SessionEnv {envLoggerHandle = hLoggerHandle}
+     in runSessionWithEnv env session connection
+
+runSessionWithEnv :: SessionEnv -> Session a -> C.Connection -> IO a
+runSessionWithEnv env (Session session) =
   either (throwIO . DatabaseException) pure <=< S.run hasqlSession
   where
-    hasqlSession = runReaderT session $ SessionEnv hLoggerHandle
+    hasqlSession = runReaderT session env
 
 type SQL = B.ByteString
 
