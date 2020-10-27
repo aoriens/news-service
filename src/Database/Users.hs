@@ -35,12 +35,12 @@ import qualified Hasql.TH as TH
 
 createUser :: I.CreateUserCommand -> Transaction I.CreateUserResult
 createUser cmd@I.CreateUserCommand {..} = do
-  optAvatarId <-
+  curAvatarId <-
     case cuAvatar of
       Just image -> Just <$> createImage image
       Nothing -> pure Nothing
-  userId <- statement insertUser (optAvatarId, cmd)
-  pure I.CreateUserResult {curUserId = userId, curAvatarId = optAvatarId}
+  curUserId <- statement insertUser (curAvatarId, cmd)
+  pure I.CreateUserResult {curUserId, curAvatarId}
 
 insertUser :: Statement (Maybe ImageId, I.CreateUserCommand) UserId
 insertUser =
