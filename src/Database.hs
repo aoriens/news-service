@@ -75,7 +75,7 @@ runSession Handle {..} session =
 
 runSessionWithEnv :: SessionEnv -> Session a -> IO a
 runSessionWithEnv env (Session session) =
-  either (IOE.throwIO . DatabaseException) pure =<<
+  either (IOE.throwIO . HasqlException) pure =<<
   S.run hasqlSession (envConnection env)
   where
     hasqlSession = runReaderT session env
@@ -153,13 +153,13 @@ runTransactionRO :: Handle -> Transaction a -> IO a
 runTransactionRO h = runSession h . transactionRO
 
 newtype DatabaseException =
-  DatabaseException S.QueryError
+  HasqlException S.QueryError
   deriving (Show)
 
 instance Exception DatabaseException
 
 isDatabaseResultErrorWithCode :: PE.ErrorCode -> DatabaseException -> Bool
-isDatabaseResultErrorWithCode code (DatabaseException queryError)
+isDatabaseResultErrorWithCode code (HasqlException queryError)
   | (S.QueryError _ _ resultError) <- queryError
   , (S.ResultError (S.ServerError code' _ _ _)) <- resultError = code == code'
   | otherwise = False
