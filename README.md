@@ -1,6 +1,6 @@
 # news-service
 
-This is a training project - a simple news service with RESTful interface,
+This is a training project - a simple news service with a REST-like interface,
 written in Haskell. It's going to support getting and publishing news, several
 kinds of users, authentication etc. It uses warp and PostgreSQL.
 
