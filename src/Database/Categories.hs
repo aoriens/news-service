@@ -33,7 +33,7 @@ createCategory ::
   -> Transaction (Either CreateCategory.CreateCategoryFailure Category)
 createCategory Nothing names = Right <$> createCategoriesInRoot names
 createCategory (Just parentId) names = do
-  optParentCat <- statement selectCategory parentId
+  optParentCat <- selectCategory parentId
   case optParentCat of
     Just parentCat ->
       Right <$> createCategoriesInParent parentCat (toList names)
@@ -49,12 +49,12 @@ createCategoriesInParent = foldM (insertCategory . Just)
 
 insertCategory :: Maybe Category -> T.Text -> Transaction Category
 insertCategory categoryParent categoryName = do
-  categoryId <-
-    statement insertCategorySt (categoryId <$> categoryParent, categoryName)
+  categoryId <- insertCategorySt (categoryId <$> categoryParent, categoryName)
   pure Category {..}
 
-insertCategorySt :: Statement (Maybe CategoryId, T.Text) CategoryId
+insertCategorySt :: (Maybe CategoryId, T.Text) -> Transaction CategoryId
 insertCategorySt =
+  statement $
   dimap
     (first (fmap getCategoryId))
     CategoryId
@@ -65,8 +65,9 @@ insertCategorySt =
     ) returning category_id :: integer
     |]
 
-selectCategory :: Statement CategoryId (Maybe Category)
+selectCategory :: CategoryId -> Transaction (Maybe Category)
 selectCategory =
+  statement $
   dimap
     getCategoryId
     foldToCategory
@@ -91,8 +92,9 @@ selectCategory =
       Just
         Category {categoryId = CategoryId catId, categoryName, categoryParent}
 
-selectCategories :: Statement PageSpec [Category]
+selectCategories :: PageSpec -> Transaction [Category]
 selectCategories =
+  statement $
   dimap
     (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
     (categoriesFromRows . toList)
@@ -135,16 +137,17 @@ deleteCategory ::
 deleteCategory catId defaultRange =
   runExceptT $ do
     dependentCategoryIds <-
-      lift $ statement selectChildCategoryIdsOf (catId, defaultRange)
+      lift $ selectChildCategoryIdsOf (catId, defaultRange)
     unless (null dependentCategoryIds) $
       throwE
         (DeleteCategory.DependentEntitiesPreventDeletion $
          map CategoryEntityId dependentCategoryIds)
-    isDeleted <- lift $ statement deleteCategorySt catId
+    isDeleted <- lift $ deleteCategorySt catId
     unless isDeleted $ throwE DeleteCategory.UnknownCategory
 
-selectChildCategoryIdsOf :: Statement (CategoryId, PageSpec) [CategoryId]
+selectChildCategoryIdsOf :: (CategoryId, PageSpec) -> Transaction [CategoryId]
 selectChildCategoryIdsOf =
+  statement $
   dimap
     (\(CategoryId catId, PageSpec {..}) ->
        (catId, getPageLimit pageLimit, getPageOffset pageOffset))
@@ -156,8 +159,9 @@ selectChildCategoryIdsOf =
       limit $2 :: integer offset $3 :: integer
     |]
 
-deleteCategorySt :: Statement CategoryId Bool
+deleteCategorySt :: CategoryId -> Transaction Bool
 deleteCategorySt =
+  statement $
   dimap
     getCategoryId
     (> 0)
