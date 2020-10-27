@@ -50,9 +50,10 @@ newtype Session a =
   Session (ReaderT SessionEnv S.Session a)
   deriving (Functor, Applicative, Monad, MonadIO)
 
-newtype SessionEnv =
+data SessionEnv =
   SessionEnv
     { envLoggerHandle :: Logger.Handle IO
+    , envConnection :: C.Connection
     }
 
 instance MonadError S.QueryError Session where
@@ -68,13 +69,14 @@ instance MonadError S.QueryError Session where
 -- | Runs a session. It can throw 'DatabaseException'.
 runSession :: Handle -> Session a -> IO a
 runSession Handle {..} session =
-  CM.withConnection hConnectionConfig $ \connection ->
-    let env = SessionEnv {envLoggerHandle = hLoggerHandle}
-     in runSessionWithEnv env session connection
+  CM.withConnection hConnectionConfig $ \envConnection ->
+    let env = SessionEnv {envConnection, envLoggerHandle = hLoggerHandle}
+     in runSessionWithEnv env session
 
-runSessionWithEnv :: SessionEnv -> Session a -> C.Connection -> IO a
+runSessionWithEnv :: SessionEnv -> Session a -> IO a
 runSessionWithEnv env (Session session) =
-  either (throwIO . DatabaseException) pure <=< S.run hasqlSession
+  either (throwIO . DatabaseException) pure =<<
+  S.run hasqlSession (envConnection env)
   where
     hasqlSession = runReaderT session env
 
@@ -116,7 +118,12 @@ data ReadWriteMode
 -- transactions can be composed into a single session.
 transactionWithMode :: ReadWriteMode -> Transaction a -> Session a
 transactionWithMode rwMode (Transaction transactionSession) =
-  catchError doTransaction $ \e -> rollback >> throwError e
+  Session $ do
+    env <- ask
+    liftIO $
+      onException
+        (runSessionWithEnv env doTransaction)
+        (runSessionWithEnv env rollback)
   where
     doTransaction = do
       startTransaction rwMode
