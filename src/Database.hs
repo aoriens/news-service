@@ -24,7 +24,6 @@ module Database
 import qualified Control.Exception as IOE
 import Control.Monad
 import Control.Monad.Catch
-import Control.Monad.Except
 import Control.Monad.Reader
 import qualified Data.ByteString as B
 import qualified Data.Text as T
@@ -56,16 +55,6 @@ data SessionEnv =
     { envLoggerHandle :: Logger.Handle IO
     , envConnection :: C.Connection
     }
-
-instance MonadError S.QueryError Session where
-  throwError = Session . lift . throwError
-  catchError (Session r) h =
-    Session $ do
-      env <- ask
-      lift $
-        catchError (runReaderT r env) $ \e ->
-          let (Session r') = h e
-           in runReaderT r' env
 
 instance MonadThrow Session where
   throwM = liftIO . IOE.throwIO
@@ -169,8 +158,8 @@ newtype DatabaseException =
 
 instance Exception DatabaseException
 
-isDatabaseResultErrorWithCode :: PE.ErrorCode -> S.QueryError -> Bool
-isDatabaseResultErrorWithCode code queryError
+isDatabaseResultErrorWithCode :: PE.ErrorCode -> DatabaseException -> Bool
+isDatabaseResultErrorWithCode code (DatabaseException queryError)
   | (S.QueryError _ _ resultError) <- queryError
   , (S.ResultError (S.ServerError code' _ _ _)) <- resultError = code == code'
   | otherwise = False
@@ -179,10 +168,10 @@ isDatabaseResultErrorWithCode code queryError
 -- foreign key violation failure.
 onForeignKeyViolation :: Session a -> Session a -> Session a
 onForeignKeyViolation action fallback =
-  catchError action $ \e ->
-    if isDatabaseResultErrorWithCode PE.foreign_key_violation e
-      then fallback
-      else throwError e
+  catchIf
+    (isDatabaseResultErrorWithCode PE.foreign_key_violation)
+    action
+    (const fallback)
 
 ignoringForeignKeyViolation :: Session () -> Session ()
 ignoringForeignKeyViolation action = action `onForeignKeyViolation` pure ()
