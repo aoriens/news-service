@@ -86,7 +86,7 @@ not be negative.
 `offset` is a number of the first entity to output which defaults to `0`. It
 must not be negative.
 
-## Endpoints
+## Methods
 
 ### `GET /authors`
 
@@ -136,8 +136,8 @@ Requires authentication of a user having the administrator privilege.
 
 ### `GET /images/{image_id}`
 
-Returns an image at the specified URL. The endpoint is not considered as part of
-the public API, it is used for constructing URLs returned by other endpoints.
+Returns an image at the specified URL. The method is not considered as part of
+the public API, it is used for constructing URLs returned by other methods.
 
 The response contains the image data with the corresponding MIME type.
 
