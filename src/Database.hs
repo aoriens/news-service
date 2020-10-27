@@ -21,8 +21,9 @@ module Database
   , ignoringForeignKeyViolation
   ) where
 
-import Control.Exception
+import qualified Control.Exception as IOE
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Reader
 import qualified Data.ByteString as B
@@ -66,6 +67,16 @@ instance MonadError S.QueryError Session where
           let (Session r') = h e
            in runReaderT r' env
 
+instance MonadThrow Session where
+  throwM = liftIO . IOE.throwIO
+
+instance MonadCatch Session where
+  catch action handler =
+    Session $ do
+      env <- ask
+      liftIO $
+        catch (runSessionWithEnv env action) (runSessionWithEnv env . handler)
+
 -- | Runs a session. It can throw 'DatabaseException'.
 runSession :: Handle -> Session a -> IO a
 runSession Handle {..} session =
@@ -75,7 +86,7 @@ runSession Handle {..} session =
 
 runSessionWithEnv :: SessionEnv -> Session a -> IO a
 runSessionWithEnv env (Session session) =
-  either (throwIO . DatabaseException) pure =<<
+  either (IOE.throwIO . DatabaseException) pure =<<
   S.run hasqlSession (envConnection env)
   where
     hasqlSession = runReaderT session env
@@ -87,7 +98,7 @@ type SQL = B.ByteString
 -- statement.
 newtype Transaction a =
   Transaction (Session a)
-  deriving (Functor, Applicative, Monad, MonadIO)
+  deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch)
 
 -- | Creates a composable transaction from a statement.
 statement :: St.Statement a b -> a -> Transaction b
