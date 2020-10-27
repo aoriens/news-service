@@ -129,18 +129,11 @@ data ReadWriteMode
 -- transactions can be composed into a single session.
 transactionWithMode :: ReadWriteMode -> Transaction a -> Session a
 transactionWithMode rwMode (Transaction transactionSession) =
-  Session $ do
-    env <- ask
-    liftIO $
-      onException
-        (runSessionWithEnv env doTransaction)
-        (runSessionWithEnv env rollback)
-  where
-    doTransaction = do
-      startTransaction rwMode
-      r <- transactionSession
-      commit
-      pure r
+  (`onException` rollback) $ do
+    startTransaction rwMode
+    r <- transactionSession
+    commit
+    pure r
 
 startTransaction :: ReadWriteMode -> Session ()
 startTransaction rwMode = simplePreparedStatement sql
