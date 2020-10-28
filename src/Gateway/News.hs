@@ -10,4 +10,4 @@ import qualified Database.News as DNews
 
 getNews :: DB.Handle -> PageSpec -> IO [News]
 getNews h page =
-  toList <$> DB.runTransactionRO h (DB.statement DNews.selectNews page)
+  toList <$> DB.runTransactionRO h (DB.statement DNews.getNews page)

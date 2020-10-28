@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Database.News
-  ( selectNews
+  ( getNews
   ) where
 
 import Core.News
@@ -11,8 +11,8 @@ import Data.Vector (Vector)
 import Database
 import qualified Hasql.TH as TH
 
-selectNews :: Statement PageSpec (Vector News)
-selectNews =
+getNews :: Statement PageSpec (Vector News)
+getNews =
   dimap
     (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
     (fmap $ \(rawId, newsTitle, newsDate, newsText) ->
