@@ -24,7 +24,7 @@ data UserRep =
     { userUserId :: Int32
     , userFirstName :: Maybe T.Text
     , userLastName :: T.Text
-    , userAvatarURL :: Maybe T.Text
+    , userAvatarURL :: Maybe AppURIRep
     , userCreatedAt :: UTCTime
     , userIsAdmin :: Bool
     , userSecretToken :: Maybe T.Text

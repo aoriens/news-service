@@ -8,6 +8,7 @@ module Web.RepresentationBuilder
   , renderAppURI
   , renderMaybeAppURI
   , runRepBuilder
+  , AppURIRep
   ) where
 
 import Control.Monad.Reader
@@ -27,13 +28,13 @@ data RepBuilderHandle =
 -- | A monad type which is parameterized with the representation type
 --  it can generate.
 newtype RepBuilder a =
-  RepBuilder (Reader (AppURI -> T.Text) a)
+  RepBuilder (Reader (AppURI -> AppURIRep) a)
   deriving (Functor, Applicative, Monad)
 
-renderAppURI :: AppURI -> RepBuilder T.Text
+renderAppURI :: AppURI -> RepBuilder AppURIRep
 renderAppURI url = RepBuilder $ asks ($ url)
 
-renderMaybeAppURI :: Maybe AppURI -> RepBuilder (Maybe T.Text)
+renderMaybeAppURI :: Maybe AppURI -> RepBuilder (Maybe AppURIRep)
 renderMaybeAppURI Nothing = pure Nothing
 renderMaybeAppURI (Just u) = Just <$> renderAppURI u
 
@@ -41,6 +42,12 @@ runRepBuilder ::
      A.ToJSON a => RepBuilderHandle -> RepBuilder a -> ResourceRepresentation
 runRepBuilder h (RepBuilder r) =
   ResourceRepresentation
-    { resourceRepresentationBody = hJSONEncode h $ runReader r (hRenderAppURI h)
+    { resourceRepresentationBody =
+        hJSONEncode h $ runReader r (AppURIRep . hRenderAppURI h)
     , resourceRepresentationContentType = contentType "application/json"
     }
+
+-- | A JSON-encodable type-safe wrapper for application URLs.
+newtype AppURIRep =
+  AppURIRep T.Text
+  deriving (A.ToJSON)
