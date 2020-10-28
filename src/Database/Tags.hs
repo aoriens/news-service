@@ -21,19 +21,21 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as H
 
-findTagByName :: Statement T.Text (Maybe Tag)
-findTagByName = statementWithColumns sql encoder tagColumns D.rowMaybe True
+findTagByName :: T.Text -> Transaction (Maybe Tag)
+findTagByName =
+  statement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from tags where name = $1"
     encoder = E.param (E.nonNullable E.text)
 
 createTagNamed :: T.Text -> Transaction Tag
 createTagNamed tagName = do
-  tagId <- statement createTagNamedSt tagName
+  tagId <- createTagNamedSt tagName
   pure Tag {tagName, tagId}
 
-createTagNamedSt :: Statement T.Text TagId
+createTagNamedSt :: T.Text -> Transaction TagId
 createTagNamedSt =
+  statement $
   rmap
     TagId
     [H.singletonStatement|
@@ -42,14 +44,16 @@ createTagNamedSt =
       ) returning tag_id :: integer
     |]
 
-findTagById :: Statement TagId (Maybe Tag)
-findTagById = statementWithColumns sql encoder tagColumns D.rowMaybe True
+findTagById :: TagId -> Transaction (Maybe Tag)
+findTagById =
+  statement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from tags where tag_id = $1"
     encoder = getTagId >$< E.param (E.nonNullable E.int4)
 
-getTags :: Statement PageSpec [Tag]
+getTags :: PageSpec -> Transaction [Tag]
 getTags =
+  statement $
   statementWithColumns sql pageToLimitOffsetEncoder tagColumns decoder True
   where
     sql = "select $COLUMNS from tags limit $1 offset $2"
