@@ -52,7 +52,11 @@ create table tags (
 create table news_versions (
        news_version_id serial not null primary key,
        title varchar not null,
-       body varchar not null
+       body varchar not null,
+       author_id integer not null references authors,
+       category_id integer not null references categories,
+       main_photo_id integer references images
+);
 );
 
 create table news (

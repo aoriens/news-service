@@ -8,6 +8,7 @@ module Database.Authors
   , updateAuthor
   , selectAuthorsByUserId
   , deleteAuthorById
+  , authorColumns
   ) where
 
 import Control.Arrow

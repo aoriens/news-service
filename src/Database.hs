@@ -19,6 +19,7 @@ module Database
   , isDatabaseResultErrorWithCode
   , onForeignKeyViolation
   , ignoringForeignKeyViolation
+  , databaseInternalInconsistency
   ) where
 
 import qualified Control.Exception as IOE
@@ -152,16 +153,18 @@ runTransactionRW h = runSession h . transactionRW
 runTransactionRO :: Handle -> Transaction a -> IO a
 runTransactionRO h = runSession h . transactionRO
 
-newtype DatabaseException =
-  HasqlException S.QueryError
+data DatabaseException
+  = HasqlException S.QueryError
+  | DatabaseInternalInconsistencyException T.Text
   deriving (Show)
 
 instance Exception DatabaseException
 
 isDatabaseResultErrorWithCode :: PE.ErrorCode -> DatabaseException -> Bool
-isDatabaseResultErrorWithCode code (HasqlException queryError)
-  | (S.QueryError _ _ resultError) <- queryError
-  , (S.ResultError (S.ServerError code' _ _ _)) <- resultError = code == code'
+isDatabaseResultErrorWithCode code exception
+  | HasqlException queryError <- exception
+  , S.QueryError _ _ resultError <- queryError
+  , S.ResultError (S.ServerError code' _ _ _) <- resultError = code == code'
   | otherwise = False
 
 -- | Runs a fallback session if another session finished with the
@@ -175,3 +178,6 @@ onForeignKeyViolation action fallback =
 
 ignoringForeignKeyViolation :: Session () -> Session ()
 ignoringForeignKeyViolation action = action `onForeignKeyViolation` pure ()
+
+databaseInternalInconsistency :: T.Text -> Transaction a
+databaseInternalInconsistency = throwM . DatabaseInternalInconsistencyException

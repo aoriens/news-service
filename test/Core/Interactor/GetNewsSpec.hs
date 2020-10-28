@@ -3,11 +3,14 @@ module Core.Interactor.GetNewsSpec
   ) where
 
 import Control.Monad
+import Core.Author
+import Core.Category
 import Core.Interactor.GetNews as I
 import Core.News
 import Core.Pagination
 import Core.Pagination.Test
-import Data.Time.Calendar
+import Core.User
+import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -19,14 +22,14 @@ spec =
                 { newsId = NewsId 1
                 , newsDate = fromGregorian 2020 01 01
                 , newsVersion =
-                    NewsVersion
+                    stubNewsVersion
                       {nvId = NewsVersionId 1, nvTitle = "A", nvText = "Text"}
                 }
             , News
                 { newsId = NewsId 2
                 , newsDate = fromGregorian 2020 01 02
                 , newsVersion =
-                    NewsVersion
+                    stubNewsVersion
                       {nvId = NewsVersionId 2, nvTitle = "B", nvText = "Text2"}
                 }
             ]
@@ -49,3 +52,32 @@ spec =
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing
+
+stubNewsVersion :: NewsVersion
+stubNewsVersion =
+  NewsVersion
+    { nvId = NewsVersionId 0
+    , nvTitle = ""
+    , nvText = ""
+    , nvAuthor =
+        Author
+          { authorId = AuthorId 1
+          , authorDescription = ""
+          , authorUser =
+              User
+                { userId = UserId 1
+                , userLastName = ""
+                , userFirstName = Nothing
+                , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+                , userAvatarId = Nothing
+                , userIsAdmin = False
+                }
+          }
+    , nvCategory =
+        Category
+          { categoryId = CategoryId 1
+          , categoryName = "q"
+          , categoryParent = Nothing
+          }
+    , nvMainPhotoId = Nothing
+    }

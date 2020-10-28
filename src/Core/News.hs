@@ -5,6 +5,9 @@ module Core.News
   , NewsVersionId(..)
   ) where
 
+import Core.Author
+import Core.Category
+import Core.Image
 import Data.Int
 import Data.Text (Text)
 import Data.Time
@@ -28,6 +31,9 @@ data NewsVersion =
     { nvId :: NewsVersionId
     , nvTitle :: Text
     , nvText :: Text
+    , nvAuthor :: Author
+    , nvCategory :: Category
+    , nvMainPhotoId :: Maybe ImageId
     }
   deriving (Eq, Show)
 
