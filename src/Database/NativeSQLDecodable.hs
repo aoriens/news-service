@@ -6,7 +6,7 @@ module Database.NativeSQLDecodable
 
 import Data.Int
 import Data.Text (Text)
-import Data.Time.Clock
+import Data.Time
 import qualified Hasql.Decoders as D
 
 -- | A class of types provided with built-in Hasql column decoders. It
@@ -40,3 +40,9 @@ instance NativeSQLDecodable UTCTime where
 
 instance NativeSQLDecodable (Maybe UTCTime) where
   nativeSQLDecoder = D.column $ D.nullable D.timestamptz
+
+instance NativeSQLDecodable Day where
+  nativeSQLDecoder = D.column $ D.nonNullable D.date
+
+instance NativeSQLDecodable (Maybe Day) where
+  nativeSQLDecoder = D.column $ D.nullable D.date
