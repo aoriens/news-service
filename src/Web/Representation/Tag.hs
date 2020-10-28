@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Web.Representation.Tag
-  ( Tag
+  ( TagRep
   , tagRep
   ) where
 
