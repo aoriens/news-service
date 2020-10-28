@@ -3,6 +3,7 @@ module Core.Tag
   , Tag(..)
   ) where
 
+import Data.Hashable
 import Data.Int
 import Data.Text (Text)
 
@@ -12,9 +13,15 @@ newtype TagId =
     }
   deriving (Eq, Show)
 
+instance Hashable TagId where
+  hashWithSalt salt = hashWithSalt salt . getTagId
+
 data Tag =
   Tag
     { tagId :: TagId
     , tagName :: Text
     }
   deriving (Eq, Show)
+
+instance Hashable Tag where
+  hashWithSalt salt = hashWithSalt salt . tagId

@@ -9,7 +9,9 @@ import Core.Interactor.GetNews as I
 import Core.News
 import Core.Pagination
 import Core.Pagination.Test
+import Core.Tag
 import Core.User
+import qualified Data.HashSet as Set
 import Data.Time
 import Test.Hspec
 
@@ -80,4 +82,6 @@ stubNewsVersion =
           , categoryParent = Nothing
           }
     , nvMainPhotoId = Nothing
+    , nvAdditionalPhotoIds = Set.empty
+    , nvTags = Set.singleton Tag {tagId = TagId 1, tagName = "q"}
     }

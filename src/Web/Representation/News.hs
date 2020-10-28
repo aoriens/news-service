@@ -7,6 +7,7 @@ module Web.Representation.News
 import Core.News
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
+import Data.Foldable
 import Data.Int
 import Data.List
 import Data.Maybe
@@ -15,6 +16,7 @@ import Data.Time
 import Web.AppURI hiding (renderAppURI)
 import Web.Representation.Author
 import Web.Representation.Category
+import Web.Representation.Tag
 import Web.RepresentationBuilder
 
 newsRep :: News -> RepBuilder NewsRep
@@ -22,6 +24,8 @@ newsRep News {newsId, newsDate, newsVersion = NewsVersion {..}} = do
   newsAuthor <- authorRep nvAuthor
   newsCategory <- categoryRep nvCategory
   newsPhoto <- renderMaybeAppURI (ImageURI <$> nvMainPhotoId)
+  newsPhotos <- mapM (renderAppURI . ImageURI) $ toList nvAdditionalPhotoIds
+  newsTags <- mapM tagRep $ toList nvTags
   pure
     NewsRep
       { newsNewsId = getNewsId newsId
@@ -31,6 +35,8 @@ newsRep News {newsId, newsDate, newsVersion = NewsVersion {..}} = do
       , newsAuthor
       , newsCategory
       , newsPhoto
+      , newsPhotos
+      , newsTags
       }
 
 data NewsRep =
@@ -42,6 +48,8 @@ data NewsRep =
     , newsAuthor :: AuthorRep
     , newsCategory :: CategoryRep
     , newsPhoto :: Maybe AppURIRep
+    , newsPhotos :: [AppURIRep]
+    , newsTags :: [TagRep]
     }
 
 $(A.deriveToJSON

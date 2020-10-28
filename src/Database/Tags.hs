@@ -6,6 +6,7 @@ module Database.Tags
   , findTagById
   , createTagNamed
   , getTags
+  , tagColumns
   ) where
 
 import Core.Pagination

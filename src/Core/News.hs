@@ -8,6 +8,8 @@ module Core.News
 import Core.Author
 import Core.Category
 import Core.Image
+import Core.Tag
+import Data.HashSet (HashSet)
 import Data.Int
 import Data.Text (Text)
 import Data.Time
@@ -34,6 +36,8 @@ data NewsVersion =
     , nvAuthor :: Author
     , nvCategory :: Category
     , nvMainPhotoId :: Maybe ImageId
+    , nvAdditionalPhotoIds :: HashSet ImageId
+    , nvTags :: HashSet Tag
     }
   deriving (Eq, Show)
 

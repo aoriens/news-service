@@ -133,6 +133,7 @@ library
     , deepseq
     , dlist
     , exceptions
+    , hashable
     , hasql
     , hasql-th
     , http-types
