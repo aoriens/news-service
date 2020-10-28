@@ -13,7 +13,7 @@ module Database.Users
 import Control.Arrow
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import qualified Core.Authentication as Auth
+import Core.Authentication
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateUser as I
@@ -51,7 +51,7 @@ insertUser =
        , getImageId <$> optImageId {-3-}
        , cuCreatedAt {-4-}
        , cuIsAdmin {-5-}
-       , Auth.secretTokenHashBytes cuTokenHash {-6-}
+       , secretTokenHashBytes cuTokenHash {-6-}
         ))
     UserId
     [TH.singletonStatement|
@@ -100,12 +100,11 @@ userColumns = do
 usersTable :: TableName
 usersTable = "users"
 
-selectUserAuthData ::
-     Statement UserId (Maybe (Auth.SecretTokenHash, Auth.IsAdmin))
+selectUserAuthData :: Statement UserId (Maybe (SecretTokenHash, IsAdmin))
 selectUserAuthData =
   dimap
     getUserId
-    (fmap $ first Auth.SecretTokenHash)
+    (fmap $ first SecretTokenHash)
     [TH.maybeStatement|
     select token_hash :: bytea, is_admin :: boolean
     from users
