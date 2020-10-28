@@ -11,8 +11,9 @@ import Data.Profunctor
 import Database
 import qualified Hasql.TH as TH
 
-getNews :: Statement PageSpec [News]
+getNews :: PageSpec -> Transaction [News]
 getNews =
+  statement $
   dimap
     (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
     (map
