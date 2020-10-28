@@ -15,7 +15,14 @@ import Data.Time
 import Web.RepresentationBuilder
 
 newsRep :: News -> RepBuilder NewsRep
-newsRep News {..} = pure NewsRep {newsNewsId = getNewsId newsId, ..}
+newsRep News {newsId, newsDate, newsVersion = NewsVersion {..}} = do
+  pure
+    NewsRep
+      { newsNewsId = getNewsId newsId
+      , newsTitle = nvTitle
+      , newsDate
+      , newsText = nvText
+      }
 
 data NewsRep =
   NewsRep

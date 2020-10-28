@@ -17,15 +17,17 @@ spec =
       let stubResults =
             [ News
                 { newsId = NewsId 1
-                , newsTitle = "A"
                 , newsDate = fromGregorian 2020 01 01
-                , newsText = "Text"
+                , newsVersion =
+                    NewsVersion
+                      {nvId = NewsVersionId 1, nvTitle = "A", nvText = "Text"}
                 }
             , News
                 { newsId = NewsId 2
-                , newsTitle = "B"
                 , newsDate = fromGregorian 2020 01 02
-                , newsText = "Text2"
+                , newsVersion =
+                    NewsVersion
+                      {nvId = NewsVersionId 2, nvTitle = "B", nvText = "Text2"}
                 }
             ]
           h =
