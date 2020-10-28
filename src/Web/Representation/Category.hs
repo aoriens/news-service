@@ -2,7 +2,7 @@
 {-# LANGUAGE TupleSections #-}
 
 module Web.Representation.Category
-  ( Category
+  ( CategoryRep
   , categoryRep
   ) where
 
