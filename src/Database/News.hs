@@ -15,7 +15,8 @@ selectNews :: Statement PageSpec (Vector News)
 selectNews =
   dimap
     (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
-    (fmap $ \(newsId, newsTitle, newsDate, newsText) -> News {..})
+    (fmap $ \(rawId, newsTitle, newsDate, newsText) ->
+       News {newsId = NewsId rawId, ..})
     [TH.vectorStatement|
     select news_id :: integer, title :: varchar, date :: date, body :: varchar
     from news join news_versions using (news_version_id)

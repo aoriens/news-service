@@ -1,5 +1,6 @@
 module Core.News
   ( News(..)
+  , NewsId(..)
   ) where
 
 import Data.Int
@@ -8,9 +9,15 @@ import Data.Time
 
 data News =
   News
-    { newsId :: Int32
+    { newsId :: NewsId
     , newsTitle :: Text
     , newsDate :: Day
     , newsText :: Text
+    }
+  deriving (Eq, Show)
+
+newtype NewsId =
+  NewsId
+    { getNewsId :: Int32
     }
   deriving (Eq, Show)

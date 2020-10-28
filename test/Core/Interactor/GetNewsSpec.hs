@@ -16,13 +16,13 @@ spec =
     it "should pass data through from the gateway" $ do
       let stubResults =
             [ News
-                { newsId = 1
+                { newsId = NewsId 1
                 , newsTitle = "A"
                 , newsDate = fromGregorian 2020 01 01
                 , newsText = "Text"
                 }
             , News
-                { newsId = 2
+                { newsId = NewsId 2
                 , newsTitle = "B"
                 , newsDate = fromGregorian 2020 01 02
                 , newsText = "Text2"
