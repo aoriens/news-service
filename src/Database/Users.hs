@@ -20,6 +20,7 @@ import qualified Core.Interactor.CreateUser as I
 import Core.Interactor.DeleteUser as IDeleteUser
 import Core.Pagination
 import Core.User
+import Data.Bifunctor
 import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
@@ -104,15 +105,20 @@ usersTable :: TableName
 usersTable = "users"
 
 selectUserAuthData :: UserId -> Transaction (Maybe UserAuthData)
-selectUserAuthData =
+selectUserAuthData uid = do
+  hashAndIsAdmin <- getUserHashAndIsAdmin uid
+  case hashAndIsAdmin of
+    Nothing -> pure Nothing
+    Just (authDataSecretTokenHash, authDataIsAdmin) -> do
+      authDataAuthors <- selectAuthorsByUserId uid Nothing
+      pure $ Just UserAuthData {..}
+
+getUserHashAndIsAdmin :: UserId -> Transaction (Maybe (SecretTokenHash, Bool))
+getUserHashAndIsAdmin =
   statement $
   dimap
     getUserId
-    (fmap $ \(hash, isAdmin) ->
-       UserAuthData
-         { authDataSecretTokenHash = SecretTokenHash hash
-         , authDataIsAdmin = isAdmin
-         })
+    (fmap $ first SecretTokenHash)
     [TH.maybeStatement|
     select token_hash :: bytea, is_admin :: boolean
     from users

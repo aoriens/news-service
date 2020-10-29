@@ -12,7 +12,7 @@ spec =
   describe "hasPermission" $ do
     it "should return True if the user is an admin" $ do
       let h = Impl.new
-          user = IdentifiedUser (UserId 1) True
+          user = IdentifiedUser (UserId 1) True []
           r = hHasPermission h AdminPermission user
       r `shouldBe` True
     it "should return False if the user is anonymous" $ do
@@ -22,6 +22,6 @@ spec =
       r `shouldBe` False
     it "should rqeturn False if the user is identified and is not an admin" $ do
       let h = Impl.new
-          user = IdentifiedUser (UserId 1) False
+          user = IdentifiedUser (UserId 1) False []
           r = hHasPermission h AdminPermission user
       r `shouldBe` False

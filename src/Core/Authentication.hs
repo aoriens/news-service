@@ -10,6 +10,7 @@ module Core.Authentication
   ) where
 
 import Control.Monad.Catch
+import Core.Author
 import Core.User
 import qualified Data.ByteString as B
 
@@ -39,7 +40,7 @@ newtype SecretTokenHash =
 
 data AuthenticatedUser
   = AnonymousUser
-  | IdentifiedUser !UserId !IsAdmin
+  | IdentifiedUser !UserId !IsAdmin [AuthorId]
   deriving (Eq, Show)
 
 type IsAdmin = Bool

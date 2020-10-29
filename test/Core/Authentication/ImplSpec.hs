@@ -46,7 +46,7 @@ spec =
                 { Impl.hGetUserAuthData = \_ -> pure stubOKAuthData
                 , Impl.hTokenMatchesHash = \_ _ -> True
                 }
-      A.IdentifiedUser uid _ <- A.authenticate h $ Just creds
+      A.IdentifiedUser uid _ _ <- A.authenticate h $ Just creds
       uid `shouldBe` expectedUserId
     it "should return IsAdmin from hGetUserAuthData on auth success" $
       property $ \expectedIsAdmin -> do
@@ -60,7 +60,7 @@ spec =
                           stubAuthData {Impl.authDataIsAdmin = expectedIsAdmin}
                   , Impl.hTokenMatchesHash = \_ _ -> True
                   }
-        A.IdentifiedUser _ isAdmin <- A.authenticate h $ Just stubCreds
+        A.IdentifiedUser _ isAdmin _ <- A.authenticate h $ Just stubCreds
         isAdmin `shouldBe` expectedIsAdmin
     it "should pass UserId to hGetUserAuthData" $ do
       ref <- newIORef undefined
@@ -125,7 +125,10 @@ stubSecretToken = A.SecretToken ""
 stubAuthData :: Impl.UserAuthData
 stubAuthData =
   Impl.UserAuthData
-    {authDataSecretTokenHash = A.SecretTokenHash "", authDataIsAdmin = False}
+    { authDataSecretTokenHash = A.SecretTokenHash ""
+    , authDataIsAdmin = False
+    , authDataAuthors = []
+    }
 
 stubOKAuthData :: Maybe Impl.UserAuthData
 stubOKAuthData = Just stubAuthData

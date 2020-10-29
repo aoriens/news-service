@@ -6,6 +6,7 @@ module Core.Authentication.Impl
 
 import Control.Monad.Catch
 import Core.Authentication hiding (authenticate)
+import Core.Author
 import Core.Exception
 import Core.User
 import qualified Data.Text as T
@@ -22,6 +23,7 @@ data UserAuthData =
   UserAuthData
     { authDataSecretTokenHash :: !SecretTokenHash
     , authDataIsAdmin :: !Bool
+    , authDataAuthors :: ![AuthorId]
     }
 
 new :: Handle m -> AuthenticationHandle m
@@ -38,7 +40,7 @@ authenticate h (Just (TokenCredentials userIdent token)) = do
       "User does not exist: " <> T.pack (show userIdent)
     Just UserAuthData {..}
       | hTokenMatchesHash h token authDataSecretTokenHash -> do
-        let authUser = IdentifiedUser userIdent authDataIsAdmin
+        let authUser = IdentifiedUser userIdent authDataIsAdmin authDataAuthors
         Logger.info (hLoggerHandle h) $
           "Authentication success: " <> T.pack (show authUser)
         pure authUser

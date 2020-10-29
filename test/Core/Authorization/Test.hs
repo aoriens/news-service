@@ -44,7 +44,7 @@ itShouldAuthorizeBeforeOperation expectedPerm test = do
       isNoPermissionException
   it
     "should pass AuthenticatedUser from AuthenticationHandle to AuthorizationHandle" $ do
-    let expectedUser = IdentifiedUser (UserId 1872134) False
+    let expectedUser = IdentifiedUser (UserId 1872134) False []
         authenticationHandle = AuthenticationHandle $ \_ -> pure expectedUser
         authorizationHandle = AuthorizationHandle $ const (== expectedUser)
     test authenticationHandle authorizationHandle (pure ())

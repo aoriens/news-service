@@ -8,5 +8,5 @@ new :: AuthorizationHandle
 new = AuthorizationHandle $ \AdminPermission -> isAdmin
 
 isAdmin :: AuthenticatedUser -> Bool
-isAdmin (IdentifiedUser _ admin) = admin
+isAdmin (IdentifiedUser _ admin _) = admin
 isAdmin _ = False
