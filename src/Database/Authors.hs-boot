@@ -6,4 +6,4 @@ import Core.User
 import Data.Vector (Vector)
 import Database
 
-selectAuthorsByUserId :: Statement (UserId, PageSpec) (Vector AuthorId)
+selectAuthorsByUserId :: (UserId, PageSpec) -> Transaction (Vector AuthorId)

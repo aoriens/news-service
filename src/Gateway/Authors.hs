@@ -20,19 +20,17 @@ createAuthor h uid description =
   runTransactionRW h $ DAuthors.createAuthor uid description
 
 getAuthors :: DB.Handle -> PageSpec -> IO [Author]
-getAuthors h page =
-  toList <$> runTransactionRO h (statement DAuthors.selectAuthors page)
+getAuthors h page = toList <$> runTransactionRO h (DAuthors.selectAuthors page)
 
 getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
 getAuthor h authorIdent =
-  runTransactionRO h (statement DAuthors.selectAuthorById authorIdent)
+  runTransactionRO h (DAuthors.selectAuthorById authorIdent)
 
 deleteAuthor :: DB.Handle -> AuthorId -> IO Bool
-deleteAuthor h =
-  runTransactionRW h . fmap (0 /=) . statement DAuthors.deleteAuthorById
+deleteAuthor h = runTransactionRW h . fmap (0 /=) . DAuthors.deleteAuthorById
 
 updateAuthor :: DB.Handle -> AuthorId -> T.Text -> IO (Maybe Author)
 updateAuthor h aid newDescription =
   runTransactionRW h $ do
-    statement DAuthors.updateAuthor (aid, newDescription)
-    statement DAuthors.selectAuthorById aid
+    DAuthors.updateAuthor (aid, newDescription)
+    DAuthors.selectAuthorById aid

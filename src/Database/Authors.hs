@@ -36,14 +36,15 @@ createAuthor uid description = do
   case optUser of
     Nothing -> pure $ Left I.UnknownUserId
     Just user -> do
-      aid <- statement insertAuthor (uid, description)
+      aid <- insertAuthor (uid, description)
       pure $
         Right
           Author
             {authorId = aid, authorUser = user, authorDescription = description}
 
-insertAuthor :: Statement (UserId, T.Text) AuthorId
+insertAuthor :: (UserId, T.Text) -> Transaction AuthorId
 insertAuthor =
+  statement $
   dimap
     (first getUserId)
     AuthorId
@@ -54,8 +55,9 @@ insertAuthor =
     ) returning author_id :: integer
     |]
 
-selectAuthors :: Statement PageSpec (Vector Author)
+selectAuthors :: PageSpec -> Transaction (Vector Author)
 selectAuthors =
+  statement $
   statementWithColumns
     "select $COLUMNS from authors join users using (user_id) limit $1 offset $2"
     pageToLimitOffsetEncoder
@@ -63,8 +65,9 @@ selectAuthors =
     D.rowVector
     True
 
-selectAuthorById :: Statement AuthorId (Maybe Author)
+selectAuthorById :: AuthorId -> Transaction (Maybe Author)
 selectAuthorById =
+  statement $
   statementWithColumns
     "select $COLUMNS from authors join users using (user_id) where author_id = $1"
     (getAuthorId >$< E.param (E.nonNullable E.int4))
@@ -72,8 +75,9 @@ selectAuthorById =
     D.rowMaybe
     True
 
-updateAuthor :: Statement (AuthorId, T.Text) ()
+updateAuthor :: (AuthorId, T.Text) -> Transaction ()
 updateAuthor =
+  statement $
   lmap
     (swap . first getAuthorId)
     [TH.resultlessStatement|
@@ -92,8 +96,9 @@ authorColumns = do
 authorsTable :: TableName
 authorsTable = "authors"
 
-selectAuthorsByUserId :: Statement (UserId, PageSpec) (Vector AuthorId)
+selectAuthorsByUserId :: (UserId, PageSpec) -> Transaction (Vector AuthorId)
 selectAuthorsByUserId =
+  statement $
   dimap
     (\(uid, page) ->
        ( getUserId uid
@@ -107,8 +112,9 @@ selectAuthorsByUserId =
        limit $2 :: integer offset $3 :: integer
     |]
 
-deleteAuthorById :: Statement AuthorId Int64
+deleteAuthorById :: AuthorId -> Transaction Int64
 deleteAuthorById =
+  statement $
   lmap
     getAuthorId
     [TH.rowsAffectedStatement|
