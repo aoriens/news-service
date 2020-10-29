@@ -96,20 +96,20 @@ authorColumns = do
 authorsTable :: TableName
 authorsTable = "authors"
 
-selectAuthorsByUserId :: UserId -> PageSpec -> Transaction [AuthorId]
+selectAuthorsByUserId :: UserId -> Maybe PageSpec -> Transaction [AuthorId]
 selectAuthorsByUserId =
   curry . statement $
   dimap
     (\(uid, page) ->
        ( getUserId uid
-       , getPageLimit $ pageLimit page
-       , getPageOffset $ pageOffset page))
+       , getPageLimit . pageLimit <$> page
+       , getPageOffset . pageOffset <$> page))
     (map AuthorId . toList)
     [TH.vectorStatement|
        select author_id :: integer
        from authors join users using (user_id)
        where user_id = $1 :: integer
-       limit $2 :: integer offset $3 :: integer
+       limit $2 :: integer? offset $3 :: integer?
     |]
 
 deleteAuthorById :: AuthorId -> Transaction Int64
