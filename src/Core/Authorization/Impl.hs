@@ -5,8 +5,11 @@ module Core.Authorization.Impl
 import Core.Authorization
 
 new :: AuthorizationHandle
-new = AuthorizationHandle $ \AdminPermission -> isAdmin
+new = AuthorizationHandle hasPermission
+
+hasPermission :: Permission -> AuthenticatedUser -> Bool
+hasPermission AdminPermission = isAdmin
 
 isAdmin :: AuthenticatedUser -> Bool
 isAdmin (IdentifiedUser _ admin _) = admin
-isAdmin _ = False
+isAdmin AnonymousUser = False
