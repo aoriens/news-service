@@ -16,12 +16,12 @@ import Core.Author
 import qualified Core.Interactor.CreateAuthor as I
 import Core.Pagination
 import Core.User
+import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Int
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Tuple
-import Data.Vector (Vector)
 import Database
 import Database.Columns
 import Database.Pagination
@@ -55,14 +55,14 @@ insertAuthor =
     ) returning author_id :: integer
     |]
 
-selectAuthors :: PageSpec -> Transaction (Vector Author)
+selectAuthors :: PageSpec -> Transaction [Author]
 selectAuthors =
   statement $
   statementWithColumns
     "select $COLUMNS from authors join users using (user_id) limit $1 offset $2"
     pageToLimitOffsetEncoder
     authorColumns
-    D.rowVector
+    (fmap toList . D.rowVector)
     True
 
 selectAuthorById :: AuthorId -> Transaction (Maybe Author)
@@ -96,7 +96,7 @@ authorColumns = do
 authorsTable :: TableName
 authorsTable = "authors"
 
-selectAuthorsByUserId :: UserId -> PageSpec -> Transaction (Vector AuthorId)
+selectAuthorsByUserId :: UserId -> PageSpec -> Transaction [AuthorId]
 selectAuthorsByUserId =
   curry . statement $
   dimap
@@ -104,7 +104,7 @@ selectAuthorsByUserId =
        ( getUserId uid
        , getPageLimit $ pageLimit page
        , getPageOffset $ pageOffset page))
-    (fmap AuthorId)
+    (map AuthorId . toList)
     [TH.vectorStatement|
        select author_id :: integer
        from authors join users using (user_id)
