@@ -1,5 +1,6 @@
 module Core.Authentication.Impl
   ( Handle(..)
+  , UserAuthData(..)
   , new
   ) where
 
@@ -12,9 +13,15 @@ import qualified Logger
 
 data Handle m =
   Handle
-    { hGetUserAuthData :: UserId -> m (Maybe (SecretTokenHash, IsAdmin))
+    { hGetUserAuthData :: UserId -> m (Maybe UserAuthData)
     , hTokenMatchesHash :: SecretToken -> SecretTokenHash -> Bool
     , hLoggerHandle :: Logger.Handle m
+    }
+
+data UserAuthData =
+  UserAuthData
+    { authDataSecretTokenHash :: !SecretTokenHash
+    , authDataIsAdmin :: !Bool
     }
 
 new :: Handle m -> AuthenticationHandle m
@@ -29,9 +36,9 @@ authenticate h (Just (TokenCredentials userIdent token)) = do
     Nothing ->
       throwM . BadCredentialsException $
       "User does not exist: " <> T.pack (show userIdent)
-    Just (hash, isAdmin)
-      | hTokenMatchesHash h token hash -> do
-        let authUser = IdentifiedUser userIdent isAdmin
+    Just UserAuthData {..}
+      | hTokenMatchesHash h token authDataSecretTokenHash -> do
+        let authUser = IdentifiedUser userIdent authDataIsAdmin
         Logger.info (hLoggerHandle h) $
           "Authentication success: " <> T.pack (show authUser)
         pure authUser

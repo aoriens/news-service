@@ -10,10 +10,10 @@ module Database.Users
   , userColumns
   ) where
 
-import Control.Arrow
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.Authentication
+import Core.Authentication.Impl
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateUser as I
@@ -100,11 +100,15 @@ userColumns = do
 usersTable :: TableName
 usersTable = "users"
 
-selectUserAuthData :: Statement UserId (Maybe (SecretTokenHash, IsAdmin))
+selectUserAuthData :: Statement UserId (Maybe UserAuthData)
 selectUserAuthData =
   dimap
     getUserId
-    (fmap $ first SecretTokenHash)
+    (fmap $ \(hash, isAdmin) ->
+       UserAuthData
+         { authDataSecretTokenHash = SecretTokenHash hash
+         , authDataIsAdmin = isAdmin
+         })
     [TH.maybeStatement|
     select token_hash :: bytea, is_admin :: boolean
     from users

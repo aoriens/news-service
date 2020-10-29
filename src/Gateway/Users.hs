@@ -6,7 +6,7 @@ module Gateway.Users
   , deleteUser
   ) where
 
-import Core.Authentication
+import Core.Authentication.Impl
 import Core.Interactor.CreateUser
 import Core.Interactor.DeleteUser as IDeleteUser
 import Core.Pagination
@@ -25,7 +25,7 @@ getUsers :: DB.Handle -> PageSpec -> IO [User]
 getUsers h page =
   toList <$> runTransactionRO h (statement DUsers.selectUsers page)
 
-getUserAuthData :: DB.Handle -> UserId -> IO (Maybe (SecretTokenHash, IsAdmin))
+getUserAuthData :: DB.Handle -> UserId -> IO (Maybe UserAuthData)
 getUserAuthData h = runTransactionRO h . statement DUsers.selectUserAuthData
 
 deleteUser ::

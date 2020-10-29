@@ -54,7 +54,10 @@ spec =
               Impl.new
                 stubHandle
                   { Impl.hGetUserAuthData =
-                      \_ -> pure $ Just (A.SecretTokenHash "", expectedIsAdmin)
+                      \_ ->
+                        pure $
+                        Just
+                          stubAuthData {Impl.authDataIsAdmin = expectedIsAdmin}
                   , Impl.hTokenMatchesHash = \_ _ -> True
                   }
         A.IdentifiedUser _ isAdmin <- A.authenticate h $ Just stubCreds
@@ -66,7 +69,7 @@ spec =
             Impl.new
               stubHandle
                 { Impl.hGetUserAuthData =
-                    \uid -> writeIORef ref uid >> pure stubOKAuthData
+                    \uid -> writeIORef ref uid >> pure (Just stubAuthData)
                 , Impl.hTokenMatchesHash = \_ _ -> True
                 }
       _ <-
@@ -93,7 +96,11 @@ spec =
             Impl.new
               stubHandle
                 { Impl.hGetUserAuthData =
-                    \_ -> pure $ Just (expectedHash, False)
+                    \_ ->
+                      pure $
+                      Just
+                        stubAuthData
+                          {Impl.authDataSecretTokenHash = expectedHash}
                 , Impl.hTokenMatchesHash =
                     \_ hash ->
                       unsafePerformIO $ writeIORef ref hash >> pure True
@@ -115,5 +122,10 @@ stubCreds = A.TokenCredentials (UserId 1) stubSecretToken
 stubSecretToken :: A.SecretToken
 stubSecretToken = A.SecretToken ""
 
-stubOKAuthData :: Maybe (A.SecretTokenHash, A.IsAdmin)
-stubOKAuthData = Just (A.SecretTokenHash "", False)
+stubAuthData :: Impl.UserAuthData
+stubAuthData =
+  Impl.UserAuthData
+    {authDataSecretTokenHash = A.SecretTokenHash "", authDataIsAdmin = False}
+
+stubOKAuthData :: Maybe Impl.UserAuthData
+stubOKAuthData = Just stubAuthData
