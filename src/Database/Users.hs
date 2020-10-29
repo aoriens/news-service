@@ -39,12 +39,12 @@ createUser cmd@I.CreateUserCommand {..} = do
     case cuAvatar of
       Just image -> Just <$> createImage image
       Nothing -> pure Nothing
-  curUserId <- insertUser (curAvatarId, cmd)
+  curUserId <- insertUser curAvatarId cmd
   pure I.CreateUserResult {curUserId, curAvatarId}
 
-insertUser :: (Maybe ImageId, I.CreateUserCommand) -> Transaction UserId
+insertUser :: Maybe ImageId -> I.CreateUserCommand -> Transaction UserId
 insertUser =
-  statement $
+  curry . statement $
   dimap
     (\(optImageId, I.CreateUserCommand {..}) ->
        ( cuFirstName {-1-}
