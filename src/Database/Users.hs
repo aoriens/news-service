@@ -39,11 +39,12 @@ createUser cmd@I.CreateUserCommand {..} = do
     case cuAvatar of
       Just image -> Just <$> createImage image
       Nothing -> pure Nothing
-  curUserId <- statement insertUser (curAvatarId, cmd)
+  curUserId <- insertUser (curAvatarId, cmd)
   pure I.CreateUserResult {curUserId, curAvatarId}
 
-insertUser :: Statement (Maybe ImageId, I.CreateUserCommand) UserId
+insertUser :: (Maybe ImageId, I.CreateUserCommand) -> Transaction UserId
 insertUser =
+  statement $
   dimap
     (\(optImageId, I.CreateUserCommand {..}) ->
        ( cuFirstName {-1-}
@@ -72,14 +73,16 @@ insertUser =
     ) returning user_id :: integer
     |]
 
-selectUserById :: Statement UserId (Maybe User)
-selectUserById = statementWithColumns sql encoder userColumns D.rowMaybe True
+selectUserById :: UserId -> Transaction (Maybe User)
+selectUserById =
+  statement $ statementWithColumns sql encoder userColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from users where user_id = $1"
     encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
-selectUsers :: Statement PageSpec (Vector User)
+selectUsers :: PageSpec -> Transaction (Vector User)
 selectUsers =
+  statement $
   statementWithColumns
     "select $COLUMNS from users limit $1 offset $2"
     pageToLimitOffsetEncoder
@@ -100,8 +103,9 @@ userColumns = do
 usersTable :: TableName
 usersTable = "users"
 
-selectUserAuthData :: Statement UserId (Maybe UserAuthData)
+selectUserAuthData :: UserId -> Transaction (Maybe UserAuthData)
 selectUserAuthData =
+  statement $
   dimap
     getUserId
     (fmap $ \(hash, isAdmin) ->
@@ -128,7 +132,7 @@ deleteUser uid defaultRange =
       transactionRW $ do
         authors <- statement selectAuthorsByUserId (uid, defaultRange)
         if null authors
-          then Right <$> statement deleteUserSt uid
+          then Right <$> deleteUserSt uid
           else pure $ dependencyFailure authors
     dependencyFailure =
       Left . DependentEntitiesPreventDeletion . map AuthorEntityId . toList
@@ -136,8 +140,9 @@ deleteUser uid defaultRange =
 -- | Returns @Nothing@ if no users found; @Just Nothing@ if a user is
 -- deleted and it did not have an avatar; @Just (Just avatarId)@
 -- otherwise.
-deleteUserSt :: Statement UserId (Maybe (Maybe ImageId))
+deleteUserSt :: UserId -> Transaction (Maybe (Maybe ImageId))
 deleteUserSt =
+  statement $
   dimap
     getUserId
     (fmap (fmap ImageId))

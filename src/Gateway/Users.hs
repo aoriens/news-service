@@ -19,14 +19,13 @@ createUser :: DB.Handle -> CreateUserCommand -> IO CreateUserResult
 createUser h = runTransactionRW h . DUsers.createUser
 
 getUser :: DB.Handle -> UserId -> IO (Maybe User)
-getUser h = runTransactionRO h . statement DUsers.selectUserById
+getUser h = runTransactionRO h . DUsers.selectUserById
 
 getUsers :: DB.Handle -> PageSpec -> IO [User]
-getUsers h page =
-  toList <$> runTransactionRO h (statement DUsers.selectUsers page)
+getUsers h page = toList <$> runTransactionRO h (DUsers.selectUsers page)
 
 getUserAuthData :: DB.Handle -> UserId -> IO (Maybe UserAuthData)
-getUserAuthData h = runTransactionRO h . statement DUsers.selectUserAuthData
+getUserAuthData h = runTransactionRO h . DUsers.selectUserAuthData
 
 deleteUser ::
      DB.Handle -> UserId -> PageSpec -> IO (Either IDeleteUser.Failure ())
