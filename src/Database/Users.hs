@@ -130,7 +130,7 @@ deleteUser uid defaultRange =
   where
     deleteUserReturningAvatarId =
       transactionRW $ do
-        authors <- selectAuthorsByUserId (uid, defaultRange)
+        authors <- selectAuthorsByUserId uid defaultRange
         if null authors
           then Right <$> deleteUserSt uid
           else pure $ dependencyFailure authors

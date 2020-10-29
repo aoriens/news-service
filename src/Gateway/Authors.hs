@@ -32,5 +32,5 @@ deleteAuthor h = runTransactionRW h . fmap (0 /=) . DAuthors.deleteAuthorById
 updateAuthor :: DB.Handle -> AuthorId -> T.Text -> IO (Maybe Author)
 updateAuthor h aid newDescription =
   runTransactionRW h $ do
-    DAuthors.updateAuthor (aid, newDescription)
+    DAuthors.updateAuthor aid newDescription
     DAuthors.selectAuthorById aid

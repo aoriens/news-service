@@ -36,15 +36,15 @@ createAuthor uid description = do
   case optUser of
     Nothing -> pure $ Left I.UnknownUserId
     Just user -> do
-      aid <- insertAuthor (uid, description)
+      aid <- insertAuthor uid description
       pure $
         Right
           Author
             {authorId = aid, authorUser = user, authorDescription = description}
 
-insertAuthor :: (UserId, T.Text) -> Transaction AuthorId
+insertAuthor :: UserId -> T.Text -> Transaction AuthorId
 insertAuthor =
-  statement $
+  curry . statement $
   dimap
     (first getUserId)
     AuthorId
@@ -75,9 +75,9 @@ selectAuthorById =
     D.rowMaybe
     True
 
-updateAuthor :: (AuthorId, T.Text) -> Transaction ()
+updateAuthor :: AuthorId -> T.Text -> Transaction ()
 updateAuthor =
-  statement $
+  curry . statement $
   lmap
     (swap . first getAuthorId)
     [TH.resultlessStatement|
@@ -96,9 +96,9 @@ authorColumns = do
 authorsTable :: TableName
 authorsTable = "authors"
 
-selectAuthorsByUserId :: (UserId, PageSpec) -> Transaction (Vector AuthorId)
+selectAuthorsByUserId :: UserId -> PageSpec -> Transaction (Vector AuthorId)
 selectAuthorsByUserId =
-  statement $
+  curry . statement $
   dimap
     (\(uid, page) ->
        ( getUserId uid
