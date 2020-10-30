@@ -113,6 +113,7 @@ library
     , Web.Representation.Author
     , Web.Representation.Base64
     , Web.Representation.Category
+    , Web.Representation.Image
     , Web.Representation.News
     , Web.Representation.Tag
     , Web.Representation.User

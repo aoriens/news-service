@@ -17,6 +17,7 @@ import Data.Maybe
 import Data.Text (Text)
 import Web.Application
 import Web.Representation.Base64
+import Web.Representation.Image
 
 data Handle =
   Handle
@@ -37,32 +38,24 @@ queryFromInUser InUser {..} =
   I.Query
     { qFirstName = iuFirstName
     , qLastName = iuLastName
-    , qAvatar = imageQueryFromInImage <$> iuAvatar
+    , qAvatar = imageQueryFromImageRep <$> iuAvatar
     }
 
-imageQueryFromInImage :: InImage -> I.ImageQuery
-imageQueryFromInImage InImage {..} =
-  Image {imageData = unBase64 iiBase64Data, imageContentType = iiContentType}
+imageQueryFromImageRep :: ImageRep -> I.ImageQuery
+imageQueryFromImageRep ImageRep {..} =
+  Image
+    { imageData = unBase64 imageRepBase64Data
+    , imageContentType = imageRepContentType
+    }
 
 data InUser =
   InUser
     { iuFirstName :: Maybe Text
     , iuLastName :: Text
-    , iuAvatar :: Maybe InImage
-    }
-
-data InImage =
-  InImage
-    { iiBase64Data :: Base64
-    , iiContentType :: Text
+    , iuAvatar :: Maybe ImageRep
     }
 
 $(A.deriveFromJSON
     A.defaultOptions
       {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "iu"}
     ''InUser)
-
-$(A.deriveFromJSON
-    A.defaultOptions
-      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "ii"}
-    ''InImage)
