@@ -43,6 +43,45 @@ spec = do
       uriFragment <$> uri `shouldBe` Just ""
       uriQuery <$> uri `shouldBe` Just ""
       uriUserInfo <$> (uriAuthority =<< uri) `shouldBe` Just ""
+  describe "parseAppURI" $ do
+    it
+      "should parse back everything renderAppURI has rendered with the same config" $ do
+      let config = AppURIConfig {cfUseHTTPS = False, cfDomain = "a.com"}
+          uris = appURIsForAllPossibleConstructors
+          results = map (parseAppURI config . renderAppURI config) uris
+      results `shouldBe` map Just uris
+    it "should return Nothing for a non-URI" $ do
+      let config = defaultConfig
+          input = "qwe"
+          r = parseAppURI config input
+      r `shouldBe` Nothing
+    it "should return Nothing for a neither http nor https scheme" $ do
+      let config = defaultConfig
+          input = "ftp://a.com/1"
+          r = parseAppURI config input
+      r `shouldBe` Nothing
+    it "should return Nothing for an http URI if cfUseHTTPS is True" $ do
+      let config = AppURIConfig {cfUseHTTPS = True, cfDomain = "a.com"}
+          input = "http://a.com/users/1"
+          r = parseAppURI config input
+      r `shouldBe` Nothing
+    it "should return Nothing for an https URI if cfUseHTTPS is False" $ do
+      let config = AppURIConfig {cfUseHTTPS = False, cfDomain = "a.com"}
+          input = "https://a.com/users/1"
+          r = parseAppURI config input
+      r `shouldBe` Nothing
+    it "should return Nothing for a URI if the domain mismatches cfDomain" $ do
+      let config =
+            AppURIConfig {cfUseHTTPS = False, cfDomain = "expecteddomain"}
+          input = "http://otherdomain/users/1"
+          r = parseAppURI config input
+      r `shouldBe` Nothing
+    it
+      "should return True if the domain and scheme matches the config and the path is parsable" $ do
+      let config = AppURIConfig {cfUseHTTPS = False, cfDomain = "a.com"}
+          input = "http://a.com/users/1"
+          r = parseAppURI config input
+      r `shouldBe` Just (UserURI $ UserId 1)
 
 defaultAppURI :: AppURI
 defaultAppURI = ImageURI $ ImageId 1

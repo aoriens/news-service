@@ -7,23 +7,26 @@ module Web.AppURI
   , RelativeURI(..)
   , AppURIConfig(..)
   , renderAppURI
+  , parseAppURI
   , toRelativeURI
   , fromRelativeURI
   ) where
 
+import Control.Monad
 import Core.Author
 import Core.Category
 import Core.Image
 import Core.Tag
 import Core.User
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LB
 import Data.Integral.Exact
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Types as Http
+import qualified Network.URI as URI
 
 data AppURIConfig =
   AppURIConfig
@@ -50,11 +53,9 @@ data AppURI
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
-renderAppURI AppURIConfig {..} appURI = scheme <> cfDomain <> path
+renderAppURI config appURI =
+  requiredURIScheme config <> "//" <> cfDomain config <> path
   where
-    scheme
-      | cfUseHTTPS = "https://"
-      | otherwise = "http://"
     path =
       T.decodeUtf8 . buildByteString . Http.encodePathSegments . relativeURIPath $
       toRelativeURI appURI
@@ -76,6 +77,20 @@ toRelativeURI uri =
     NewsURI -> ["news"]
     TagsURI -> ["tags"]
     TagURI (TagId tid) -> ["tags", T.pack $ show tid]
+
+parseAppURI :: AppURIConfig -> T.Text -> Maybe AppURI
+parseAppURI config uriText = do
+  URI.URI {uriScheme, uriAuthority, uriPath} <-
+    URI.parseAbsoluteURI $ T.unpack uriText
+  URI.URIAuth {uriRegName} <- uriAuthority
+  guard $ uriScheme == T.unpack (requiredURIScheme config)
+  guard $ uriRegName == T.unpack (cfDomain config)
+  fromRelativeURI . RelativeURI . Http.decodePathSegments $ B.pack uriPath
+
+requiredURIScheme :: AppURIConfig -> Text
+requiredURIScheme AppURIConfig {cfUseHTTPS}
+  | cfUseHTTPS = "https:"
+  | otherwise = "http:"
 
 fromRelativeURI :: RelativeURI -> Maybe AppURI
 fromRelativeURI (RelativeURI path) =
