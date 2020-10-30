@@ -110,6 +110,7 @@ library
     , Web.Presenter
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
+    , Web.Representation.AppURI
     , Web.Representation.Author
     , Web.Representation.Base64
     , Web.Representation.Category

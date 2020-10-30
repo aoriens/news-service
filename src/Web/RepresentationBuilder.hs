@@ -16,6 +16,7 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import Data.Text as T
 import Web.AppURI hiding (renderAppURI)
+import Web.Representation.AppURI
 import Web.Response
 
 data RepBuilderHandle =
@@ -46,8 +47,3 @@ runRepBuilder h (RepBuilder r) =
         hJSONEncode h $ runReader r (AppURIRep . hRenderAppURI h)
     , resourceRepresentationContentType = contentType "application/json"
     }
-
--- | A JSON-encodable type-safe wrapper for application URLs.
-newtype AppURIRep =
-  AppURIRep T.Text
-  deriving (A.ToJSON)
