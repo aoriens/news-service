@@ -123,7 +123,7 @@ exceptionToResponse h e
         T.pack (show entityIdent) <>
         " cannot be deleted because the following entities depend on it: " <>
         (T.intercalate ", " . map (T.pack . show)) depIds
-      EntityNotFoundException _ -> notFoundResponse
+      RequestedEntityNotFoundException _ -> notFoundResponse
   | hShowInternalExceptionInfoInResponses h =
     Just $
     stubErrorResponseWithReason Http.internalServerError500 [] $

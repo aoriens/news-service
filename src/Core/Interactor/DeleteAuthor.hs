@@ -24,4 +24,5 @@ run Handle {..} credentials authorIdent = do
   actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "deleting author"
   ok <- hDeleteAuthor authorIdent
-  unless ok $ throwM . EntityNotFoundException $ AuthorEntityId authorIdent
+  unless ok $
+    throwM . RequestedEntityNotFoundException $ AuthorEntityId authorIdent

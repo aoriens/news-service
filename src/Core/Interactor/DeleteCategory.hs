@@ -31,7 +31,7 @@ run Handle {..} credentials categoryIdent = do
         (CategoryEntityId categoryIdent)
         ids
     failureToException UnknownCategory =
-      EntityNotFoundException $ CategoryEntityId categoryIdent
+      RequestedEntityNotFoundException $ CategoryEntityId categoryIdent
 
 data Failure
   = DependentEntitiesPreventDeletion [EntityId]

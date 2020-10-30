@@ -54,12 +54,13 @@ spec
           h = stubHandle {hUpdateAuthor = \_ _ -> pure $ Just expectedAuthor}
       r <- run h noCredentials aid description
       r `shouldBe` expectedAuthor
-    it "should throw EntityNotFoundException if the gateway returned Nothing" $ do
+    it
+      "should throw RequestedEntityNotFoundException if the gateway returned Nothing" $ do
       let aid = AuthorId 1
           description = "q"
           h = stubHandle {hUpdateAuthor = \_ _ -> pure Nothing}
       run h noCredentials aid description `shouldThrow`
-        isEntityNotFoundException
+        isRequestedEntityNotFoundException
 
 stubHandle :: Handle IO
 stubHandle =

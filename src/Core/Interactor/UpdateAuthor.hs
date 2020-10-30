@@ -30,4 +30,4 @@ run Handle {..} credentials aid newDescription = do
   optAuthor' <- hUpdateAuthor aid newDescription
   case optAuthor' of
     Just author' -> pure author'
-    Nothing -> throwM . EntityNotFoundException $ AuthorEntityId aid
+    Nothing -> throwM . RequestedEntityNotFoundException $ AuthorEntityId aid

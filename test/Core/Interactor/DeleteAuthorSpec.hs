@@ -34,10 +34,12 @@ spec =
               }
       run h noCredentials expectedAuthorId
       readIORef passedAuthorId `shouldReturn` expectedAuthorId
-    it "should throw EntityNotFoundException if the gateway returned False" $ do
+    it
+      "should throw RequestedEntityNotFoundException if the gateway returned False" $ do
       let authorId = AuthorId 8
           h = stubHandle {hDeleteAuthor = \_ -> pure False}
-      run h noCredentials authorId `shouldThrow` isEntityNotFoundException
+      run h noCredentials authorId `shouldThrow`
+        isRequestedEntityNotFoundException
 
 stubHandle :: Handle IO
 stubHandle =

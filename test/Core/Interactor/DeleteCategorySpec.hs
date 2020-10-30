@@ -44,12 +44,13 @@ spec =
              (CategoryEntityId catId)
              childCatIds)
     it
-      "should throw EntityNotFoundException if \
+      "should throw RequestedEntityNotFoundException if \
        \the gateway returned Left UnknownCategory" $ do
       let catId = CategoryId 1
           h = stubHandle {hDeleteCategory = \_ _ -> pure $ Left UnknownCategory}
       r <- try $ run h noCredentials catId
-      r `shouldBe` Left (EntityNotFoundException $ CategoryEntityId catId)
+      r `shouldBe`
+        Left (RequestedEntityNotFoundException $ CategoryEntityId catId)
     it "should pass the CategoryId argument to the gateway delete command" $ do
       passedCategoryId <- newIORef undefined
       let expectedCatId = CategoryId 8

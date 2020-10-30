@@ -29,7 +29,7 @@ run Handle {..} credentials userIdent = do
     failureToException (DependentEntitiesPreventDeletion ids) =
       DependentEntitiesPreventDeletionException (UserEntityId userIdent) ids
     failureToException UnknownUser =
-      EntityNotFoundException $ UserEntityId userIdent
+      RequestedEntityNotFoundException $ UserEntityId userIdent
 
 data Failure
   = DependentEntitiesPreventDeletion [EntityId]

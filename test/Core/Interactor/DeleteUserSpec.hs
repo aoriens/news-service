@@ -45,12 +45,12 @@ spec =
              (UserEntityId uid)
              authorIds)
     it
-      "should throw EntityNotFoundException if \
+      "should throw RequestedEntityNotFoundException if \
        \the gateway returned Left UnknownUser" $ do
       let uid = UserId 1
           h = stubHandle {hDeleteUser = \_ _ -> pure $ Left UnknownUser}
       r <- try $ run h noCredentials uid
-      r `shouldBe` Left (EntityNotFoundException $ UserEntityId uid)
+      r `shouldBe` Left (RequestedEntityNotFoundException $ UserEntityId uid)
     it "should pass the UserId argument to the gateway delete command" $ do
       passedUserId <- newIORef undefined
       let expectedUid = UserId 8
