@@ -22,7 +22,7 @@ spec = do
       let uris = appURIsForAllPossibleConstructors
           results = map (fromRelativeURI . toRelativeURI) uris
       results `shouldBe` map Just uris
-  describe "render" $ do
+  describe "renderAppURI" $ do
     it "should return https URI if cfUseHTTPS is True" $ do
       let config = defaultConfig {cfUseHTTPS = True}
           r = renderAppURI config defaultAppURI
