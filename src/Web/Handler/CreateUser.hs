@@ -7,7 +7,6 @@ module Web.Handler.CreateUser
   ) where
 
 import Core.Authentication
-import Core.Image
 import qualified Core.Interactor.CreateUser as I
 import Core.User
 import qualified Data.Aeson as A
@@ -16,7 +15,6 @@ import Data.List
 import Data.Maybe
 import Data.Text (Text)
 import Web.Application
-import Web.Representation.Base64
 import Web.Representation.Image
 
 data Handle =
@@ -38,14 +36,7 @@ queryFromInUser InUser {..} =
   I.Query
     { qFirstName = iuFirstName
     , qLastName = iuLastName
-    , qAvatar = imageQueryFromImageRep <$> iuAvatar
-    }
-
-imageQueryFromImageRep :: ImageRep -> I.ImageQuery
-imageQueryFromImageRep ImageRep {..} =
-  Image
-    { imageData = unBase64 imageRepBase64Data
-    , imageContentType = imageRepContentType
+    , qAvatar = imageFromRep <$> iuAvatar
     }
 
 data InUser =
