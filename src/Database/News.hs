@@ -29,15 +29,15 @@ import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
 getNews :: PageSpec -> Transaction [News]
-getNews = mapM loadNewsWithPartialNews <=< selectPartialNews
+getNews = mapM loadNewsWithRow <=< selectNewsRow
 
-selectPartialNews :: PageSpec -> Transaction [PartialNews]
-selectPartialNews =
+selectNewsRow :: PageSpec -> Transaction [NewsRow]
+selectNewsRow =
   statement $
   statementWithColumns
     sql
     pageToLimitOffsetEncoder
-    partialNewsColumns
+    newsRowColumns
     (fmap toList . D.rowVector)
     True
   where
@@ -53,26 +53,26 @@ selectPartialNews =
       |]
 
 -- Part of news we can extract from the database with the first query.
-data PartialNews =
-  PartialNews
+data NewsRow =
+  NewsRow
     { newsId :: NewsId
     , newsDate :: Day
-    , newsPartialVersion :: PartialVersion
+    , newsVersionRow :: VersionRow
     }
 
-partialNewsColumns :: Columns PartialNews
-partialNewsColumns = do
+newsRowColumns :: Columns NewsRow
+newsRowColumns = do
   newsId <- NewsId <$> column newsTable "news_id"
   newsDate <- column newsTable "date"
-  newsPartialVersion <- partialVersionColumns
-  pure PartialNews {..}
+  newsVersionRow <- versionRowColumns
+  pure NewsRow {..}
 
 newsTable :: TableName
 newsTable = "news"
 
 -- Part of news version we can extract from the database with the first query.
-data PartialVersion =
-  PartialVersion
+data VersionRow =
+  VersionRow
     { nvId :: NewsVersionId
     , nvTitle :: Text
     , nvText :: Text
@@ -81,26 +81,26 @@ data PartialVersion =
     , nvMainPhotoId :: Maybe ImageId
     }
 
-partialVersionColumns :: Columns PartialVersion
-partialVersionColumns = do
+versionRowColumns :: Columns VersionRow
+versionRowColumns = do
   nvId <- NewsVersionId <$> column versionsTable "news_version_id"
   nvTitle <- column versionsTable "title"
   nvText <- column versionsTable "body"
   nvAuthor <- authorColumns
   nvCategoryId <- CategoryId <$> column versionsTable "category_id"
   nvMainPhotoId <- fmap ImageId <$> column versionsTable "main_photo_id"
-  pure PartialVersion {..}
+  pure VersionRow {..}
 
 versionsTable :: TableName
 versionsTable = "news_versions"
 
-loadNewsWithPartialNews :: PartialNews -> Transaction News
-loadNewsWithPartialNews PartialNews {..} = do
-  newsVersion <- loadVersionWithPartialVersion newsPartialVersion
+loadNewsWithRow :: NewsRow -> Transaction News
+loadNewsWithRow NewsRow {..} = do
+  newsVersion <- loadVersionWithRow newsVersionRow
   pure News {newsVersion, ..}
 
-loadVersionWithPartialVersion :: PartialVersion -> Transaction NewsVersion
-loadVersionWithPartialVersion PartialVersion {..} = do
+loadVersionWithRow :: VersionRow -> Transaction NewsVersion
+loadVersionWithRow VersionRow {..} = do
   nvCategory <- getExistingCategoryById nvCategoryId
   nvTags <- getTagsForVersion nvId
   nvAdditionalPhotoIds <- getAdditionalPhotosForVersion nvId
