@@ -19,32 +19,9 @@ spec :: Spec
 spec = do
   describe "toRelativeURI" $ do
     it "should parse back all supported URIs after rendering them" $ do
-      let appURIs =
-            [ ImageURI $ ImageId 1
-            , UsersURI
-            , UserURI $ UserId 1
-            , AuthorsURI
-            , AuthorURI $ AuthorId 1
-            , CategoriesURI
-            , CategoryURI $ CategoryId 1
-            , NewsURI
-            , TagsURI
-            , TagURI $ TagId 1
-            ]
-          _addNewElementToTheListAboveIfDoesNotCompile =
-            \case
-              ImageURI _ -> ()
-              UsersURI -> ()
-              UserURI _ -> ()
-              AuthorsURI -> ()
-              AuthorURI _ -> ()
-              CategoriesURI -> ()
-              CategoryURI _ -> ()
-              NewsURI -> ()
-              TagsURI -> ()
-              TagURI _ -> ()
-          results = map (fromRelativeURI . toRelativeURI) appURIs
-      results `shouldBe` map Just appURIs
+      let uris = appURIsForAllPossibleConstructors
+          results = map (fromRelativeURI . toRelativeURI) uris
+      results `shouldBe` map Just uris
   describe "render" $ do
     it "should return https URI if cfUseHTTPS is True" $ do
       let config = defaultConfig {cfUseHTTPS = True}
@@ -72,3 +49,30 @@ defaultAppURI = ImageURI $ ImageId 1
 
 defaultConfig :: AppURIConfig
 defaultConfig = AppURIConfig {cfUseHTTPS = False, cfDomain = "example.com"}
+
+appURIsForAllPossibleConstructors :: [AppURI]
+appURIsForAllPossibleConstructors =
+  [ ImageURI $ ImageId 1
+  , UsersURI
+  , UserURI $ UserId 1
+  , AuthorsURI
+  , AuthorURI $ AuthorId 1
+  , CategoriesURI
+  , CategoryURI $ CategoryId 1
+  , NewsURI
+  , TagsURI
+  , TagURI $ TagId 1
+  ]
+  where
+    _addNewElementToTheListAboveIfDoesNotCompile =
+      \case
+        ImageURI _ -> ()
+        UsersURI -> ()
+        UserURI _ -> ()
+        AuthorsURI -> ()
+        AuthorURI _ -> ()
+        CategoriesURI -> ()
+        CategoryURI _ -> ()
+        NewsURI -> ()
+        TagsURI -> ()
+        TagURI _ -> ()
