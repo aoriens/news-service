@@ -98,10 +98,8 @@ exceptionToResponse h e
   | Just webException <- fromException e =
     Just $
     case webException of
-      BadRequestException reason ->
-        stubErrorResponseWithReason Http.badRequest400 [] reason
-      IncorrectParameterException reason ->
-        stubErrorResponseWithReason Http.badRequest400 [] reason
+      BadRequestException reason -> badRequestResponse reason
+      IncorrectParameterException reason -> badRequestResponse reason
       NotFoundException -> notFoundResponse
       UnsupportedMediaTypeException supportedTypes ->
         stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
@@ -114,12 +112,11 @@ exceptionToResponse h e
   | Just coreException <- fromException e =
     Just $
     case coreException of
-      QueryException reason ->
-        stubErrorResponseWithReason Http.badRequest400 [] reason
+      QueryException reason -> badRequestResponse reason
       BadCredentialsException _ -> notFoundResponse
       NoPermissionException _ _ -> notFoundResponse
       DependentEntitiesPreventDeletionException entityIdent depIds ->
-        stubErrorResponseWithReason Http.badRequest400 [] $
+        badRequestResponse $
         T.pack (show entityIdent) <>
         " cannot be deleted because the following entities depend on it: " <>
         (T.intercalate ", " . map (T.pack . show)) depIds
@@ -168,6 +165,9 @@ notFoundResponse = stubErrorResponse Http.notFound404 []
 stubErrorResponse :: Http.Status -> [Http.Header] -> Response
 stubErrorResponse status additionalHeaders =
   stubErrorResponseWithReason status additionalHeaders ""
+
+badRequestResponse :: T.Text -> Response
+badRequestResponse = stubErrorResponseWithReason Http.badRequest400 []
 
 stubErrorResponseWithReason ::
      Http.Status -> [Http.Header] -> T.Text -> Response
