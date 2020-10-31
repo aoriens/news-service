@@ -23,7 +23,7 @@ newsRep :: News -> RepBuilder NewsRep
 newsRep News {newsId, newsDate, newsVersion = NewsVersion {..}} = do
   newsAuthor <- authorRep nvAuthor
   newsCategory <- categoryRep nvCategory
-  newsPhoto <- renderMaybeAppURI (ImageURI <$> nvMainPhotoId)
+  newsPhoto <- mapM (renderAppURI . ImageURI) nvMainPhotoId
   newsPhotos <- mapM (renderAppURI . ImageURI) $ toList nvAdditionalPhotoIds
   newsTags <- mapM tagRep $ toList nvTags
   pure

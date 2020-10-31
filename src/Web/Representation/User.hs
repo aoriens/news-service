@@ -32,7 +32,7 @@ data UserRep =
 
 userRep :: Maybe Core.Credentials -> User -> RepBuilder UserRep
 userRep creds User {..} = do
-  avatarURL <- renderMaybeAppURI (U.ImageURI <$> userAvatarId)
+  avatarURL <- mapM (renderAppURI . U.ImageURI) userAvatarId
   pure
     UserRep
       { userUserId = getUserId userId

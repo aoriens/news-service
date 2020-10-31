@@ -6,7 +6,6 @@ module Web.RepresentationBuilder
   , RepBuilder
   , AppURI
   , renderAppURI
-  , renderMaybeAppURI
   , runRepBuilder
   , AppURIRep
   ) where
@@ -34,10 +33,6 @@ newtype RepBuilder a =
 
 renderAppURI :: AppURI -> RepBuilder AppURIRep
 renderAppURI url = RepBuilder $ asks ($ url)
-
-renderMaybeAppURI :: Maybe AppURI -> RepBuilder (Maybe AppURIRep)
-renderMaybeAppURI Nothing = pure Nothing
-renderMaybeAppURI (Just u) = Just <$> renderAppURI u
 
 runRepBuilder ::
      A.ToJSON a => RepBuilderHandle -> RepBuilder a -> ResourceRepresentation
