@@ -46,7 +46,7 @@ spec = do
   describe "parseAppURI" $ do
     it
       "should parse back everything renderAppURI has rendered with the same config" $ do
-      let config = AppURIConfig {cfUseHTTPS = False, cfDomain = "a.com"}
+      let config = defaultConfig {cfUseHTTPS = False, cfDomain = "a.com"}
           uris = appURIsForAllPossibleConstructors
           results = map (parseAppURI config . renderAppURI config) uris
       results `shouldBe` map Just uris
@@ -61,24 +61,46 @@ spec = do
           r = parseAppURI config input
       r `shouldBe` Nothing
     it "should return Nothing for an http URI if cfUseHTTPS is True" $ do
-      let config = AppURIConfig {cfUseHTTPS = True, cfDomain = "a.com"}
+      let config = defaultConfig {cfUseHTTPS = True, cfDomain = "a.com"}
           input = "http://a.com/users/1"
           r = parseAppURI config input
       r `shouldBe` Nothing
     it "should return Nothing for an https URI if cfUseHTTPS is False" $ do
-      let config = AppURIConfig {cfUseHTTPS = False, cfDomain = "a.com"}
+      let config = defaultConfig {cfUseHTTPS = False, cfDomain = "a.com"}
           input = "https://a.com/users/1"
           r = parseAppURI config input
       r `shouldBe` Nothing
     it "should return Nothing for a URI if the domain mismatches cfDomain" $ do
       let config =
-            AppURIConfig {cfUseHTTPS = False, cfDomain = "expecteddomain"}
+            defaultConfig {cfUseHTTPS = False, cfDomain = "expecteddomain"}
           input = "http://otherdomain/users/1"
           r = parseAppURI config input
       r `shouldBe` Nothing
     it
       "should return True if the domain and scheme matches the config and the path is parsable" $ do
-      let config = AppURIConfig {cfUseHTTPS = False, cfDomain = "a.com"}
+      let config = defaultConfig {cfUseHTTPS = False, cfDomain = "a.com"}
+          input = "http://a.com/users/1"
+          r = parseAppURI config input
+      r `shouldBe` Just (UserURI $ UserId 1)
+    it "should parse good URI with a different port than specified in config" $ do
+      let config =
+            defaultConfig
+              {cfUseHTTPS = False, cfDomain = "a.com", cfPort = Just "1"}
+          input = "http://a.com:2/users/1"
+          r = parseAppURI config input
+      r `shouldBe` Just (UserURI $ UserId 1)
+    it "should parse good URI with a port although the config port is Nothing" $ do
+      let config =
+            defaultConfig
+              {cfUseHTTPS = False, cfDomain = "a.com", cfPort = Nothing}
+          input = "http://a.com:2/users/1"
+          r = parseAppURI config input
+      r `shouldBe` Just (UserURI $ UserId 1)
+    it
+      "should parse good URI without a port although the config port is specified" $ do
+      let config =
+            defaultConfig
+              {cfUseHTTPS = False, cfDomain = "a.com", cfPort = Just "1"}
           input = "http://a.com/users/1"
           r = parseAppURI config input
       r `shouldBe` Just (UserURI $ UserId 1)
@@ -87,7 +109,8 @@ defaultAppURI :: AppURI
 defaultAppURI = ImageURI $ ImageId 1
 
 defaultConfig :: AppURIConfig
-defaultConfig = AppURIConfig {cfUseHTTPS = False, cfDomain = "example.com"}
+defaultConfig =
+  AppURIConfig {cfUseHTTPS = False, cfDomain = "example.com", cfPort = Nothing}
 
 appURIsForAllPossibleConstructors :: [AppURI]
 appURIsForAllPossibleConstructors =

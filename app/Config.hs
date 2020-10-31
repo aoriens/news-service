@@ -13,6 +13,7 @@ module Config
 import qualified Core.Pagination as Pagination
 import qualified Data.HashSet as HS
 import Data.Int
+import Data.Integral.Exact
 import Data.Maybe
 import Data.String
 import Data.Text (Text)
@@ -78,6 +79,7 @@ makeConfig inConfig@InConfig {..} = do
       Nothing -> pure $ HS.fromList ["image/jpeg", "image/png"]
       Just types@(_:_) -> pure $ HS.fromList types
       Just [] -> Left "Allowed image MIME types list must not be empty"
+  (publicDomain, publicPort) <- parsePublicDomainAndPort inServerPublicDomain
   Right
     Config
       { cfWarpSettings = warpSettings inConfig
@@ -94,7 +96,8 @@ makeConfig inConfig@InConfig {..} = do
       , cfAppURIConfig =
           AppURIConfig
             { cfUseHTTPS = Just True == inServerPublicURLsUseHTTPS
-            , cfDomain = fromString inServerPublicDomain
+            , cfDomain = publicDomain
+            , cfPort = publicPort
             }
       , ..
       }
@@ -139,3 +142,15 @@ assureRange min_ max_ xName x
       , ", but given value "
       , show x
       ]
+
+parsePublicDomainAndPort :: String -> Either String (Text, Maybe Text)
+parsePublicDomainAndPort s = do
+  let (domainString, rest) = break (== ':') s
+  port <- parsePort rest
+  pure (fromString domainString, port)
+  where
+    parsePort "" = Right Nothing
+    parsePort (_:port)
+      | Just _ <- readExactIntegral port :: Maybe Word16 =
+        Right . Just $ fromString port
+      | otherwise = Left $ "Invalid public port: " ++ show port

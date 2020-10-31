@@ -32,6 +32,7 @@ data AppURIConfig =
   AppURIConfig
     { cfUseHTTPS :: Bool
     , cfDomain :: T.Text
+    , cfPort :: Maybe T.Text
     }
 
 newtype RelativeURI =
@@ -54,8 +55,9 @@ data AppURI
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
 renderAppURI config appURI =
-  requiredURIScheme config <> "//" <> cfDomain config <> path
+  requiredURIScheme config <> "//" <> cfDomain config <> port <> path
   where
+    port = maybe "" (":" <>) $ cfPort config
     path =
       T.decodeUtf8 . buildByteString . Http.encodePathSegments . relativeURIPath $
       toRelativeURI appURI
