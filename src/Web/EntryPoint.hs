@@ -134,6 +134,14 @@ exceptionToResponse h e
         stubErrorResponseWithReason Http.badRequest400 [] $
         "The following entity IDs cannot be found: " <>
         (T.intercalate ", " . map (T.pack . show)) ids
+      DisallowedImageContentTypeException badContentType allowedContentTypes ->
+        stubErrorResponseWithReason
+          Http.unsupportedMediaType415
+          []
+          ("Unsupported content type: " <>
+           badContentType <>
+           ". Supported content types: " <>
+           T.intercalate ", " allowedContentTypes)
   | hShowInternalExceptionInfoInResponses h =
     Just $
     stubErrorResponseWithReason Http.internalServerError500 [] $

@@ -124,7 +124,8 @@ spec = do
           h =
             stubHandle
               {I.hAllowedImageContentTypes = HS.fromList allowedContentTypes}
-      I.run h query `shouldThrow` \QueryException {} -> True
+      I.run h query `shouldThrow` \DisallowedImageContentTypeException {} ->
+        True
     it
       "should not throw QueryException if avatar content type is in the allowed list" $ do
       let allowedContentType = "image/tiff"

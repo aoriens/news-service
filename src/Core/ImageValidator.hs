@@ -15,17 +15,6 @@ rejectDisallowedImage :: MonadThrow m => Set.HashSet T.Text -> Image -> m ()
 rejectDisallowedImage allowedImageContentTypes Image {..} =
   when (imageContentType `notElem` allowedImageContentTypes) $
   throwM
-    (disallowedImageContentTypeException
+    (DisallowedImageContentTypeException
        imageContentType
-       allowedImageContentTypes)
-
-disallowedImageContentTypeException ::
-     T.Text -> Set.HashSet T.Text -> CoreException
-disallowedImageContentTypeException badContentType allowedContentTypes =
-  QueryException $
-  mconcat
-    [ "Content type '"
-    , badContentType
-    , "' is disallowed. Allowed content types: "
-    ] <>
-  T.intercalate ", " (sort $ toList allowedContentTypes)
+       (sort $ toList allowedImageContentTypes))

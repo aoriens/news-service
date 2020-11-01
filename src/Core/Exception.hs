@@ -16,6 +16,8 @@ type Reason = Text
 
 type ActionName = Text
 
+type ContentType = Text
+
 -- | An exception to designate incorrect input data to an interactor.
 data CoreException
   = QueryException Reason
@@ -24,6 +26,7 @@ data CoreException
   | DependentEntitiesPreventDeletionException EntityId [EntityId]
   | RequestedEntityNotFoundException EntityId
   | DependentEntitiesNotFoundException [EntityId]
+  | DisallowedImageContentTypeException ContentType [ContentType]
   deriving (Show, Eq)
 
 instance Exception CoreException
