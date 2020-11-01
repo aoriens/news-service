@@ -149,7 +149,7 @@ coreExceptionToResponse e =
       stubErrorResponseWithReason
         Http.unsupportedMediaType415
         []
-        ("Unsupported content type: " <>
+        ("Unsupported image content type: " <>
          badContentType <>
          ". Supported content types: " <> T.intercalate ", " allowedContentTypes)
 
