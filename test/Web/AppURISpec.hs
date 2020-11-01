@@ -138,3 +138,5 @@ appURIsForAllPossibleConstructors =
         NewsURI -> ()
         TagsURI -> ()
         TagURI _ -> ()
+        DraftsURI -> ()
+        DraftURI _ -> ()

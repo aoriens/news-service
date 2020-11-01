@@ -11,3 +11,6 @@ import qualified Data.Text as T
 newtype AppURIRep =
   AppURIRep T.Text
   deriving (A.ToJSON)
+
+instance A.FromJSON AppURIRep where
+  parseJSON = A.withText "URI" $ pure . AppURIRep

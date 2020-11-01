@@ -17,6 +17,7 @@ module Web.Presenter
   , tagCreatedPresenter
   , tagPresenter
   , tagListPresenter
+  , draftCreatedPresenter
   ) where
 
 import Core.Authentication
@@ -33,6 +34,7 @@ import Web.AppURI
 import Web.Application
 import Web.Representation.Author
 import Web.Representation.Category
+import Web.Representation.Draft
 import Web.Representation.News
 import Web.Representation.Tag
 import Web.Representation.User
@@ -131,3 +133,13 @@ tagPresenter h = dataResponse . runRepBuilder h . tagRep
 
 tagListPresenter :: RepBuilderHandle -> [Tag] -> Response
 tagListPresenter h = dataResponse . runRepBuilder h . mapM tagRep
+
+draftCreatedPresenter ::
+     AppURIConfig -> RepBuilderHandle -> NewsVersion -> Response
+draftCreatedPresenter uriConfig h newsVersion =
+  resourceCreatedAndReturnedResponse uriConfig (draftURI newsVersion) .
+  runRepBuilder h $
+  draftRep newsVersion
+
+draftURI :: NewsVersion -> AppURI
+draftURI = DraftURI . nvId

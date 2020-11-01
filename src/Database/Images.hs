@@ -2,6 +2,7 @@
 
 module Database.Images
   ( selectImage
+  , imageExists
   , createImage
   , deleteImageIfNotReferenced
   ) where
@@ -21,6 +22,17 @@ selectImage =
     [TH.maybeStatement|
       select images.content :: bytea, mime_types.value :: varchar
       from images join mime_types using (mime_type_id)
+      where image_id = $1 :: integer
+    |]
+
+imageExists :: ImageId -> Transaction Bool
+imageExists =
+  statement $
+  lmap
+    getImageId
+    [TH.singletonStatement|
+      select (count(*) > 0) :: boolean
+      from images
       where image_id = $1 :: integer
     |]
 

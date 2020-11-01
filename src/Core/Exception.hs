@@ -23,6 +23,7 @@ data CoreException
   | NoPermissionException Permission ActionName
   | DependentEntitiesPreventDeletionException EntityId [EntityId]
   | RequestedEntityNotFoundException EntityId
+  | DependentEntitiesNotFoundException [EntityId]
   deriving (Show, Eq)
 
 instance Exception CoreException

@@ -16,6 +16,7 @@ import Control.Monad
 import Core.Author
 import Core.Category
 import Core.Image
+import Core.News
 import Core.Tag
 import Core.User
 import qualified Data.ByteString.Builder as BB
@@ -51,6 +52,8 @@ data AppURI
   | NewsURI
   | TagsURI
   | TagURI TagId
+  | DraftsURI
+  | DraftURI NewsVersionId
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -79,6 +82,8 @@ toRelativeURI uri =
     NewsURI -> ["news"]
     TagsURI -> ["tags"]
     TagURI (TagId tid) -> ["tags", T.pack $ show tid]
+    DraftsURI -> ["drafts"]
+    DraftURI (NewsVersionId vid) -> ["drafts", T.pack $ show vid]
 
 parseAppURI :: AppURIConfig -> T.Text -> Maybe AppURI
 parseAppURI config uriText = do
@@ -110,4 +115,7 @@ fromRelativeURI (RelativeURI path) =
     ["news"] -> Just NewsURI
     ["tags"] -> Just TagsURI
     ["tags", ident] -> TagURI . TagId <$> readExactIntegral (T.unpack ident)
+    ["drafts"] -> Just DraftsURI
+    ["drafts", ident] ->
+      DraftURI . NewsVersionId <$> readExactIntegral (T.unpack ident)
     _ -> Nothing

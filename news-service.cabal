@@ -32,6 +32,7 @@ library
     , Core.Image
     , Core.Interactor.CreateAuthor
     , Core.Interactor.CreateCategory
+    , Core.Interactor.CreateDraft
     , Core.Interactor.CreateTag
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteAuthor
@@ -90,8 +91,9 @@ library
     , Web.HTTP
     , Web.Handler.CreateAuthor
     , Web.Handler.CreateCategory
-    , Web.Handler.CreateUser
+    , Web.Handler.CreateDraft
     , Web.Handler.CreateTag
+    , Web.Handler.CreateUser
     , Web.Handler.DeleteAuthor
     , Web.Handler.DeleteCategory
     , Web.Handler.DeleteUser
@@ -114,6 +116,7 @@ library
     , Web.Representation.Author
     , Web.Representation.Base64
     , Web.Representation.Category
+    , Web.Representation.Draft
     , Web.Representation.Image
     , Web.Representation.News
     , Web.Representation.Tag

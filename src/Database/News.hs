@@ -3,12 +3,18 @@
 
 module Database.News
   ( getNews
+  , createNewsVersion
   ) where
 
+import Control.Arrow
 import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.Except
 import Core.Author
 import Core.Category
+import Core.EntityId
 import Core.Image
+import Core.Interactor.CreateDraft
 import Core.News
 import Core.Pagination
 import Core.Tag
@@ -22,6 +28,7 @@ import Database
 import Database.Authors
 import Database.Categories
 import Database.Columns
+import Database.Images
 import Database.Pagination
 import Database.Tags
 import qualified Hasql.Decoders as D
@@ -144,4 +151,128 @@ getAdditionalPhotosForVersion =
       select image_id :: integer
       from news_versions_and_additional_photos_relation
       where news_version_id = $1 :: integer
+    |]
+
+createNewsVersion ::
+     CreateNewsVersionCommand -> Transaction (Either GatewayFailure NewsVersion)
+createNewsVersion CreateNewsVersionCommand {..} =
+  runExceptT $ do
+    nvAuthor <- getExistingEntityBy selectAuthorById cnvAuthorId
+    nvCategory <- getExistingEntityBy selectCategory cnvCategoryId
+    nvTags <- getExistingTags
+    nvMainPhotoId <- mapM createOrGetExistingImage cnvMainPhoto
+    nvId <- lift $ insertVersion' nvMainPhotoId
+    nvAdditionalPhotoIds <- createOrGetExistingAdditionalPhotos
+    lift $ addPhotosToVersion nvId nvAdditionalPhotoIds
+    lift $ addTagsToVersion nvId cnvTagIds
+    pure
+      NewsVersion
+        { nvId
+        , nvTitle = cnvTitle
+        , nvText = cnvText
+        , nvAuthor
+        , nvCategory
+        , nvMainPhotoId
+        , nvAdditionalPhotoIds
+        , nvTags
+        }
+  where
+    getExistingEntityBy getOptEntity ident = do
+      optEntity <- lift $ getOptEntity ident
+      case optEntity of
+        Nothing -> failWithEntityNotFound ident
+        Just entity -> pure entity
+    getExistingTags =
+      Set.fromList <$> mapM (getExistingEntityBy findTagById) (toList cnvTagIds)
+    createOrGetExistingImage img
+      | Right image <- img = lift $ createImage image
+      | Left imageIdent <- img = do
+        exists <- lift $ imageExists imageIdent
+        if exists
+          then pure imageIdent
+          else failWithEntityNotFound imageIdent
+    insertVersion' photoId =
+      insertVersion
+        InsertVersionCommand
+          { ivcTitle = cnvTitle
+          , ivcText = cnvText
+          , ivcAuthorId = cnvAuthorId
+          , ivcCategoryId = cnvCategoryId
+          , ivcMainPhotoId = photoId
+          }
+    createOrGetExistingAdditionalPhotos =
+      Set.fromList <$> mapM createOrGetExistingImage cnvAdditionalPhotos
+    failWithEntityNotFound objId = throwE $ GUnknownEntityId [toEntityId objId]
+
+insertVersion :: InsertVersionCommand -> Transaction NewsVersionId
+insertVersion =
+  statement $
+  dimap
+    (\InsertVersionCommand {..} ->
+       ( ivcTitle
+       , ivcText
+       , getAuthorId ivcAuthorId
+       , getCategoryId ivcCategoryId
+       , getImageId <$> ivcMainPhotoId))
+    NewsVersionId
+    [TH.singletonStatement|
+      insert into news_versions (
+        title,
+        body,
+        author_id,
+        category_id,
+        main_photo_id
+      ) values (
+        $1 :: varchar,
+        $2 :: varchar,
+        $3 :: integer,
+        $4 :: integer,
+        $5 :: integer?
+      ) returning news_version_id :: integer
+    |]
+
+data InsertVersionCommand =
+  InsertVersionCommand
+    { ivcTitle :: Text
+    , ivcText :: Text
+    , ivcAuthorId :: AuthorId
+    , ivcCategoryId :: CategoryId
+    , ivcMainPhotoId :: Maybe ImageId
+    }
+
+addPhotosToVersion :: NewsVersionId -> Set.HashSet ImageId -> Transaction ()
+addPhotosToVersion = mapM_ . insertVersionAndAdditionalPhotoAssociation
+
+insertVersionAndAdditionalPhotoAssociation ::
+     NewsVersionId -> ImageId -> Transaction ()
+insertVersionAndAdditionalPhotoAssociation =
+  curry . statement $
+  lmap
+    (getNewsVersionId *** getImageId)
+    [TH.resultlessStatement|
+      insert into news_versions_and_additional_photos_relation (
+        news_version_id,
+        image_id
+      ) values (
+        $1 :: integer,
+        $2 :: integer
+      ) on conflict do nothing
+    |]
+
+addTagsToVersion :: NewsVersionId -> Set.HashSet TagId -> Transaction ()
+addTagsToVersion = mapM_ . insertVersionAndTagAssociation
+
+insertVersionAndTagAssociation :: NewsVersionId -> TagId -> Transaction ()
+insertVersionAndTagAssociation =
+  curry . statement $
+  lmap
+    (getNewsVersionId *** getTagId)
+    [TH.resultlessStatement|
+      insert into news_versions_and_tags_relation (
+        news_version_id,
+        tag_id
+      ) values (
+        $1 :: integer,
+        $2 :: integer
+      ) on conflict do nothing
     |]

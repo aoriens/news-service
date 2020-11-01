@@ -15,6 +15,7 @@ import Core.Authentication.Impl as AuthImpl
 import qualified Core.Authorization.Impl
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
+import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateTag as ICreateTag
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
@@ -57,6 +58,7 @@ import qualified Web.Application as Web
 import qualified Web.EntryPoint
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateCategory as HCreateCategory
+import qualified Web.Handler.CreateDraft as HCreateDraft
 import qualified Web.Handler.CreateTag as HCreateTag
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
@@ -213,6 +215,8 @@ router deps =
     TagURI tagIdent ->
       R.get $ \session ->
         HGetTag.run (getTagHandlerHandle deps session) tagIdent
+    DraftsURI -> R.post $ HCreateDraft.run . createDraftHandlerHandle deps
+    DraftURI _ -> pure ()
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =
@@ -443,6 +447,22 @@ getTagsHandlerHandle deps@Deps {..} session =
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = tagListPresenter dRepresentationBuilderHandle
+    }
+
+createDraftHandlerHandle :: Deps -> Web.Session -> HCreateDraft.Handle
+createDraftHandlerHandle deps@Deps {..} session =
+  HCreateDraft.Handle
+    { hCreateDraftHandle =
+        ICreateDraft.Handle
+          { hAuthenticationHandle = dMakeAuthenticationHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
+          , hCreateNewsVersion =
+              GNews.createNewsVersion $ sessionDatabaseHandle deps session
+          }
+    , hLoadJSONRequestBody = dLoadJSONRequestBody
+    , hPresenter =
+        draftCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+    , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be

@@ -134,6 +134,13 @@ Deletes the identified category and returns no content. Only the least
 significant [CategoryItem](#CategoryItem) of the category will be deleted.
 Requires authentication of a user having the administrator privilege.
 
+### `POST /drafts`
+
+Creates a draft version of news. Accepts [CreateDraft](#CreateDraft) entity in
+the request body and returns [Draft](#Draft) entity. The method requires
+authentication. Your cannot perform the operation on behalf of an
+[Author](#Author) that you do not own.
+
 ### `GET /images/{image_id}`
 
 Returns an image at the specified URL. The method is not considered as part of
@@ -224,6 +231,26 @@ A request to create categories. Fields:
   [CategoryItem](#CategoryItem) where a new category will be created. When no
   one specified, a new root category will be created. An integer, optional.
 
+### CreateDraft
+
+A request to create a news draft. Fields:
+
+- `title` - the document title. A string, required.
+- `text` - the document body as plain text. A string, required.
+- `author_id` - an identifier of an [Author](#Autor) of the news. An integer,
+  required.
+- `category_id` - an identifier of an [Category](#Category) of the news. An
+  integer, required.
+- `photo` - the primary illustration for the news. This is an optional URL of an
+  image returned by the service or an optional [CreateImage](#CreateImage)
+  entity.
+- `photos` - more illustrations for the news. This is an array consisting of
+  URLs of images returned by the service and [CreateImage](#CreateImage)
+  entities. Duplicate image URLs will be skipped. The parameter is required.
+- `tag_ids` - tags of the news. This is an array of integer identifiers of
+  [Tag](#Tag) entities. Duplicate items are allowed and skipped. The parameter
+  is required.
+
 ### CreateImage
 
 A request to create an image. Fields:
@@ -245,6 +272,20 @@ A request to create a user. Fields:
 - `last_name` - the user's last name. This is to be used in case of a
   single-component name. A string, required.
 - `avatar` - the user's avatar image. A [CreateImage](#CreateImage), optional.
+
+### Draft
+
+A draft of a news entry. Fields:
+
+- `draft_id` - an identifier of the draft. An integer, required.
+- `title` - the news title. A string, required.
+- `text` - the news body text. It is considered as a plain Unicode text.
+  A string, required.
+- `author` - the news author. An [Author](#Author), required.
+- `category` - the news category. A [Category](#Category), required.
+- `photo` - the main illustration photo URI for the news. A string, required.
+- `photos` - additional illustration URIs. An array of strings, required.
+- `tags` - tags for the news. An array of [Tag](#Tag) objects, required.
 
 ### News
 
