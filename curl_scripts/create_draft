@@ -23,7 +23,10 @@ run_curl "$DOMAIN/drafts" \
   "category_id": $category_id,
   "photo": "http://localhost:3000/images/1",
   "photos": [
-    "http://localhost:3000/images/1"
+    {
+        "base64_data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/TQBcNTh/AAAACklEQVR4nGNiAAAABgADNjd8qAAAAABJRU5ErkJggg==",
+        "content_type": "image/png"
+    }
   ],
   "tag_ids": [1]
 }
