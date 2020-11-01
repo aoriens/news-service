@@ -194,6 +194,7 @@ test-suite news-service-test
     , Core.Authorization.Test
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateCategorySpec
+    , Core.Interactor.CreateDraftSpec
     , Core.Interactor.CreateTagSpec
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteAuthorSpec
