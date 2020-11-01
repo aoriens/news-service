@@ -5,6 +5,7 @@ module Core.Exception
   , isBadCredentialsException
   , isNoPermissionException
   , isRequestedEntityNotFoundException
+  , isDisallowedImageContentTypeException
   ) where
 
 import Control.Exception
@@ -46,3 +47,8 @@ isNoPermissionException _ = False
 isRequestedEntityNotFoundException :: CoreException -> Bool
 isRequestedEntityNotFoundException RequestedEntityNotFoundException {} = True
 isRequestedEntityNotFoundException _ = False
+
+isDisallowedImageContentTypeException :: CoreException -> Bool
+isDisallowedImageContentTypeException DisallowedImageContentTypeException {} =
+  True
+isDisallowedImageContentTypeException _ = False
