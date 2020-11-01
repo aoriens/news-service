@@ -98,55 +98,60 @@ exceptionToResponse :: Handle -> SomeException -> Maybe Response
 exceptionToResponse h e
   | isAsyncException e = Nothing
   | Just webException <- fromException e =
-    Just $
-    case webException of
-      BadRequestException reason -> badRequestResponse reason
-      IncorrectParameterException reason -> badRequestResponse reason
-      NotFoundException -> notFoundResponse
-      UnsupportedMediaTypeException supportedTypes ->
-        stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
-        "Supported media types are: " <> T.intercalate ", " supportedTypes
-      PayloadTooLargeException maxPayloadSize ->
-        stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
-        "The request body length must not exceed " <>
-        T.pack (show maxPayloadSize) <> " bytes"
-      MalformedAuthDataException _ -> notFoundResponse
+    Just $ webExceptionToResponse webException
   | Just coreException <- fromException e =
-    Just $
-    case coreException of
-      QueryException reason -> badRequestResponse reason
-      BadCredentialsException _ -> notFoundResponse
-      NoPermissionException perm _
-        | AdminPermission <- perm -> notFoundResponse
-        | AuthorshipPermission (AuthorId authorIdent) <- perm ->
-          stubErrorResponseWithReason
-            Http.forbidden403
-            []
-            ("You do not own author with id=" <>
-             T.pack (show authorIdent) <> ". Forgot to authorize?")
-      DependentEntitiesPreventDeletionException entityIdent depIds ->
-        badRequestResponse $
-        T.pack (show entityIdent) <>
-        " cannot be deleted because the following entities depend on it: " <>
-        (T.intercalate ", " . map (T.pack . show)) depIds
-      RequestedEntityNotFoundException _ -> notFoundResponse
-      DependentEntitiesNotFoundException ids ->
-        stubErrorResponseWithReason Http.badRequest400 [] $
-        "The following entity IDs cannot be found: " <>
-        (T.intercalate ", " . map (T.pack . show)) ids
-      DisallowedImageContentTypeException badContentType allowedContentTypes ->
-        stubErrorResponseWithReason
-          Http.unsupportedMediaType415
-          []
-          ("Unsupported content type: " <>
-           badContentType <>
-           ". Supported content types: " <>
-           T.intercalate ", " allowedContentTypes)
+    Just $ coreExceptionToResponse coreException
   | hShowInternalExceptionInfoInResponses h =
     Just $
     stubErrorResponseWithReason Http.internalServerError500 [] $
     "<pre>" <> T.pack (show e) <> "</pre>"
   | otherwise = Nothing
+
+webExceptionToResponse :: WebException -> Response
+webExceptionToResponse e =
+  case e of
+    BadRequestException reason -> badRequestResponse reason
+    IncorrectParameterException reason -> badRequestResponse reason
+    NotFoundException -> notFoundResponse
+    UnsupportedMediaTypeException supportedTypes ->
+      stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
+      "Supported media types are: " <> T.intercalate ", " supportedTypes
+    PayloadTooLargeException maxPayloadSize ->
+      stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
+      "The request body length must not exceed " <>
+      T.pack (show maxPayloadSize) <> " bytes"
+    MalformedAuthDataException _ -> notFoundResponse
+
+coreExceptionToResponse :: CoreException -> Response
+coreExceptionToResponse e =
+  case e of
+    QueryException reason -> badRequestResponse reason
+    BadCredentialsException _ -> notFoundResponse
+    NoPermissionException perm _
+      | AdminPermission <- perm -> notFoundResponse
+      | AuthorshipPermission (AuthorId authorIdent) <- perm ->
+        stubErrorResponseWithReason
+          Http.forbidden403
+          []
+          ("You do not own author with id=" <>
+           T.pack (show authorIdent) <> ". Forgot to authorize?")
+    DependentEntitiesPreventDeletionException entityIdent depIds ->
+      badRequestResponse $
+      T.pack (show entityIdent) <>
+      " cannot be deleted because the following entities depend on it: " <>
+      (T.intercalate ", " . map (T.pack . show)) depIds
+    RequestedEntityNotFoundException _ -> notFoundResponse
+    DependentEntitiesNotFoundException ids ->
+      stubErrorResponseWithReason Http.badRequest400 [] $
+      "The following entity IDs cannot be found: " <>
+      (T.intercalate ", " . map (T.pack . show)) ids
+    DisallowedImageContentTypeException badContentType allowedContentTypes ->
+      stubErrorResponseWithReason
+        Http.unsupportedMediaType415
+        []
+        ("Unsupported content type: " <>
+         badContentType <>
+         ". Supported content types: " <> T.intercalate ", " allowedContentTypes)
 
 logUncaughtExceptions :: Handle -> EMiddleware
 logUncaughtExceptions h eapp session request respond =
