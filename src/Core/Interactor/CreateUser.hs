@@ -7,16 +7,13 @@ module Core.Interactor.CreateUser
   , CreateUserResult(..)
   ) where
 
-import Control.Monad
 import Control.Monad.Catch
 import qualified Core.Authentication as Auth
-import Core.Exception
 import Core.Image
+import Core.ImageValidator
 import Core.User
 import qualified Data.HashSet as HS
-import Data.List
 import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Time.Clock
 
 data Handle m =
@@ -29,9 +26,9 @@ data Handle m =
 
 -- | Run the interactor. It can throw 'QueryException'
 run :: MonadThrow m => Handle m -> Query -> m (User, Auth.Credentials)
-run h@Handle {..} q@Query {..} = do
+run Handle {..} Query {..} = do
   let isAdmin = False
-  rejectDisallowedAvatarContentType h q
+  mapM_ (rejectDisallowedImage hAllowedImageContentTypes) qAvatar
   (token, tokenHash) <- hGenerateToken
   createdAt <- hGetCurrentTime
   result <-
@@ -54,17 +51,6 @@ run h@Handle {..} q@Query {..} = do
         , userIsAdmin = isAdmin
         }
     , Auth.TokenCredentials (curUserId result) token)
-
-rejectDisallowedAvatarContentType :: MonadThrow m => Handle m -> Query -> m ()
-rejectDisallowedAvatarContentType Handle {..} Query {..} =
-  case qAvatar of
-    Just Image {..} ->
-      when (imageContentType `notElem` hAllowedImageContentTypes) $
-      throwM
-        (disallowedAvatarContentTypeException
-           imageContentType
-           hAllowedImageContentTypes)
-    Nothing -> pure ()
 
 data Query =
   Query
@@ -92,13 +78,3 @@ data CreateUserResult =
     { curUserId :: UserId
     , curAvatarId :: Maybe ImageId
     }
-
-disallowedAvatarContentTypeException :: Text -> HS.HashSet Text -> CoreException
-disallowedAvatarContentTypeException badContentType allowedContentTypes =
-  QueryException $
-  mconcat
-    [ "Content type '"
-    , badContentType
-    , "' is disallowed. Allowed content types: "
-    ] <>
-  T.intercalate ", " (sort $ HS.toList allowedContentTypes)

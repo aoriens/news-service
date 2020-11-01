@@ -30,6 +30,7 @@ library
     , Core.EntityId
     , Core.Exception
     , Core.Image
+    , Core.ImageValidator
     , Core.Interactor.CreateAuthor
     , Core.Interactor.CreateCategory
     , Core.Interactor.CreateDraft
