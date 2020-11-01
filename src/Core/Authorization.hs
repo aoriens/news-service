@@ -2,11 +2,13 @@ module Core.Authorization
   ( module Core.Permission
   , AuthorizationHandle(..)
   , requireAdminPermission
+  , requireAuthorshipPermission
   , module Core.Authentication
   ) where
 
 import Control.Monad.Catch
 import Core.Authentication
+import Core.Author
 import Core.Exception
 import Core.Permission
 import qualified Data.Text as T
@@ -19,6 +21,15 @@ newtype AuthorizationHandle =
 requireAdminPermission ::
      MonadThrow m => AuthorizationHandle -> AuthenticatedUser -> T.Text -> m ()
 requireAdminPermission h = requirePermission h AdminPermission
+
+requireAuthorshipPermission ::
+     MonadThrow m
+  => AuthorizationHandle
+  -> AuthorId
+  -> AuthenticatedUser
+  -> T.Text
+  -> m ()
+requireAuthorshipPermission h = requirePermission h . AuthorshipPermission
 
 requirePermission ::
      MonadThrow m

@@ -8,8 +8,8 @@ new :: AuthorizationHandle
 new = AuthorizationHandle hasPermission
 
 hasPermission :: Permission -> AuthenticatedUser -> Bool
-hasPermission AdminPermission = isAdmin
-
-isAdmin :: AuthenticatedUser -> Bool
-isAdmin (IdentifiedUser _ admin _) = admin
-isAdmin AnonymousUser = False
+hasPermission AdminPermission (IdentifiedUser _ isAdmin _) = isAdmin
+hasPermission AdminPermission AnonymousUser = False
+hasPermission (AuthorshipPermission requiredAuthorId) (IdentifiedUser _ _ authorIds) =
+  requiredAuthorId `elem` authorIds
+hasPermission (AuthorshipPermission _) AnonymousUser = False
