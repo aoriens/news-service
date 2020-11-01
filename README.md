@@ -244,12 +244,11 @@ A request to create a news draft. Fields:
 - `photo` - the primary illustration for the news. This is an optional URL of an
   image returned by the service or an optional [CreateImage](#CreateImage)
   entity.
-- `photos` - more illustrations for the news. This is an array consisting of
-  URLs of images returned by the service and [CreateImage](#CreateImage)
-  entities. Duplicate image URLs will be skipped. The parameter is required.
-- `tag_ids` - tags of the news. This is an array of integer identifiers of
-  [Tag](#Tag) entities. Duplicate items are allowed and skipped. The parameter
-  is required.
+- `photos` - more illustrations for the news. This is an optional array
+  consisting of URLs of images returned by the service and
+  [CreateImage](#CreateImage) entities. Duplicate image URLs will be skipped.
+- `tag_ids` - tags of the news. This is an optional array of integer identifiers
+  of [Tag](#Tag) entities. Duplicate items are allowed and skipped.
 
 ### CreateImage
 

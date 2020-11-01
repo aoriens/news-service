@@ -51,15 +51,15 @@ data InDraft =
     , inAuthorId :: Int32
     , inCategoryId :: Int32
     , inPhoto :: Maybe ExistingOrNewImageRep
-    , inPhotos :: [ExistingOrNewImageRep]
-    , inTagIds :: [Int32]
+    , inPhotos :: Maybe [ExistingOrNewImageRep]
+    , inTagIds :: Maybe [Int32]
     }
 
 makeCreateDraftRequest ::
      MonadThrow m => Handle -> InDraft -> m I.CreateDraftRequest
 makeCreateDraftRequest h InDraft {..} = do
   cdMainPhoto <- mapM (parseImage h) inPhoto
-  cdAdditionalPhotos <- mapM (parseImage h) inPhotos
+  cdAdditionalPhotos <- mapM (parseImage h) $ fromMaybe [] inPhotos
   pure
     I.CreateDraftRequest
       { cdTitle = inTitle
@@ -68,7 +68,7 @@ makeCreateDraftRequest h InDraft {..} = do
       , cdCategoryId = CategoryId inCategoryId
       , cdMainPhoto
       , cdAdditionalPhotos
-      , cdTagIds = Set.fromList $ map TagId inTagIds
+      , cdTagIds = maybe Set.empty (Set.fromList . map TagId) inTagIds
       }
 
 parseImage ::

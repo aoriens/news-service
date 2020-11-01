@@ -1,0 +1,25 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test X"$2" = X
+then
+    die "Usage: $0 author_id category_id"
+fi
+
+author_id=$1
+category_id=$2
+
+require_token
+run_curl "$DOMAIN/drafts" \
+         -X POST  \
+         -H "Content-Type: application/json" \
+         -u "$TOKEN:" \
+         --data-binary @- <<EOF
+{
+  "title": "GHC 19.0 has been released",
+  "text": "See https://ghc.haskell.org",
+  "author_id": $author_id,
+  "category_id": $category_id
+}
+EOF
