@@ -73,19 +73,15 @@ shouldPassValueSatisfying ::
   -> ((a -> IO ()) -> IO ())
   -> IO ()
 shouldPassValueSatisfying expectation name test = do
-  acc <- newIORef False
-  test $ passValue acc
-  check acc
-  where
-    passValue acc newValue = do
-      isPassed <- readIORef acc
-      if isPassed
-        then expectationFailure $ "'" ++ name ++ "' is invoked more than once"
-        else do
-          writeIORef acc True
-          expectation newValue
-    check acc = do
-      isPassed <- readIORef acc
-      unless isPassed $
-        expectationFailure $
-        "'" ++ name ++ "' is not invoked, although it should have been"
+  acc <- newIORef []
+  test $ \x -> modifyIORef' acc (x :)
+  values <- readIORef acc
+  case values of
+    [] ->
+      expectationFailure $
+      "'" ++ name ++ "' is not invoked, although it should have been"
+    [value] -> expectation value
+    _ ->
+      expectationFailure $
+      "'" ++
+      name ++ "' is invoked more than once with parameters: " ++ show values
