@@ -6,14 +6,12 @@ module Core.Interactor.CreateUserSpec
 
 import Control.Monad
 import qualified Core.Authentication as Auth
-import Core.Exception
 import Core.Image
 import qualified Core.Interactor.CreateUser as I
 import Core.User
-import qualified Data.HashSet as HS
 import Data.IORef
-import Data.Text (Text)
 import Data.Time
+import Test.AsyncExpectation
 import Test.Hspec
 
 spec :: Spec
@@ -110,36 +108,33 @@ spec = do
       (user, _) <- I.run h stubQuery
       userIsAdmin user `shouldBe` False
       readIORef ref `shouldReturn` False
-    it
-      "should throw QueryException if avatar content type is not in the allowed list" $ do
-      let disallowedContentType = "image/jpeg"
-          allowedContentTypes = ["image/tiff"]
-          query =
-            stubQuery
-              { I.qAvatar =
-                  Just
-                    Image
-                      {imageContentType = disallowedContentType, imageData = ""}
-              }
+    it "should pass avatar, if qAvatar == Just _, to hRejectDisallowedImage" $ do
+      let image = stubImage {imageContentType = "t"}
+      shouldPassValue image "hRejectDisallowedImage" $ \pass -> do
+        let query = stubQuery {I.qAvatar = Just image}
+            h = stubHandle {I.hRejectDisallowedImage = pass}
+        void $ I.run h query
+    it "should not call hRejectDisallowedImage if no avatar passed" $ do
+      let query = stubQuery {I.qAvatar = Nothing}
           h =
             stubHandle
-              {I.hAllowedImageContentTypes = HS.fromList allowedContentTypes}
-      I.run h query `shouldThrow` \DisallowedImageContentTypeException {} ->
-        True
+              {I.hRejectDisallowedImage = \_ -> error "Must not invoke"}
+      void $ I.run h query
+    it "should throw exception from hRejectDisallowedImage" $ do
+      let query = stubQuery {I.qAvatar = Just stubImage}
+          expectedError = "q"
+          h = stubHandle {I.hRejectDisallowedImage = \_ -> error expectedError}
+      I.run h query `shouldThrow` errorCall expectedError
     it
-      "should not throw QueryException if avatar content type is in the allowed list" $ do
-      let allowedContentType = "image/tiff"
-          query =
-            stubQuery
-              { I.qAvatar =
-                  Just
-                    Image
-                      {imageContentType = allowedContentType, imageData = ""}
-              }
+      "should not invoke hCreateUser if hRejectDisallowedImage threw an exception" $ do
+      let query = stubQuery {I.qAvatar = Just stubImage}
+          expectedError = "q"
           h =
             stubHandle
-              {I.hAllowedImageContentTypes = HS.singleton allowedContentType}
-      void $ I.run h query -- should not throw
+              { I.hRejectDisallowedImage = \_ -> error expectedError
+              , I.hCreateUser = \_ -> error "Must not invoke hCreateUser"
+              }
+      I.run h query `shouldThrow` errorCall expectedError
 
 stubHandle :: I.Handle IO
 stubHandle =
@@ -147,11 +142,8 @@ stubHandle =
     { hCreateUser = const $ pure stubCreateUserResult
     , hGenerateToken = pure (stubToken, stubTokenHash)
     , hGetCurrentTime = stubGetCurrentTime
-    , hAllowedImageContentTypes = HS.singleton defaultAllowedImageContentType
+    , hRejectDisallowedImage = \_ -> pure ()
     }
-
-defaultAllowedImageContentType :: Text
-defaultAllowedImageContentType = "image/png"
 
 stubToken :: Auth.SecretToken
 stubToken = Auth.SecretToken ""
@@ -166,13 +158,9 @@ stubCreateUserResult :: I.CreateUserResult
 stubCreateUserResult =
   I.CreateUserResult {curUserId = UserId 0, curAvatarId = Nothing}
 
+stubImage :: Image
+stubImage = Image {imageContentType = "", imageData = ""}
+
 stubQuery :: I.Query
 stubQuery =
-  I.Query
-    { qFirstName = Just "John"
-    , qLastName = "Doe"
-    , qAvatar =
-        Just
-          Image
-            {imageContentType = defaultAllowedImageContentType, imageData = ""}
-    }
+  I.Query {qFirstName = Just "John", qLastName = "Doe", qAvatar = Nothing}

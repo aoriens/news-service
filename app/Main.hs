@@ -13,6 +13,7 @@ import Control.Exception.Sync
 import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
 import qualified Core.Authorization.Impl
+import Core.ImageValidator
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateDraft as ICreateDraft
@@ -368,7 +369,8 @@ createUserHandle deps@Deps {..} session =
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
-        , hAllowedImageContentTypes = Cf.cfAllowedImageMimeTypes dConfig
+        , hRejectDisallowedImage =
+            rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
         }
     secretTokenConfig =
       GSecretToken.Config {cfTokenLength = Cf.cfSecretTokenLength dConfig}

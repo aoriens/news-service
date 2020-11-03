@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Core.Interactor.CreateUser
   ( run
   , Handle(..)
@@ -10,9 +12,7 @@ module Core.Interactor.CreateUser
 import Control.Monad.Catch
 import qualified Core.Authentication as Auth
 import Core.Image
-import Core.ImageValidator
 import Core.User
-import qualified Data.HashSet as HS
 import Data.Text (Text)
 import Data.Time.Clock
 
@@ -21,14 +21,15 @@ data Handle m =
     { hCreateUser :: CreateUserCommand -> m CreateUserResult
     , hGenerateToken :: m (Auth.SecretToken, Auth.SecretTokenHash)
     , hGetCurrentTime :: m UTCTime
-    , hAllowedImageContentTypes :: HS.HashSet Text
+    , hRejectDisallowedImage :: MonadThrow m =>
+                                  Image -> m ()
     }
 
 -- | Run the interactor. It can throw 'QueryException'
 run :: MonadThrow m => Handle m -> Query -> m (User, Auth.Credentials)
 run Handle {..} Query {..} = do
   let isAdmin = False
-  mapM_ (rejectDisallowedImage hAllowedImageContentTypes) qAvatar
+  mapM_ hRejectDisallowedImage qAvatar
   (token, tokenHash) <- hGenerateToken
   createdAt <- hGetCurrentTime
   result <-
