@@ -105,6 +105,71 @@ spec
               {hCreateNewsVersion = \_ -> pure . Left $ GUnknownEntityId ids}
       result <- try $ run h noCredentials request
       result `shouldBe` Left (DependentEntitiesNotFoundException ids)
+    it "should pass main photo to hRejectDisallowedImage if it's Right Image" $ do
+      passedPhotosRef <- newIORef []
+      let photo = stubImage {imageData = "q"}
+          request =
+            stubRequest
+              {cdMainPhoto = Just $ Right photo, cdAdditionalPhotos = []}
+          h =
+            stubHandle
+              { hRejectDisallowedImage =
+                  \img -> modifyIORef' passedPhotosRef (img :)
+              }
+      _ <- run h noCredentials request
+      readIORef passedPhotosRef `shouldReturn` [photo]
+    it
+      "should pass all additional photos that are Right Image to hRejectDisallowedImage" $ do
+      passedPhotosRef <- newIORef []
+      let rightImages =
+            [stubImage {imageData = "1"}, stubImage {imageData = "2"}]
+          photos = map Right rightImages ++ [Left $ ImageId 3]
+          request =
+            stubRequest {cdMainPhoto = Nothing, cdAdditionalPhotos = photos}
+          h =
+            stubHandle
+              { hRejectDisallowedImage =
+                  \img -> modifyIORef' passedPhotosRef (img :)
+              }
+      _ <- run h noCredentials request
+      passedPhotos <- readIORef passedPhotosRef
+      passedPhotos `shouldMatchList` rightImages
+    it
+      "should not invoke hRejectDisallowedImage if neither main nor additional photos are Right Image" $ do
+      let request =
+            stubRequest
+              { cdMainPhoto = Just . Left $ ImageId 1
+              , cdAdditionalPhotos = [Left $ ImageId 2]
+              }
+          h =
+            stubHandle
+              { hRejectDisallowedImage =
+                  \img -> error $ "Must not invoke with parameter " ++ show img
+              }
+      _ <- run h noCredentials request
+      pure ()
+    it
+      "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on main photo" $ do
+      let expectedError = "expected"
+          request = stubRequest {cdMainPhoto = Just $ Right stubImage}
+          h =
+            stubHandle
+              { hRejectDisallowedImage = \_ -> error expectedError
+              , hCreateNewsVersion = \_ -> error "Must not invoke"
+              }
+      run h noCredentials request `shouldThrow` errorCall expectedError
+    it
+      "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on an additional photo" $ do
+      let expectedError = "expected"
+          request =
+            stubRequest
+              {cdMainPhoto = Nothing, cdAdditionalPhotos = [Right stubImage]}
+          h =
+            stubHandle
+              { hRejectDisallowedImage = \_ -> error expectedError
+              , hCreateNewsVersion = \_ -> error "Must not invoke"
+              }
+      run h noCredentials request `shouldThrow` errorCall expectedError
 
 stubNewsVersion :: NewsVersion
 stubNewsVersion =
@@ -152,7 +217,11 @@ stubRequest =
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    { hCreateNewsVersion = undefined
+    { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
     , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
+    , hRejectDisallowedImage = \_ -> pure ()
     }
+
+stubImage :: Image
+stubImage = Image {imageContentType = "", imageData = ""}

@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Core.Interactor.CreateDraft
   ( run
   , Handle(..)
@@ -23,6 +25,8 @@ data Handle m =
     { hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
     , hCreateNewsVersion :: CreateNewsVersionCommand -> m (Either GatewayFailure NewsVersion)
+    , hRejectDisallowedImage :: MonadThrow m =>
+                                  Image -> m ()
     }
 
 run ::
@@ -31,15 +35,21 @@ run ::
   -> Maybe Credentials
   -> CreateDraftRequest
   -> m NewsVersion
-run Handle {..} credentials request = do
+run h@Handle {..} credentials request = do
   actor <- authenticate hAuthenticationHandle credentials
   requireAuthorshipPermission
     hAuthorizationHandle
     (cdAuthorId request)
     actor
     "create a draft"
+  rejectRequestIfInvalid h request
   hCreateNewsVersion (commandFromRequest request) >>=
     either (throwM . exceptionFromGatewayFailure) pure
+
+rejectRequestIfInvalid :: MonadThrow m => Handle m -> CreateDraftRequest -> m ()
+rejectRequestIfInvalid Handle {hRejectDisallowedImage} CreateDraftRequest {..} = do
+  mapM_ (mapM_ hRejectDisallowedImage) cdMainPhoto
+  mapM_ (mapM_ hRejectDisallowedImage) cdAdditionalPhotos
 
 commandFromRequest :: CreateDraftRequest -> CreateNewsVersionCommand
 commandFromRequest CreateDraftRequest {..} =

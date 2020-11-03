@@ -460,6 +460,8 @@ createDraftHandlerHandle deps@Deps {..} session =
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateNewsVersion =
               GNews.createNewsVersion $ sessionDatabaseHandle deps session
+          , hRejectDisallowedImage =
+              rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
