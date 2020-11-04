@@ -15,9 +15,9 @@ import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
 import qualified Data.Text as T
-import Database
 import Database.Columns
 import Database.Pagination
+import Database.Service.Primitives
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as H

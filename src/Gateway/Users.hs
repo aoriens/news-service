@@ -12,7 +12,7 @@ import Core.Interactor.DeleteUser as IDeleteUser
 import Core.Pagination
 import Core.User
 import Data.Foldable
-import Database as DB
+import Database.Service.Primitives as DB
 import qualified Database.Users as DUsers
 
 createUser :: DB.Handle -> CreateUserCommand -> IO CreateUserResult

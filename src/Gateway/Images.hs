@@ -3,8 +3,8 @@ module Gateway.Images
   ) where
 
 import Core.Image
-import Database as DB
 import qualified Database.Images as DImages
+import Database.Service.Primitives as DB
 
 getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
 getImage h = DB.runTransactionRO h . DImages.selectImage

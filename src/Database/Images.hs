@@ -10,7 +10,7 @@ module Database.Images
 import Core.Image
 import Data.Profunctor
 import qualified Data.Text as T
-import Database
+import Database.Service.Primitives
 import qualified Hasql.TH as TH
 
 selectImage :: ImageId -> Transaction (Maybe Image)

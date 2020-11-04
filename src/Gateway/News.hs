@@ -6,8 +6,8 @@ module Gateway.News
 import Core.Interactor.CreateDraft
 import Core.News
 import Core.Pagination
-import qualified Database as DB
 import qualified Database.News as DNews
+import qualified Database.Service.Primitives as DB
 
 getNews :: DB.Handle -> PageSpec -> IO [News]
 getNews h = DB.runTransactionRO h . DNews.getNews

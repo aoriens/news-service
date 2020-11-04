@@ -24,7 +24,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.Map.Lazy as Map
 import Data.Profunctor
 import qualified Data.Text as T
-import Database
+import Database.Service.Primitives
 import qualified Hasql.TH as TH
 
 createCategory ::

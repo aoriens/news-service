@@ -12,8 +12,8 @@ import Core.Pagination
 import Core.User
 import Data.Foldable
 import qualified Data.Text as T
-import Database as DB
 import qualified Database.Authors as DAuthors
+import Database.Service.Primitives as DB
 
 createAuthor :: DB.Handle -> UserId -> T.Text -> IO (Either I.Failure Author)
 createAuthor h uid description =

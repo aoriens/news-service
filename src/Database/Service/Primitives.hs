@@ -3,7 +3,7 @@
 
 -- | Database-related basic definitions. They may only be imported
 -- from database-related modules.
-module Database
+module Database.Service.Primitives
   ( Handle(..)
   , Session
   , runSession

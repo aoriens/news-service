@@ -25,11 +25,11 @@ import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
 import Data.Vector (Vector)
-import Database
 import {-# SOURCE #-} Database.Authors
 import Database.Columns
 import Database.Images
 import Database.Pagination
+import Database.Service.Primitives
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH

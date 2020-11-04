@@ -59,7 +59,6 @@ library
     , Data.ByteString.Util
     , Data.Either.Util
     , Data.Integral.Exact
-    , Database
     , Database.Authors
     , Database.Categories
     , Database.Columns
@@ -68,6 +67,7 @@ library
     , Database.NativeSQLDecodable
     , Database.News
     , Database.Pagination
+    , Database.Service.Primitives
     , Database.Tags
     , Database.Users
     , FrontEnd.Wai

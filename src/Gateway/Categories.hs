@@ -11,8 +11,8 @@ import qualified Core.Interactor.DeleteCategory as DeleteCategory
 import Core.Pagination
 import Data.List.NonEmpty
 import Data.Text (Text)
-import Database
 import qualified Database.Categories as DCategories
+import Database.Service.Primitives as Database
 
 createCategory ::
      Database.Handle

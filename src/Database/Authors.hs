@@ -22,9 +22,9 @@ import Data.Int
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Tuple
-import Database
 import Database.Columns
 import Database.Pagination
+import Database.Service.Primitives
 import Database.Users
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E

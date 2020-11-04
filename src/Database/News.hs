@@ -24,12 +24,12 @@ import qualified Data.HashSet as Set
 import Data.Profunctor
 import Data.Text (Text)
 import Data.Time
-import Database
 import Database.Authors
 import Database.Categories
 import Database.Columns
 import Database.Images
 import Database.Pagination
+import Database.Service.Primitives
 import Database.Tags
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E

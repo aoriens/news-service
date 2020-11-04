@@ -38,8 +38,8 @@ import qualified Core.Pagination.Impl
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text as T
-import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
+import qualified Database.Service.Primitives as Database
 import qualified FrontEnd.Wai
 import qualified Gateway.Authors as GAuthors
 import qualified Gateway.Categories as GCategories

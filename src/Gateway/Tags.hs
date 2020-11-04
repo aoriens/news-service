@@ -8,7 +8,7 @@ module Gateway.Tags
 import Core.Pagination
 import Core.Tag
 import Data.Text (Text)
-import Database
+import Database.Service.Primitives as Database
 import qualified Database.Tags as DTags
 
 findTagByName :: Database.Handle -> Text -> IO (Maybe Tag)
