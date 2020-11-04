@@ -7,7 +7,7 @@ module Gateway.Authors
   ) where
 
 import Core.Author
-import qualified Core.Interactor.CreateAuthor as I
+import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import Core.Pagination
 import Core.User
 import Data.Foldable
@@ -15,7 +15,8 @@ import qualified Data.Text as T
 import qualified Database.Authors as DAuthors
 import Database.Service.Primitives as DB
 
-createAuthor :: DB.Handle -> UserId -> T.Text -> IO (Either I.Failure Author)
+createAuthor ::
+     DB.Handle -> UserId -> T.Text -> IO (Either ICreateAuthor.Failure Author)
 createAuthor h uid description =
   runTransactionRW h $ DAuthors.createAuthor uid description
 

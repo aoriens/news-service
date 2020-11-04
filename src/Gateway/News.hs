@@ -3,7 +3,7 @@ module Gateway.News
   , createNewsVersion
   ) where
 
-import Core.Interactor.CreateDraft
+import qualified Core.Interactor.CreateDraft as ICreateDraft
 import Core.News
 import Core.Pagination
 import qualified Database.News as DNews
@@ -14,6 +14,6 @@ getNews h = DB.runTransactionRO h . DNews.getNews
 
 createNewsVersion ::
      DB.Handle
-  -> CreateNewsVersionCommand
-  -> IO (Either GatewayFailure NewsVersion)
+  -> ICreateDraft.CreateNewsVersionCommand
+  -> IO (Either ICreateDraft.GatewayFailure NewsVersion)
 createNewsVersion h = DB.runTransactionRW h . DNews.createNewsVersion

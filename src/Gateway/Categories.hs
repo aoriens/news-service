@@ -6,31 +6,31 @@ module Gateway.Categories
   ) where
 
 import Core.Category
-import qualified Core.Interactor.CreateCategory as CreateCategory
-import qualified Core.Interactor.DeleteCategory as DeleteCategory
+import qualified Core.Interactor.CreateCategory as ICreateCategory
+import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import Core.Pagination
 import Data.List.NonEmpty
 import Data.Text (Text)
 import qualified Database.Categories as DCategories
-import Database.Service.Primitives as Database
+import Database.Service.Primitives as DB
 
 createCategory ::
-     Database.Handle
+     DB.Handle
   -> Maybe CategoryId
   -> NonEmpty Text
-  -> IO (Either CreateCategory.CreateCategoryFailure Category)
+  -> IO (Either ICreateCategory.CreateCategoryFailure Category)
 createCategory h parentId =
   runTransactionRW h . DCategories.createCategory parentId
 
-getCategory :: Database.Handle -> CategoryId -> IO (Maybe Category)
+getCategory :: DB.Handle -> CategoryId -> IO (Maybe Category)
 getCategory h = runTransactionRO h . DCategories.selectCategory
 
-getCategories :: Database.Handle -> PageSpec -> IO [Category]
+getCategories :: DB.Handle -> PageSpec -> IO [Category]
 getCategories h = runTransactionRO h . DCategories.selectCategories
 
 deleteCategory ::
-     Database.Handle
+     DB.Handle
   -> CategoryId
   -> PageSpec
-  -> IO (Either DeleteCategory.Failure ())
+  -> IO (Either IDeleteCategory.Failure ())
 deleteCategory h = (runTransactionRW h .) . DCategories.deleteCategory

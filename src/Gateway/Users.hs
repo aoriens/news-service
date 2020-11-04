@@ -7,15 +7,18 @@ module Gateway.Users
   ) where
 
 import Core.Authentication.Impl
-import Core.Interactor.CreateUser
-import Core.Interactor.DeleteUser as IDeleteUser
+import qualified Core.Interactor.CreateUser as ICreateUser
+import qualified Core.Interactor.DeleteUser as IDeleteUser
 import Core.Pagination
 import Core.User
 import Data.Foldable
 import Database.Service.Primitives as DB
 import qualified Database.Users as DUsers
 
-createUser :: DB.Handle -> CreateUserCommand -> IO CreateUserResult
+createUser ::
+     DB.Handle
+  -> ICreateUser.CreateUserCommand
+  -> IO ICreateUser.CreateUserResult
 createUser h = runTransactionRW h . DUsers.createUser
 
 getUser :: DB.Handle -> UserId -> IO (Maybe User)
