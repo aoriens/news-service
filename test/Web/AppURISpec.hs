@@ -7,6 +7,7 @@ module Web.AppURISpec
 import Core.Author
 import Core.Category
 import Core.Image
+import Core.News
 import Core.Tag
 import Core.User
 import Data.String
@@ -124,6 +125,8 @@ appURIsForAllPossibleConstructors =
   , NewsURI
   , TagsURI
   , TagURI $ TagId 1
+  , DraftsURI
+  , DraftURI $ NewsVersionId 1
   ]
   where
     _addNewElementToTheListAboveIfDoesNotCompile =
