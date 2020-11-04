@@ -177,20 +177,20 @@ createNewsVersion CreateNewsVersionCommand {..} =
         , nvTags
         }
   where
-    getExistingEntityBy getOptEntity ident = do
-      optEntity <- lift $ getOptEntity ident
+    getExistingEntityBy getOptEntity id' = do
+      optEntity <- lift $ getOptEntity id'
       case optEntity of
-        Nothing -> failWithEntityNotFound ident
+        Nothing -> failWithEntityNotFound id'
         Just entity -> pure entity
     getExistingTags =
       Set.fromList <$> mapM (getExistingEntityBy findTagById) (toList cnvTagIds)
     createOrGetExistingImage img
       | Right image <- img = lift $ createImage image
-      | Left imageIdent <- img = do
-        exists <- lift $ imageExists imageIdent
+      | Left imageId' <- img = do
+        exists <- lift $ imageExists imageId'
         if exists
-          then pure imageIdent
-          else failWithEntityNotFound imageIdent
+          then pure imageId'
+          else failWithEntityNotFound imageId'
     insertVersion' photoId =
       insertVersion
         InsertVersionCommand

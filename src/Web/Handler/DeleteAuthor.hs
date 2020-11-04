@@ -15,7 +15,7 @@ data Handle =
     }
 
 run :: Handle -> AuthorId -> Application
-run Handle {..} authorIdent request respond = do
+run Handle {..} authorId' request respond = do
   credentials <- getCredentialsFromRequest request
-  I.run hDeleteAuthorHandle credentials authorIdent
+  I.run hDeleteAuthorHandle credentials authorId'
   respond hPresenter

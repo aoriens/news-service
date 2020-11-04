@@ -17,9 +17,9 @@ data Handle =
     }
 
 run :: Handle -> AuthorId -> Application
-run Handle {..} authorIdent request respond = do
+run Handle {..} authorId' request respond = do
   credentials <- getCredentialsFromRequest request
   author <-
     maybe (throwIO NotFoundException) pure =<<
-    I.run hGetAuthorHandle credentials authorIdent
+    I.run hGetAuthorHandle credentials authorId'
   respond $ hPresenter author

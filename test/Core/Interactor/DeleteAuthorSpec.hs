@@ -15,22 +15,21 @@ spec :: Spec
 spec =
   describe "run" $ do
     itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
-      let authorIdent = AuthorId 1
+      let authorId' = AuthorId 1
           h =
             stubHandle
               { hDeleteAuthor = \_ -> onSuccess >> pure True
               , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
-      run h credentials authorIdent
+      run h credentials authorId'
     it "should pass the AuthorId argument to the gateway delete command" $ do
       passedAuthorId <- newIORef undefined
       let expectedAuthorId = AuthorId 8
           h =
             stubHandle
               { hDeleteAuthor =
-                  \authorIdent ->
-                    writeIORef passedAuthorId authorIdent >> pure True
+                  \authorId' -> writeIORef passedAuthorId authorId' >> pure True
               }
       run h noCredentials expectedAuthorId
       readIORef passedAuthorId `shouldReturn` expectedAuthorId

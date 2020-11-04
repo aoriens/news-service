@@ -16,8 +16,7 @@ data Handle =
     }
 
 run :: Handle -> TagId -> Application
-run Handle {..} tagIdent _ respond = do
+run Handle {..} tagId' _ respond = do
   tag <-
-    maybe (throwIO NotFoundException) pure =<<
-    IGetTag.run hGetTagHandle tagIdent
+    maybe (throwIO NotFoundException) pure =<< IGetTag.run hGetTagHandle tagId'
   respond $ hPresenter tag

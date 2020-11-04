@@ -208,9 +208,8 @@ router deps =
     TagsURI -> do
       R.get $ HGetTags.run . getTagsHandlerHandle deps
       R.post $ HCreateTag.run . createTagHandlerHandle deps
-    TagURI tagIdent ->
-      R.get $ \session ->
-        HGetTag.run (getTagHandlerHandle deps session) tagIdent
+    TagURI tagId' ->
+      R.get $ \session -> HGetTag.run (getTagHandlerHandle deps session) tagId'
     DraftsURI -> R.post $ HCreateDraft.run . createDraftHandlerHandle deps
     DraftURI _ -> pure ()
 

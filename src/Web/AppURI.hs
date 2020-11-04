@@ -102,20 +102,19 @@ requiredURIScheme AppURIConfig {cfUseHTTPS}
 fromRelativeURI :: RelativeURI -> Maybe AppURI
 fromRelativeURI (RelativeURI path) =
   case path of
-    ["images", ident] ->
-      ImageURI . ImageId <$> readExactIntegral (T.unpack ident)
+    ["images", id'] -> ImageURI . ImageId <$> readExactIntegral (T.unpack id')
     ["users"] -> Just UsersURI
-    ["users", ident] -> UserURI . UserId <$> readExactIntegral (T.unpack ident)
+    ["users", id'] -> UserURI . UserId <$> readExactIntegral (T.unpack id')
     ["authors"] -> Just AuthorsURI
-    ["authors", ident] ->
-      AuthorURI . AuthorId <$> readExactIntegral (T.unpack ident)
+    ["authors", id'] ->
+      AuthorURI . AuthorId <$> readExactIntegral (T.unpack id')
     ["categories"] -> Just CategoriesURI
-    ["categories", ident] ->
-      CategoryURI . CategoryId <$> readExactIntegral (T.unpack ident)
+    ["categories", id'] ->
+      CategoryURI . CategoryId <$> readExactIntegral (T.unpack id')
     ["news"] -> Just NewsURI
     ["tags"] -> Just TagsURI
-    ["tags", ident] -> TagURI . TagId <$> readExactIntegral (T.unpack ident)
+    ["tags", id'] -> TagURI . TagId <$> readExactIntegral (T.unpack id')
     ["drafts"] -> Just DraftsURI
-    ["drafts", ident] ->
-      DraftURI . NewsVersionId <$> readExactIntegral (T.unpack ident)
+    ["drafts", id'] ->
+      DraftURI . NewsVersionId <$> readExactIntegral (T.unpack id')
     _ -> Nothing

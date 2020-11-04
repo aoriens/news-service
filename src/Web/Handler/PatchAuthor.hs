@@ -25,10 +25,10 @@ data Handle =
     }
 
 run :: Handle -> AuthorId -> Application
-run Handle {..} authorIdent request respond = do
+run Handle {..} authorId' request respond = do
   creds <- getCredentialsFromRequest request
   InAuthor {inDescription} <- hLoadJSONRequestBody request
-  newAuthor <- I.run hUpdateAuthorHandle creds authorIdent inDescription
+  newAuthor <- I.run hUpdateAuthorHandle creds authorId' inDescription
   respond $ hPresenter newAuthor
 
 newtype InAuthor =

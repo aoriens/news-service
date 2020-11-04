@@ -16,7 +16,7 @@ data Handle =
     }
 
 run :: Handle -> UserId -> Application
-run Handle {..} userIdent _ respond = do
+run Handle {..} userId' _ respond = do
   user <-
-    maybe (throwIO NotFoundException) pure =<< I.run hGetUserHandle userIdent
+    maybe (throwIO NotFoundException) pure =<< I.run hGetUserHandle userId'
   respond $ hPresenter user

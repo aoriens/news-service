@@ -129,20 +129,20 @@ coreExceptionToResponse e =
     BadCredentialsException _ -> notFoundResponse
     NoPermissionException perm _
       | AdminPermission <- perm -> notFoundResponse
-      | AuthorshipPermission (AuthorId authorIdent) <- perm ->
+      | AuthorshipPermission (AuthorId authorId') <- perm ->
         stubErrorResponseWithReason
           Http.forbidden403
           []
           ("You do not own author with id=" <>
-           T.pack (show authorIdent) <> ". Forgot to authorize?")
+           T.pack (show authorId') <> ". Forgot to authorize?")
     UserNotIdentifiedException _ ->
       stubErrorResponseWithReason
         Http.forbidden403
         []
         "Authentication is required"
-    DependentEntitiesPreventDeletionException entityIdent depIds ->
+    DependentEntitiesPreventDeletionException entityId' depIds ->
       badRequestResponse $
-      T.pack (show entityIdent) <>
+      T.pack (show entityId') <>
       " cannot be deleted because the following entities depend on it: " <>
       (T.intercalate ", " . map (T.pack . show)) depIds
     RequestedEntityNotFoundException _ -> notFoundResponse

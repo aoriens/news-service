@@ -20,18 +20,18 @@ data Handle m =
     }
 
 run :: MonadThrow m => Handle m -> Maybe Credentials -> CategoryId -> m ()
-run Handle {..} credentials categoryIdent = do
+run Handle {..} credentials categoryId' = do
   actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "deleting category"
   either (throwM . failureToException) pure =<<
-    hDeleteCategory categoryIdent hDefaultEntityListRange
+    hDeleteCategory categoryId' hDefaultEntityListRange
   where
     failureToException (DependentEntitiesPreventDeletion ids) =
       DependentEntitiesPreventDeletionException
-        (CategoryEntityId categoryIdent)
+        (CategoryEntityId categoryId')
         ids
     failureToException UnknownCategory =
-      RequestedEntityNotFoundException $ CategoryEntityId categoryIdent
+      RequestedEntityNotFoundException $ CategoryEntityId categoryId'
 
 data Failure
   = DependentEntitiesPreventDeletion [EntityId]

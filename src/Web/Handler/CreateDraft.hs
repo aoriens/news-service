@@ -78,7 +78,7 @@ parseImage h rep =
     NewImage imageRep -> pure . Right $ imageFromRep imageRep
     ExistingImage (AppURIRep uriText) ->
       case hParseAppURI h uriText of
-        Just (ImageURI imageIdent) -> pure $ Left imageIdent
+        Just (ImageURI imageId') -> pure $ Left imageId'
         _ ->
           throwM . IncorrectParameterException $
           "URI does not match an image resource: " <> uriText

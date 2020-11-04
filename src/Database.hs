@@ -62,8 +62,7 @@ getAuthorIdByUserIdIfExactlyOne h =
   runTransactionRO h . DAuthors.selectAuthorIdByUserIdIfExactlyOne
 
 getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
-getAuthor h authorIdent =
-  runTransactionRO h (DAuthors.selectAuthorById authorIdent)
+getAuthor h authorId' = runTransactionRO h (DAuthors.selectAuthorById authorId')
 
 deleteAuthor :: DB.Handle -> AuthorId -> IO Bool
 deleteAuthor h = runTransactionRW h . fmap (0 /=) . DAuthors.deleteAuthorById

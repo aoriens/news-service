@@ -20,7 +20,7 @@ run ::
   -> Maybe Credentials
   -> AuthorId
   -> m (Maybe Author)
-run Handle {..} credentials authorIdent = do
+run Handle {..} credentials authorId' = do
   actor <- authenticate hAuthenticationHandle credentials
   requireAdminPermission hAuthorizationHandle actor "get an author"
-  hGetAuthor authorIdent
+  hGetAuthor authorId'

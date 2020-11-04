@@ -30,18 +30,18 @@ newtype Credentials =
   deriving (Eq, Show)
 
 presentCredentials :: Core.Credentials -> Credentials
-presentCredentials (Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)) =
-  WebToken $ fromString (show userIdent) <> "," <> encodeBase64' token
+presentCredentials (Core.TokenCredentials (UserId userId') (Core.SecretToken token)) =
+  WebToken $ fromString (show userId') <> "," <> encodeBase64' token
 
 readCredentials :: Credentials -> Either T.Text Core.Credentials
 readCredentials (WebToken webToken) = do
   (uidString, codedToken) <-
     maybeToEither "comma is missing" $ B.splitOnCharOnce (== ',') webToken
-  userIdent <-
+  userId' <-
     maybeToEither "user id is malformed or too large" $
     readExactIntegral (B.unpack uidString)
   token <- first ("incorrect base64 in secret: " <>) $ decodeBase64 codedToken
-  pure $ Core.TokenCredentials (UserId userIdent) (Core.SecretToken token)
+  pure $ Core.TokenCredentials (UserId userId') (Core.SecretToken token)
 
 -- | Returns Nothing if no credentials found, but throws
 -- 'MalformedAuthDataException in case of malformed credentials.
