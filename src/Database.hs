@@ -10,7 +10,7 @@ module Database
   , getCategories
   , deleteCategory
   , getImage
-  , getNews
+  , getNewsList
   , createNewsVersion
   , findTagByName
   , findTagById
@@ -97,8 +97,8 @@ deleteCategory h = (runTransactionRW h .) . DCategories.deleteCategory
 getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
 getImage h = DB.runTransactionRO h . DImages.selectImage
 
-getNews :: DB.Handle -> PageSpec -> IO [News]
-getNews h = DB.runTransactionRO h . DNews.getNews
+getNewsList :: DB.Handle -> PageSpec -> IO [News]
+getNewsList h = DB.runTransactionRO h . DNews.getNewsList
 
 createNewsVersion ::
      DB.Handle

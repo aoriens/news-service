@@ -2,7 +2,7 @@
 {-# LANGUAGE ApplicativeDo #-}
 
 module Database.Logic.News
-  ( getNews
+  ( getNewsList
   , createNewsVersion
   ) where
 
@@ -35,11 +35,11 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
-getNews :: PageSpec -> Transaction [News]
-getNews = mapM loadNewsWithRow <=< selectNewsRow
+getNewsList :: PageSpec -> Transaction [News]
+getNewsList = mapM loadNewsWithRow <=< selectNewsRows
 
-selectNewsRow :: PageSpec -> Transaction [NewsRow]
-selectNewsRow =
+selectNewsRows :: PageSpec -> Transaction [NewsRow]
+selectNewsRows =
   statement $
   statementWithColumns
     sql

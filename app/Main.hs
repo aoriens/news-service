@@ -344,7 +344,7 @@ newsHandlerHandle deps@Deps {..} session =
   where
     interactorHandle =
       IGetNews.Handle
-        { hGetNews = Database.getNews $ sessionDatabaseHandle deps session
+        { hGetNews = Database.getNewsList $ sessionDatabaseHandle deps session
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
