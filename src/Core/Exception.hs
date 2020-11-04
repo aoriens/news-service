@@ -4,6 +4,7 @@ module Core.Exception
   , isQueryException
   , isBadCredentialsException
   , isNoPermissionException
+  , isUserNotIdentifiedException
   , isRequestedEntityNotFoundException
   , isDisallowedImageContentTypeException
   ) where
@@ -24,6 +25,7 @@ data CoreException
   = QueryException Reason
   | BadCredentialsException Reason
   | NoPermissionException Permission ActionName
+  | UserNotIdentifiedException ActionName
   | DependentEntitiesPreventDeletionException EntityId [EntityId]
   | RequestedEntityNotFoundException EntityId
   | DependentEntitiesNotFoundException [EntityId]
@@ -43,6 +45,10 @@ isBadCredentialsException _ = False
 isNoPermissionException :: CoreException -> Bool
 isNoPermissionException NoPermissionException {} = True
 isNoPermissionException _ = False
+
+isUserNotIdentifiedException :: CoreException -> Bool
+isUserNotIdentifiedException UserNotIdentifiedException {} = True
+isUserNotIdentifiedException _ = False
 
 isRequestedEntityNotFoundException :: CoreException -> Bool
 isRequestedEntityNotFoundException RequestedEntityNotFoundException {} = True

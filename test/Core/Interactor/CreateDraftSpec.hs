@@ -35,7 +35,7 @@ spec
               , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
-          request = stubRequest {cdAuthorId = creatorId}
+          request = stubRequest {cdAuthorId = Just creatorId}
       _ <- run h credentials request
       pure ()
     it "should pass author id from request in the AuthorshipPermission" $ do
@@ -49,7 +49,7 @@ spec
                   AuthorizationHandle
                     {hHasPermission = \perm _ -> perm == expectedPermission}
               }
-          request = stubRequest {cdAuthorId = aid}
+          request = stubRequest {cdAuthorId = Just aid}
       _ <- run h noCredentials request
       pure ()
     it
@@ -59,7 +59,7 @@ spec
             CreateDraftRequest
               { cdTitle = "title"
               , cdText = "text"
-              , cdAuthorId = AuthorId 1
+              , cdAuthorId = Just $ AuthorId 1
               , cdCategoryId = CategoryId 1
               , cdMainPhoto = Just . Left $ ImageId 1
               , cdAdditionalPhotos =
@@ -83,7 +83,7 @@ spec
       acceptedCommand <- readIORef acceptedCommandRef
       cnvTitle <$> acceptedCommand `shouldBe` Just (cdTitle request)
       cnvText <$> acceptedCommand `shouldBe` Just (cdText request)
-      cnvAuthorId <$> acceptedCommand `shouldBe` Just (cdAuthorId request)
+      cnvAuthorId <$> acceptedCommand `shouldBe` cdAuthorId request
       cnvCategoryId <$> acceptedCommand `shouldBe` Just (cdCategoryId request)
       cnvMainPhoto <$> acceptedCommand `shouldBe` Just (cdMainPhoto request)
       cnvAdditionalPhotos <$>
@@ -170,6 +170,89 @@ spec
               , hCreateNewsVersion = \_ -> error "Must not invoke"
               }
       run h noCredentials request `shouldThrow` errorCall expectedError
+    it
+      "should pass authorId to hCreateNewsVersion from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
+      passedAuthorsId <- newIORef []
+      let request = stubRequest {cdAuthorId = Nothing}
+          expectedAuthorId = AuthorId 1
+          h =
+            stubHandle
+              { hAuthenticationHandle =
+                  authenticationHandleReturningIdentifiedUser
+              , hGetAuthorIdByUserIdIfExactlyOne =
+                  \_ -> pure $ Just expectedAuthorId
+              , hCreateNewsVersion =
+                  \cmd -> do
+                    modifyIORef' passedAuthorsId (cnvAuthorId cmd :)
+                    pure (Right stubNewsVersion)
+              }
+      _ <- run h noCredentials request
+      readIORef passedAuthorsId `shouldReturn` [expectedAuthorId]
+    it
+      "should pass authorId to authorization from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
+      let request = stubRequest {cdAuthorId = Nothing}
+          expectedAuthorId = AuthorId 1
+          h =
+            stubHandle
+              { hAuthenticationHandle =
+                  authenticationHandleReturningIdentifiedUser
+              , hGetAuthorIdByUserIdIfExactlyOne =
+                  \_ -> pure $ Just expectedAuthorId
+              , hAuthorizationHandle =
+                  AuthorizationHandle $ \perm _ ->
+                    perm == AuthorshipPermission expectedAuthorId
+              }
+      _ <- run h noCredentials request
+      pure ()
+    it
+      "should pass UserId from AuthenticatedUser from authenticate to hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
+      passedUserIds <- newIORef []
+      let request = stubRequest {cdAuthorId = Nothing}
+          expectedUserId = UserId 1
+          h =
+            stubHandle
+              { hGetAuthorIdByUserIdIfExactlyOne =
+                  \userId' -> do
+                    modifyIORef' passedUserIds (userId' :)
+                    pure $ Just $ AuthorId 2
+              , hAuthenticationHandle =
+                  AuthenticationHandle $ \_ ->
+                    pure $ IdentifiedUser expectedUserId False []
+              }
+      _ <- run h noCredentials request
+      readIORef passedUserIds `shouldReturn` [expectedUserId]
+    it
+      "should not invoke hGetAuthorsOfUser if author is specified in CreateDraftRequest" $ do
+      invoked <- newIORef False
+      let request = stubRequest {cdAuthorId = Just $ AuthorId 1}
+          h =
+            stubHandle
+              { hGetAuthorIdByUserIdIfExactlyOne =
+                  \_ -> modifyIORef' invoked succ >> pure Nothing
+              }
+      _ <- run h noCredentials request
+      readIORef invoked `shouldReturn` False
+    it
+      "should throw QueryException if CreateDraftRequest has no author and hGetAuthorIdByUserIdIfExactlyOne returns Nothing" $ do
+      let request = stubRequest {cdAuthorId = Nothing}
+          h =
+            stubHandle
+              { hAuthenticationHandle =
+                  authenticationHandleReturningIdentifiedUser
+              , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
+              }
+      run h noCredentials request `shouldThrow` isQueryException
+    it
+      "should throw UserNotIdentifiedException if CreateDraftRequest has no author and authenticate returns AnonymousUser" $ do
+      let request = stubRequest {cdAuthorId = Nothing}
+          h =
+            stubHandle
+              { hAuthenticationHandle =
+                  AuthenticationHandle $ \_ -> pure AnonymousUser
+              , hGetAuthorIdByUserIdIfExactlyOne =
+                  \_ -> pure $ Just $ AuthorId 1
+              }
+      run h noCredentials request `shouldThrow` isUserNotIdentifiedException
 
 stubNewsVersion :: NewsVersion
 stubNewsVersion =
@@ -207,7 +290,7 @@ stubRequest =
   CreateDraftRequest
     { cdTitle = "one"
     , cdText = "two"
-    , cdAuthorId = AuthorId 888
+    , cdAuthorId = Just $ AuthorId 888
     , cdCategoryId = CategoryId 888
     , cdMainPhoto = Nothing
     , cdAdditionalPhotos = []
@@ -218,6 +301,7 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
+    , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
     , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     , hRejectDisallowedImage = \_ -> pure ()

@@ -456,6 +456,9 @@ createDraftHandlerHandle deps@Deps {..} session =
         ICreateDraft.Handle
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
+          , hGetAuthorIdByUserIdIfExactlyOne =
+              Database.getAuthorIdByUserIdIfExactlyOne $
+              sessionDatabaseHandle deps session
           , hCreateNewsVersion =
               Database.createNewsVersion $ sessionDatabaseHandle deps session
           , hRejectDisallowedImage =

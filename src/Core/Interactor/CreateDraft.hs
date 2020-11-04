@@ -17,6 +17,7 @@ import Core.Exception
 import Core.Image
 import Core.News
 import Core.Tag
+import Core.User
 import qualified Data.HashSet as Set
 import qualified Data.Text as T
 
@@ -24,6 +25,7 @@ data Handle m =
   Handle
     { hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
+    , hGetAuthorIdByUserIdIfExactlyOne :: UserId -> m (Maybe AuthorId)
     , hCreateNewsVersion :: CreateNewsVersionCommand -> m (Either GatewayFailure NewsVersion)
     , hRejectDisallowedImage :: MonadThrow m =>
                                   Image -> m ()
@@ -37,26 +39,46 @@ run ::
   -> m NewsVersion
 run h@Handle {..} credentials request = do
   actor <- authenticate hAuthenticationHandle credentials
-  requireAuthorshipPermission
-    hAuthorizationHandle
-    (cdAuthorId request)
-    actor
-    "create a draft"
+  authorId' <- guessAuthorId h actor request
+  requireAuthorshipPermission hAuthorizationHandle authorId' actor actionName
   rejectRequestIfInvalid h request
-  hCreateNewsVersion (commandFromRequest request) >>=
+  hCreateNewsVersion (makeCommand request authorId') >>=
     either (throwM . exceptionFromGatewayFailure) pure
+
+guessAuthorId ::
+     MonadThrow m
+  => Handle m
+  -> AuthenticatedUser
+  -> CreateDraftRequest
+  -> m AuthorId
+guessAuthorId _ _ CreateDraftRequest {cdAuthorId = Just authorId'} =
+  pure authorId'
+guessAuthorId h authUser _ = do
+  userId' <-
+    maybe (throwM userNotIdentifiedException) pure $
+    authenticatedUserId authUser
+  hGetAuthorIdByUserIdIfExactlyOne h userId' >>=
+    maybe (throwM authorAmbiguityException) pure
+  where
+    authorAmbiguityException =
+      QueryException
+        "author ID is required: can't determine a unique author ID for the current user"
+    userNotIdentifiedException = UserNotIdentifiedException actionName
+
+actionName :: T.Text
+actionName = "create a draft"
 
 rejectRequestIfInvalid :: MonadThrow m => Handle m -> CreateDraftRequest -> m ()
 rejectRequestIfInvalid Handle {hRejectDisallowedImage} CreateDraftRequest {..} = do
   mapM_ (mapM_ hRejectDisallowedImage) cdMainPhoto
   mapM_ (mapM_ hRejectDisallowedImage) cdAdditionalPhotos
 
-commandFromRequest :: CreateDraftRequest -> CreateNewsVersionCommand
-commandFromRequest CreateDraftRequest {..} =
+makeCommand :: CreateDraftRequest -> AuthorId -> CreateNewsVersionCommand
+makeCommand CreateDraftRequest {..} aid =
   CreateNewsVersionCommand
     { cnvTitle = cdTitle
     , cnvText = cdText
-    , cnvAuthorId = cdAuthorId
+    , cnvAuthorId = aid
     , cnvCategoryId = cdCategoryId
     , cnvMainPhoto = cdMainPhoto
     , cnvAdditionalPhotos = cdAdditionalPhotos
@@ -71,7 +93,7 @@ data CreateDraftRequest =
   CreateDraftRequest
     { cdTitle :: T.Text
     , cdText :: T.Text
-    , cdAuthorId :: AuthorId
+    , cdAuthorId :: Maybe AuthorId
     , cdCategoryId :: CategoryId
     , cdMainPhoto :: Maybe (Either ImageId Image)
     , cdAdditionalPhotos :: [Either ImageId Image]

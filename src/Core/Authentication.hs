@@ -7,6 +7,7 @@ module Core.Authentication
   , SecretTokenHash(..)
   , AuthenticatedUser(..)
   , IsAdmin
+  , authenticatedUserId
   ) where
 
 import Control.Monad.Catch
@@ -42,5 +43,9 @@ data AuthenticatedUser
   = AnonymousUser
   | IdentifiedUser !UserId !IsAdmin [AuthorId]
   deriving (Eq, Show)
+
+authenticatedUserId :: AuthenticatedUser -> Maybe UserId
+authenticatedUserId AnonymousUser = Nothing
+authenticatedUserId (IdentifiedUser uid _ _) = Just uid
 
 type IsAdmin = Bool

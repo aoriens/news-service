@@ -1,6 +1,7 @@
 module Database
   ( createAuthor
   , getAuthors
+  , getAuthorIdByUserIdIfExactlyOne
   , getAuthor
   , deleteAuthor
   , updateAuthor
@@ -55,6 +56,10 @@ createAuthor h uid description =
 
 getAuthors :: DB.Handle -> PageSpec -> IO [Author]
 getAuthors h page = toList <$> runTransactionRO h (DAuthors.selectAuthors page)
+
+getAuthorIdByUserIdIfExactlyOne :: DB.Handle -> UserId -> IO (Maybe AuthorId)
+getAuthorIdByUserIdIfExactlyOne h =
+  runTransactionRO h . DAuthors.selectAuthorIdByUserIdIfExactlyOne
 
 getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
 getAuthor h authorIdent =

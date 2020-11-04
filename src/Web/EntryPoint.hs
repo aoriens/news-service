@@ -135,6 +135,11 @@ coreExceptionToResponse e =
           []
           ("You do not own author with id=" <>
            T.pack (show authorIdent) <> ". Forgot to authorize?")
+    UserNotIdentifiedException _ ->
+      stubErrorResponseWithReason
+        Http.forbidden403
+        []
+        "Authentication is required"
     DependentEntitiesPreventDeletionException entityIdent depIds ->
       badRequestResponse $
       T.pack (show entityIdent) <>

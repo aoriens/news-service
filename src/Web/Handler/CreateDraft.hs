@@ -64,7 +64,7 @@ makeCreateDraftRequest h InDraft {..} = do
     I.CreateDraftRequest
       { cdTitle = inTitle
       , cdText = inText
-      , cdAuthorId = AuthorId inAuthorId
+      , cdAuthorId = Just $ AuthorId inAuthorId
       , cdCategoryId = CategoryId inCategoryId
       , cdMainPhoto
       , cdAdditionalPhotos

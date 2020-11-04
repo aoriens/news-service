@@ -7,6 +7,7 @@ module Database.Logic.Authors
   , selectAuthorById
   , updateAuthor
   , selectAuthorsByUserId
+  , selectAuthorIdByUserIdIfExactlyOne
   , deleteAuthorById
   , authorColumns
   ) where
@@ -111,6 +112,16 @@ selectAuthorsByUserId =
        where user_id = $1 :: integer
        limit $2 :: integer? offset $3 :: integer?
     |]
+
+selectAuthorIdByUserIdIfExactlyOne :: UserId -> Transaction (Maybe AuthorId)
+selectAuthorIdByUserIdIfExactlyOne uid = do
+  authorIds <- selectAuthorsByUserId uid upTo2
+  pure $
+    case authorIds of
+      [aid] -> Just aid
+      _ -> Nothing
+  where
+    upTo2 = Just PageSpec {pageLimit = PageLimit 2, pageOffset = PageOffset 0}
 
 deleteAuthorById :: AuthorId -> Transaction Int64
 deleteAuthorById =

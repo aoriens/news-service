@@ -2,6 +2,7 @@ module Core.Authentication.Test
   ( itShouldAuthenticateBeforeOperation
   , noCredentials
   , noOpAuthenticationHandle
+  , authenticationHandleReturningIdentifiedUser
   ) where
 
 import Control.Exception
@@ -66,6 +67,10 @@ someTokenCredentials =
 
 noOpAuthenticationHandle :: AuthenticationHandle IO
 noOpAuthenticationHandle = AuthenticationHandle $ \_ -> pure AnonymousUser
+
+authenticationHandleReturningIdentifiedUser :: AuthenticationHandle IO
+authenticationHandleReturningIdentifiedUser =
+  AuthenticationHandle $ \_ -> pure $ IdentifiedUser (UserId 1) False []
 
 noCredentials :: Maybe Credentials
 noCredentials = Nothing
