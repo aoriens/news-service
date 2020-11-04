@@ -88,7 +88,7 @@ type SQL = B.ByteString
 -- statement.
 newtype Transaction a =
   Transaction (Session a)
-  deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch)
+  deriving (Functor, Applicative, Monad, MonadIO, MonadThrow)
 
 -- | Creates a composable transaction from a statement.
 statement :: St.Statement a b -> a -> Transaction b
