@@ -237,8 +237,9 @@ A request to create a news draft. Fields:
 
 - `title` - the document title. A string, required.
 - `text` - the document body as plain text. A string, required.
-- `author_id` - an identifier of an [Author](#Autor) of the news. An integer,
-  required.
+- `author_id` - an identifier of an [Author](#Autor) of the news. It is optional
+  and may be inferred automatically, if you have exactly one author, otherwise
+  it is required. An integer, optional.
 - `category_id` - an identifier of an [Category](#Category) of the news. An
   integer, required.
 - `photo` - the primary illustration for the news. This is an optional URL of an

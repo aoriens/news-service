@@ -48,7 +48,7 @@ data InDraft =
   InDraft
     { inTitle :: T.Text
     , inText :: T.Text
-    , inAuthorId :: Int32
+    , inAuthorId :: Maybe Int32
     , inCategoryId :: Int32
     , inPhoto :: Maybe ExistingOrNewImageRep
     , inPhotos :: Maybe [ExistingOrNewImageRep]
@@ -64,7 +64,7 @@ makeCreateDraftRequest h InDraft {..} = do
     I.CreateDraftRequest
       { cdTitle = inTitle
       , cdText = inText
-      , cdAuthorId = Just $ AuthorId inAuthorId
+      , cdAuthorId = AuthorId <$> inAuthorId
       , cdCategoryId = CategoryId inCategoryId
       , cdMainPhoto
       , cdAdditionalPhotos
