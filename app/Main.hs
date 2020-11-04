@@ -38,17 +38,12 @@ import qualified Core.Pagination.Impl
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text as T
+import qualified Database
 import qualified Database.ConnectionManager as DBConnManager
 import qualified Database.Service.Primitives as Database
 import qualified FrontEnd.Wai
-import qualified Gateway.Authors as GAuthors
-import qualified Gateway.Categories as GCategories
 import Gateway.CurrentTime as GCurrentTime
-import qualified Gateway.Images as GImages
-import qualified Gateway.News as GNews
 import qualified Gateway.SecretToken as GSecretToken
-import qualified Gateway.Tags as GTags
-import qualified Gateway.Users as GUsers
 import qualified Logger
 import qualified Logger.Impl
 import qualified Network.Wai.Handler.Warp as Warp
@@ -153,7 +148,7 @@ getDeps = do
               AuthImpl.new
                 AuthImpl.Handle
                   { hGetUserAuthData =
-                      GUsers.getUserAuthData $
+                      Database.getUserAuthData $
                       sessionDatabaseHandle'
                         dDatabaseConnectionConfig
                         dLoggerHandle
@@ -227,7 +222,7 @@ createAuthorHandlerHandle deps@Deps {..} session =
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateAuthor =
-              GAuthors.createAuthor $ sessionDatabaseHandle deps session
+              Database.createAuthor $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
@@ -242,7 +237,7 @@ getAuthorsHandlerHandle deps@Deps {..} session =
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hGetAuthors =
-              GAuthors.getAuthors $ sessionDatabaseHandle deps session
+              Database.getAuthors $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = authorListPresenter dRepresentationBuilderHandle
@@ -256,7 +251,7 @@ patchAuthorHandlerHandle deps@Deps {..} session =
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hUpdateAuthor =
-              GAuthors.updateAuthor $ sessionDatabaseHandle deps session
+              Database.updateAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter =
         authorUpdatedPresenter dAppURIConfig dRepresentationBuilderHandle
@@ -270,7 +265,7 @@ getAuthorHandlerHandle deps@Deps {..} session =
         IGetAuthor.Handle
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
-          , hGetAuthor = GAuthors.getAuthor $ sessionDatabaseHandle deps session
+          , hGetAuthor = Database.getAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter = authorPresenter dRepresentationBuilderHandle
     }
@@ -283,7 +278,7 @@ deleteAuthorHandlerHandle deps@Deps {..} session =
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hDeleteAuthor =
-              GAuthors.deleteAuthor $ sessionDatabaseHandle deps session
+              Database.deleteAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter = authorDeletedPresenter
     }
@@ -296,7 +291,7 @@ createCategoryHandlerHandle deps@Deps {..} session =
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateCategory =
-              GCategories.createCategory $ sessionDatabaseHandle deps session
+              Database.createCategory $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
@@ -309,7 +304,7 @@ getCategoryHandlerHandle deps@Deps {..} session =
     { hGetCategoryHandle =
         IGetCategory.Handle
           { hGetCategory =
-              GCategories.getCategory $ sessionDatabaseHandle deps session
+              Database.getCategory $ sessionDatabaseHandle deps session
           }
     , hPresenter = categoryPresenter dRepresentationBuilderHandle
     }
@@ -320,7 +315,7 @@ getCategoriesHandlerHandle deps@Deps {..} session =
     { hGetCategoriesHandle =
         IGetCategories.Handle
           { hGetCategories =
-              GCategories.getCategories $ sessionDatabaseHandle deps session
+              Database.getCategories $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = categoryListPresenter dRepresentationBuilderHandle
@@ -332,7 +327,7 @@ deleteCategoryHandlerHandle deps@Deps {..} session =
     { hDeleteCategoryHandle =
         IDeleteCategory.Handle
           { hDeleteCategory =
-              GCategories.deleteCategory $ sessionDatabaseHandle deps session
+              Database.deleteCategory $ sessionDatabaseHandle deps session
           , hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hDefaultEntityListRange = dDefaultEntityListRange
@@ -350,7 +345,7 @@ newsHandlerHandle deps@Deps {..} session =
   where
     interactorHandle =
       IGetNews.Handle
-        { hGetNews = GNews.getNews $ sessionDatabaseHandle deps session
+        { hGetNews = Database.getNews $ sessionDatabaseHandle deps session
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
@@ -365,7 +360,7 @@ createUserHandle deps@Deps {..} session =
   where
     interactorHandle =
       ICreateUser.Handle
-        { hCreateUser = GUsers.createUser $ sessionDatabaseHandle deps session
+        { hCreateUser = Database.createUser $ sessionDatabaseHandle deps session
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
@@ -379,7 +374,8 @@ getImageHandlerHandle :: Deps -> Web.Session -> HGetImage.Handle
 getImageHandlerHandle deps@Deps {..} session =
   HGetImage.Handle
     { hGetImageHandle =
-        IGetImage.Handle $ GImages.getImage $ sessionDatabaseHandle deps session
+        IGetImage.Handle $
+        Database.getImage $ sessionDatabaseHandle deps session
     , hPresenter = imagePresenter
     }
 
@@ -387,7 +383,7 @@ getUserHandlerHandle :: Deps -> Web.Session -> HGetUser.Handle
 getUserHandlerHandle deps@Deps {..} session =
   HGetUser.Handle
     { hGetUserHandle =
-        IGetUser.Handle $ GUsers.getUser $ sessionDatabaseHandle deps session
+        IGetUser.Handle $ Database.getUser $ sessionDatabaseHandle deps session
     , hPresenter = userPresenter dRepresentationBuilderHandle
     }
 
@@ -396,7 +392,8 @@ deleteUserHandlerHandle deps@Deps {..} session =
   HDeleteUser.Handle
     { hDeleteUserHandle =
         IDeleteUser.Handle
-          { hDeleteUser = GUsers.deleteUser $ sessionDatabaseHandle deps session
+          { hDeleteUser =
+              Database.deleteUser $ sessionDatabaseHandle deps session
           , hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hDefaultEntityListRange = dDefaultEntityListRange
@@ -409,7 +406,7 @@ getUsersHandlerHandle deps@Deps {..} session =
   HGetUsers.Handle
     { hGetUsersHandle =
         IGetUsers.Handle
-          { hGetUsers = GUsers.getUsers $ sessionDatabaseHandle deps session
+          { hGetUsers = Database.getUsers $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = userListPresenter dRepresentationBuilderHandle
@@ -423,9 +420,9 @@ createTagHandlerHandle deps@Deps {..} session =
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateTagNamed =
-              GTags.createTagNamed $ sessionDatabaseHandle deps session
+              Database.createTagNamed $ sessionDatabaseHandle deps session
           , hFindTagByName =
-              GTags.findTagByName $ sessionDatabaseHandle deps session
+              Database.findTagByName $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
@@ -436,7 +433,8 @@ getTagHandlerHandle :: Deps -> Web.Session -> HGetTag.Handle
 getTagHandlerHandle deps@Deps {..} session =
   HGetTag.Handle
     { hGetTagHandle =
-        IGetTag.Handle $ GTags.findTagById $ sessionDatabaseHandle deps session
+        IGetTag.Handle $
+        Database.findTagById $ sessionDatabaseHandle deps session
     , hPresenter = tagPresenter dRepresentationBuilderHandle
     }
 
@@ -445,7 +443,7 @@ getTagsHandlerHandle deps@Deps {..} session =
   HGetTags.Handle
     { hGetTagsHandle =
         IGetTags.Handle
-          { hGetTags = GTags.getTags $ sessionDatabaseHandle deps session
+          { hGetTags = Database.getTags $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = tagListPresenter dRepresentationBuilderHandle
@@ -459,7 +457,7 @@ createDraftHandlerHandle deps@Deps {..} session =
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateNewsVersion =
-              GNews.createNewsVersion $ sessionDatabaseHandle deps session
+              Database.createNewsVersion $ sessionDatabaseHandle deps session
           , hRejectDisallowedImage =
               rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
           }

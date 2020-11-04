@@ -59,6 +59,7 @@ library
     , Data.ByteString.Util
     , Data.Either.Util
     , Data.Integral.Exact
+    , Database
     , Database.Authors
     , Database.Categories
     , Database.Columns
@@ -71,14 +72,8 @@ library
     , Database.Tags
     , Database.Users
     , FrontEnd.Wai
-    , Gateway.Authors
-    , Gateway.Categories
     , Gateway.CurrentTime
-    , Gateway.Images
-    , Gateway.News
     , Gateway.SecretToken
-    , Gateway.Tags
-    , Gateway.Users
     , Logger
     , Logger.Impl
     , Web.AppURI
