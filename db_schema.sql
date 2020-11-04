@@ -72,7 +72,7 @@ create table news_versions_and_additional_photos_relation (
 
 create table news (
        news_id serial not null primary key,
-       news_version_id integer not null references news_versions,
+       news_version_id integer not null unique references news_versions,
        "date" date not null
 );
 
