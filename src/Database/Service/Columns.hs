@@ -3,7 +3,7 @@
 
 -- | Table data decoder, coupled with table column names. This can
 -- help to avoid duplication of columns lists.
-module Database.Columns
+module Database.Service.Columns
   ( Columns
   , TableName
   , column
@@ -13,7 +13,7 @@ module Database.Columns
 import qualified Data.ByteString.Char8 as B
 import qualified Data.DList as DL
 import Data.String
-import Database.NativeSQLDecodable
+import Database.Service.NativeSQLDecodable
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.Statement as S

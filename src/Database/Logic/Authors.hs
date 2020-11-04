@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ApplicativeDo #-}
 
-module Database.Authors
+module Database.Logic.Authors
   ( createAuthor
   , selectAuthors
   , selectAuthorById
@@ -22,10 +22,10 @@ import Data.Int
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Tuple
-import Database.Columns
-import Database.Pagination
+import Database.Logic.Pagination
+import Database.Logic.Users
+import Database.Service.Columns
 import Database.Service.Primitives
-import Database.Users
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import Hasql.TH as TH

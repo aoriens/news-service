@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
 
-module Database.Categories
+module Database.Logic.Categories
   ( createCategory
   , selectCategory
   , selectCategories

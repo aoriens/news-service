@@ -41,8 +41,8 @@ library
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
-    , Core.Interactor.GetCategory
     , Core.Interactor.GetCategories
+    , Core.Interactor.GetCategory
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetTag
@@ -60,17 +60,17 @@ library
     , Data.Either.Util
     , Data.Integral.Exact
     , Database
-    , Database.Authors
-    , Database.Categories
-    , Database.Columns
-    , Database.ConnectionManager
-    , Database.Images
-    , Database.NativeSQLDecodable
-    , Database.News
-    , Database.Pagination
+    , Database.Logic.Authors
+    , Database.Logic.Categories
+    , Database.Logic.Images
+    , Database.Logic.News
+    , Database.Logic.Pagination
+    , Database.Logic.Tags
+    , Database.Logic.Users
+    , Database.Service.Columns
+    , Database.Service.ConnectionManager
+    , Database.Service.NativeSQLDecodable
     , Database.Service.Primitives
-    , Database.Tags
-    , Database.Users
     , FrontEnd.Wai
     , Gateway.CurrentTime
     , Gateway.SecretToken
@@ -95,8 +95,8 @@ library
     , Web.Handler.DeleteUser
     , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
-    , Web.Handler.GetCategory
     , Web.Handler.GetCategories
+    , Web.Handler.GetCategory
     , Web.Handler.GetImage
     , Web.Handler.GetNews
     , Web.Handler.GetTag

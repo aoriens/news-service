@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ApplicativeDo #-}
 
-module Database.News
+module Database.Logic.News
   ( getNews
   , createNewsVersion
   ) where
@@ -24,13 +24,13 @@ import qualified Data.HashSet as Set
 import Data.Profunctor
 import Data.Text (Text)
 import Data.Time
-import Database.Authors
-import Database.Categories
-import Database.Columns
-import Database.Images
-import Database.Pagination
+import Database.Logic.Authors
+import Database.Logic.Categories
+import Database.Logic.Images
+import Database.Logic.Pagination
+import Database.Logic.Tags
+import Database.Service.Columns
 import Database.Service.Primitives
-import Database.Tags
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH

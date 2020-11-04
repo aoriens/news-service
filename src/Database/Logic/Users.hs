@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ApplicativeDo #-}
 
-module Database.Users
+module Database.Logic.Users
   ( createUser
   , selectUserById
   , selectUsers
@@ -25,10 +25,10 @@ import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
 import Data.Vector (Vector)
-import {-# SOURCE #-} Database.Authors
-import Database.Columns
-import Database.Images
-import Database.Pagination
+import {-# SOURCE #-} Database.Logic.Authors
+import Database.Logic.Images
+import Database.Logic.Pagination
+import Database.Service.Columns
 import Database.Service.Primitives
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E

@@ -1,4 +1,4 @@
-module Database.Authors where
+module Database.Logic.Authors where
 
 import Core.Author
 import Core.Pagination

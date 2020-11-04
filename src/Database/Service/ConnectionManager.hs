@@ -1,5 +1,5 @@
 -- | The module is responsible for managing open database connections.
-module Database.ConnectionManager
+module Database.Service.ConnectionManager
   ( withConnection
   , Config
   , makeConfig

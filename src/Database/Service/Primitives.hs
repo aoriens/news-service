@@ -29,7 +29,7 @@ import Control.Monad.Reader
 import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
-import qualified Database.ConnectionManager as CM
+import qualified Database.Service.ConnectionManager as CM
 import qualified Hasql.Connection as C
 import qualified Hasql.Decoders as D
 import qualified Hasql.Session as S

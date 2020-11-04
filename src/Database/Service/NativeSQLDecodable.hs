@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Database.NativeSQLDecodable
+module Database.Service.NativeSQLDecodable
   ( NativeSQLDecodable(..)
   ) where
 

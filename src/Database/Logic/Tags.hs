@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ApplicativeDo #-}
 
-module Database.Tags
+module Database.Logic.Tags
   ( findTagByName
   , findTagById
   , createTagNamed
@@ -15,8 +15,8 @@ import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
 import qualified Data.Text as T
-import Database.Columns
-import Database.Pagination
+import Database.Logic.Pagination
+import Database.Service.Columns
 import Database.Service.Primitives
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E

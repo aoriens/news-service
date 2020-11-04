@@ -40,13 +40,13 @@ import Data.Foldable
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Database.Authors as DAuthors
-import qualified Database.Categories as DCategories
-import qualified Database.Images as DImages
-import qualified Database.News as DNews
+import qualified Database.Logic.Authors as DAuthors
+import qualified Database.Logic.Categories as DCategories
+import qualified Database.Logic.Images as DImages
+import qualified Database.Logic.News as DNews
+import qualified Database.Logic.Tags as DTags
+import qualified Database.Logic.Users as DUsers
 import Database.Service.Primitives as DB
-import qualified Database.Tags as DTags
-import qualified Database.Users as DUsers
 
 createAuthor ::
      DB.Handle -> UserId -> T.Text -> IO (Either ICreateAuthor.Failure Author)

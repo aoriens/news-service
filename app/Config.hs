@@ -18,7 +18,7 @@ import Data.Maybe
 import Data.String
 import Data.Text (Text)
 import Data.Word
-import qualified Database.ConnectionManager as DB
+import qualified Database.Service.ConnectionManager as DB
 import qualified Logger
 import qualified Network.Wai.Handler.Warp as Warp
 import Web.AppURI

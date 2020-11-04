@@ -1,4 +1,4 @@
-module Database.Pagination
+module Database.Logic.Pagination
   ( pageToLimitOffsetEncoder
   ) where
 

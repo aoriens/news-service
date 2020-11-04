@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module Database.Images
+module Database.Logic.Images
   ( selectImage
   , imageExists
   , createImage
