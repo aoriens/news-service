@@ -6,6 +6,7 @@ module Core.EntityId
 import Core.Author
 import Core.Category
 import Core.Image
+import Core.News
 import Core.Tag
 import Core.User
 
@@ -16,6 +17,7 @@ data EntityId
   | CategoryEntityId CategoryId
   | TagEntityId TagId
   | ImageEntityId ImageId
+  | NewsVersionEntityId NewsVersionId
   deriving (Show, Eq)
 
 class IsEntityId a where
@@ -38,3 +40,6 @@ instance IsEntityId TagId where
 
 instance IsEntityId ImageId where
   toEntityId = ImageEntityId
+
+instance IsEntityId NewsVersionId where
+  toEntityId = NewsVersionEntityId

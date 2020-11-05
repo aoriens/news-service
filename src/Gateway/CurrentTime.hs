@@ -1,8 +1,9 @@
 module Gateway.CurrentTime
   ( getIntegralSecondsTime
+  , getCurrentDay
   ) where
 
-import Data.Time.Clock
+import Data.Time
 
 -- | Returns UTCTime with integral (truncated) seconds. It can be
 -- useful when storing time into a persistent storage that does not
@@ -14,3 +15,6 @@ getIntegralSecondsTime = truncateSeconds <$> getCurrentTime
   where
     truncateSeconds (UTCTime day time) =
       UTCTime day $ fromIntegral (truncate time :: Int)
+
+getCurrentDay :: IO Day
+getCurrentDay = utctDay <$> getCurrentTime

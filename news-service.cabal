@@ -49,6 +49,7 @@ library
     , Core.Interactor.GetTags
     , Core.Interactor.GetUser
     , Core.Interactor.GetUsers
+    , Core.Interactor.PublishDraft
     , Core.Interactor.UpdateAuthor
     , Core.News
     , Core.Pagination
@@ -104,6 +105,7 @@ library
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
     , Web.Handler.PatchAuthor
+    , Web.Handler.PublishDraft
     , Web.JSONEncoder
     , Web.Presenter
     , Web.QueryParameter

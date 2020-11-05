@@ -4,17 +4,21 @@
 module Database.Logic.News
   ( getNewsList
   , createNewsVersion
+  , getAuthorOfNewsVersion
+  , createNews
   ) where
 
 import Control.Arrow
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.Author
 import Core.Category
 import Core.EntityId
 import Core.Image
-import Core.Interactor.CreateDraft
+import qualified Core.Interactor.CreateDraft as ICreateDraft
+import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
 import Core.Tag
@@ -22,7 +26,7 @@ import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
 import Data.Profunctor
-import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time
 import Database.Logic.Authors
 import Database.Logic.Categories
@@ -37,6 +41,9 @@ import qualified Hasql.TH as TH
 
 getNewsList :: PageSpec -> Transaction [News]
 getNewsList = mapM loadNewsWithRow <=< selectNewsRows
+
+getNews :: NewsId -> Transaction (Maybe News)
+getNews = mapM loadNewsWithRow <=< selectNewsRow
 
 selectNewsRows :: PageSpec -> Transaction [NewsRow]
 selectNewsRows =
@@ -57,6 +64,26 @@ selectNewsRows =
              join users using (user_id)
         order by date desc, news_id desc
         limit $1 offset $2
+      |]
+
+selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
+selectNewsRow =
+  statement $
+  statementWithColumns
+    sql
+    (getNewsId >$< (E.param . E.nonNullable) E.int4)
+    newsRowColumns
+    D.rowMaybe
+    True
+  where
+    sql =
+      [TH.uncheckedSql|
+        select $COLUMNS
+        from news
+             join news_versions using (news_version_id)
+             join authors using (author_id)
+             join users using (user_id)
+        where news_id = $1
       |]
 
 -- Part of news we can extract from the database with the first query.
@@ -81,8 +108,8 @@ newsTable = "news"
 data VersionRow =
   VersionRow
     { nvId :: NewsVersionId
-    , nvTitle :: Text
-    , nvText :: Text
+    , nvTitle :: T.Text
+    , nvText :: T.Text
     , nvAuthor :: Author
     , nvCategoryId :: CategoryId
     , nvMainPhotoId :: Maybe ImageId
@@ -154,8 +181,9 @@ getAdditionalPhotosForVersion =
     |]
 
 createNewsVersion ::
-     CreateNewsVersionCommand -> Transaction (Either GatewayFailure NewsVersion)
-createNewsVersion CreateNewsVersionCommand {..} =
+     ICreateDraft.CreateNewsVersionCommand
+  -> Transaction (Either ICreateDraft.GatewayFailure NewsVersion)
+createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
   runExceptT $ do
     nvAuthor <- getExistingEntityBy selectAuthorById cnvAuthorId
     nvCategory <- getExistingEntityBy selectCategory cnvCategoryId
@@ -202,7 +230,8 @@ createNewsVersion CreateNewsVersionCommand {..} =
           }
     createOrGetExistingAdditionalPhotos =
       Set.fromList <$> mapM createOrGetExistingImage cnvAdditionalPhotos
-    failWithEntityNotFound objId = throwE $ GUnknownEntityId [toEntityId objId]
+    failWithEntityNotFound objId =
+      throwE $ ICreateDraft.GUnknownEntityId [toEntityId objId]
 
 insertVersion :: InsertVersionCommand -> Transaction NewsVersionId
 insertVersion =
@@ -233,8 +262,8 @@ insertVersion =
 
 data InsertVersionCommand =
   InsertVersionCommand
-    { ivcTitle :: Text
-    , ivcText :: Text
+    { ivcTitle :: T.Text
+    , ivcText :: T.Text
     , ivcAuthorId :: AuthorId
     , ivcCategoryId :: CategoryId
     , ivcMainPhotoId :: Maybe ImageId
@@ -275,4 +304,42 @@ insertVersionAndTagAssociation =
         $1 :: integer,
         $2 :: integer
       ) on conflict do nothing
+    |]
+
+getAuthorOfNewsVersion ::
+     NewsVersionId -> Transaction (Either IPublishDraft.GatewayFailure AuthorId)
+getAuthorOfNewsVersion =
+  statement $
+  dimap
+    getNewsVersionId
+    (maybe (Left IPublishDraft.UnknownNewsVersionId) (Right . AuthorId))
+    [TH.maybeStatement|
+      select author_id :: integer
+      from news_versions
+      where news_version_id = $1 :: integer
+    |]
+
+createNews :: NewsVersionId -> Day -> Transaction News
+createNews vId day = do
+  newsId' <- insertNews vId day
+  getNews newsId' >>=
+    maybe
+      (throwM . DatabaseInternalInconsistencyException $
+       "Cannot find news just created: news_id=" <> T.pack (show newsId'))
+      pure
+
+insertNews :: NewsVersionId -> Day -> Transaction NewsId
+insertNews =
+  curry . statement $
+  dimap
+    (first getNewsVersionId)
+    NewsId
+    [TH.singletonStatement|
+      insert into news (
+        news_version_id,
+        "date"
+      ) values (
+        $1 :: integer,
+        $2 :: date
+      ) returning news_id :: integer
     |]

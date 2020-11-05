@@ -12,6 +12,8 @@ module Database
   , getImage
   , getNewsList
   , createNewsVersion
+  , getAuthorOfNewsVersion
+  , createNews
   , findTagByName
   , findTagById
   , getTags
@@ -33,6 +35,7 @@ import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.DeleteUser as IDeleteUser
+import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
 import Core.Tag
@@ -41,6 +44,7 @@ import Data.Foldable
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Time
 import qualified Database.Logic.Authors as DAuthors
 import qualified Database.Logic.Categories as DCategories
 import qualified Database.Logic.Images as DImages
@@ -105,6 +109,15 @@ createNewsVersion ::
   -> ICreateDraft.CreateNewsVersionCommand
   -> IO (Either ICreateDraft.GatewayFailure NewsVersion)
 createNewsVersion h = DB.runTransactionRW h . DNews.createNewsVersion
+
+getAuthorOfNewsVersion ::
+     DB.Handle
+  -> NewsVersionId
+  -> IO (Either IPublishDraft.GatewayFailure AuthorId)
+getAuthorOfNewsVersion h = DB.runTransactionRO h . DNews.getAuthorOfNewsVersion
+
+createNews :: DB.Handle -> NewsVersionId -> Day -> IO News
+createNews h vId day = DB.runTransactionRW h $ DNews.createNews vId day
 
 findTagByName :: DB.Handle -> Text -> IO (Maybe Tag)
 findTagByName h = runTransactionRO h . DTags.findTagByName

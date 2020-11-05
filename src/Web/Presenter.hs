@@ -18,6 +18,7 @@ module Web.Presenter
   , tagPresenter
   , tagListPresenter
   , draftCreatedPresenter
+  , newsCreatedPresenter
   ) where
 
 import Core.Authentication
@@ -143,3 +144,12 @@ draftCreatedPresenter uriConfig h newsVersion =
 
 draftURI :: NewsVersion -> AppURI
 draftURI = DraftURI . nvId
+
+newsCreatedPresenter :: AppURIConfig -> RepBuilderHandle -> News -> Response
+newsCreatedPresenter uriConfig h news =
+  resourceCreatedAndReturnedResponse uriConfig (newsItemURI news) .
+  runRepBuilder h $
+  newsRep news
+
+newsItemURI :: News -> AppURI
+newsItemURI = NewsItemURI . newsId

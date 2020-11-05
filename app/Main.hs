@@ -32,6 +32,7 @@ import qualified Core.Interactor.GetTag as IGetTag
 import qualified Core.Interactor.GetTags as IGetTags
 import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
+import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
 import Core.Pagination
 import qualified Core.Pagination.Impl
@@ -71,6 +72,7 @@ import qualified Web.Handler.GetTags as HGetTags
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PatchAuthor as HPatchAuthor
+import qualified Web.Handler.PublishDraft as HPublishDraft
 import qualified Web.JSONEncoder as JSONEncoder
 import Web.Presenter
 import Web.RepresentationBuilder
@@ -205,13 +207,16 @@ router deps =
           (deleteCategoryHandlerHandle deps session)
           categoryId
     NewsURI -> R.get $ HGetNews.run . newsHandlerHandle deps
+    NewsItemURI _ -> pure ()
     TagsURI -> do
       R.get $ HGetTags.run . getTagsHandlerHandle deps
       R.post $ HCreateTag.run . createTagHandlerHandle deps
     TagURI tagId' ->
       R.get $ \session -> HGetTag.run (getTagHandlerHandle deps session) tagId'
     DraftsURI -> R.post $ HCreateDraft.run . createDraftHandlerHandle deps
-    DraftURI _ -> pure ()
+    DraftURI draftId ->
+      R.post $ \session ->
+        HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =
@@ -467,6 +472,24 @@ createDraftHandlerHandle deps@Deps {..} session =
     , hPresenter =
         draftCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
+    }
+
+publishDraftHandlerHandle :: Deps -> Web.Session -> HPublishDraft.Handle
+publishDraftHandlerHandle deps@Deps {..} session =
+  HPublishDraft.Handle
+    { hPublishDraftHandle =
+        IPublishDraft.Handle
+          { hAuthenticationHandle = dMakeAuthenticationHandle session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
+          , hGetAuthorOfNewsVersion =
+              Database.getAuthorOfNewsVersion $
+              sessionDatabaseHandle deps session
+          , hGetCurrentDay = getCurrentDay
+          , hCreateNews =
+              Database.createNews $ sessionDatabaseHandle deps session
+          }
+    , hPresenter =
+        newsCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be

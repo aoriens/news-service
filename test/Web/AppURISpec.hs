@@ -123,6 +123,7 @@ appURIsForAllPossibleConstructors =
   , CategoriesURI
   , CategoryURI $ CategoryId 1
   , NewsURI
+  , NewsItemURI $ NewsId 1
   , TagsURI
   , TagURI $ TagId 1
   , DraftsURI
@@ -139,6 +140,7 @@ appURIsForAllPossibleConstructors =
         CategoriesURI -> ()
         CategoryURI _ -> ()
         NewsURI -> ()
+        NewsItemURI _ -> ()
         TagsURI -> ()
         TagURI _ -> ()
         DraftsURI -> ()
