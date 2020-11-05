@@ -11,7 +11,6 @@ module Web.EntryPoint
 
 import Control.Exception
 import Control.Exception.Sync
-import Core.Author
 import Core.Exception
 import Core.Permission
 import qualified Data.ByteString as B
@@ -129,12 +128,11 @@ coreExceptionToResponse e =
     BadCredentialsException _ -> notFoundResponse
     NoPermissionException perm _
       | AdminPermission <- perm -> notFoundResponse
-      | AuthorshipPermission (AuthorId authorId') <- perm ->
+      | AuthorshipPermission _ <- perm ->
         stubErrorResponseWithReason
           Http.forbidden403
           []
-          ("You do not own author with id=" <>
-           T.pack (show authorId') <> ". Forgot to authorize?")
+          "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
     UserNotIdentifiedException _ ->
       stubErrorResponseWithReason
         Http.forbidden403
