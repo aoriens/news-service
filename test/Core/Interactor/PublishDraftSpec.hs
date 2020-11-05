@@ -28,27 +28,27 @@ spec
             stubHandle
               { hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
-              , hGetAuthorOfNewsVersion = \_ -> pure $ Right documentAuthorId
+              , hGetDraftAuthor = \_ -> pure $ Right documentAuthorId
               , hCreateNews = \_ _ -> onSuccess >> pure stubNews
               }
           draftId = NewsVersionId 1
       _ <- run h credentials draftId
       pure ()
     it
-      "should throw RequestedEntityNotFoundException if hGetAuthorOfNewsVersion returns Left UnknownNewsVersionId" $ do
+      "should throw RequestedEntityNotFoundException if hGetDraftAuthor returns Left UnknownNewsVersionId" $ do
       let h =
             stubHandle
-              { hGetAuthorOfNewsVersion = \_ -> pure $ Left UnknownNewsVersionId
+              { hGetDraftAuthor = \_ -> pure $ Left UnknownDraftId
               , hCreateNews = \_ _ -> error "Must not invoke"
               }
           draftId = NewsVersionId 1
       run h noCredentials draftId `shouldThrow`
         isRequestedEntityNotFoundException
-    it "should pass authorId to authorization from hGetAuthorOfNewsVersion" $ do
+    it "should pass authorId to authorization from hGetDraftAuthor" $ do
       let authorId' = AuthorId 1
           h =
             stubHandle
-              { hGetAuthorOfNewsVersion = \_ -> pure $ Right authorId'
+              { hGetDraftAuthor = \_ -> pure $ Right authorId'
               , hAuthorizationHandle =
                   AuthorizationHandle $ \perm _ ->
                     perm == AuthorshipPermission authorId'
@@ -56,11 +56,11 @@ spec
           draftId = NewsVersionId 1
       _ <- run h noCredentials draftId
       pure ()
-    it "should pass draftId to hGetAuthorOfNewsVersion" $ do
+    it "should pass draftId to hGetDraftAuthor" $ do
       passedDraftIds <- newIORef []
       let h =
             stubHandle
-              { hGetAuthorOfNewsVersion =
+              { hGetDraftAuthor =
                   \id' -> do
                     modifyIORef' passedDraftIds (id' :)
                     pure . Right $ AuthorId 1
@@ -138,7 +138,7 @@ stubHandle =
   Handle
     { hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
-    , hGetAuthorOfNewsVersion = \_ -> pure $ Right $ AuthorId 999
+    , hGetDraftAuthor = \_ -> pure $ Right $ AuthorId 999
     , hGetCurrentDay = pure $ ModifiedJulianDay 0
     , hCreateNews = \_ _ -> pure stubNews
     }

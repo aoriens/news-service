@@ -16,7 +16,7 @@ data Handle m =
   Handle
     { hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
-    , hGetAuthorOfNewsVersion :: NewsVersionId -> m (Either GatewayFailure AuthorId)
+    , hGetDraftAuthor :: NewsVersionId -> m (Either GatewayFailure AuthorId)
     , hGetCurrentDay :: m Day
     , hCreateNews :: NewsVersionId -> Day -> m News
     }
@@ -24,7 +24,7 @@ data Handle m =
 run :: MonadThrow m => Handle m -> Maybe Credentials -> NewsVersionId -> m News
 run Handle {..} credentials vId = do
   actor <- authenticate hAuthenticationHandle credentials
-  documentAuthorId <- hGetAuthorOfNewsVersion vId >>= fromGatewayResult vId
+  documentAuthorId <- hGetDraftAuthor vId >>= fromGatewayResult vId
   requireAuthorshipPermission
     hAuthorizationHandle
     documentAuthorId
@@ -34,12 +34,12 @@ run Handle {..} credentials vId = do
   hCreateNews vId day
 
 data GatewayFailure =
-  UnknownNewsVersionId
+  UnknownDraftId -- ^ News version is not found or already published
 
 fromGatewayResult ::
      MonadThrow m => NewsVersionId -> Either GatewayFailure a -> m a
 fromGatewayResult vId = either (throwM . exceptionFromGatewayFailure vId) pure
 
 exceptionFromGatewayFailure :: NewsVersionId -> GatewayFailure -> CoreException
-exceptionFromGatewayFailure vId UnknownNewsVersionId =
+exceptionFromGatewayFailure vId UnknownDraftId =
   RequestedEntityNotFoundException $ toEntityId vId

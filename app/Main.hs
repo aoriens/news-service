@@ -481,9 +481,8 @@ publishDraftHandlerHandle deps@Deps {..} session =
         IPublishDraft.Handle
           { hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
-          , hGetAuthorOfNewsVersion =
-              Database.getAuthorOfNewsVersion $
-              sessionDatabaseHandle deps session
+          , hGetDraftAuthor =
+              Database.getDraftAuthor $ sessionDatabaseHandle deps session
           , hGetCurrentDay = getCurrentDay
           , hCreateNews =
               Database.createNews $ sessionDatabaseHandle deps session

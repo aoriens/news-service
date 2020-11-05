@@ -4,7 +4,7 @@
 module Database.Logic.News
   ( getNewsList
   , createNewsVersion
-  , getAuthorOfNewsVersion
+  , getDraftAuthor
   , createNews
   ) where
 
@@ -306,16 +306,16 @@ insertVersionAndTagAssociation =
       ) on conflict do nothing
     |]
 
-getAuthorOfNewsVersion ::
+getDraftAuthor ::
      NewsVersionId -> Transaction (Either IPublishDraft.GatewayFailure AuthorId)
-getAuthorOfNewsVersion =
+getDraftAuthor =
   statement $
   dimap
     getNewsVersionId
-    (maybe (Left IPublishDraft.UnknownNewsVersionId) (Right . AuthorId))
+    (maybe (Left IPublishDraft.UnknownDraftId) (Right . AuthorId))
     [TH.maybeStatement|
       select author_id :: integer
-      from news_versions
+      from drafts
       where news_version_id = $1 :: integer
     |]
 
