@@ -40,17 +40,17 @@ spec =
               { hPageSpecParserHandle =
                   PageSpecParserHandle . const . Right $
                   PageSpec (PageOffset 0) (PageLimit 0)
-              , hGetNews = const (pure stubResults)
+              , hGetNews = \_ _ -> pure stubResults
               }
-      results <- I.getNews h noPageQuery
+      results <- I.getNews h emptyNewsFilter noPageQuery
       results `shouldBe` stubResults
     itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
       let h =
             I.Handle
-              { hGetNews = \pageQuery -> onSuccess pageQuery >> pure []
+              { hGetNews = \_ pageQuery -> onSuccess pageQuery >> pure []
               , hPageSpecParserHandle
               }
-      void $ I.getNews h pageSpecQuery
+      void $ I.getNews h emptyNewsFilter pageSpecQuery
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing

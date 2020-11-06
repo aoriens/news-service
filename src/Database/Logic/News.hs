@@ -18,6 +18,7 @@ import Core.Category
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
+import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
@@ -39,15 +40,16 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
-getNewsList :: PageSpec -> Transaction [News]
-getNewsList = mapM loadNewsWithRow <=< selectNewsRows
+getNewsList :: IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [News]
+getNewsList newsFilter = mapM loadNewsWithRow <=< selectNewsRows newsFilter
 
 getNews :: NewsId -> Transaction (Maybe News)
 getNews = mapM loadNewsWithRow <=< selectNewsRow
 
-selectNewsRows :: PageSpec -> Transaction [NewsRow]
+selectNewsRows ::
+     IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
 selectNewsRows =
-  statement $
+  const . statement $
   statementWithColumns
     sql
     pageToLimitOffsetEncoder

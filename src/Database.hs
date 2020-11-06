@@ -35,6 +35,7 @@ import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.DeleteUser as IDeleteUser
+import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
@@ -101,8 +102,8 @@ deleteCategory h = (runTransactionRW h .) . DCategories.deleteCategory
 getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
 getImage h = DB.runTransactionRO h . DImages.selectImage
 
-getNewsList :: DB.Handle -> PageSpec -> IO [News]
-getNewsList h = DB.runTransactionRO h . DNews.getNewsList
+getNewsList :: DB.Handle -> IGetNews.GatewayNewsFilter -> PageSpec -> IO [News]
+getNewsList h nf = DB.runTransactionRO h . DNews.getNewsList nf
 
 createNewsVersion ::
      DB.Handle

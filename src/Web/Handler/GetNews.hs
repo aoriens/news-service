@@ -24,5 +24,5 @@ data Handle =
 run :: Handle -> Application
 run Handle {..} request respond = do
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
-  news <- I.getNews hGetNewsHandle pageQuery
+  news <- I.getNews hGetNewsHandle I.emptyNewsFilter pageQuery
   respond $ hPresenter news
