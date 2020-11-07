@@ -23,19 +23,21 @@ import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
 import Core.Tag
+import qualified Data.ByteString as B
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
+import Data.Maybe
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
 import Database.Logic.Authors
 import Database.Logic.Categories
 import Database.Logic.Images
-import Database.Logic.Pagination
 import Database.Logic.Tags
 import Database.Service.Columns
 import Database.Service.Primitives
+import Database.Service.SQLBuilder
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
@@ -48,25 +50,66 @@ getNews = mapM loadNewsWithRow <=< selectNewsRow
 
 selectNewsRows ::
      IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
-selectNewsRows =
-  const . runStatement $
-  statementWithColumns
-    sql
-    pageToLimitOffsetEncoder
-    newsRowColumns
-    (fmap toList . D.rowVector)
-    True
+selectNewsRows newsFilter pageSpec =
+  runStatement statement (newsFilter, pageSpec)
   where
-    sql =
-      [TH.uncheckedSql|
-        select $COLUMNS
-        from news
-             join news_versions using (news_version_id)
-             join authors using (author_id)
-             join users using (user_id)
-        order by date desc, news_id desc
-        limit $1 offset $2
-      |]
+    statement =
+      statementWithColumns
+        sql
+        encoder
+        newsRowColumns
+        (fmap toList . D.rowVector)
+        True
+    (sql, encoder) =
+      renderSQLBuilder $ topBuilder <> whereBuilder <> orderByBuilder <>
+      limitOffsetBuilder
+    topBuilder =
+      sqlText
+        [TH.uncheckedSql|
+          select $COLUMNS
+          from news
+               join news_versions using (news_version_id)
+               join authors using (author_id)
+               join users using (user_id)
+        |]
+    whereBuilder =
+      case IGetNews.gnfDateRange newsFilter of
+        Nothing -> mempty
+        Just dateRange ->
+          "where" <>
+          (fromJust . IGetNews.gnfDateRange . fst >$<
+           sqlFallsIntoDateRange "\"date\"" dateRange)
+    orderByBuilder = "order by date desc, news_id desc"
+    limitOffsetBuilder = snd >$< sqlLimitOffset
+
+type SQL = B.ByteString
+
+sqlFallsIntoDateRange ::
+     SQL -> IGetNews.NewsDateRange -> SQLBuilder IGetNews.NewsDateRange
+sqlFallsIntoDateRange expr dateRange =
+  case dateRange of
+    IGetNews.NewsSinceUntil {} ->
+      (\(IGetNews.NewsSinceUntil from to) -> (from, to)) >$<
+      sqlBetweenParams expr
+    IGetNews.NewsSince {} ->
+      (\(IGetNews.NewsSince day) -> day) >$< sqlGreaterOrEqualParam expr
+    IGetNews.NewsUntil {} ->
+      (\(IGetNews.NewsUntil day) -> day) >$< sqlLessOrEqualParam expr
+
+sqlBetweenParams :: NativeSQLEncodable a => SQL -> SQLBuilder (a, a)
+sqlBetweenParams expr =
+  sqlText expr <> "between" <> (fst >$< sqlParam) <> "and" <> (snd >$< sqlParam)
+
+sqlGreaterOrEqualParam :: NativeSQLEncodable a => SQL -> SQLBuilder a
+sqlGreaterOrEqualParam expr = sqlText expr <> ">=" <> sqlParam
+
+sqlLessOrEqualParam :: NativeSQLEncodable a => SQL -> SQLBuilder a
+sqlLessOrEqualParam expr = sqlText expr <> "<=" <> sqlParam
+
+sqlLimitOffset :: SQLBuilder PageSpec
+sqlLimitOffset =
+  "limit" <> (getPageLimit . pageLimit >$< sqlParam) <> "offset" <>
+  (getPageOffset . pageOffset >$< sqlParam)
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =
@@ -327,7 +370,8 @@ createNews vId day = do
   getNews newsId' >>=
     maybe
       (throwM . DatabaseInternalInconsistencyException $
-       "Cannot find news just created: news_id=" <> T.pack (show newsId'))
+       "Cannot find news just created: news_id=" <>
+       T.pack (show newsId'))
       pure
 
 insertNews :: NewsVersionId -> Day -> Transaction NewsId

@@ -27,6 +27,8 @@ import Data.Int
 import Data.Integral.Exact
 import Data.Maybe
 import qualified Data.Text.Encoding as T
+import Data.Time
+import Data.Time.Format.ISO8601
 import GHC.Generics
 import qualified Network.HTTP.Types as Http
 import qualified Web.Exception as E
@@ -150,7 +152,10 @@ instance QueryParameter () where
   parseQueryParameter _ = Just ()
 
 instance QueryParameter Int where
-  parseQueryParameter = (>>= readExactIntegral . BS8.unpack)
+  parseQueryParameter = (readExactIntegral . BS8.unpack =<<)
 
 instance QueryParameter Int32 where
-  parseQueryParameter = (>>= readExactIntegral . BS8.unpack)
+  parseQueryParameter = (readExactIntegral . BS8.unpack =<<)
+
+instance QueryParameter Day where
+  parseQueryParameter = (iso8601ParseM . BS8.unpack =<<)

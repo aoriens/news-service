@@ -32,11 +32,13 @@ data Handle m =
 -- might use the empty list or set for it, but it might be error-prone
 -- and involve detecting that special case, since processing an empty
 -- list consistently results in no matching items.
-data NewsFilter =
+newtype NewsFilter =
   NewsFilter
+    { nfDateRange :: Maybe NewsDateRange
+    }
 
 emptyNewsFilter :: NewsFilter
-emptyNewsFilter = NewsFilter
+emptyNewsFilter = NewsFilter {nfDateRange = Nothing}
 
 -- | The inclusive range of dates.
 data NewsDateRange
@@ -44,8 +46,11 @@ data NewsDateRange
   | NewsSince Day
   | NewsUntil Day
 
-data GatewayNewsFilter =
+newtype GatewayNewsFilter =
   GatewayNewsFilter
+    { gnfDateRange :: Maybe NewsDateRange
+    }
 
 gatewayNewsFilterFromNewsFilter :: NewsFilter -> GatewayNewsFilter
-gatewayNewsFilterFromNewsFilter NewsFilter = GatewayNewsFilter
+gatewayNewsFilterFromNewsFilter NewsFilter {..} =
+  GatewayNewsFilter {gnfDateRange = nfDateRange}
