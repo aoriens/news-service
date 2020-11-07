@@ -9,7 +9,7 @@ module Database.Service.Primitives
   , runSession
   , Transaction
   , St.Statement(..)
-  , statement
+  , runStatement
   , transactionRO
   , transactionRW
   , runTransactionRO
@@ -91,8 +91,8 @@ newtype Transaction a =
   deriving (Functor, Applicative, Monad, MonadIO, MonadThrow)
 
 -- | Creates a composable transaction from a statement.
-statement :: St.Statement a b -> a -> Transaction b
-statement st = Transaction . freeStatement st
+runStatement :: St.Statement a b -> a -> Transaction b
+runStatement st = Transaction . freeStatement st
 
 freeStatement :: St.Statement a b -> a -> Session b
 freeStatement st@(St.Statement sql _ _ _) params = do

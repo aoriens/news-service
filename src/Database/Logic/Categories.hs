@@ -54,7 +54,7 @@ insertCategory categoryParent categoryName = do
 
 insertCategorySt :: Maybe CategoryId -> T.Text -> Transaction CategoryId
 insertCategorySt =
-  curry . statement $
+  curry . runStatement $
   dimap
     (first (fmap getCategoryId))
     CategoryId
@@ -67,7 +67,7 @@ insertCategorySt =
 
 selectCategory :: CategoryId -> Transaction (Maybe Category)
 selectCategory =
-  statement $
+  runStatement $
   dimap
     getCategoryId
     foldToCategory
@@ -94,7 +94,7 @@ selectCategory =
 
 selectCategories :: PageSpec -> Transaction [Category]
 selectCategories =
-  statement $
+  runStatement $
   dimap
     (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
     (categoriesFromRows . toList)
@@ -146,7 +146,7 @@ deleteCategory catId defaultRange =
 
 selectChildCategoryIdsOf :: CategoryId -> PageSpec -> Transaction [CategoryId]
 selectChildCategoryIdsOf =
-  curry . statement $
+  curry . runStatement $
   dimap
     (\(CategoryId catId, PageSpec {..}) ->
        (catId, getPageLimit pageLimit, getPageOffset pageOffset))
@@ -160,7 +160,7 @@ selectChildCategoryIdsOf =
 
 deleteCategorySt :: CategoryId -> Transaction Bool
 deleteCategorySt =
-  statement $
+  runStatement $
   dimap
     getCategoryId
     (> 0)

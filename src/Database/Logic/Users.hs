@@ -45,7 +45,7 @@ createUser cmd@I.CreateUserCommand {..} = do
 
 insertUser :: Maybe ImageId -> I.CreateUserCommand -> Transaction UserId
 insertUser =
-  curry . statement $
+  curry . runStatement $
   dimap
     (\(optImageId, I.CreateUserCommand {..}) ->
        ( cuFirstName {-1-}
@@ -76,14 +76,14 @@ insertUser =
 
 selectUserById :: UserId -> Transaction (Maybe User)
 selectUserById =
-  statement $ statementWithColumns sql encoder userColumns D.rowMaybe True
+  runStatement $ statementWithColumns sql encoder userColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from users where user_id = $1"
     encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
 selectUsers :: PageSpec -> Transaction (Vector User)
 selectUsers =
-  statement $
+  runStatement $
   statementWithColumns
     "select $COLUMNS from users limit $1 offset $2"
     pageToLimitOffsetEncoder
@@ -115,7 +115,7 @@ selectUserAuthData uid = do
 
 getUserHashAndIsAdmin :: UserId -> Transaction (Maybe (SecretTokenHash, Bool))
 getUserHashAndIsAdmin =
-  statement $
+  runStatement $
   dimap
     getUserId
     (fmap $ first SecretTokenHash)
@@ -148,7 +148,7 @@ deleteUser uid defaultRange =
 -- otherwise.
 deleteUserSt :: UserId -> Transaction (Maybe (Maybe ImageId))
 deleteUserSt =
-  statement $
+  runStatement $
   dimap
     getUserId
     (fmap (fmap ImageId))

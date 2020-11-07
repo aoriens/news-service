@@ -24,7 +24,7 @@ import qualified Hasql.TH as H
 
 findTagByName :: T.Text -> Transaction (Maybe Tag)
 findTagByName =
-  statement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
+  runStatement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from tags where name = $1"
     encoder = E.param (E.nonNullable E.text)
@@ -36,7 +36,7 @@ createTagNamed tagName = do
 
 createTagNamedSt :: T.Text -> Transaction TagId
 createTagNamedSt =
-  statement $
+  runStatement $
   rmap
     TagId
     [H.singletonStatement|
@@ -47,14 +47,14 @@ createTagNamedSt =
 
 findTagById :: TagId -> Transaction (Maybe Tag)
 findTagById =
-  statement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
+  runStatement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from tags where tag_id = $1"
     encoder = getTagId >$< E.param (E.nonNullable E.int4)
 
 getTags :: PageSpec -> Transaction [Tag]
 getTags =
-  statement $
+  runStatement $
   statementWithColumns sql pageToLimitOffsetEncoder tagColumns decoder True
   where
     sql = "select $COLUMNS from tags limit $1 offset $2"

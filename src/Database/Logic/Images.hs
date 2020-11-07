@@ -15,7 +15,7 @@ import qualified Hasql.TH as TH
 
 selectImage :: ImageId -> Transaction (Maybe Image)
 selectImage =
-  statement $
+  runStatement $
   dimap
     getImageId
     (fmap $ \(imageData, imageContentType) -> Image {..})
@@ -27,7 +27,7 @@ selectImage =
 
 imageExists :: ImageId -> Transaction Bool
 imageExists =
-  statement $
+  runStatement $
   lmap
     getImageId
     [TH.singletonStatement|
@@ -43,14 +43,14 @@ createImage image = do
 
 createMimeTypeIfNotFound :: T.Text -> Transaction ()
 createMimeTypeIfNotFound =
-  statement
+  runStatement
     [TH.resultlessStatement|
       insert into mime_types (value) values ($1 :: varchar) on conflict do nothing
     |]
 
 createImageSt :: Image -> Transaction ImageId
 createImageSt =
-  statement $
+  runStatement $
   dimap
     (\Image {..} -> (imageData, imageContentType))
     ImageId
@@ -68,7 +68,7 @@ deleteImageIfNotReferenced =
 
 deleteImage :: ImageId -> Transaction ()
 deleteImage =
-  statement $
+  runStatement $
   lmap
     getImageId
     [TH.resultlessStatement|

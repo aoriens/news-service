@@ -45,7 +45,7 @@ createAuthor uid description = do
 
 insertAuthor :: UserId -> T.Text -> Transaction AuthorId
 insertAuthor =
-  curry . statement $
+  curry . runStatement $
   dimap
     (first getUserId)
     AuthorId
@@ -58,7 +58,7 @@ insertAuthor =
 
 selectAuthors :: PageSpec -> Transaction [Author]
 selectAuthors =
-  statement $
+  runStatement $
   statementWithColumns
     "select $COLUMNS from authors join users using (user_id) limit $1 offset $2"
     pageToLimitOffsetEncoder
@@ -68,7 +68,7 @@ selectAuthors =
 
 selectAuthorById :: AuthorId -> Transaction (Maybe Author)
 selectAuthorById =
-  statement $
+  runStatement $
   statementWithColumns
     "select $COLUMNS from authors join users using (user_id) where author_id = $1"
     (getAuthorId >$< E.param (E.nonNullable E.int4))
@@ -78,7 +78,7 @@ selectAuthorById =
 
 updateAuthor :: AuthorId -> T.Text -> Transaction ()
 updateAuthor =
-  curry . statement $
+  curry . runStatement $
   lmap
     (swap . first getAuthorId)
     [TH.resultlessStatement|
@@ -99,7 +99,7 @@ authorsTable = "authors"
 
 selectAuthorsByUserId :: UserId -> Maybe PageSpec -> Transaction [AuthorId]
 selectAuthorsByUserId =
-  curry . statement $
+  curry . runStatement $
   dimap
     (\(uid, page) ->
        ( getUserId uid
@@ -125,7 +125,7 @@ selectAuthorIdByUserIdIfExactlyOne uid = do
 
 deleteAuthorById :: AuthorId -> Transaction Int64
 deleteAuthorById =
-  statement $
+  runStatement $
   lmap
     getAuthorId
     [TH.rowsAffectedStatement|

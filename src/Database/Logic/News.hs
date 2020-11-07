@@ -49,7 +49,7 @@ getNews = mapM loadNewsWithRow <=< selectNewsRow
 selectNewsRows ::
      IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
 selectNewsRows =
-  const . statement $
+  const . runStatement $
   statementWithColumns
     sql
     pageToLimitOffsetEncoder
@@ -70,7 +70,7 @@ selectNewsRows =
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =
-  statement $
+  runStatement $
   statementWithColumns
     sql
     (getNewsId >$< (E.param . E.nonNullable) E.int4)
@@ -152,7 +152,7 @@ getExistingCategoryById =
 
 getTagsForVersion :: NewsVersionId -> Transaction (Set.HashSet Tag)
 getTagsForVersion =
-  statement $
+  runStatement $
   statementWithColumns
     sql
     encoder
@@ -172,7 +172,7 @@ getTagsForVersion =
 getAdditionalPhotosForVersion ::
      NewsVersionId -> Transaction (Set.HashSet ImageId)
 getAdditionalPhotosForVersion =
-  statement $
+  runStatement $
   dimap
     getNewsVersionId
     (Set.fromList . map ImageId . toList)
@@ -237,7 +237,7 @@ createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
 
 insertVersion :: InsertVersionCommand -> Transaction NewsVersionId
 insertVersion =
-  statement $
+  runStatement $
   dimap
     (\InsertVersionCommand {..} ->
        ( ivcTitle
@@ -277,7 +277,7 @@ addPhotosToVersion = mapM_ . insertVersionAndAdditionalPhotoAssociation
 insertVersionAndAdditionalPhotoAssociation ::
      NewsVersionId -> ImageId -> Transaction ()
 insertVersionAndAdditionalPhotoAssociation =
-  curry . statement $
+  curry . runStatement $
   lmap
     (getNewsVersionId *** getImageId)
     [TH.resultlessStatement|
@@ -295,7 +295,7 @@ addTagsToVersion = mapM_ . insertVersionAndTagAssociation
 
 insertVersionAndTagAssociation :: NewsVersionId -> TagId -> Transaction ()
 insertVersionAndTagAssociation =
-  curry . statement $
+  curry . runStatement $
   lmap
     (getNewsVersionId *** getTagId)
     [TH.resultlessStatement|
@@ -311,7 +311,7 @@ insertVersionAndTagAssociation =
 getDraftAuthor ::
      NewsVersionId -> Transaction (Either IPublishDraft.GatewayFailure AuthorId)
 getDraftAuthor =
-  statement $
+  runStatement $
   dimap
     getNewsVersionId
     (maybe (Left IPublishDraft.UnknownDraftId) (Right . AuthorId))
@@ -332,7 +332,7 @@ createNews vId day = do
 
 insertNews :: NewsVersionId -> Day -> Transaction NewsId
 insertNews =
-  curry . statement $
+  curry . runStatement $
   dimap
     (first getNewsVersionId)
     NewsId
