@@ -10,8 +10,8 @@ import Core.News
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import Web.Application
-import qualified Web.QueryParameter as QP
-import qualified Web.QueryParameter.PageQuery as QP
+import Web.QueryParameter
+import Web.QueryParameter.PageQuery
 
 data Handle =
   Handle
@@ -23,6 +23,6 @@ data Handle =
 
 run :: Handle -> Application
 run Handle {..} request respond = do
-  pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
+  pageQuery <- parseQueryM (requestQueryString request) parsePageQuery
   news <- I.getNews hGetNewsHandle I.emptyNewsFilter pageQuery
   respond $ hPresenter news
