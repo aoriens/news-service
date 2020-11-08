@@ -49,19 +49,11 @@ getNews = mapM loadNewsWithRow <=< selectNewsRow
 
 selectNewsRows ::
      IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
-selectNewsRows newsFilter pageSpec = runStatement statement ()
+selectNewsRows newsFilter pageSpec =
+  runStatementWithColumns sql newsRowColumns (fmap toList . D.rowVector) True
   where
-    statement =
-      statementWithColumns
-        sql
-        encoder
-        newsRowColumns
-        (fmap toList . D.rowVector)
-        True
-    (sql, encoder) =
-      renderSQLBuilder $
-      topBuilder <> whereBuilder <> orderByBuilder <> limitOffsetBuilder
-    topBuilder =
+    sql = topClause <> whereClause <> orderByClause <> limitOffsetClause
+    topClause =
       sqlText
         [TH.uncheckedSql|
           select $COLUMNS
@@ -70,12 +62,12 @@ selectNewsRows newsFilter pageSpec = runStatement statement ()
                join authors using (author_id)
                join users using (user_id)
         |]
-    whereBuilder =
+    whereClause =
       case IGetNews.gnfDateRange newsFilter of
         Nothing -> mempty
         Just dateRange -> "where" <> sqlFallsIntoDateRange "\"date\"" dateRange
-    orderByBuilder = "order by date desc, news_id desc"
-    limitOffsetBuilder = sqlLimitOffset pageSpec
+    orderByClause = "order by date desc, news_id desc"
+    limitOffsetClause = sqlLimitOffset pageSpec
 
 type SQL = B.ByteString
 

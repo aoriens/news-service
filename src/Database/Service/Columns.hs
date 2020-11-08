@@ -8,12 +8,15 @@ module Database.Service.Columns
   , TableName
   , column
   , statementWithColumns
+  , runStatementWithColumns
   ) where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.DList as DL
 import Data.String
 import Database.Service.NativeSQLDecodable
+import Database.Service.Primitives
+import Database.Service.SQLBuilder
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.Statement as S
@@ -81,6 +84,15 @@ statementWithColumns sqlTemplate encoder columns resultMaker =
         (" " <> renderColumns columns <> " ")
         "$COLUMNS"
         sqlTemplate
+
+runStatementWithColumns ::
+     SQLBuilder -> Columns b -> (D.Row b -> D.Result c) -> Bool -> Transaction c
+runStatementWithColumns sqlBuilder columns resultMaker shouldPrepare =
+  statement `runStatement` ()
+  where
+    statement =
+      statementWithColumns sql encoder columns resultMaker shouldPrepare
+    (sql, encoder) = renderSQLBuilder sqlBuilder
 
 replaceAllSubstrings ::
      B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
