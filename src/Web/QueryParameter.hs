@@ -74,16 +74,18 @@ data Failure
 -- | Runs the query parser on the given query.
 parseQuery :: Http.Query -> QueryParser a -> Either Failure a
 parseQuery items (QueryParser keys r) =
-  runReaderT r $ findAll initialMap (length initialMap) items
+  runReaderT r $ findAll items (length initialMap) initialMap
   where
     initialMap = HM.fromList . map (, NotFound) $ DL.toList keys
-    findAll pmap 0 _ = pmap
-    findAll pmap _ [] = pmap
-    findAll pmap remainingCount ((k, v):items') =
-      case HM.lookup k pmap of
-        Just NotFound ->
-          findAll (HM.insert k (Found v) pmap) (pred remainingCount) items'
-        _ -> findAll pmap remainingCount items'
+
+findAll :: Http.Query -> Int -> ParameterMap -> ParameterMap
+findAll _ 0 pmap = pmap
+findAll [] _ pmap = pmap
+findAll ((k, v):items') remainingCount pmap =
+  case HM.lookup k pmap of
+    Just NotFound ->
+      findAll items' (pred remainingCount) (HM.insert k (Found v) pmap)
+    _ -> findAll items' remainingCount pmap
 
 -- | Runs 'parseQuery' and throws 'BadExceptionRequest' in case of
 -- parse failure.
