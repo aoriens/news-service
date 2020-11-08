@@ -49,6 +49,14 @@ spec = do
           query = [("k", Just "value")]
           r = parseQuery query parser
       r `shouldBe` Right (Just (Just "value"))
+    it
+      "should find an existing key with a value if collectRawQueryParameter is invoked with the same key too" $ do
+      let parser =
+            collectRawQueryParameter "k" *> lookupRawQueryParameter "k" <*
+            collectRawQueryParameter "k"
+          query = [("k", Just "value")]
+          r = parseQuery query parser
+      r `shouldBe` Right (Just (Just "value"))
     it "should find an existing key with a missing value" $ do
       let parser = lookupRawQueryParameter "k"
           query = [("k", Nothing)]
@@ -59,6 +67,41 @@ spec = do
           query = [("bad", Just "value")]
           r = parseQuery query parser
       r `shouldBe` Right Nothing
+  describe "collectRawQueryParameter" $ do
+    it "should find all existing values for key value while keeping order" $ do
+      let parser = collectRawQueryParameter "k"
+          query = [("k", Just "1"), ("k", Just "1"), ("k", Just "2")]
+          r = parseQuery query parser
+      r `shouldBe` Right [Just "1", Just "1", Just "2"]
+    it
+      "should find all existing values for the key while keeping order if collectRawQueryParameter invoked twice with the same key" $ do
+      let parser = collectRawQueryParameter "k" *> collectRawQueryParameter "k"
+          query = [("k", Just "1"), ("k", Just "1"), ("k", Just "2")]
+          r = parseQuery query parser
+      r `shouldBe` Right [Just "1", Just "1", Just "2"]
+    it
+      "should find all existing values for the key while keeping order if lookupRawQueryParameter invoked with the same key too" $ do
+      let parser =
+            lookupRawQueryParameter "k" *> collectRawQueryParameter "k" <*
+            lookupRawQueryParameter "k"
+          query = [("k", Just "1"), ("k", Just "1"), ("k", Just "2")]
+          r = parseQuery query parser
+      r `shouldBe` Right [Just "1", Just "1", Just "2"]
+    it "should find all existing keys with missing values" $ do
+      let parser = collectRawQueryParameter "k"
+          query = [("k", Nothing), ("k", Just "")]
+          r = parseQuery query parser
+      r `shouldBe` Right [Nothing, Just ""]
+    it "should return [] for missing key" $ do
+      let parser = collectRawQueryParameter "k"
+          query = [("bad", Just "value")]
+          r = parseQuery query parser
+      r `shouldBe` Right []
+    it "should not return values for non-matching keys" $ do
+      let parser = collectRawQueryParameter "k"
+          query = [("bad", Just "bad"), ("k", Just "good")]
+          r = parseQuery query parser
+      r `shouldBe` Right [Just "good"]
   describe "lookupQueryParameter" $ do
     it "should parse a valid value for a found key" $ do
       let parser = lookupQueryParameter "k"
@@ -91,6 +134,29 @@ spec = do
           query = [("k", Just "")]
           r = parseQuery query parser
       r `shouldBe` Left (BadValue "k" (Just ""))
+  describe "collectQueryParameter" $ do
+    it "should parse all values if they are valid for a found key" $ do
+      let parser = collectQueryParameter "k"
+          query = [("k", Just "1"), ("k", Just "2")]
+          r = parseQuery query parser
+      r `shouldBe` Right ([1, 2] :: [Int])
+    it "should return [] for a missing key" $ do
+      let parser = collectQueryParameter "k" :: QueryParser [Int]
+          query = [("bad", Just "1")]
+          r = parseQuery query parser
+      r `shouldBe` Right []
+    it
+      "should return BadValue if the last parameter with the key among several ones cannot be parsed" $ do
+      let parser = collectQueryParameter "k" :: QueryParser [Int]
+          query = [("k", Just "1"), ("k", Just "bad")]
+          r = parseQuery query parser
+      r `shouldBe` Left (BadValue "k" (Just "bad"))
+    it
+      "should return BadValue if the first parameter with the key among several ones cannot be parsed" $ do
+      let parser = collectQueryParameter "k" :: QueryParser [Int]
+          query = [("k", Just "bad"), ("k", Just "1")]
+          r = parseQuery query parser
+      r `shouldBe` Left (BadValue "k" (Just "bad"))
   describe "parseQuery" $ do
     it "should not evaluate query items after all keys are found" $ do
       let query = [("a", Nothing), ("b", Nothing), error "Must not evaluate"]

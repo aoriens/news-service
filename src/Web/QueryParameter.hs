@@ -1,4 +1,3 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
@@ -9,7 +8,9 @@ module Web.QueryParameter
   , parseQueryM
   , requireQueryParameter
   , lookupQueryParameter
+  , collectQueryParameter
   , lookupRawQueryParameter
+  , collectRawQueryParameter
   , Failure(..)
   , QueryParameter(..)
   ) where
@@ -19,6 +20,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
+import Data.Bifunctor
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.DList as DL
@@ -46,8 +48,14 @@ type RawValue = Maybe B.ByteString
 -- found.
 data QueryParser a =
   QueryParser
-    (DL.DList Key) -- ^ Keys to search for
-    (ParameterReader a) -- ^ A reader monad to consume parameters found
+    { qKeys :: !(DL.DList (Key, SearchType))
+    , qParameterReader :: !(ParameterReader a)
+    , qMayScanPartially :: !Bool
+    }
+
+data SearchType
+  = FindFirst
+  | FindAll
 
 type ParameterReader = ReaderT ParameterMap (Either Failure)
 
@@ -55,16 +63,23 @@ type ParameterReader = ReaderT ParameterMap (Either Failure)
 type ParameterMap = HM.HashMap Key Searched
 
 data Searched
-  = NotFound
-  | Found !RawValue
+  = SearchedOne
+  | FoundOne !RawValue
+  | Collected !(DL.DList RawValue)
 
 instance Functor QueryParser where
-  fmap f (QueryParser keys r) = QueryParser keys (fmap f r)
+  fmap f parser = parser {qParameterReader = f <$> qParameterReader parser}
 
 instance Applicative QueryParser where
-  pure = QueryParser DL.empty . pure
-  (QueryParser keys1 f) <*> (QueryParser keys2 a) =
-    QueryParser (keys1 <> keys2) (f <*> a)
+  pure v =
+    QueryParser
+      {qKeys = DL.empty, qParameterReader = pure v, qMayScanPartially = True}
+  pf <*> px =
+    QueryParser
+      { qKeys = qKeys pf <> qKeys px
+      , qParameterReader = qParameterReader pf <*> qParameterReader px
+      , qMayScanPartially = qMayScanPartially pf && qMayScanPartially px
+      }
 
 data Failure
   = MissingKey Key
@@ -73,19 +88,46 @@ data Failure
 
 -- | Runs the query parser on the given query.
 parseQuery :: Http.Query -> QueryParser a -> Either Failure a
-parseQuery items (QueryParser keys r) =
-  runReaderT r $ findAll items (length initialMap) initialMap
+parseQuery items QueryParser {..} = runReaderT qParameterReader resultingMap
   where
-    initialMap = HM.fromList . map (, NotFound) $ DL.toList keys
+    resultingMap
+      | qMayScanPartially =
+        scanQueryPartially items (length initialMap) initialMap
+      | otherwise = scanFullQuery items initialMap
+    initialMap =
+      HM.fromListWith mergeInitialLeaves . map (second initialLeafForSearchType) $
+      DL.toList qKeys
+    mergeInitialLeaves new old
+      | Collected {} <- new = new
+      | otherwise = old
+    initialLeafForSearchType FindFirst = SearchedOne
+    initialLeafForSearchType FindAll = Collected DL.empty
 
-findAll :: Http.Query -> Int -> ParameterMap -> ParameterMap
-findAll _ 0 pmap = pmap
-findAll [] _ pmap = pmap
-findAll ((k, v):items') remainingCount pmap =
-  case HM.lookup k pmap of
-    Just NotFound ->
-      findAll items' (pred remainingCount) (HM.insert k (Found v) pmap)
-    _ -> findAll items' remainingCount pmap
+scanQueryPartially :: Http.Query -> Int -> ParameterMap -> ParameterMap
+scanQueryPartially _ 0 pmap = pmap
+scanQueryPartially [] _ pmap = pmap
+scanQueryPartially ((k, v):items') remainingCount pmap =
+  mergeValue skip save (HM.lookup k pmap) v
+  where
+    skip = scanQueryPartially items' remainingCount pmap
+    save value =
+      scanQueryPartially items' (pred remainingCount) (HM.insert k value pmap)
+
+scanFullQuery :: Http.Query -> ParameterMap -> ParameterMap
+scanFullQuery [] pmap = pmap
+scanFullQuery ((k, v):items') pmap = mergeValue skip save (HM.lookup k pmap) v
+  where
+    skip = scanFullQuery items' pmap
+    save value = scanFullQuery items' (HM.insert k value pmap)
+
+mergeValue :: a -> (Searched -> a) -> Maybe Searched -> RawValue -> a
+mergeValue skip save lookedUp newValue =
+  case lookedUp of
+    Just SearchedOne -> save $ FoundOne newValue
+    Just (FoundOne _) -> skip
+    Just (Collected oldValues) ->
+      save . Collected $ oldValues `DL.snoc` newValue
+    Nothing -> skip
 
 -- | Runs 'parseQuery' and throws 'BadExceptionRequest' in case of
 -- parse failure.
@@ -111,36 +153,54 @@ parseQueryM query parser =
 lookupRawQueryParameter :: Key -> QueryParser (Maybe RawValue)
 lookupRawQueryParameter key =
   QueryParser
-    (DL.singleton key)
-    (ReaderT $ Right . (searchedToMaybe <=< HM.lookup key))
+    { qKeys = DL.singleton (key, FindFirst)
+    , qParameterReader = ReaderT $ Right . (searchedToMaybe <=< HM.lookup key)
+    , qMayScanPartially = True
+    }
 
 searchedToMaybe :: Searched -> Maybe RawValue
-searchedToMaybe NotFound = Nothing
-searchedToMaybe (Found v) = Just v
+searchedToMaybe SearchedOne = Nothing
+searchedToMaybe (FoundOne v) = Just v
+searchedToMaybe (Collected list) = listToMaybe $ DL.toList list
+
+collectQueryParameter :: QueryParameter a => Key -> QueryParser [a]
+collectQueryParameter key = collectRawQueryParameter key `bindReader` f
+  where
+    f = lift . mapM (parseQueryParameterE key)
+
+collectRawQueryParameter :: Key -> QueryParser [RawValue]
+collectRawQueryParameter key =
+  QueryParser
+    { qKeys = DL.singleton (key, FindAll)
+    , qParameterReader =
+        ReaderT $ Right . (searchedToList <=< maybeToList . HM.lookup key)
+    , qMayScanPartially = False
+    }
+
+searchedToList :: Searched -> [RawValue]
+searchedToList SearchedOne = []
+searchedToList (FoundOne v) = [v]
+searchedToList (Collected list) = DL.toList list
 
 -- | Finds a value for the given key and tries to parse it. If none
 -- found, returns Nothing. If a wrong value is found, generates a
 -- failure.
 lookupQueryParameter :: QueryParameter a => Key -> QueryParser (Maybe a)
-lookupQueryParameter key = mapValue f (lookupRawQueryParameter key)
+lookupQueryParameter key = lookupRawQueryParameter key `bindReader` (lift . f)
   where
-    f a =
-      case a of
-        Nothing -> Right Nothing
-        Just optBS -> Just <$> parseQueryParameterE key optBS
+    f Nothing = Right Nothing
+    f (Just rawValue) = Just <$> parseQueryParameterE key rawValue
 
 -- | Finds a value for the given key and tries to parse it. If none
 -- found or parsing failed, generates a failure.
 requireQueryParameter :: QueryParameter a => Key -> QueryParser a
-requireQueryParameter key = mapValue f (lookupRawQueryParameter key)
+requireQueryParameter key = lookupRawQueryParameter key `bindReader` (lift . f)
   where
-    f a =
-      case a of
-        Nothing -> Left (MissingKey key)
-        Just optBS -> parseQueryParameterE key optBS
+    f Nothing = Left (MissingKey key)
+    f (Just rawValue) = parseQueryParameterE key rawValue
 
-mapValue :: (a -> Either Failure b) -> QueryParser a -> QueryParser b
-mapValue f (QueryParser keys r) = QueryParser keys (r >>= lift . f)
+bindReader :: QueryParser a -> (a -> ParameterReader b) -> QueryParser b
+bindReader parser f = parser {qParameterReader = qParameterReader parser >>= f}
 
 parseQueryParameterE :: QueryParameter a => Key -> RawValue -> Either Failure a
 parseQueryParameterE key bs =
