@@ -39,8 +39,14 @@ parseParams = liftA2 (,) parsePageQuery parseNewsFilter
 
 parseNewsFilter :: QueryParser I.NewsFilter
 parseNewsFilter = do
-  optDateRange <- lookupQueryParameter "date"
-  pure I.NewsFilter {nfDateRange = getDateRange <$> optDateRange}
+  dateRanges <- fmap getDateRange <$> collectQueryParameter "date"
+  pure
+    I.NewsFilter
+      { nfDateRanges =
+          if null dateRanges
+            then Nothing
+            else Just dateRanges
+      }
 
 newtype DateRange =
   DateRange

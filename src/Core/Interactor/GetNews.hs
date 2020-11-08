@@ -34,11 +34,11 @@ data Handle m =
 -- list consistently results in no matching items.
 newtype NewsFilter =
   NewsFilter
-    { nfDateRange :: Maybe NewsDateRange
+    { nfDateRanges :: Maybe [NewsDateRange]
     }
 
 emptyNewsFilter :: NewsFilter
-emptyNewsFilter = NewsFilter {nfDateRange = Nothing}
+emptyNewsFilter = NewsFilter {nfDateRanges = Nothing}
 
 -- | The inclusive range of dates.
 data NewsDateRange
@@ -48,9 +48,9 @@ data NewsDateRange
 
 newtype GatewayNewsFilter =
   GatewayNewsFilter
-    { gnfDateRange :: Maybe NewsDateRange
+    { gnfDateRanges :: Maybe [NewsDateRange]
     }
 
 gatewayNewsFilterFromNewsFilter :: NewsFilter -> GatewayNewsFilter
 gatewayNewsFilterFromNewsFilter NewsFilter {..} =
-  GatewayNewsFilter {gnfDateRange = nfDateRange}
+  GatewayNewsFilter {gnfDateRanges = nfDateRanges}

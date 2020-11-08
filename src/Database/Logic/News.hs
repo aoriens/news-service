@@ -27,6 +27,7 @@ import qualified Data.ByteString as B
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
+import Data.List
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
@@ -63,9 +64,12 @@ selectNewsRows newsFilter pageSpec =
                join users using (user_id)
         |]
     whereClause =
-      case IGetNews.gnfDateRange newsFilter of
+      case IGetNews.gnfDateRanges newsFilter of
         Nothing -> mempty
-        Just dateRange -> "where" <> sqlFallsIntoDateRange "\"date\"" dateRange
+        Just [] -> "where false"
+        Just ranges@(_:_) ->
+          mconcat . ("where" :) . intersperse "or" $
+          map (sqlFallsIntoDateRange "\"date\"") ranges
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = sqlLimitOffset pageSpec
 
