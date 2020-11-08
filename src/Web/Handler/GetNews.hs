@@ -12,6 +12,9 @@ import Core.News
 import Core.Pagination
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Util as B
+import Data.Time.Format.ISO8601
 import Web.Application
 import Web.QueryParameter
 import Web.QueryParameter.PageQuery
@@ -36,6 +39,28 @@ parseParams = liftA2 (,) parsePageQuery parseNewsFilter
 
 parseNewsFilter :: QueryParser I.NewsFilter
 parseNewsFilter = do
-  optDay <- lookupQueryParameter "date"
-  pure
-    I.NewsFilter {nfDateRange = (\day -> I.NewsSinceUntil day day) <$> optDay}
+  optDateRange <- lookupQueryParameter "date"
+  pure I.NewsFilter {nfDateRange = getDateRange <$> optDateRange}
+
+newtype DateRange =
+  DateRange
+    { getDateRange :: I.NewsDateRange
+    }
+
+instance QueryParameter DateRange where
+  parseQueryParameter = (fmap DateRange . parseDateRange =<<)
+
+parseDateRange :: B.ByteString -> Maybe I.NewsDateRange
+parseDateRange str =
+  case B.splitOnCharOnce (== ',') str of
+    Nothing ->
+      (\day -> I.NewsSinceUntil day day) <$> iso8601ParseM (B.unpack str)
+    Just (from, to) ->
+      case ( iso8601ParseM $ B.unpack from
+           , B.null from
+           , iso8601ParseM $ B.unpack to
+           , B.null to) of
+        (Just day1, _, Just day2, _) -> Just $ I.NewsSinceUntil day1 day2
+        (Just day1, _, Nothing, True) -> Just $ I.NewsSince day1
+        (Nothing, True, Just day2, _) -> Just $ I.NewsUntil day2
+        _ -> Nothing
