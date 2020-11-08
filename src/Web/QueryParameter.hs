@@ -51,10 +51,12 @@ data QueryParser a =
 
 type ParameterReader = ReaderT ParameterMap (Either Failure)
 
--- The map contains keys to be searched for. Values may be:
--- - Nothing - no value is found for the key yet
--- - Just value - a value is found
-type ParameterMap = HM.HashMap Key (Maybe RawValue)
+-- The map contains keys to be searched for.
+type ParameterMap = HM.HashMap Key Searched
+
+data Searched
+  = NotFound
+  | Found !RawValue
 
 instance Functor QueryParser where
   fmap f (QueryParser keys r) = QueryParser keys (fmap f r)
@@ -74,16 +76,13 @@ parseQuery :: Http.Query -> QueryParser a -> Either Failure a
 parseQuery items (QueryParser keys r) =
   runReaderT r $ findAll initialMap (length initialMap) items
   where
-    initialMap = HM.fromList . map (, Nothing) $ DL.toList keys
+    initialMap = HM.fromList . map (, NotFound) $ DL.toList keys
     findAll pmap 0 _ = pmap
     findAll pmap _ [] = pmap
     findAll pmap remainingCount ((k, v):items') =
-      case HM.lookup k pmap
-        -- The key is searched for, but no value found yet
-            of
-        Just Nothing ->
-          findAll (HM.insert k (Just v) pmap) (pred remainingCount) items'
-        -- The key is not searched for, or a value has already been found
+      case HM.lookup k pmap of
+        Just NotFound ->
+          findAll (HM.insert k (Found v) pmap) (pred remainingCount) items'
         _ -> findAll pmap remainingCount items'
 
 -- | Runs 'parseQuery' and throws 'BadExceptionRequest' in case of
@@ -109,7 +108,13 @@ parseQueryM query parser =
 -- | Finds a raw value for the given key. If none found, returns Nothing.
 lookupRawQueryParameter :: Key -> QueryParser (Maybe RawValue)
 lookupRawQueryParameter key =
-  QueryParser (DL.singleton key) (ReaderT $ pure . join . HM.lookup key)
+  QueryParser
+    (DL.singleton key)
+    (ReaderT $ Right . (searchedToMaybe <=< HM.lookup key))
+
+searchedToMaybe :: Searched -> Maybe RawValue
+searchedToMaybe NotFound = Nothing
+searchedToMaybe (Found v) = Just v
 
 -- | Finds a value for the given key and tries to parse it. If none
 -- found, returns Nothing. If a wrong value is found, generates a
