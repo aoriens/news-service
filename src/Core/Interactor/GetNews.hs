@@ -10,6 +10,7 @@ module Core.Interactor.GetNews
 import Control.Monad.Catch
 import Core.News
 import Core.Pagination
+import qualified Data.List.NonEmpty as N
 import Data.Time
 
 getNews :: MonadThrow m => Handle m -> NewsFilter -> PageSpecQuery -> m [News]
@@ -30,11 +31,11 @@ data Handle m =
 --
 -- 'Maybe' is used to represent 'no filtering' value as Nothing. We
 -- might use the empty list or set for it, but it might be error-prone
--- and involve detecting that special case, since processing an empty
--- list consistently results in no matching items.
+-- due to forcing to detect the special case. Treating an empty list
+-- consistently results in no matching items and so it is useless.
 newtype NewsFilter =
   NewsFilter
-    { nfDateRanges :: Maybe [NewsDateRange]
+    { nfDateRanges :: Maybe (N.NonEmpty NewsDateRange)
     }
 
 emptyNewsFilter :: NewsFilter
@@ -48,7 +49,7 @@ data NewsDateRange
 
 newtype GatewayNewsFilter =
   GatewayNewsFilter
-    { gnfDateRanges :: Maybe [NewsDateRange]
+    { gnfDateRanges :: Maybe (N.NonEmpty NewsDateRange)
     }
 
 gatewayNewsFilterFromNewsFilter :: NewsFilter -> GatewayNewsFilter

@@ -66,10 +66,9 @@ selectNewsRows newsFilter pageSpec =
     whereClause =
       case IGetNews.gnfDateRanges newsFilter of
         Nothing -> mempty
-        Just [] -> "where false"
-        Just ranges@(_:_) ->
+        Just ranges ->
           mconcat . ("where" :) . intersperse "or" $
-          map (sqlFallsIntoDateRange "\"date\"") ranges
+          map (sqlFallsIntoDateRange "\"date\"") $ toList ranges
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = sqlLimitOffset pageSpec
 

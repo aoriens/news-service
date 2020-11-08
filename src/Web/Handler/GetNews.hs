@@ -14,6 +14,7 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Util as B
+import qualified Data.List.NonEmpty as N
 import Data.Time.Format.ISO8601
 import Web.Application
 import Web.QueryParameter
@@ -40,13 +41,7 @@ parseParams = liftA2 (,) parsePageQuery parseNewsFilter
 parseNewsFilter :: QueryParser I.NewsFilter
 parseNewsFilter = do
   dateRanges <- fmap getDateRange <$> collectQueryParameter "date"
-  pure
-    I.NewsFilter
-      { nfDateRanges =
-          if null dateRanges
-            then Nothing
-            else Just dateRanges
-      }
+  pure I.NewsFilter {nfDateRanges = N.nonEmpty dateRanges}
 
 newtype DateRange =
   DateRange
