@@ -56,7 +56,7 @@ spec = do
       let parser = lookupRawQueryParameter "target"
           r = parseQuery [("nonmatching", Just "value")] parser
       r `shouldBe` Right Nothing
-  describe "lookup" $ do
+  describe "lookupQueryParameter" $ do
     it "should parse a valid value for a found key" $ do
       let parser = lookupQueryParameter "target"
           r = parseQuery [("target", Just "1")] parser
