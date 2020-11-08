@@ -8,7 +8,7 @@ import Control.Applicative
 import Criterion.Main
 import qualified Data.ByteString.Char8 as BS8
 import Data.List
-import qualified Web.QueryParameter as QP
+import Web.QueryParameter
 
 run :: Benchmark
 run =
@@ -30,17 +30,29 @@ run =
     , bgroup
         "Web.QueryParameters.lookupRawP"
         [ bench "OK, 1 parameter, 0 items to skip" $
-          nf (`QP.parseQuery` QP.lookupRaw "a") $ makeQuery 0 1
+          nf (`parseQuery` lookupRawQueryParameter "a") $ makeQuery 0 1
         , bench "OK, 1 parameter, 10 items to skip" $
-          nf (`QP.parseQuery` QP.lookupRaw "a") $ makeQuery 10 1
+          nf (`parseQuery` lookupRawQueryParameter "a") $ makeQuery 10 1
         , bench "OK, 2 parameters, 0 items to skip" $
-          nf (`QP.parseQuery` liftA2 (,) (QP.lookupRaw "a") (QP.lookupRaw "b")) $
+          nf
+            (`parseQuery` liftA2
+                            (,)
+                            (lookupRawQueryParameter "a")
+                            (lookupRawQueryParameter "b")) $
           makeQuery 0 2
         , bench "OK, 2 parameters, 10 items to skip" $
-          nf (`QP.parseQuery` liftA2 (,) (QP.lookupRaw "a") (QP.lookupRaw "b")) $
+          nf
+            (`parseQuery` liftA2
+                            (,)
+                            (lookupRawQueryParameter "a")
+                            (lookupRawQueryParameter "b")) $
           makeQuery 10 2
         , bench "Not found 2 parameters, 10 items to skip" $
-          nf (`QP.parseQuery` liftA2 (,) (QP.lookupRaw "a") (QP.lookupRaw "b")) $
+          nf
+            (`parseQuery` liftA2
+                            (,)
+                            (lookupRawQueryParameter "a")
+                            (lookupRawQueryParameter "b")) $
           makeQuery 10 0
         ]
     ]
