@@ -27,7 +27,6 @@ import qualified Data.ByteString as B
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
-import Data.Maybe
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
@@ -50,8 +49,7 @@ getNews = mapM loadNewsWithRow <=< selectNewsRow
 
 selectNewsRows ::
      IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
-selectNewsRows newsFilter pageSpec =
-  runStatement statement (newsFilter, pageSpec)
+selectNewsRows newsFilter pageSpec = runStatement statement ()
   where
     statement =
       statementWithColumns
@@ -61,8 +59,8 @@ selectNewsRows newsFilter pageSpec =
         (fmap toList . D.rowVector)
         True
     (sql, encoder) =
-      renderSQLBuilder $ topBuilder <> whereBuilder <> orderByBuilder <>
-      limitOffsetBuilder
+      renderSQLBuilder $
+      topBuilder <> whereBuilder <> orderByBuilder <> limitOffsetBuilder
     topBuilder =
       sqlText
         [TH.uncheckedSql|
@@ -75,41 +73,34 @@ selectNewsRows newsFilter pageSpec =
     whereBuilder =
       case IGetNews.gnfDateRange newsFilter of
         Nothing -> mempty
-        Just dateRange ->
-          "where" <>
-          (fromJust . IGetNews.gnfDateRange . fst >$<
-           sqlFallsIntoDateRange "\"date\"" dateRange)
+        Just dateRange -> "where" <> sqlFallsIntoDateRange "\"date\"" dateRange
     orderByBuilder = "order by date desc, news_id desc"
-    limitOffsetBuilder = snd >$< sqlLimitOffset
+    limitOffsetBuilder = sqlLimitOffset pageSpec
 
 type SQL = B.ByteString
 
-sqlFallsIntoDateRange ::
-     SQL -> IGetNews.NewsDateRange -> SQLBuilder IGetNews.NewsDateRange
+sqlFallsIntoDateRange :: SQL -> IGetNews.NewsDateRange -> SQLBuilder
 sqlFallsIntoDateRange expr dateRange =
   case dateRange of
-    IGetNews.NewsSinceUntil {} ->
-      (\(IGetNews.NewsSinceUntil from to) -> (from, to)) >$<
-      sqlBetweenParams expr
-    IGetNews.NewsSince {} ->
-      (\(IGetNews.NewsSince day) -> day) >$< sqlGreaterOrEqualParam expr
-    IGetNews.NewsUntil {} ->
-      (\(IGetNews.NewsUntil day) -> day) >$< sqlLessOrEqualParam expr
+    IGetNews.NewsSinceUntil from to -> sqlBetweenParams expr from to
+    IGetNews.NewsSince day -> sqlGreaterOrEqualParam expr day
+    IGetNews.NewsUntil day -> sqlLessOrEqualParam expr day
 
-sqlBetweenParams :: NativeSQLEncodable a => SQL -> SQLBuilder (a, a)
-sqlBetweenParams expr =
-  sqlText expr <> "between" <> (fst >$< sqlParam) <> "and" <> (snd >$< sqlParam)
+sqlBetweenParams :: NativeSQLEncodable a => SQL -> a -> a -> SQLBuilder
+sqlBetweenParams expr from to =
+  sqlText expr <> "between" <> sqlParam from <> "and" <> sqlParam to
 
-sqlGreaterOrEqualParam :: NativeSQLEncodable a => SQL -> SQLBuilder a
-sqlGreaterOrEqualParam expr = sqlText expr <> ">=" <> sqlParam
+sqlGreaterOrEqualParam :: NativeSQLEncodable a => SQL -> a -> SQLBuilder
+sqlGreaterOrEqualParam expr a = sqlText expr <> ">=" <> sqlParam a
 
-sqlLessOrEqualParam :: NativeSQLEncodable a => SQL -> SQLBuilder a
-sqlLessOrEqualParam expr = sqlText expr <> "<=" <> sqlParam
+sqlLessOrEqualParam :: NativeSQLEncodable a => SQL -> a -> SQLBuilder
+sqlLessOrEqualParam expr a = sqlText expr <> "<=" <> sqlParam a
 
-sqlLimitOffset :: SQLBuilder PageSpec
-sqlLimitOffset =
-  "limit" <> (getPageLimit . pageLimit >$< sqlParam) <> "offset" <>
-  (getPageOffset . pageOffset >$< sqlParam)
+sqlLimitOffset :: PageSpec -> SQLBuilder
+sqlLimitOffset PageSpec {..} =
+  "limit" <>
+  sqlParam (getPageLimit pageLimit) <>
+  "offset" <> sqlParam (getPageOffset pageOffset)
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =
@@ -370,8 +361,7 @@ createNews vId day = do
   getNews newsId' >>=
     maybe
       (throwM . DatabaseInternalInconsistencyException $
-       "Cannot find news just created: news_id=" <>
-       T.pack (show newsId'))
+       "Cannot find news just created: news_id=" <> T.pack (show newsId'))
       pure
 
 insertNews :: NewsVersionId -> Day -> Transaction NewsId

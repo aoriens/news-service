@@ -17,42 +17,41 @@ import qualified Hasql.Encoders as E
 
 type SQL = B.ByteString
 
-data SQLBuilder in' =
+data SQLBuilder =
   SQLBuilder
     { sqlNodes :: !(DL.DList SQLNode)
-    , sqlEncoder :: !(E.Params in')
+    , sqlEncoder :: !(E.Params ())
     }
 
 data SQLNode
   = SQLText SQL
   | SQLPlaceholder
 
-instance Contravariant SQLBuilder where
-  contramap f x = x {sqlEncoder = contramap f $ sqlEncoder x}
-
-instance Semigroup (SQLBuilder in') where
+instance Semigroup SQLBuilder where
   a <> b =
     SQLBuilder
       { sqlEncoder = sqlEncoder a <> sqlEncoder b
       , sqlNodes = sqlNodes a <> sqlNodes b
       }
 
-instance Monoid (SQLBuilder in') where
+instance Monoid SQLBuilder where
   mempty = SQLBuilder {sqlEncoder = mempty, sqlNodes = mempty}
 
-instance IsString (SQLBuilder in') where
+instance IsString SQLBuilder where
   fromString = sqlText . fromString
 
-sqlText :: SQL -> SQLBuilder a
+sqlText :: SQL -> SQLBuilder
 sqlText s =
   SQLBuilder {sqlNodes = DL.singleton $ SQLText s, sqlEncoder = mempty}
 
-sqlParam :: NativeSQLEncodable p => SQLBuilder p
-sqlParam =
+sqlParam :: NativeSQLEncodable p => p -> SQLBuilder
+sqlParam p =
   SQLBuilder
-    {sqlNodes = DL.singleton SQLPlaceholder, sqlEncoder = nativeSQLEncoder}
+    { sqlNodes = DL.singleton SQLPlaceholder
+    , sqlEncoder = const p >$< nativeSQLEncoder
+    }
 
-renderSQLBuilder :: SQLBuilder in' -> (SQL, E.Params in')
+renderSQLBuilder :: SQLBuilder -> (SQL, E.Params ())
 renderSQLBuilder SQLBuilder {..} = (B.intercalate " " segments, sqlEncoder)
   where
     (_, segments) = mapAccumL f 1 $ DL.toList sqlNodes
