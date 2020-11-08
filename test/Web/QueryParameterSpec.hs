@@ -45,53 +45,52 @@ spec = do
         (Nothing :: Maybe Int)
   describe "lookupRawQueryParameter" $ do
     it "should find an existing key with a value" $ do
-      let parser = lookupRawQueryParameter "target"
-          query = [("target", Just "value")]
+      let parser = lookupRawQueryParameter "k"
+          query = [("k", Just "value")]
           r = parseQuery query parser
       r `shouldBe` Right (Just (Just "value"))
     it "should find an existing key with a missing value" $ do
-      let parser = lookupRawQueryParameter "target"
-          query = [("target", Nothing)]
+      let parser = lookupRawQueryParameter "k"
+          query = [("k", Nothing)]
           r = parseQuery query parser
       r `shouldBe` Right (Just Nothing)
     it "should return Nothing for missing key" $ do
-      let parser = lookupRawQueryParameter "target"
-          query = [("nonmatching", Just "value")]
+      let parser = lookupRawQueryParameter "k"
+          query = [("bad", Just "value")]
           r = parseQuery query parser
       r `shouldBe` Right Nothing
   describe "lookupQueryParameter" $ do
     it "should parse a valid value for a found key" $ do
-      let parser = lookupQueryParameter "target"
-          query = [("target", Just "1")]
+      let parser = lookupQueryParameter "k"
+          query = [("k", Just "1")]
           r = parseQuery query parser
       r `shouldBe` Right (Just (1 :: Int))
     it "should return Nothing for a missing key" $ do
-      let parser = lookupQueryParameter "target" :: QueryParser (Maybe Int)
-          query = [("nonmatching", Just "1")]
+      let parser = lookupQueryParameter "k" :: QueryParser (Maybe Int)
+          query = [("bad", Just "1")]
           r = parseQuery query parser
       r `shouldBe` Right Nothing
     it "should return BadValue when parsing fails" $ do
-      let parser =
-            lookupQueryParameter "target" :: QueryParser (Maybe DoesNotParse)
-          query = [("target", Just "")]
+      let parser = lookupQueryParameter "k" :: QueryParser (Maybe DoesNotParse)
+          query = [("k", Just "")]
           r = parseQuery query parser
-      r `shouldBe` Left (BadValue "target" (Just ""))
+      r `shouldBe` Left (BadValue "k" (Just ""))
   describe "requireQueryParameter" $ do
     it "should parse a valid value for a found key" $ do
-      let parser = requireQueryParameter "target"
-          query = [("target", Just "1")]
+      let parser = requireQueryParameter "k"
+          query = [("k", Just "1")]
           r = parseQuery query parser
       r `shouldBe` Right (1 :: Int)
     it "should return MissingKey for a missing key" $ do
-      let parser = requireQueryParameter "target" :: QueryParser Int
-          query = [("nonmatching", Just "1")]
+      let parser = requireQueryParameter "k" :: QueryParser Int
+          query = [("bad", Just "1")]
           r = parseQuery query parser
-      r `shouldBe` Left (MissingKey "target")
+      r `shouldBe` Left (MissingKey "k")
     it "should return BadValue when parsing fails" $ do
-      let parser = requireQueryParameter "target" :: QueryParser DoesNotParse
-          query = [("target", Just "")]
+      let parser = requireQueryParameter "k" :: QueryParser DoesNotParse
+          query = [("k", Just "")]
           r = parseQuery query parser
-      r `shouldBe` Left (BadValue "target" (Just ""))
+      r `shouldBe` Left (BadValue "k" (Just ""))
   describe "parseQuery" $ do
     it "should not evaluate query items after all keys are found" $ do
       let query = [("a", Nothing), ("b", Nothing), error "Must not evaluate"]
