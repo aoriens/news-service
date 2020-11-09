@@ -156,7 +156,15 @@ The response contains the image data with the corresponding MIME type.
 
 ### `GET /news`
 
-Returns a list of [News](#News) entities.
+Returns a list of [News](#News) entities. Additional parameters may be passed in
+the URI query to filter entries to output:
+
+- `date` - a date or a date range when news is published. The parameter may be
+  used many times to specify multiple dates or date ranges. The following
+  formats are accepted:
+  - `YYYY-mm-dd` - a specific day in `ISO8601` date format.
+  - `YYYY-mm-dd,YYYY-mm-dd` - an inclusive date range. The start or the end date
+    may be absent, but not both, to select all dates since/until a specific day.
 
 ### `GET /tags`
 
