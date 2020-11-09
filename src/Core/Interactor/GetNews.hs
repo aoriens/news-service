@@ -46,6 +46,7 @@ data NewsDateRange
   = NewsSinceUntil Day Day
   | NewsSince Day
   | NewsUntil Day
+  deriving (Eq, Show)
 
 newtype GatewayNewsFilter =
   GatewayNewsFilter

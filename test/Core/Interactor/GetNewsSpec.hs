@@ -12,6 +12,8 @@ import Core.Pagination.Test
 import Core.Tag
 import Core.User
 import qualified Data.HashSet as Set
+import Data.IORef
+import qualified Data.List.NonEmpty as N
 import Data.Time
 import Test.Hspec
 
@@ -43,6 +45,21 @@ spec =
               , hPageSpecParserHandle
               }
       void $ I.getNews h emptyNewsFilter pageSpecQuery
+    it "should pass NewsFilter data to hGetNews" $ do
+      ref <- newIORef []
+      let newsFilter =
+            I.NewsFilter
+              { nfDateRanges =
+                  N.nonEmpty
+                    [ I.NewsSinceUntil
+                        (ModifiedJulianDay 1)
+                        (ModifiedJulianDay 2)
+                    ]
+              }
+          h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
+      _ <- I.getNews h newsFilter noPageQuery
+      passedFilters <- readIORef ref
+      fmap gnfDateRanges passedFilters `shouldBe` [I.nfDateRanges newsFilter]
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing
