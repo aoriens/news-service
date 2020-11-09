@@ -214,7 +214,8 @@ router deps =
     TagURI tagId' ->
       R.get $ \session -> HGetTag.run (getTagHandlerHandle deps session) tagId'
     DraftsURI -> R.post $ HCreateDraft.run . createDraftHandlerHandle deps
-    DraftURI draftId ->
+    DraftURI _ -> pure ()
+    PublishDraftURI draftId ->
       R.post $ \session ->
         HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
 

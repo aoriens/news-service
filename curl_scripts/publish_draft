@@ -10,6 +10,6 @@ fi
 draft_id=$1
 
 require_token
-run_curl "$DOMAIN/drafts/$draft_id" \
+run_curl "$DOMAIN/drafts/$draft_id/publish" \
          -X POST  \
          -u "$TOKEN:"

@@ -141,7 +141,7 @@ the request body and returns [Draft](#Draft) entity. The method requires
 authentication. Your cannot perform the operation on behalf of an
 [Author](#Author) that you do not own.
 
-### `POST /drafts/{draft_id}`
+### `POST /drafts/{draft_id}/publish`
 
 Publishes a [Draft](#Draft) with the given identifier as a news article. Returns
 [News](#News) just created. Requires authentication. You need to be an owner of

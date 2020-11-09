@@ -128,6 +128,7 @@ appURIsForAllPossibleConstructors =
   , TagURI $ TagId 1
   , DraftsURI
   , DraftURI $ NewsVersionId 1
+  , PublishDraftURI $ NewsVersionId 1
   ]
   where
     _addNewElementToTheListAboveIfDoesNotCompile =
@@ -145,3 +146,4 @@ appURIsForAllPossibleConstructors =
         TagURI _ -> ()
         DraftsURI -> ()
         DraftURI _ -> ()
+        PublishDraftURI _ -> ()

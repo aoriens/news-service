@@ -55,6 +55,7 @@ data AppURI
   | TagURI TagId
   | DraftsURI
   | DraftURI NewsVersionId
+  | PublishDraftURI NewsVersionId
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -86,6 +87,8 @@ toRelativeURI uri =
     TagURI (TagId tid) -> ["tags", T.pack $ show tid]
     DraftsURI -> ["drafts"]
     DraftURI (NewsVersionId vid) -> ["drafts", T.pack $ show vid]
+    PublishDraftURI (NewsVersionId vid) ->
+      ["drafts", T.pack $ show vid, "publish"]
 
 parseAppURI :: AppURIConfig -> T.Text -> Maybe AppURI
 parseAppURI config uriText = do
@@ -120,4 +123,6 @@ fromRelativeURI (RelativeURI path) =
     ["drafts"] -> Just DraftsURI
     ["drafts", id'] ->
       DraftURI . NewsVersionId <$> readExactIntegral (T.unpack id')
+    ["drafts", id', "publish"] ->
+      PublishDraftURI . NewsVersionId <$> readExactIntegral (T.unpack id')
     _ -> Nothing
