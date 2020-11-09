@@ -19,34 +19,26 @@ spec :: Spec
 spec =
   describe "getNews" $ do
     it "should pass data through from the gateway" $ do
-      let stubResults =
-            [ News
+      let expectedNews =
+            [ stubNews
                 { newsId = NewsId 1
-                , newsDate = fromGregorian 2020 01 01
                 , newsVersion =
                     stubNewsVersion
                       {nvId = NewsVersionId 1, nvTitle = "A", nvText = "Text"}
                 }
-            , News
+            , stubNews
                 { newsId = NewsId 2
-                , newsDate = fromGregorian 2020 01 02
                 , newsVersion =
                     stubNewsVersion
                       {nvId = NewsVersionId 2, nvTitle = "B", nvText = "Text2"}
                 }
             ]
-          h =
-            I.Handle
-              { hPageSpecParserHandle =
-                  PageSpecParserHandle . const . Right $
-                  PageSpec (PageOffset 0) (PageLimit 0)
-              , hGetNews = \_ _ -> pure stubResults
-              }
+          h = stubHandle {hGetNews = \_ _ -> pure expectedNews}
       results <- I.getNews h emptyNewsFilter noPageQuery
-      results `shouldBe` stubResults
+      results `shouldBe` expectedNews
     itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
       let h =
-            I.Handle
+            stubHandle
               { hGetNews = \_ pageQuery -> onSuccess pageQuery >> pure []
               , hPageSpecParserHandle
               }
@@ -54,6 +46,23 @@ spec =
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing
+
+stubHandle :: I.Handle IO
+stubHandle =
+  I.Handle
+    { hPageSpecParserHandle =
+        PageSpecParserHandle . const . Right $
+        PageSpec (PageOffset 0) (PageLimit 0)
+    , hGetNews = \_ _ -> pure []
+    }
+
+stubNews :: News
+stubNews =
+  News
+    { newsId = NewsId (-1)
+    , newsDate = ModifiedJulianDay (-1)
+    , newsVersion = stubNewsVersion
+    }
 
 stubNewsVersion :: NewsVersion
 stubNewsVersion =
