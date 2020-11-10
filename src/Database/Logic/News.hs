@@ -23,7 +23,6 @@ import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
 import Core.Tag
-import qualified Data.ByteString as B
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
@@ -68,37 +67,30 @@ selectNewsRows newsFilter pageSpec =
         Nothing -> mempty
         Just ranges ->
           mconcat . ("where" :) . intersperse "or" $
-          map (sqlFallsIntoDateRange "\"date\"") $ toList ranges
+          map (sqlWithinDateRange "\"date\"") $ toList ranges
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = sqlLimitOffset pageSpec
 
-type SQL = B.ByteString
-
-sqlFallsIntoDateRange :: SQL -> IGetNews.NewsDateRange -> SQLBuilder
-sqlFallsIntoDateRange expr dateRange =
+sqlWithinDateRange :: SQLBuilder -> IGetNews.NewsDateRange -> SQLBuilder
+sqlWithinDateRange expr dateRange =
   case dateRange of
     IGetNews.NewsSinceUntil from to
-      | from == to -> sqlEqualParam expr from
-      | otherwise -> sqlBetweenParams expr from to
-    IGetNews.NewsSince day -> sqlGreaterOrEqualParam expr day
-    IGetNews.NewsUntil day -> sqlLessOrEqualParam expr day
+      | from == to -> sqlEqual expr $ sqlParam from
+      | otherwise -> sqlBetween expr (sqlParam from, sqlParam to)
+    IGetNews.NewsSince day -> sqlGreaterOrEqual expr $ sqlParam day
+    IGetNews.NewsUntil day -> sqlLessOrEqual expr $ sqlParam day
 
-sqlBetweenParams :: NativeSQLEncodable a => SQL -> a -> a -> SQLBuilder
-sqlBetweenParams expr from to =
-  sqlText expr <> "between" <> sqlParam from <> "and" <> sqlParam to
+sqlBetween :: SQLBuilder -> (SQLBuilder, SQLBuilder) -> SQLBuilder
+sqlBetween expr (from, to) = expr <> "between" <> from <> "and" <> to
 
-sqlEqualParam :: NativeSQLEncodable a => SQL -> a -> SQLBuilder
-sqlEqualParam expr = sqlCompareWithParam expr "="
+sqlEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
+sqlEqual x y = x <> "=" <> y
 
-sqlGreaterOrEqualParam :: NativeSQLEncodable a => SQL -> a -> SQLBuilder
-sqlGreaterOrEqualParam expr = sqlCompareWithParam expr ">="
+sqlGreaterOrEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
+sqlGreaterOrEqual x y = x <> ">=" <> y
 
-sqlLessOrEqualParam :: NativeSQLEncodable a => SQL -> a -> SQLBuilder
-sqlLessOrEqualParam expr = sqlCompareWithParam expr "<="
-
-sqlCompareWithParam ::
-     NativeSQLEncodable a => SQL -> B.ByteString -> a -> SQLBuilder
-sqlCompareWithParam expr op a = sqlText expr <> sqlText op <> sqlParam a
+sqlLessOrEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
+sqlLessOrEqual x y = x <> "<=" <> y
 
 sqlLimitOffset :: PageSpec -> SQLBuilder
 sqlLimitOffset PageSpec {..} =
