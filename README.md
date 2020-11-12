@@ -171,6 +171,15 @@ the URI query to filter entries to output:
 - `author` - a substring of a [User](#User) name who is an [Author](#Author) of
   the news. The parameter may be passed many times to specify multiple values.
 
+URI query parameters which specify filters are considered to be combined using
+the following rule. Filters over independent fields should be combined using
+logical AND, and filters over dependent fields should be combined using logical
+OR. The AND-combined groups of filters are:
+
+- `date`
+- the author filter group. It consists of `author_id` and `author` filters that
+  should be combined using logical OR.
+
 ### `GET /tags`
 
 Returns a list of [Tag](#Tag) entities.
