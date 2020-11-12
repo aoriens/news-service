@@ -26,7 +26,6 @@ import Core.Tag
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
-import Data.List
 import qualified Data.List.NonEmpty as N
 import Data.Profunctor
 import qualified Data.Text as T
@@ -64,18 +63,19 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
                join users using (user_id)
         |]
     whereClause =
-      ifSQLBuilderEmptyOr mempty ("where" <>) $
-      sqlAnd [dateCondition gnfDateRanges, authorCondition gnfAuthorFilter]
+      ("where" <>) $
+      dateCondition gnfDateRanges `sqlAnd` authorCondition gnfAuthorFilter `ifSQLBuilderEmpty`
+      "true"
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = sqlLimitOffset pageSpec
 
 dateCondition :: Maybe (N.NonEmpty IGetNews.NewsDateRange) -> SQLBuilder
 dateCondition =
-  maybe mempty $ sqlOr . map (sqlWithinDateRange "\"date\"") . toList
+  maybe mempty $ foldr (sqlOr . sqlWithinDateRange "\"date\"") mempty
 
 authorCondition :: IGetNews.GatewayNewsAuthorFilter -> SQLBuilder
 authorCondition IGetNews.GatewayNewsAuthorFilter {..} =
-  sqlOr [idCondition, nameCondition]
+  idCondition `sqlOr` nameCondition
   where
     idCondition =
       case gnfAuthorIds of
@@ -105,15 +105,18 @@ sqlEscapeLikePattern = T.concatMap f
 sqlAny :: SQLBuilder -> SQLBuilder
 sqlAny e = "any (" <> e <> ")"
 
-sqlOr :: [SQLBuilder] -> SQLBuilder
-sqlOr = sqlJoinNonEmptyExpressionsWith "or"
+sqlOr :: SQLBuilder -> SQLBuilder -> SQLBuilder
+sqlOr = sqlBinaryOperationIfNonEmpty "or"
 
-sqlAnd :: [SQLBuilder] -> SQLBuilder
-sqlAnd = sqlJoinNonEmptyExpressionsWith "and"
+sqlAnd :: SQLBuilder -> SQLBuilder -> SQLBuilder
+sqlAnd = sqlBinaryOperationIfNonEmpty "and"
 
-sqlJoinNonEmptyExpressionsWith :: SQLBuilder -> [SQLBuilder] -> SQLBuilder
-sqlJoinNonEmptyExpressionsWith separator =
-  mconcat . intersperse separator . filter (not . sqlBuilderIsEmpty)
+sqlBinaryOperationIfNonEmpty ::
+     SQLBuilder -> SQLBuilder -> SQLBuilder -> SQLBuilder
+sqlBinaryOperationIfNonEmpty op x y
+  | sqlBuilderIsEmpty x = y
+  | sqlBuilderIsEmpty y = x
+  | otherwise = x <> op <> y
 
 sqlWithinDateRange :: SQLBuilder -> IGetNews.NewsDateRange -> SQLBuilder
 sqlWithinDateRange expr dateRange =

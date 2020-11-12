@@ -6,7 +6,6 @@ module Database.Service.SQLBuilder
   , sqlParam
   , sqlBuilderIsEmpty
   , ifSQLBuilderEmpty
-  , ifSQLBuilderEmptyOr
   , renderSQLBuilder
   , NativeSQLEncodable
   , nativeSQLEncoder
@@ -71,11 +70,6 @@ ifSQLBuilderEmpty :: SQLBuilder -> SQLBuilder -> SQLBuilder
 ifSQLBuilderEmpty x y
   | sqlBuilderIsEmpty x = y
   | otherwise = x
-
-ifSQLBuilderEmptyOr :: a -> (SQLBuilder -> a) -> SQLBuilder -> a
-ifSQLBuilderEmptyOr ifEmpty ifNonEmpty b
-  | sqlBuilderIsEmpty b = ifEmpty
-  | otherwise = ifNonEmpty b
 
 renderSQLBuilder :: SQLBuilder -> (SQL, E.Params ())
 renderSQLBuilder SQLBuilder {..} = (B.intercalate " " segments, sqlEncoder)
