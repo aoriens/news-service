@@ -21,8 +21,7 @@ import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import Data.Bifunctor
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BS8
+import qualified Data.ByteString.Char8 as B
 import qualified Data.DList as DL
 import qualified Data.HashMap.Strict as HM
 import Data.Int
@@ -219,10 +218,10 @@ instance QueryParameter () where
   parseQueryParameter _ = Just ()
 
 instance QueryParameter Int where
-  parseQueryParameter = (readExactIntegral . BS8.unpack =<<)
+  parseQueryParameter = (readExactIntegral . B.unpack =<<)
 
 instance QueryParameter Int32 where
-  parseQueryParameter = (readExactIntegral . BS8.unpack =<<)
+  parseQueryParameter = (readExactIntegral . B.unpack =<<)
 
 instance QueryParameter Day where
-  parseQueryParameter = (iso8601ParseM . BS8.unpack =<<)
+  parseQueryParameter = (iso8601ParseM . B.unpack =<<)
