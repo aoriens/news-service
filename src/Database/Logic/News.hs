@@ -33,6 +33,7 @@ import Data.Time
 import Database.Logic.Authors
 import Database.Logic.Categories
 import Database.Logic.Images
+import Database.Logic.Pagination
 import Database.Logic.Tags
 import Database.Service.Columns
 import Database.Service.Primitives
@@ -69,7 +70,7 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
       selectNewsAuthorCondition gnfAuthorFilter `ifSQLBuilderEmpty`
       "true"
     orderByClause = "order by date desc, news_id desc"
-    limitOffsetClause = sqlLimitOffset pageSpec
+    limitOffsetClause = pageSpecToLimitOffset pageSpec
 
 selectNewsDateCondition ::
      Maybe (N.NonEmpty IGetNews.NewsDateRange) -> SQLBuilder
@@ -104,12 +105,6 @@ sqlWithinDateRange expr dateRange =
       | otherwise -> expr `Sql.between` (sqlParam from, sqlParam to)
     IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` sqlParam day
     IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` sqlParam day
-
-sqlLimitOffset :: PageSpec -> SQLBuilder
-sqlLimitOffset PageSpec {..} =
-  "limit" <>
-  sqlParam (getPageLimit pageLimit) <>
-  "offset" <> sqlParam (getPageOffset pageOffset)
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =
