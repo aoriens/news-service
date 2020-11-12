@@ -7,6 +7,7 @@ module Web.Handler.GetNews
   ) where
 
 import Control.Applicative
+import Core.Author
 import qualified Core.Interactor.GetNews as I
 import Core.News
 import Core.Pagination
@@ -14,6 +15,8 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Util as B
+import qualified Data.HashSet as Set
+import Data.Hashable
 import qualified Data.List.NonEmpty as N
 import Data.Time.Format.ISO8601
 import Web.Application
@@ -41,7 +44,20 @@ parseParams = liftA2 (,) parsePageQuery parseNewsFilter
 parseNewsFilter :: QueryParser I.NewsFilter
 parseNewsFilter = do
   dateRanges <- fmap getDateRange <$> collectQueryParameter "date"
-  pure I.NewsFilter {nfDateRanges = N.nonEmpty dateRanges}
+  authorIds <-
+    map AuthorId . concatMap getCommaSeparatedList <$>
+    collectQueryParameter "author_id"
+  authorNames <- collectQueryParameter "author"
+  pure
+    I.NewsFilter
+      { nfDateRanges = N.nonEmpty dateRanges
+      , nfAuthorIds = nonEmptySet authorIds
+      , nfAuthorNames = nonEmptySet authorNames
+      }
+
+nonEmptySet :: (Eq a, Hashable a) => [a] -> Maybe (Set.HashSet a)
+nonEmptySet [] = Nothing
+nonEmptySet xs@(_:_) = Just $ Set.fromList xs
 
 newtype DateRange =
   DateRange

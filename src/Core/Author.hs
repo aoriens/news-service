@@ -4,6 +4,7 @@ module Core.Author
   ) where
 
 import Core.User
+import Data.Hashable
 import Data.Int
 import qualified Data.Text as T
 
@@ -12,6 +13,9 @@ newtype AuthorId =
     { getAuthorId :: Int32
     }
   deriving (Eq, Show)
+
+instance Hashable AuthorId where
+  hashWithSalt salt = hashWithSalt salt . getAuthorId
 
 data Author =
   Author

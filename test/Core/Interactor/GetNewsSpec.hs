@@ -55,11 +55,17 @@ spec =
                         (ModifiedJulianDay 1)
                         (ModifiedJulianDay 2)
                     ]
+              , nfAuthorIds = Just $ Set.fromList [AuthorId 1]
+              , nfAuthorNames = Just $ Set.fromList ["q"]
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
       passedFilters <- readIORef ref
       fmap gnfDateRanges passedFilters `shouldBe` [I.nfDateRanges newsFilter]
+      fmap (gnfAuthorIds . gnfAuthorFilter) passedFilters `shouldBe`
+        [I.nfAuthorIds newsFilter]
+      fmap (gnfAuthorNames . gnfAuthorFilter) passedFilters `shouldBe`
+        [I.nfAuthorNames newsFilter]
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing

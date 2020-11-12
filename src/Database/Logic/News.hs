@@ -27,6 +27,7 @@ import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
 import Data.List
+import qualified Data.List.NonEmpty as N
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
@@ -49,7 +50,7 @@ getNews = mapM loadNewsWithRow <=< selectNewsRow
 
 selectNewsRows ::
      IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
-selectNewsRows newsFilter pageSpec =
+selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
   runStatementWithColumns sql newsRowColumns (fmap toList . D.rowVector) True
   where
     sql = topClause <> whereClause <> orderByClause <> limitOffsetClause
@@ -63,13 +64,56 @@ selectNewsRows newsFilter pageSpec =
                join users using (user_id)
         |]
     whereClause =
-      case IGetNews.gnfDateRanges newsFilter of
-        Nothing -> mempty
-        Just ranges ->
-          mconcat . ("where" :) . intersperse "or" $
-          map (sqlWithinDateRange "\"date\"") $ toList ranges
+      ifSQLBuilderEmptyOr mempty ("where" <>) $
+      sqlAnd [dateCondition gnfDateRanges, authorCondition gnfAuthorFilter]
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = sqlLimitOffset pageSpec
+
+dateCondition :: Maybe (N.NonEmpty IGetNews.NewsDateRange) -> SQLBuilder
+dateCondition =
+  maybe mempty $ sqlOr . map (sqlWithinDateRange "\"date\"") . toList
+
+authorCondition :: IGetNews.GatewayNewsAuthorFilter -> SQLBuilder
+authorCondition IGetNews.GatewayNewsAuthorFilter {..} =
+  sqlOr [idCondition, nameCondition]
+  where
+    idCondition =
+      case gnfAuthorIds of
+        Nothing -> mempty
+        Just ids ->
+          "authors.author_id =" <>
+          sqlAny (sqlParam . map getAuthorId $ toList ids)
+    nameCondition =
+      case gnfAuthorNames of
+        Nothing -> mempty
+        Just names ->
+          fullName <>
+          "ilike" <> sqlAny (sqlParam $ map patternFromName $ toList names)
+    fullName =
+      "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
+    patternFromName = T.cons '%' . (`T.snoc` '%') . sqlEscapeLikePattern
+
+sqlEscapeLikePattern :: T.Text -> T.Text
+sqlEscapeLikePattern = T.concatMap f
+  where
+    f char
+      | shouldEscape char = escapeChar `T.cons` T.singleton char
+      | otherwise = T.singleton char
+    shouldEscape char = char == escapeChar || char == '%' || char == '_'
+    escapeChar = '\\'
+
+sqlAny :: SQLBuilder -> SQLBuilder
+sqlAny e = "any (" <> e <> ")"
+
+sqlOr :: [SQLBuilder] -> SQLBuilder
+sqlOr = sqlJoinNonEmptyExpressionsWith "or"
+
+sqlAnd :: [SQLBuilder] -> SQLBuilder
+sqlAnd = sqlJoinNonEmptyExpressionsWith "and"
+
+sqlJoinNonEmptyExpressionsWith :: SQLBuilder -> [SQLBuilder] -> SQLBuilder
+sqlJoinNonEmptyExpressionsWith separator =
+  mconcat . intersperse separator . filter (not . sqlBuilderIsEmpty)
 
 sqlWithinDateRange :: SQLBuilder -> IGetNews.NewsDateRange -> SQLBuilder
 sqlWithinDateRange expr dateRange =

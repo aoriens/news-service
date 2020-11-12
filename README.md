@@ -165,6 +165,11 @@ the URI query to filter entries to output:
   - `YYYY-mm-dd` - a specific day in `ISO8601` date format.
   - `YYYY-mm-dd,YYYY-mm-dd` - an inclusive date range. The start or the end date
     may be absent, but not both, to select all dates since/until a specific day.
+- `author_id` - an integer identifier of an [Author](#Author) of the news or a
+  comma-separated list thereof. The parameter may be passed many times to
+  specify multiple values or value lists to be joined.
+- `author` - a substring of a [User](#User) name who is an [Author](#Author) of
+  the news. The parameter may be passed many times to specify multiple values.
 
 ### `GET /tags`
 

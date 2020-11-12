@@ -13,6 +13,7 @@ module Web.QueryParameter
   , collectRawQueryParameter
   , Failure(..)
   , QueryParameter(..)
+  , CommaSeparatedList(..)
   ) where
 
 import Control.DeepSeq
@@ -23,10 +24,12 @@ import Control.Monad.Trans.Reader
 import Data.Bifunctor
 import qualified Data.ByteString.Char8 as B
 import qualified Data.DList as DL
+import Data.Either.Util
 import qualified Data.HashMap.Strict as HM
 import Data.Int
 import Data.Integral.Exact
 import Data.Maybe
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Time
 import Data.Time.Format.ISO8601
@@ -225,3 +228,19 @@ instance QueryParameter Int32 where
 
 instance QueryParameter Day where
   parseQueryParameter = (iso8601ParseM . B.unpack =<<)
+
+instance QueryParameter T.Text where
+  parseQueryParameter = (eitherToMaybe . T.decodeUtf8' =<<)
+
+-- | A wrapper over a list of values that parses from a
+-- comma-separated list parameter. Note that parsing values containing
+-- commas is not possible, all commas are considered as separators
+-- between values.
+newtype CommaSeparatedList a =
+  CommaSeparatedList
+    { getCommaSeparatedList :: [a]
+    }
+
+instance QueryParameter a => QueryParameter (CommaSeparatedList a) where
+  parseQueryParameter =
+    (fmap CommaSeparatedList . mapM (parseQueryParameter . Just) . B.split ',' =<<)
