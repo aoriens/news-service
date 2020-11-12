@@ -37,6 +37,7 @@ import Database.Logic.Tags
 import Database.Service.Columns
 import Database.Service.Primitives
 import Database.Service.SQLBuilder
+import qualified Database.Service.SQLBuilders as Sql
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
@@ -64,80 +65,45 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
         |]
     whereClause =
       ("where" <>) $
-      dateCondition gnfDateRanges `sqlAnd` authorCondition gnfAuthorFilter `ifSQLBuilderEmpty`
+      selectNewsDateCondition gnfDateRanges `Sql.and`
+      selectNewsAuthorCondition gnfAuthorFilter `ifSQLBuilderEmpty`
       "true"
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = sqlLimitOffset pageSpec
 
-dateCondition :: Maybe (N.NonEmpty IGetNews.NewsDateRange) -> SQLBuilder
-dateCondition =
-  maybe mempty $ foldr (sqlOr . sqlWithinDateRange "\"date\"") mempty
+selectNewsDateCondition ::
+     Maybe (N.NonEmpty IGetNews.NewsDateRange) -> SQLBuilder
+selectNewsDateCondition =
+  maybe mempty $ foldr (Sql.or . sqlWithinDateRange "\"date\"") mempty
 
-authorCondition :: IGetNews.GatewayNewsAuthorFilter -> SQLBuilder
-authorCondition IGetNews.GatewayNewsAuthorFilter {..} =
-  idCondition `sqlOr` nameCondition
+selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> SQLBuilder
+selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
+  idCondition `Sql.or` nameCondition
   where
     idCondition =
       case gnfAuthorIds of
         Nothing -> mempty
         Just ids ->
           "authors.author_id =" <>
-          sqlAny (sqlParam . map getAuthorId $ toList ids)
+          Sql.any (sqlParam . map getAuthorId $ toList ids)
     nameCondition =
       case gnfAuthorNames of
         Nothing -> mempty
         Just names ->
           fullName <>
-          "ilike" <> sqlAny (sqlParam $ map patternFromName $ toList names)
+          "ilike" <> Sql.any (sqlParam $ map patternFromName $ toList names)
     fullName =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
-    patternFromName = T.cons '%' . (`T.snoc` '%') . sqlEscapeLikePattern
-
-sqlEscapeLikePattern :: T.Text -> T.Text
-sqlEscapeLikePattern = T.concatMap f
-  where
-    f char
-      | shouldEscape char = escapeChar `T.cons` T.singleton char
-      | otherwise = T.singleton char
-    shouldEscape char = char == escapeChar || char == '%' || char == '_'
-    escapeChar = '\\'
-
-sqlAny :: SQLBuilder -> SQLBuilder
-sqlAny e = "any (" <> e <> ")"
-
-sqlOr :: SQLBuilder -> SQLBuilder -> SQLBuilder
-sqlOr = sqlBinaryOperationIfNonEmpty "or"
-
-sqlAnd :: SQLBuilder -> SQLBuilder -> SQLBuilder
-sqlAnd = sqlBinaryOperationIfNonEmpty "and"
-
-sqlBinaryOperationIfNonEmpty ::
-     SQLBuilder -> SQLBuilder -> SQLBuilder -> SQLBuilder
-sqlBinaryOperationIfNonEmpty op x y
-  | sqlBuilderIsEmpty x = y
-  | sqlBuilderIsEmpty y = x
-  | otherwise = x <> op <> y
+    patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
 
 sqlWithinDateRange :: SQLBuilder -> IGetNews.NewsDateRange -> SQLBuilder
 sqlWithinDateRange expr dateRange =
   case dateRange of
     IGetNews.NewsSinceUntil from to
-      | from == to -> sqlEqual expr $ sqlParam from
-      | otherwise -> sqlBetween expr (sqlParam from, sqlParam to)
-    IGetNews.NewsSince day -> sqlGreaterOrEqual expr $ sqlParam day
-    IGetNews.NewsUntil day -> sqlLessOrEqual expr $ sqlParam day
-
-sqlBetween :: SQLBuilder -> (SQLBuilder, SQLBuilder) -> SQLBuilder
-sqlBetween expr (from, to) = expr <> "between" <> from <> "and" <> to
-
-sqlEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
-sqlEqual x y = x <> "=" <> y
-
-sqlGreaterOrEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
-sqlGreaterOrEqual x y = x <> ">=" <> y
-
-sqlLessOrEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
-sqlLessOrEqual x y = x <> "<=" <> y
+      | from == to -> expr `Sql.equal` sqlParam from
+      | otherwise -> expr `Sql.between` (sqlParam from, sqlParam to)
+    IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` sqlParam day
+    IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` sqlParam day
 
 sqlLimitOffset :: PageSpec -> SQLBuilder
 sqlLimitOffset PageSpec {..} =

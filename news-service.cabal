@@ -73,6 +73,7 @@ library
     , Database.Service.NativeSQLDecodable
     , Database.Service.Primitives
     , Database.Service.SQLBuilder
+    , Database.Service.SQLBuilders
     , FrontEnd.Wai
     , Gateway.CurrentTime
     , Gateway.SecretToken
