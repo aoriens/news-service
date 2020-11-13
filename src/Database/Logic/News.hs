@@ -67,7 +67,7 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
     whereClause =
       ("where" <>) $
       selectNewsDateCondition gnfDateRanges `Sql.and`
-      selectNewsAuthorCondition gnfAuthorFilter `ifSQLBuilderEmpty`
+      selectNewsAuthorCondition gnfAuthorFilter `sqlIfBuilderEmpty`
       "true"
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec

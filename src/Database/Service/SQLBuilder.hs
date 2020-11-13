@@ -5,7 +5,7 @@ module Database.Service.SQLBuilder
   , sqlText
   , sqlParam
   , sqlBuilderIsEmpty
-  , ifSQLBuilderEmpty
+  , sqlIfBuilderEmpty
   , renderSQLBuilder
   , NativeSQLEncodable
   , nativeSQLEncoder
@@ -66,8 +66,8 @@ sqlParamFrom f a =
 sqlBuilderIsEmpty :: SQLBuilder -> Bool
 sqlBuilderIsEmpty = null . DL.toList . sqlNodes
 
-ifSQLBuilderEmpty :: SQLBuilder -> SQLBuilder -> SQLBuilder
-ifSQLBuilderEmpty x y
+sqlIfBuilderEmpty :: SQLBuilder -> SQLBuilder -> SQLBuilder
+sqlIfBuilderEmpty x y
   | sqlBuilderIsEmpty x = y
   | otherwise = x
 
