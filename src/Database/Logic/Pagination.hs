@@ -5,7 +5,7 @@ module Database.Logic.Pagination
 
 import Core.Pagination
 import Data.Functor.Contravariant
-import Database.Service.SQLBuilder
+import qualified Database.Service.SQLBuilder as Sql
 import qualified Hasql.Encoders as E
 
 -- | Encodes a page into two SQL parameters for 'LIMIT ... OFFSET ...'
@@ -15,7 +15,7 @@ pageToLimitOffsetEncoder =
   (getPageLimit . pageLimit >$< (E.param . E.nonNullable) E.int4) <>
   (getPageOffset . pageOffset >$< (E.param . E.nonNullable) E.int4)
 
-pageSpecToLimitOffset :: PageSpec -> SQLBuilder
+pageSpecToLimitOffset :: PageSpec -> Sql.Builder
 pageSpecToLimitOffset PageSpec {..} =
-  "limit" <> sqlParam (getPageLimit pageLimit) <> "offset" <>
-  sqlParam (getPageOffset pageOffset)
+  "limit" <> Sql.param (getPageLimit pageLimit) <> "offset" <>
+  Sql.param (getPageOffset pageOffset)

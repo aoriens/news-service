@@ -17,7 +17,7 @@ import qualified Data.DList as DL
 import Data.String
 import Database.Service.NativeSQLDecodable
 import Database.Service.Primitives
-import Database.Service.SQLBuilder
+import qualified Database.Service.SQLBuilder as Sql
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.Statement as S
@@ -87,10 +87,14 @@ statementWithColumns sqlTemplate encoder columns resultMaker =
         sqlTemplate
 
 runStatementWithColumns ::
-     SQLBuilder -> Columns b -> (D.Row b -> D.Result c) -> Bool -> Transaction c
+     Sql.Builder
+  -> Columns b
+  -> (D.Row b -> D.Result c)
+  -> Bool
+  -> Transaction c
 runStatementWithColumns sqlBuilder columns resultMaker shouldPrepare =
   statement `runStatement` ()
   where
     statement =
       statementWithColumns sql encoder columns resultMaker shouldPrepare
-    (sql, encoder) = renderSQLBuilder sqlBuilder
+    (sql, encoder) = Sql.renderBuilder sqlBuilder

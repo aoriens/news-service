@@ -37,7 +37,7 @@ import Database.Logic.Pagination
 import Database.Logic.Tags
 import Database.Service.Columns
 import Database.Service.Primitives
-import Database.Service.SQLBuilder
+import qualified Database.Service.SQLBuilder as Sql
 import qualified Database.Service.SQLBuilders as Sql
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
@@ -56,7 +56,7 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
   where
     sql = topClause <> whereClause <> orderByClause <> limitOffsetClause
     topClause =
-      sqlText
+      Sql.text
         [TH.uncheckedSql|
           select $COLUMNS
           from news
@@ -67,17 +67,17 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
     whereClause =
       ("where" <>) $
       selectNewsDateCondition gnfDateRanges `Sql.and`
-      selectNewsAuthorCondition gnfAuthorFilter `sqlIfBuilderEmpty`
+      selectNewsAuthorCondition gnfAuthorFilter `Sql.ifEmpty`
       "true"
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec
 
 selectNewsDateCondition ::
-     Maybe (N.NonEmpty IGetNews.NewsDateRange) -> SQLBuilder
+     Maybe (N.NonEmpty IGetNews.NewsDateRange) -> Sql.Builder
 selectNewsDateCondition =
   maybe mempty $ foldr (Sql.or . sqlWithinDateRange "\"date\"") mempty
 
-selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> SQLBuilder
+selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
 selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
   idCondition `Sql.or` nameCondition
   where
@@ -86,25 +86,25 @@ selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
         Nothing -> mempty
         Just ids ->
           "authors.author_id =" <>
-          Sql.any (sqlParam . map getAuthorId $ toList ids)
+          Sql.any (Sql.param . map getAuthorId $ toList ids)
     nameCondition =
       case gnfAuthorNames of
         Nothing -> mempty
         Just names ->
           fullName <>
-          "ilike" <> Sql.any (sqlParam $ map patternFromName $ toList names)
+          "ilike" <> Sql.any (Sql.param $ map patternFromName $ toList names)
     fullName =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
     patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
 
-sqlWithinDateRange :: SQLBuilder -> IGetNews.NewsDateRange -> SQLBuilder
+sqlWithinDateRange :: Sql.Builder -> IGetNews.NewsDateRange -> Sql.Builder
 sqlWithinDateRange expr dateRange =
   case dateRange of
     IGetNews.NewsSinceUntil from to
-      | from == to -> expr `Sql.equal` sqlParam from
-      | otherwise -> expr `Sql.between` (sqlParam from, sqlParam to)
-    IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` sqlParam day
-    IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` sqlParam day
+      | from == to -> expr `Sql.equal` Sql.param from
+      | otherwise -> expr `Sql.between` (Sql.param from, Sql.param to)
+    IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` Sql.param day
+    IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` Sql.param day
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =

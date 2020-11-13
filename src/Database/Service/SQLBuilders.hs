@@ -10,7 +10,7 @@ module Database.Service.SQLBuilders
   ) where
 
 import qualified Data.Text as T
-import Database.Service.SQLBuilder
+import qualified Database.Service.SQLBuilder as Sql
 import Prelude hiding (and, any, or)
 
 -- | Converts a string into a literal text in SQL LIKE predicate
@@ -26,36 +26,36 @@ escapeLikePattern = T.concatMap f
     escapeChar = '\\'
 
 -- | Wraps an expression into ANY (...) expression.
-any :: SQLBuilder -> SQLBuilder
+any :: Sql.Builder -> Sql.Builder
 any e = "any (" <> e <> ")"
 
 -- | Creates OR expression to combine two SQL expressions. If either
 -- expression is empty, OR is not used and just another expression is
 -- returned.
-or :: SQLBuilder -> SQLBuilder -> SQLBuilder
+or :: Sql.Builder -> Sql.Builder -> Sql.Builder
 or = binaryOperationIfNonEmpty "or"
 
 -- | Creates AND expression to combine two SQL expressions. If either
 -- expression is empty, AND is not used and just another expression is
 -- returned.
-and :: SQLBuilder -> SQLBuilder -> SQLBuilder
+and :: Sql.Builder -> Sql.Builder -> Sql.Builder
 and = binaryOperationIfNonEmpty "and"
 
 binaryOperationIfNonEmpty ::
-     SQLBuilder -> SQLBuilder -> SQLBuilder -> SQLBuilder
+     Sql.Builder -> Sql.Builder -> Sql.Builder -> Sql.Builder
 binaryOperationIfNonEmpty op x y
-  | sqlBuilderIsEmpty x = y
-  | sqlBuilderIsEmpty y = x
+  | Sql.isEmpty x = y
+  | Sql.isEmpty y = x
   | otherwise = x <> op <> y
 
-between :: SQLBuilder -> (SQLBuilder, SQLBuilder) -> SQLBuilder
+between :: Sql.Builder -> (Sql.Builder, Sql.Builder) -> Sql.Builder
 between expr (from, to) = expr <> "between" <> from <> "and" <> to
 
-equal :: SQLBuilder -> SQLBuilder -> SQLBuilder
+equal :: Sql.Builder -> Sql.Builder -> Sql.Builder
 equal x y = x <> "=" <> y
 
-greaterOrEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
+greaterOrEqual :: Sql.Builder -> Sql.Builder -> Sql.Builder
 greaterOrEqual x y = x <> ">=" <> y
 
-lessOrEqual :: SQLBuilder -> SQLBuilder -> SQLBuilder
+lessOrEqual :: Sql.Builder -> Sql.Builder -> Sql.Builder
 lessOrEqual x y = x <> "<=" <> y
