@@ -3,6 +3,7 @@ module Core.Category
   , CategoryId(..)
   ) where
 
+import Data.Hashable
 import Data.Int
 import Data.Text (Text)
 
@@ -11,6 +12,9 @@ newtype CategoryId =
     { getCategoryId :: Int32
     }
   deriving (Eq, Show)
+
+instance Hashable CategoryId where
+  hashWithSalt salt = hashWithSalt salt . getCategoryId
 
 data Category =
   Category

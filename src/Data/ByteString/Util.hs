@@ -3,6 +3,7 @@ module Data.ByteString.Util
   , trimLeft
   , trimRight
   , splitOnCharOnce
+  , replaceFirst
   , replaceAllSubstrings
   ) where
 
@@ -40,3 +41,10 @@ replaceAllSubstrings new old = go
        in if B.null suffix
             then prefix
             else prefix <> new <> go (B.drop (B.length old) suffix)
+
+replaceFirst :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
+replaceFirst new old s =
+  let (prefix, suffix) = B.breakSubstring old s
+   in if B.null suffix
+        then prefix
+        else prefix <> new <> B.drop (B.length old) suffix

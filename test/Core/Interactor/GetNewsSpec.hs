@@ -57,6 +57,8 @@ spec =
                     ]
               , nfAuthorIds = Just $ Set.fromList [AuthorId 1]
               , nfAuthorNames = Just $ Set.fromList ["q"]
+              , nfCategoryIds = Just $ Set.fromList [CategoryId 1]
+              , nfCategoryNames = Just $ Set.fromList ["c"]
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
@@ -66,6 +68,10 @@ spec =
         [I.nfAuthorIds newsFilter]
       fmap (gnfAuthorNames . gnfAuthorFilter) passedFilters `shouldBe`
         [I.nfAuthorNames newsFilter]
+      fmap (gnfCategoryIds . gnfCategoryFilter) passedFilters `shouldBe`
+        [I.nfCategoryIds newsFilter]
+      fmap (gnfCategoryNames . gnfCategoryFilter) passedFilters `shouldBe`
+        [I.nfCategoryNames newsFilter]
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing

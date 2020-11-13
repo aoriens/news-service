@@ -170,15 +170,21 @@ the URI query to filter entries to output:
   specify multiple values or value lists to be joined.
 - `author` - a substring of a [User](#User) name who is an [Author](#Author) of
   the news. The parameter may be passed many times to specify multiple values.
+- `category_id` - an integer identifier of a [Category](#Category) of the news,
+  or of some ancestor category of it, or a comma-separated list thereof. The
+  parameter may be passed many times to specify multiple values or value lists
+  to be joined.
+- `category` - a substring of a [Category](#Category) name of the news, or of
+  some ancestor category of it. The parameter may be passed many times to
+  specify multiple values.
 
-URI query parameters which specify filters are considered to be combined using
-the following rule. Filters over independent fields should be combined using
-logical AND, and filters over dependent fields should be combined using logical
-OR. The AND-combined groups of filters are:
+The parameters are logically combined as follows. If a parameter is missing, it
+should be excluded, as well as the binary operator with a missing parameter
+nearby:
 
 - `date`
-- the author filter group. It consists of `author_id` and `author` filters that
-  should be combined using logical OR.
+- AND (`author_id` OR `author`).
+- AND (`category_id` OR `category`).
 
 ### `GET /tags`
 

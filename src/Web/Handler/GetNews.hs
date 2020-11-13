@@ -8,6 +8,7 @@ module Web.Handler.GetNews
 
 import Control.Applicative
 import Core.Author
+import Core.Category
 import qualified Core.Interactor.GetNews as I
 import Core.News
 import Core.Pagination
@@ -48,11 +49,17 @@ parseNewsFilter = do
     map AuthorId . concatMap getCommaSeparatedList <$>
     collectQueryParameter "author_id"
   authorNames <- collectQueryParameter "author"
+  categoryIds <-
+    map CategoryId . concatMap getCommaSeparatedList <$>
+    collectQueryParameter "category_id"
+  categoryNames <- collectQueryParameter "category"
   pure
     I.NewsFilter
       { nfDateRanges = N.nonEmpty dateRanges
       , nfAuthorIds = nonEmptySet authorIds
       , nfAuthorNames = nonEmptySet authorNames
+      , nfCategoryIds = nonEmptySet categoryIds
+      , nfCategoryNames = nonEmptySet categoryNames
       }
 
 nonEmptySet :: (Eq a, Hashable a) => [a] -> Maybe (Set.HashSet a)

@@ -65,10 +65,10 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
                join users using (user_id)
         |]
     whereClause =
-      ("where" <>) $
+      Sql.mapNonEmpty ("where" <>) $
       selectNewsDateCondition gnfDateRanges `Sql.and`
-      selectNewsAuthorCondition gnfAuthorFilter `Sql.ifEmpty`
-      "true"
+      selectNewsAuthorCondition gnfAuthorFilter `Sql.and`
+      selectNewsCategoryCondition gnfCategoryFilter
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec
 
@@ -76,6 +76,15 @@ selectNewsDateCondition ::
      Maybe (N.NonEmpty IGetNews.NewsDateRange) -> Sql.Builder
 selectNewsDateCondition =
   maybe mempty $ foldr (Sql.or . sqlWithinDateRange "\"date\"") mempty
+
+sqlWithinDateRange :: Sql.Builder -> IGetNews.NewsDateRange -> Sql.Builder
+sqlWithinDateRange expr dateRange =
+  case dateRange of
+    IGetNews.NewsSinceUntil from to
+      | from == to -> expr `Sql.equal` Sql.param from
+      | otherwise -> expr `Sql.between` (Sql.param from, Sql.param to)
+    IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` Sql.param day
+    IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` Sql.param day
 
 selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
 selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
@@ -97,14 +106,48 @@ selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
     patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
 
-sqlWithinDateRange :: Sql.Builder -> IGetNews.NewsDateRange -> Sql.Builder
-sqlWithinDateRange expr dateRange =
-  case dateRange of
-    IGetNews.NewsSinceUntil from to
-      | from == to -> expr `Sql.equal` Sql.param from
-      | otherwise -> expr `Sql.between` (Sql.param from, Sql.param to)
-    IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` Sql.param day
-    IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` Sql.param day
+selectNewsCategoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
+selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..}
+  | Sql.isEmpty whereClause = mempty
+  | otherwise = condition
+  where
+    condition =
+      Sql.text
+        [TH.uncheckedSql|
+          category_id in (
+            with recursive cats as (
+              select category_id
+              from categories
+        |] <>
+      whereClause <>
+      Sql.text
+        [TH.uncheckedSql|
+
+              union
+
+              select categories.category_id
+              from categories
+                   join cats on categories.parent_id = cats.category_id
+            )
+            select *
+            from cats
+          )
+        |]
+    whereClause =
+      Sql.mapNonEmpty ("where" <>) $ idCondition `Sql.or` nameCondition
+    idCondition =
+      case gnfCategoryIds of
+        Nothing -> mempty
+        Just ids ->
+          "category_id =" <>
+          Sql.any (Sql.param . map getCategoryId $ toList ids)
+    nameCondition =
+      case gnfCategoryNames of
+        Nothing -> mempty
+        Just names ->
+          "name ilike" <>
+          Sql.any (Sql.param $ map patternFromName $ toList names)
+    patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =

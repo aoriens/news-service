@@ -7,6 +7,7 @@ module Database.Service.SQLBuilder
   , param
   , isEmpty
   , ifEmpty
+  , mapNonEmpty
   , renderBuilder
   , NativeSQLEncodable
   , nativeSQLEncoder
@@ -71,6 +72,11 @@ ifEmpty :: Builder -> Builder -> Builder
 ifEmpty x y
   | isEmpty x = y
   | otherwise = x
+
+mapNonEmpty :: (Builder -> Builder) -> Builder -> Builder
+mapNonEmpty f b
+  | isEmpty b = b
+  | otherwise = f b
 
 renderBuilder :: Builder -> (SQL, E.Params ())
 renderBuilder Builder {..} = (B.intercalate " " segments, sqlEncoder)
