@@ -12,6 +12,7 @@ module Database.Service.Columns
   ) where
 
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Util as B
 import qualified Data.DList as DL
 import Data.String
 import Database.Service.NativeSQLDecodable
@@ -80,7 +81,7 @@ statementWithColumns sqlTemplate encoder columns resultMaker =
   where
     decoder = resultMaker $ columnsRow columns
     sql =
-      replaceAllSubstrings
+      B.replaceAllSubstrings
         (" " <> renderColumns columns <> " ")
         "$COLUMNS"
         sqlTemplate
@@ -93,13 +94,3 @@ runStatementWithColumns sqlBuilder columns resultMaker shouldPrepare =
     statement =
       statementWithColumns sql encoder columns resultMaker shouldPrepare
     (sql, encoder) = renderSQLBuilder sqlBuilder
-
-replaceAllSubstrings ::
-     B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
-replaceAllSubstrings new old = go
-  where
-    go s =
-      let (prefix, suffix) = B.breakSubstring old s
-       in if B.null suffix
-            then prefix
-            else prefix <> new <> go (B.drop (B.length old) suffix)

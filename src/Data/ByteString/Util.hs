@@ -3,6 +3,7 @@ module Data.ByteString.Util
   , trimLeft
   , trimRight
   , splitOnCharOnce
+  , replaceAllSubstrings
   ) where
 
 import qualified Data.ByteString.Char8 as B
@@ -29,3 +30,13 @@ splitOnCharOnce charPredicate s =
    in case B.uncons rest of
         Just (_, suffix) -> Just (prefix, suffix)
         Nothing -> Nothing
+
+replaceAllSubstrings ::
+     B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
+replaceAllSubstrings new old = go
+  where
+    go s =
+      let (prefix, suffix) = B.breakSubstring old s
+       in if B.null suffix
+            then prefix
+            else prefix <> new <> go (B.drop (B.length old) suffix)
