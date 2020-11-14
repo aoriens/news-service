@@ -130,16 +130,25 @@ gatewayNewsFilterFromNewsFilter NewsFilter {..} =
     , gnfAuthorFilter =
         GatewayNewsAuthorFilter
           { gnfAuthorIds = nfAuthorIds
-          , gnfAuthorNameSubstrings = nfAuthorNameSubstrings
+          , gnfAuthorNameSubstrings = excludeEmptyStrings nfAuthorNameSubstrings
           }
     , gnfCategoryFilter =
         GatewayNewsCategoryFilter
           { gnfCategoryIds = nfCategoryIds
-          , gnfCategoryNameSubstrings = nfCategoryNameSubstrings
+          , gnfCategoryNameSubstrings =
+              excludeEmptyStrings nfCategoryNameSubstrings
           }
     , gnfAnyTagFilter =
         GatewayNewsAnyTagFilter
           { gnfTagIdsToMatchAnyTag = nfTagIdsToMatchAnyTag
-          , gnfTagNameSubstringsToMatchAnyTag = nfTagNameSubstringsToMatchAnyTag
+          , gnfTagNameSubstringsToMatchAnyTag =
+              excludeEmptyStrings nfTagNameSubstringsToMatchAnyTag
           }
     }
+
+excludeEmptyStrings :: Maybe (Set.HashSet T.Text) -> Maybe (Set.HashSet T.Text)
+excludeEmptyStrings = (normalize . Set.delete "" =<<)
+  where
+    normalize set
+      | Set.null set = Nothing
+      | otherwise = Just set
