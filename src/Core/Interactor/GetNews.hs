@@ -7,6 +7,7 @@ module Core.Interactor.GetNews
   , GatewayNewsFilter(..)
   , GatewayNewsAuthorFilter(..)
   , GatewayNewsCategoryFilter(..)
+  , GatewayNewsAnyTagFilter(..)
   ) where
 
 import Control.Monad.Catch
@@ -14,6 +15,7 @@ import Core.Author
 import Core.Category
 import Core.News
 import Core.Pagination
+import Core.Tag
 import qualified Data.HashSet as Set
 import qualified Data.List.NonEmpty as N
 import qualified Data.Text as T
@@ -48,6 +50,8 @@ data NewsFilter =
     , nfAuthorNameSubstrings :: Maybe (Set.HashSet T.Text)
     , nfCategoryIds :: Maybe (Set.HashSet CategoryId)
     , nfCategoryNameSubstrings :: Maybe (Set.HashSet T.Text)
+    , nfTagIdsToMatchAnyTag :: Maybe (Set.HashSet TagId)
+    , nfTagNameSubstringsToMatchAnyTag :: Maybe (Set.HashSet T.Text)
     }
 
 emptyNewsFilter :: NewsFilter
@@ -58,6 +62,8 @@ emptyNewsFilter =
     , nfAuthorNameSubstrings = Nothing
     , nfCategoryIds = Nothing
     , nfCategoryNameSubstrings = Nothing
+    , nfTagIdsToMatchAnyTag = Nothing
+    , nfTagNameSubstringsToMatchAnyTag = Nothing
     }
 
 -- | The inclusive range of dates.
@@ -77,6 +83,7 @@ data GatewayNewsFilter =
     { gnfDateRanges :: Maybe (N.NonEmpty NewsDateRange)
     , gnfAuthorFilter :: GatewayNewsAuthorFilter
     , gnfCategoryFilter :: GatewayNewsCategoryFilter
+    , gnfAnyTagFilter :: GatewayNewsAnyTagFilter
     }
 
 -- | An author filter. Its fields correspond to filters that should be
@@ -105,6 +112,17 @@ data GatewayNewsCategoryFilter =
     -- category names.
     }
 
+-- | A tag filter. It selects entries matching at least one tag
+-- specified. Its fields correspond to filters that should be combined
+-- using logical OR.
+data GatewayNewsAnyTagFilter =
+  GatewayNewsAnyTagFilter
+    { gnfTagIdsToMatchAnyTag :: Maybe (Set.HashSet TagId)
+    , gnfTagNameSubstringsToMatchAnyTag :: Maybe (Set.HashSet T.Text)
+    -- ^ Tag name substrings to match with. Each element is a
+    -- substring to be searched in the tag name.
+    }
+
 gatewayNewsFilterFromNewsFilter :: NewsFilter -> GatewayNewsFilter
 gatewayNewsFilterFromNewsFilter NewsFilter {..} =
   GatewayNewsFilter
@@ -118,5 +136,10 @@ gatewayNewsFilterFromNewsFilter NewsFilter {..} =
         GatewayNewsCategoryFilter
           { gnfCategoryIds = nfCategoryIds
           , gnfCategoryNameSubstrings = nfCategoryNameSubstrings
+          }
+    , gnfAnyTagFilter =
+        GatewayNewsAnyTagFilter
+          { gnfTagIdsToMatchAnyTag = nfTagIdsToMatchAnyTag
+          , gnfTagNameSubstringsToMatchAnyTag = nfTagNameSubstringsToMatchAnyTag
           }
     }

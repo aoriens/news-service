@@ -12,6 +12,7 @@ import Core.Category
 import qualified Core.Interactor.GetNews as I
 import Core.News
 import Core.Pagination
+import Core.Tag
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as B
@@ -53,6 +54,10 @@ parseNewsFilter = do
     map CategoryId . concatMap getCommaSeparatedList <$>
     collectQueryParameter "category_id"
   categoryNameSubstrings <- collectQueryParameter "category"
+  anyTagIds <-
+    map TagId . concatMap getCommaSeparatedList <$>
+    collectQueryParameter "tag_id"
+  anyTagNameSubstrings <- collectQueryParameter "tag"
   pure
     I.NewsFilter
       { nfDateRanges = N.nonEmpty dateRanges
@@ -60,6 +65,8 @@ parseNewsFilter = do
       , nfAuthorNameSubstrings = nonEmptySet authorNameSubstrings
       , nfCategoryIds = nonEmptySet categoryIds
       , nfCategoryNameSubstrings = nonEmptySet categoryNameSubstrings
+      , nfTagIdsToMatchAnyTag = nonEmptySet anyTagIds
+      , nfTagNameSubstringsToMatchAnyTag = nonEmptySet anyTagNameSubstrings
       }
 
 nonEmptySet :: (Eq a, Hashable a) => [a] -> Maybe (Set.HashSet a)

@@ -58,17 +58,20 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
     topClause =
       Sql.text
         [TH.uncheckedSql|
-          select $COLUMNS
+          select distinct $COLUMNS
           from news
                join news_versions using (news_version_id)
                join authors using (author_id)
                join users using (user_id)
+               left join news_versions_and_tags_relation using (news_version_id)
+               left join tags using (tag_id)
         |]
     whereClause =
       Sql.mapNonEmpty ("where" <>) $
       selectNewsDateCondition gnfDateRanges `Sql.and`
       selectNewsAuthorCondition gnfAuthorFilter `Sql.and`
-      selectNewsCategoryCondition gnfCategoryFilter
+      selectNewsCategoryCondition gnfCategoryFilter `Sql.and`
+      selectNewsAnyTagCondition gnfAnyTagFilter
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec
 
@@ -111,6 +114,17 @@ selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
     nameCondition =
       ("category_id in (select * from descendants_of_categories_named_like(" <>) .
       (<> "))") . Sql.param . map Sql.substringLikePattern . toList
+
+selectNewsAnyTagCondition :: IGetNews.GatewayNewsAnyTagFilter -> Sql.Builder
+selectNewsAnyTagCondition IGetNews.GatewayNewsAnyTagFilter {..} =
+  maybe mempty idCondition gnfTagIdsToMatchAnyTag `Sql.or`
+  maybe mempty nameCondition gnfTagNameSubstringsToMatchAnyTag
+  where
+    idCondition =
+      ("tags.tag_id =" <>) . Sql.any . Sql.param . map getTagId . toList
+    nameCondition =
+      ("tags.name ilike" <>) .
+      Sql.any . Sql.param . map Sql.substringLikePattern . toList
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =

@@ -177,14 +177,24 @@ the URI query to filter entries to output:
 - `category` - a substring of a [Category](#Category) name of the news, or of
   some ancestor category of it. The parameter may be passed many times to
   specify multiple values.
+- `tag_id` - an integer identifier of a [Tag](#Tag) that a news entry is tagged
+  with, or a comma-separated list thereof. A news entry needs to be tagged with
+  any tag specified in order to be output. The parameter may be passed many
+  times to specify multiple values or value lists to be joined.
+- `tag` - a substring of a [Tag](#Tag) name that a news entry is tagged with.
+  The parameter may be passed many times to specify multiple values. A news
+  entry needs to be tagged with any tag matching the parameter in order to be
+  output.
 
-The parameters are logically combined as follows. If a parameter is missing, it
-should be excluded, as well as the binary operator with a missing parameter
-nearby:
+The parameters are logically combined as follows:
 
 - `date`
 - AND (`author_id` OR `author`).
 - AND (`category_id` OR `category`).
+- AND (`tag_id` OR `tag`).
+
+If a parameter is missing, it should be excluded, as well as the binary operator
+lacking a parameter.
 
 ### `GET /tags`
 

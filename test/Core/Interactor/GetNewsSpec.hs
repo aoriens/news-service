@@ -56,9 +56,11 @@ spec =
                         (ModifiedJulianDay 2)
                     ]
               , nfAuthorIds = Just $ Set.fromList [AuthorId 1]
-              , nfAuthorNameSubstrings = Just $ Set.fromList ["q"]
+              , nfAuthorNameSubstrings = Just $ Set.fromList ["a"]
               , nfCategoryIds = Just $ Set.fromList [CategoryId 1]
               , nfCategoryNameSubstrings = Just $ Set.fromList ["c"]
+              , nfTagIdsToMatchAnyTag = Just $ Set.fromList [TagId 1]
+              , nfTagNameSubstringsToMatchAnyTag = Just $ Set.fromList ["t"]
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
@@ -72,6 +74,10 @@ spec =
         [I.nfCategoryIds newsFilter]
       fmap (gnfCategoryNameSubstrings . gnfCategoryFilter) passedFilters `shouldBe`
         [I.nfCategoryNameSubstrings newsFilter]
+      fmap (gnfTagIdsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
+        [I.nfTagIdsToMatchAnyTag newsFilter]
+      fmap (gnfTagNameSubstringsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
+        [I.nfTagNameSubstringsToMatchAnyTag newsFilter]
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing
