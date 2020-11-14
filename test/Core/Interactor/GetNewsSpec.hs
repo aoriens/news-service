@@ -56,9 +56,9 @@ spec =
                         (ModifiedJulianDay 2)
                     ]
               , nfAuthorIds = Just $ Set.fromList [AuthorId 1]
-              , nfAuthorNames = Just $ Set.fromList ["q"]
+              , nfAuthorNameSubstrings = Just $ Set.fromList ["q"]
               , nfCategoryIds = Just $ Set.fromList [CategoryId 1]
-              , nfCategoryNames = Just $ Set.fromList ["c"]
+              , nfCategoryNameSubstrings = Just $ Set.fromList ["c"]
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
@@ -66,12 +66,12 @@ spec =
       fmap gnfDateRanges passedFilters `shouldBe` [I.nfDateRanges newsFilter]
       fmap (gnfAuthorIds . gnfAuthorFilter) passedFilters `shouldBe`
         [I.nfAuthorIds newsFilter]
-      fmap (gnfAuthorNames . gnfAuthorFilter) passedFilters `shouldBe`
-        [I.nfAuthorNames newsFilter]
+      fmap (gnfAuthorNameSubstrings . gnfAuthorFilter) passedFilters `shouldBe`
+        [I.nfAuthorNameSubstrings newsFilter]
       fmap (gnfCategoryIds . gnfCategoryFilter) passedFilters `shouldBe`
         [I.nfCategoryIds newsFilter]
-      fmap (gnfCategoryNames . gnfCategoryFilter) passedFilters `shouldBe`
-        [I.nfCategoryNames newsFilter]
+      fmap (gnfCategoryNameSubstrings . gnfCategoryFilter) passedFilters `shouldBe`
+        [I.nfCategoryNameSubstrings newsFilter]
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing

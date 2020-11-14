@@ -89,7 +89,7 @@ sqlWithinDateRange expr dateRange =
 selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
 selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
   maybe mempty idCondition gnfAuthorIds `Sql.or`
-  maybe mempty nameCondition gnfAuthorNames
+  maybe mempty nameCondition gnfAuthorNameSubstrings
   where
     idCondition =
       ("authors.author_id =" <>) .
@@ -103,7 +103,7 @@ selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
 selectNewsCategoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
 selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
   maybe mempty idCondition gnfCategoryIds `Sql.or`
-  maybe mempty nameCondition gnfCategoryNames
+  maybe mempty nameCondition gnfCategoryNameSubstrings
   where
     idCondition =
       ("category_id in (select * from descendants_of_categories_with_ids(" <>) .

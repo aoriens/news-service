@@ -45,9 +45,9 @@ data NewsFilter =
   NewsFilter
     { nfDateRanges :: Maybe (N.NonEmpty NewsDateRange)
     , nfAuthorIds :: Maybe (Set.HashSet AuthorId)
-    , nfAuthorNames :: Maybe (Set.HashSet T.Text)
+    , nfAuthorNameSubstrings :: Maybe (Set.HashSet T.Text)
     , nfCategoryIds :: Maybe (Set.HashSet CategoryId)
-    , nfCategoryNames :: Maybe (Set.HashSet T.Text)
+    , nfCategoryNameSubstrings :: Maybe (Set.HashSet T.Text)
     }
 
 emptyNewsFilter :: NewsFilter
@@ -55,9 +55,9 @@ emptyNewsFilter =
   NewsFilter
     { nfDateRanges = Nothing
     , nfAuthorIds = Nothing
-    , nfAuthorNames = Nothing
+    , nfAuthorNameSubstrings = Nothing
     , nfCategoryIds = Nothing
-    , nfCategoryNames = Nothing
+    , nfCategoryNameSubstrings = Nothing
     }
 
 -- | The inclusive range of dates.
@@ -84,7 +84,7 @@ data GatewayNewsFilter =
 data GatewayNewsAuthorFilter =
   GatewayNewsAuthorFilter
     { gnfAuthorIds :: Maybe (Set.HashSet AuthorId)
-    , gnfAuthorNames :: Maybe (Set.HashSet T.Text)
+    , gnfAuthorNameSubstrings :: Maybe (Set.HashSet T.Text)
     -- ^ Author name substrings to match with. Each element is a
     -- substring to be searched in the user name of an author of a
     -- news entry. The user name consists of the first name and the
@@ -99,7 +99,7 @@ data GatewayNewsCategoryFilter =
     -- ^ Category identifier to match with. A category matches to an
     -- identifier if its identifier or its ancestor category
     -- identifier matches.
-    , gnfCategoryNames :: Maybe (Set.HashSet T.Text)
+    , gnfCategoryNameSubstrings :: Maybe (Set.HashSet T.Text)
     -- ^ Category name substrings to match with. Each element is a
     -- substring to be searched in the category name or its ancestor
     -- category names.
@@ -111,8 +111,12 @@ gatewayNewsFilterFromNewsFilter NewsFilter {..} =
     { gnfDateRanges = nfDateRanges
     , gnfAuthorFilter =
         GatewayNewsAuthorFilter
-          {gnfAuthorIds = nfAuthorIds, gnfAuthorNames = nfAuthorNames}
+          { gnfAuthorIds = nfAuthorIds
+          , gnfAuthorNameSubstrings = nfAuthorNameSubstrings
+          }
     , gnfCategoryFilter =
         GatewayNewsCategoryFilter
-          {gnfCategoryIds = nfCategoryIds, gnfCategoryNames = nfCategoryNames}
+          { gnfCategoryIds = nfCategoryIds
+          , gnfCategoryNameSubstrings = nfCategoryNameSubstrings
+          }
     }

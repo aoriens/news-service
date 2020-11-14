@@ -48,18 +48,18 @@ parseNewsFilter = do
   authorIds <-
     map AuthorId . concatMap getCommaSeparatedList <$>
     collectQueryParameter "author_id"
-  authorNames <- collectQueryParameter "author"
+  authorNameSubstrings <- collectQueryParameter "author"
   categoryIds <-
     map CategoryId . concatMap getCommaSeparatedList <$>
     collectQueryParameter "category_id"
-  categoryNames <- collectQueryParameter "category"
+  categoryNameSubstrings <- collectQueryParameter "category"
   pure
     I.NewsFilter
       { nfDateRanges = N.nonEmpty dateRanges
       , nfAuthorIds = nonEmptySet authorIds
-      , nfAuthorNames = nonEmptySet authorNames
+      , nfAuthorNameSubstrings = nonEmptySet authorNameSubstrings
       , nfCategoryIds = nonEmptySet categoryIds
-      , nfCategoryNames = nonEmptySet categoryNames
+      , nfCategoryNameSubstrings = nonEmptySet categoryNameSubstrings
       }
 
 nonEmptySet :: (Eq a, Hashable a) => [a] -> Maybe (Set.HashSet a)
