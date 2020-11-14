@@ -168,36 +168,38 @@ the URI query to filter articles to output:
   comma-separated list thereof. The parameter may be passed many times to
   specify multiple values or value lists to be joined.
 - `author` - a substring of a [User](#User) name who is an [Author](#Author) of
-  the news. The parameter may be passed many times to specify multiple values.
+  the news using case-insensitive match. The parameter may be passed many times
+  to specify multiple values.
 - `category_id` - an integer identifier of a [Category](#Category) of the news,
   or of some ancestor category of it, or a comma-separated list thereof. The
   parameter may be passed many times to specify multiple values or value lists
   to be joined.
 - `category` - a substring of a [Category](#Category) name of the news, or of
-  some ancestor category of it. The parameter may be passed many times to
-  specify multiple values.
+  some ancestor category of it. The case-insensitive match is used. The
+  parameter may be passed many times to specify multiple values.
 - `tag_id` - an integer identifier of a [Tag](#Tag) that a news article is
   tagged with, or a comma-separated list thereof. A news article needs to be
   tagged with ANY tag specified in order to be output. The parameter may be
   passed many times to specify multiple values or value lists to be joined.
 - `tag` - a substring of a [Tag](#Tag) name that a news article is tagged with.
-  The parameter may be passed many times to specify multiple values. A news
-  article needs to be tagged with ANY tag matching the parameter in order to be
-  output.
+  The case-insensitive match is used. The parameter may be passed many times to
+  specify multiple values. A news article needs to be tagged with ANY tag
+  matching the parameter in order to be output.
 - `required_tag_id` - an integer identifier of a [Tag](#Tag) that a news article
   is tagged with, or a comma-separated list thereof. A news article needs to be
   tagged with ALL tags specified in order to be output. The parameter may be
   passed many times to specify multiple values or value lists to be joined.
 - `required_tag` - a substring of a [Tag](#Tag) name that a news article is
-  tagged with. The parameter may be passed many times to specify multiple
-  values. For EACH parameter value passed there must be a matching tag related
-  to a news article in order for the news article to be output.
-- `title` - a substring in the news title. The parameter may be passed many
-  times to specify multiple values. It is enough for a news article to match at
-  least one value in order to be output.
-- `body` - a substring in the news body. The parameter may be passed many times
-  to specify multiple values. It is enough for a news article to match at least
-  one value in order to be output.
+  tagged with. The case-insensitive match is used. The parameter may be passed
+  many times to specify multiple values. For EACH parameter value passed there
+  must be a matching tag related to a news article in order for the news article
+  to be output.
+- `title` - a substring in the news title using the case-insensitive match. The
+  parameter may be passed many times to specify multiple values. It is enough
+  for a news article to match at least one value in order to be output.
+- `body` - a substring in the news body using the case-insensitive match. The
+  parameter may be passed many times to specify multiple values. It is enough
+  for a news article to match at least one value in order to be output.
 
 The parameters are logically combined as follows:
 
