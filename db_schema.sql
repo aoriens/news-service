@@ -44,6 +44,46 @@ create table categories (
        name varchar not null
 );
 
+create function descendants_of_categories_with_ids(
+    ids integer array
+    ) returns table(category_id integer)
+language sql
+$$
+    with recursive cats as (
+      select category_id
+      from categories
+      where category_id = any(ids)
+
+      union
+
+      select categories.category_id
+      from categories
+           join cats on categories.parent_id = cats.category_id
+    )
+    select *
+    from cats
+$$;
+
+create function descendants_of_categories_named_like(
+    patterns varchar array
+    ) returns table(category_id integer)
+language sql
+as $$
+    with recursive cats as (
+      select category_id
+      from categories
+      where name ilike any(patterns)
+
+      union
+
+      select categories.category_id
+      from categories
+           join cats on categories.parent_id = cats.category_id
+    )
+    select *
+    from cats
+$$;
+
 create table tags (
        tag_id serial not null primary key,
        name varchar unique not null

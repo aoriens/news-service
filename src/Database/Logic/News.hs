@@ -107,46 +107,21 @@ selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
     patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
 
 selectNewsCategoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
-selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..}
-  | Sql.isEmpty whereClause = mempty
-  | otherwise = condition
+selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
+  idCondition `Sql.or` nameCondition
   where
-    condition =
-      Sql.text
-        [TH.uncheckedSql|
-          category_id in (
-            with recursive cats as (
-              select category_id
-              from categories
-        |] <>
-      whereClause <>
-      Sql.text
-        [TH.uncheckedSql|
-
-              union
-
-              select categories.category_id
-              from categories
-                   join cats on categories.parent_id = cats.category_id
-            )
-            select *
-            from cats
-          )
-        |]
-    whereClause =
-      Sql.mapNonEmpty ("where" <>) $ idCondition `Sql.or` nameCondition
     idCondition =
       case gnfCategoryIds of
         Nothing -> mempty
         Just ids ->
-          "category_id =" <>
-          Sql.any (Sql.param . map getCategoryId $ toList ids)
+          "category_id in (select * from descendants_of_categories_with_ids(" <>
+          Sql.param (map getCategoryId $ toList ids) <> "))"
     nameCondition =
       case gnfCategoryNames of
         Nothing -> mempty
         Just names ->
-          "name ilike" <>
-          Sql.any (Sql.param $ map patternFromName $ toList names)
+          "category_id in (select * from descendants_of_categories_named_like(" <>
+          Sql.param (map patternFromName $ toList names) <> "))"
     patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
