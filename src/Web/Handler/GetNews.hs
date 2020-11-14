@@ -16,10 +16,10 @@ import Core.Tag
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Util as B
 import qualified Data.HashSet as Set
 import Data.Hashable
 import qualified Data.List.NonEmpty as N
+import qualified Data.Text as T
 import Data.Time.Format.ISO8601
 import Web.Application
 import Web.QueryParameter
@@ -79,19 +79,14 @@ newtype DateRange =
     }
 
 instance QueryParameter DateRange where
-  parseQueryParameter = (fmap DateRange . parseDateRange =<<)
+  parseQueryParameter = fmap DateRange . parseDateRange
 
-parseDateRange :: B.ByteString -> Maybe I.NewsDateRange
+parseDateRange :: Maybe B.ByteString -> Maybe I.NewsDateRange
 parseDateRange str =
-  case B.splitOnCharOnce (== ',') str of
-    Nothing ->
-      (\day -> I.NewsSinceUntil day day) <$> iso8601ParseM (B.unpack str)
-    Just (from, to) ->
-      case ( iso8601ParseM $ B.unpack from
-           , B.null from
-           , iso8601ParseM $ B.unpack to
-           , B.null to) of
-        (Just day1, _, Just day2, _) -> Just $ I.NewsSinceUntil day1 day2
-        (Just day1, _, Nothing, True) -> Just $ I.NewsSince day1
-        (Nothing, True, Just day2, _) -> Just $ I.NewsUntil day2
-        _ -> Nothing
+  case map T.unpack . getCommaSeparatedList <$> parseQueryParameter str of
+    Just [s] -> (\day -> I.NewsSinceUntil day day) <$> iso8601ParseM s
+    Just ["", s2] -> I.NewsUntil <$> iso8601ParseM s2
+    Just [s1, ""] -> I.NewsSince <$> iso8601ParseM s1
+    Just [s1, s2] ->
+      liftA2 I.NewsSinceUntil (iso8601ParseM s1) (iso8601ParseM s2)
+    _ -> Nothing
