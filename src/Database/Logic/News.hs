@@ -72,7 +72,9 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
       selectNewsAuthorCondition gnfAuthorFilter `Sql.and`
       selectNewsCategoryCondition gnfCategoryFilter `Sql.and`
       selectNewsAnyTagCondition gnfAnyTagFilter `Sql.and`
-      selectNewsAllTagsCondition gnfAllTagsFilter
+      selectNewsAllTagsCondition gnfAllTagsFilter `Sql.and`
+      selectNewsTitleCondition gnfTitleSubstrings `Sql.and`
+      selectNewsBodyCondition gnfBodySubstrings
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec
 
@@ -100,7 +102,7 @@ selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
       Sql.any . Sql.param . map getAuthorId . toList
     nameCondition =
       (fullName <>) .
-      ("ilike" <>) . Sql.any . Sql.param . map Sql.substringLikePattern . toList
+      ("ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
     fullName =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
 
@@ -114,7 +116,7 @@ selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
       (<> "))") . Sql.param . map getCategoryId . toList
     nameCondition =
       ("category_id in (select * from descendants_of_categories_named_like(" <>) .
-      (<> "))") . Sql.param . map Sql.substringLikePattern . toList
+      (<> "))") . stringsToLikeSubstringPatternsParameter
 
 selectNewsAnyTagCondition :: IGetNews.GatewayNewsAnyTagFilter -> Sql.Builder
 selectNewsAnyTagCondition IGetNews.GatewayNewsAnyTagFilter {..} =
@@ -124,8 +126,7 @@ selectNewsAnyTagCondition IGetNews.GatewayNewsAnyTagFilter {..} =
     idCondition =
       ("tags.tag_id =" <>) . Sql.any . Sql.param . map getTagId . toList
     nameCondition =
-      ("tags.name ilike" <>) .
-      Sql.any . Sql.param . map Sql.substringLikePattern . toList
+      ("tags.name ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
 
 selectNewsAllTagsCondition :: IGetNews.GatewayNewsAllTagsFilter -> Sql.Builder
 selectNewsAllTagsCondition IGetNews.GatewayNewsAllTagsFilter {..} =
@@ -137,7 +138,23 @@ selectNewsAllTagsCondition IGetNews.GatewayNewsAllTagsFilter {..} =
       (<> "))") . Sql.param . map getTagId . toList
     nameCondition =
       ("news.news_version_id in (select * from news_version_ids_connected_with_all_tags_like(" <>) .
-      (<> "))") . Sql.param . map Sql.substringLikePattern . toList
+      (<> "))") . stringsToLikeSubstringPatternsParameter
+
+selectNewsTitleCondition :: Maybe (Set.HashSet T.Text) -> Sql.Builder
+selectNewsTitleCondition =
+  maybe mempty $
+  ("news_versions.title ilike" <>) .
+  Sql.any . stringsToLikeSubstringPatternsParameter
+
+selectNewsBodyCondition :: Maybe (Set.HashSet T.Text) -> Sql.Builder
+selectNewsBodyCondition =
+  maybe mempty $
+  ("news_versions.body ilike" <>) .
+  Sql.any . stringsToLikeSubstringPatternsParameter
+
+stringsToLikeSubstringPatternsParameter :: Foldable t => t T.Text -> Sql.Builder
+stringsToLikeSubstringPatternsParameter =
+  Sql.param . map Sql.substringLikePattern . toList
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =

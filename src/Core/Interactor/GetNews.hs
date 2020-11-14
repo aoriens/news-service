@@ -55,6 +55,8 @@ data NewsFilter =
     , nfTagNameSubstringsToMatchAnyTag :: Maybe (Set.HashSet T.Text)
     , nfTagIdsAllRequiredToMatch :: Maybe (Set.HashSet TagId)
     , nfTagNameSubstringsAllRequiredToMatch :: Maybe (Set.HashSet T.Text)
+    , nfTitleSubstrings :: Maybe (Set.HashSet T.Text)
+    , nfBodySubstrings :: Maybe (Set.HashSet T.Text)
     }
 
 emptyNewsFilter :: NewsFilter
@@ -69,6 +71,8 @@ emptyNewsFilter =
     , nfTagNameSubstringsToMatchAnyTag = Nothing
     , nfTagIdsAllRequiredToMatch = Nothing
     , nfTagNameSubstringsAllRequiredToMatch = Nothing
+    , nfTitleSubstrings = Nothing
+    , nfBodySubstrings = Nothing
     }
 
 -- | The inclusive range of dates.
@@ -90,6 +94,8 @@ data GatewayNewsFilter =
     , gnfCategoryFilter :: GatewayNewsCategoryFilter
     , gnfAnyTagFilter :: GatewayNewsAnyTagFilter
     , gnfAllTagsFilter :: GatewayNewsAllTagsFilter
+    , gnfTitleSubstrings :: Maybe (Set.HashSet T.Text)
+    , gnfBodySubstrings :: Maybe (Set.HashSet T.Text)
     }
 
 -- | An author filter. Its fields correspond to filters that should be
@@ -144,28 +150,30 @@ gatewayNewsFilterFromNewsFilter :: NewsFilter -> GatewayNewsFilter
 gatewayNewsFilterFromNewsFilter NewsFilter {..} =
   GatewayNewsFilter
     { gnfDateRanges = nfDateRanges
+    , gnfTitleSubstrings = excludeEmptyString nfTitleSubstrings
+    , gnfBodySubstrings = excludeEmptyString nfBodySubstrings
     , gnfAuthorFilter =
         GatewayNewsAuthorFilter
           { gnfAuthorIds = nfAuthorIds
-          , gnfAuthorNameSubstrings = excludeEmptyStrings nfAuthorNameSubstrings
+          , gnfAuthorNameSubstrings = excludeEmptyString nfAuthorNameSubstrings
           }
     , gnfCategoryFilter =
         GatewayNewsCategoryFilter
           { gnfCategoryIds = nfCategoryIds
           , gnfCategoryNameSubstrings =
-              excludeEmptyStrings nfCategoryNameSubstrings
+              excludeEmptyString nfCategoryNameSubstrings
           }
     , gnfAnyTagFilter =
         GatewayNewsAnyTagFilter
           { gnfTagIdsToMatchAnyTag = nfTagIdsToMatchAnyTag
           , gnfTagNameSubstringsToMatchAnyTag =
-              excludeEmptyStrings nfTagNameSubstringsToMatchAnyTag
+              excludeEmptyString nfTagNameSubstringsToMatchAnyTag
           }
     , gnfAllTagsFilter =
         GatewayNewsAllTagsFilter
           { gnfTagIdsAllRequiredToMatch = nfTagIdsAllRequiredToMatch
           , gnfTagNameSubstringsAllRequiredToMatch =
-              excludeEmptyStrings nfTagNameSubstringsAllRequiredToMatch
+              excludeEmptyString nfTagNameSubstringsAllRequiredToMatch
           }
     }
 
@@ -173,8 +181,8 @@ gatewayNewsFilterFromNewsFilter NewsFilter {..} =
 -- no-op filter when needed. It is a little optimization for hGetNews,
 -- since an empty substring filter cannot filter out entries and it is
 -- useless.
-excludeEmptyStrings :: Maybe (Set.HashSet T.Text) -> Maybe (Set.HashSet T.Text)
-excludeEmptyStrings = (normalize . Set.delete "" =<<)
+excludeEmptyString :: Maybe (Set.HashSet T.Text) -> Maybe (Set.HashSet T.Text)
+excludeEmptyString = (normalize . Set.delete "" =<<)
   where
     normalize set
       | Set.null set = Nothing

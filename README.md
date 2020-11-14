@@ -192,6 +192,12 @@ the URI query to filter entries to output:
   with. The parameter may be passed many times to specify multiple values. For
   EACH parameter value passed there must be a matching tag related to a news
   entry in order for the news entry to be output.
+- `title` - a substring in the news title. The parameter may be passed many
+  times to specify multiple values. It is enough for a news article to match at
+  least one value in order to be output.
+- `body` - a substring in the news body. The parameter may be passed many times
+  to specify multiple values. It is enough for a news article to match at least
+  one value in order to be output.
 
 The parameters are logically combined as follows:
 
@@ -200,6 +206,8 @@ The parameters are logically combined as follows:
 - AND (`category_id` OR `category`)
 - AND (`tag_id` OR `tag`)
 - AND (`required_tag_id` OR `required_tag`)
+- AND `title`
+- AND `body`
 
 If a parameter is missing, it should be excluded, as well as the binary operator
 lacking a parameter.
