@@ -19,8 +19,7 @@ createdb news
 psql news -f db_schema.sql
 ```
 
-3. You may populate the database with test data. It will erase old data, but you
-   make backups regularly, so this won't be an issue.
+3. You may populate the database with test data. Beware: it will erase old data.
 
 ```sh
 psql news -f test_data.sql
@@ -62,11 +61,11 @@ database with the test data right after creating it.
 ## Authentication
 
 Some parts of API require authentication, which is documented appropriately, but
-majority of methods is available without authentication. Currently we support
-HTTP basic authentication. You should use user's secret token as a login and an
-empty password. The secret token is only returned on user creation.
+majority of methods does not. Currently we support HTTP basic authentication.
+You should use the user's secret token as a login and an empty password. The
+secret token is only returned on user creation.
 
-In case of authentication failure or lack of privileges `404 NotFound` is
+In case of authentication failure or lack of privileges `404 NotFound` may be
 returned in order to hide API which requires additional privileges.
 
 ## Entity encoding
@@ -110,7 +109,7 @@ Returns the specified [Author](#Author). Requires the administrator privilege.
 ### `PATCH /authors/{author_id}`
 
 Accepts [UpdateAuthor](#UpdateAuthor) entity, updates the corresponding author
-entity and returns the updated [Author](#Author) representation. Requires the
+entity, and returns the updated [Author](#Author) representation. Requires the
 administrator privilege.
 
 ### `GET /categories`
@@ -144,7 +143,7 @@ authentication. Your cannot perform the operation on behalf of an
 ### `POST /drafts/{draft_id}/publish`
 
 Publishes a [Draft](#Draft) with the given identifier as a news article. Returns
-[News](#News) just created. Requires authentication. You need to be an owner of
+[News](#News) just created. Requires authentication. You need to be the owner of
 the draft.
 
 ### `GET /images/{image_id}`
