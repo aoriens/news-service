@@ -61,6 +61,9 @@ spec =
               , nfCategoryNameSubstrings = Just $ Set.fromList ["c"]
               , nfTagIdsToMatchAnyTag = Just $ Set.fromList [TagId 1]
               , nfTagNameSubstringsToMatchAnyTag = Just $ Set.fromList ["t"]
+              , nfTagIdsAllRequiredToMatch = Just $ Set.fromList [TagId 2]
+              , nfTagNameSubstringsAllRequiredToMatch =
+                  Just $ Set.fromList ["T"]
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
@@ -78,11 +81,18 @@ spec =
         [I.nfTagIdsToMatchAnyTag newsFilter]
       fmap (gnfTagNameSubstringsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
         [I.nfTagNameSubstringsToMatchAnyTag newsFilter]
+      fmap (gnfTagIdsAllRequiredToMatch . gnfAllTagsFilter) passedFilters `shouldBe`
+        [I.nfTagIdsAllRequiredToMatch newsFilter]
+      fmap
+        (gnfTagNameSubstringsAllRequiredToMatch . gnfAllTagsFilter)
+        passedFilters `shouldBe`
+        [I.nfTagNameSubstringsAllRequiredToMatch newsFilter]
     it "should not pass empty substring filters to hGetNews to optimize search" $ do
       ref <- newIORef []
       let expectedAuthorNameSubstrings = Set.fromList ["a"]
           expectedCategoryNameSubstrings = Set.fromList ["c"]
           expectedAnyTagNameSubstrings = Set.fromList ["t"]
+          expectedAllTagsNameSubstrings = Set.fromList ["T"]
           newsFilter =
             I.NewsFilter
               { nfDateRanges = Nothing
@@ -95,6 +105,9 @@ spec =
               , nfTagIdsToMatchAnyTag = Nothing
               , nfTagNameSubstringsToMatchAnyTag =
                   Just $ Set.insert "" expectedAnyTagNameSubstrings
+              , nfTagIdsAllRequiredToMatch = Nothing
+              , nfTagNameSubstringsAllRequiredToMatch =
+                  Just $ Set.insert "" expectedAllTagsNameSubstrings
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
@@ -105,6 +118,10 @@ spec =
         [Just expectedCategoryNameSubstrings]
       fmap (gnfTagNameSubstringsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
         [Just expectedAnyTagNameSubstrings]
+      fmap
+        (gnfTagNameSubstringsAllRequiredToMatch . gnfAllTagsFilter)
+        passedFilters `shouldBe`
+        [Just expectedAllTagsNameSubstrings]
     it
       "should pass Nothing as a substrings filter to hGetNews if the filter contains an empty string only" $ do
       ref <- newIORef []
@@ -117,6 +134,8 @@ spec =
               , nfCategoryNameSubstrings = Just $ Set.singleton ""
               , nfTagIdsToMatchAnyTag = Nothing
               , nfTagNameSubstringsToMatchAnyTag = Just $ Set.singleton ""
+              , nfTagIdsAllRequiredToMatch = Nothing
+              , nfTagNameSubstringsAllRequiredToMatch = Just $ Set.singleton ""
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
@@ -126,6 +145,10 @@ spec =
       fmap (gnfCategoryNameSubstrings . gnfCategoryFilter) passedFilters `shouldBe`
         [Nothing]
       fmap (gnfTagNameSubstringsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
+        [Nothing]
+      fmap
+        (gnfTagNameSubstringsAllRequiredToMatch . gnfAllTagsFilter)
+        passedFilters `shouldBe`
         [Nothing]
 
 noPageQuery :: PageSpecQuery

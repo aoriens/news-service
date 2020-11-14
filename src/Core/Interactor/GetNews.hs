@@ -8,6 +8,7 @@ module Core.Interactor.GetNews
   , GatewayNewsAuthorFilter(..)
   , GatewayNewsCategoryFilter(..)
   , GatewayNewsAnyTagFilter(..)
+  , GatewayNewsAllTagsFilter(..)
   ) where
 
 import Control.Monad.Catch
@@ -52,6 +53,8 @@ data NewsFilter =
     , nfCategoryNameSubstrings :: Maybe (Set.HashSet T.Text)
     , nfTagIdsToMatchAnyTag :: Maybe (Set.HashSet TagId)
     , nfTagNameSubstringsToMatchAnyTag :: Maybe (Set.HashSet T.Text)
+    , nfTagIdsAllRequiredToMatch :: Maybe (Set.HashSet TagId)
+    , nfTagNameSubstringsAllRequiredToMatch :: Maybe (Set.HashSet T.Text)
     }
 
 emptyNewsFilter :: NewsFilter
@@ -64,6 +67,8 @@ emptyNewsFilter =
     , nfCategoryNameSubstrings = Nothing
     , nfTagIdsToMatchAnyTag = Nothing
     , nfTagNameSubstringsToMatchAnyTag = Nothing
+    , nfTagIdsAllRequiredToMatch = Nothing
+    , nfTagNameSubstringsAllRequiredToMatch = Nothing
     }
 
 -- | The inclusive range of dates.
@@ -84,6 +89,7 @@ data GatewayNewsFilter =
     , gnfAuthorFilter :: GatewayNewsAuthorFilter
     , gnfCategoryFilter :: GatewayNewsCategoryFilter
     , gnfAnyTagFilter :: GatewayNewsAnyTagFilter
+    , gnfAllTagsFilter :: GatewayNewsAllTagsFilter
     }
 
 -- | An author filter. Its fields correspond to filters that should be
@@ -112,13 +118,24 @@ data GatewayNewsCategoryFilter =
     -- category names.
     }
 
--- | A tag filter. It selects entries matching at least one tag
+-- | A tag filter. It selects news entries matching at least one tag
 -- specified. Its fields correspond to filters that should be combined
 -- using logical OR.
 data GatewayNewsAnyTagFilter =
   GatewayNewsAnyTagFilter
     { gnfTagIdsToMatchAnyTag :: Maybe (Set.HashSet TagId)
     , gnfTagNameSubstringsToMatchAnyTag :: Maybe (Set.HashSet T.Text)
+    -- ^ Tag name substrings to match with. Each element is a
+    -- substring to be searched in the tag name.
+    }
+
+-- | A tag filter. It selects news entries matching all tags specified. Its
+-- fields correspond to filters that should be combined using logical
+-- OR.
+data GatewayNewsAllTagsFilter =
+  GatewayNewsAllTagsFilter
+    { gnfTagIdsAllRequiredToMatch :: Maybe (Set.HashSet TagId)
+    , gnfTagNameSubstringsAllRequiredToMatch :: Maybe (Set.HashSet T.Text)
     -- ^ Tag name substrings to match with. Each element is a
     -- substring to be searched in the tag name.
     }
@@ -144,8 +161,18 @@ gatewayNewsFilterFromNewsFilter NewsFilter {..} =
           , gnfTagNameSubstringsToMatchAnyTag =
               excludeEmptyStrings nfTagNameSubstringsToMatchAnyTag
           }
+    , gnfAllTagsFilter =
+        GatewayNewsAllTagsFilter
+          { gnfTagIdsAllRequiredToMatch = nfTagIdsAllRequiredToMatch
+          , gnfTagNameSubstringsAllRequiredToMatch =
+              excludeEmptyStrings nfTagNameSubstringsAllRequiredToMatch
+          }
     }
 
+-- | Excludes the empty string from a set of strings, normalizing to a
+-- no-op filter when needed. It is a little optimization for hGetNews,
+-- since an empty substring filter cannot filter out entries and it is
+-- useless.
 excludeEmptyStrings :: Maybe (Set.HashSet T.Text) -> Maybe (Set.HashSet T.Text)
 excludeEmptyStrings = (normalize . Set.delete "" =<<)
   where

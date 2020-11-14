@@ -178,19 +178,28 @@ the URI query to filter entries to output:
   specify multiple values.
 - `tag_id` - an integer identifier of a [Tag](#Tag) that a news entry is tagged
   with, or a comma-separated list thereof. A news entry needs to be tagged with
-  any tag specified in order to be output. The parameter may be passed many
+  ANY tag specified in order to be output. The parameter may be passed many
   times to specify multiple values or value lists to be joined.
 - `tag` - a substring of a [Tag](#Tag) name that a news entry is tagged with.
   The parameter may be passed many times to specify multiple values. A news
-  entry needs to be tagged with any tag matching the parameter in order to be
+  entry needs to be tagged with ANY tag matching the parameter in order to be
   output.
+- `required_tag_id` - an integer identifier of a [Tag](#Tag) that a news entry
+  is tagged with, or a comma-separated list thereof. A news entry needs to be
+  tagged with ALL tags specified in order to be output. The parameter may be
+  passed many times to specify multiple values or value lists to be joined.
+- `required_tag` - a substring of a [Tag](#Tag) name that a news entry is tagged
+  with. The parameter may be passed many times to specify multiple values. For
+  EACH parameter value passed there must be a matching tag related to a news
+  entry in order for the news entry to be output.
 
 The parameters are logically combined as follows:
 
 - `date`
-- AND (`author_id` OR `author`).
-- AND (`category_id` OR `category`).
-- AND (`tag_id` OR `tag`).
+- AND (`author_id` OR `author`)
+- AND (`category_id` OR `category`)
+- AND (`tag_id` OR `tag`)
+- AND (`required_tag_id` OR `required_tag`)
 
 If a parameter is missing, it should be excluded, as well as the binary operator
 lacking a parameter.

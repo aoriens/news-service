@@ -58,6 +58,10 @@ parseNewsFilter = do
     map TagId . concatMap getCommaSeparatedList <$>
     collectQueryParameter "tag_id"
   anyTagNameSubstrings <- collectQueryParameter "tag"
+  requiredTagIds <-
+    map TagId . concatMap getCommaSeparatedList <$>
+    collectQueryParameter "required_tag_id"
+  requiredTagNameSubstrings <- collectQueryParameter "required_tag"
   pure
     I.NewsFilter
       { nfDateRanges = N.nonEmpty dateRanges
@@ -67,6 +71,9 @@ parseNewsFilter = do
       , nfCategoryNameSubstrings = nonEmptySet categoryNameSubstrings
       , nfTagIdsToMatchAnyTag = nonEmptySet anyTagIds
       , nfTagNameSubstringsToMatchAnyTag = nonEmptySet anyTagNameSubstrings
+      , nfTagIdsAllRequiredToMatch = nonEmptySet requiredTagIds
+      , nfTagNameSubstringsAllRequiredToMatch =
+          nonEmptySet requiredTagNameSubstrings
       }
 
 nonEmptySet :: (Eq a, Hashable a) => [a] -> Maybe (Set.HashSet a)
