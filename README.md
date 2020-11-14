@@ -156,7 +156,7 @@ The response contains the image data with the corresponding MIME type.
 ### `GET /news`
 
 Returns a list of [News](#News) entities. Additional parameters may be passed in
-the URI query to filter entries to output:
+the URI query to filter articles to output:
 
 - `date` - a date or a date range when news is published. The parameter may be
   used many times to specify multiple dates or date ranges. The following
@@ -176,22 +176,22 @@ the URI query to filter entries to output:
 - `category` - a substring of a [Category](#Category) name of the news, or of
   some ancestor category of it. The parameter may be passed many times to
   specify multiple values.
-- `tag_id` - an integer identifier of a [Tag](#Tag) that a news entry is tagged
-  with, or a comma-separated list thereof. A news entry needs to be tagged with
-  ANY tag specified in order to be output. The parameter may be passed many
-  times to specify multiple values or value lists to be joined.
-- `tag` - a substring of a [Tag](#Tag) name that a news entry is tagged with.
+- `tag_id` - an integer identifier of a [Tag](#Tag) that a news article is
+  tagged with, or a comma-separated list thereof. A news article needs to be
+  tagged with ANY tag specified in order to be output. The parameter may be
+  passed many times to specify multiple values or value lists to be joined.
+- `tag` - a substring of a [Tag](#Tag) name that a news article is tagged with.
   The parameter may be passed many times to specify multiple values. A news
-  entry needs to be tagged with ANY tag matching the parameter in order to be
+  article needs to be tagged with ANY tag matching the parameter in order to be
   output.
-- `required_tag_id` - an integer identifier of a [Tag](#Tag) that a news entry
-  is tagged with, or a comma-separated list thereof. A news entry needs to be
+- `required_tag_id` - an integer identifier of a [Tag](#Tag) that a news article
+  is tagged with, or a comma-separated list thereof. A news article needs to be
   tagged with ALL tags specified in order to be output. The parameter may be
   passed many times to specify multiple values or value lists to be joined.
-- `required_tag` - a substring of a [Tag](#Tag) name that a news entry is tagged
-  with. The parameter may be passed many times to specify multiple values. For
-  EACH parameter value passed there must be a matching tag related to a news
-  entry in order for the news entry to be output.
+- `required_tag` - a substring of a [Tag](#Tag) name that a news article is
+  tagged with. The parameter may be passed many times to specify multiple
+  values. For EACH parameter value passed there must be a matching tag related
+  to a news article in order for the news article to be output.
 - `title` - a substring in the news title. The parameter may be passed many
   times to specify multiple values. It is enough for a news article to match at
   least one value in order to be output.
@@ -335,7 +335,7 @@ A request to create a user. Fields:
 
 ### Draft
 
-A draft of a news entry. Fields:
+A draft of a news article. Fields:
 
 - `draft_id` - an identifier of the draft. An integer, required.
 - `title` - the news title. A string, required.
@@ -349,7 +349,7 @@ A draft of a news entry. Fields:
 
 ### News
 
-A news entry. Fields:
+A news article. Fields:
 
 - `news_id` - the entity identifier. An integer, required.
 - `title` - the news title. A string, required.
