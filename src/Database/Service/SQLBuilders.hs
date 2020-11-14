@@ -1,5 +1,6 @@
 module Database.Service.SQLBuilders
   ( escapeLikePattern
+  , substringLikePattern
   , any
   , or
   , and
@@ -24,6 +25,11 @@ escapeLikePattern = T.concatMap f
       | otherwise = T.singleton char
     shouldEscape char = char == escapeChar || char == '%' || char == '_'
     escapeChar = '\\'
+
+-- | Creates a pattern for SQL LIKE predicate for searching the given
+-- string as a literal substring. Special characters will be escaped.
+substringLikePattern :: T.Text -> T.Text
+substringLikePattern = T.cons '%' . (`T.snoc` '%') . escapeLikePattern
 
 -- | Wraps an expression into ANY (...) expression.
 any :: Sql.Builder -> Sql.Builder

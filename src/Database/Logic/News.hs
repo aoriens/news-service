@@ -88,41 +88,29 @@ sqlWithinDateRange expr dateRange =
 
 selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
 selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
-  idCondition `Sql.or` nameCondition
+  maybe mempty idCondition gnfAuthorIds `Sql.or`
+  maybe mempty nameCondition gnfAuthorNames
   where
     idCondition =
-      case gnfAuthorIds of
-        Nothing -> mempty
-        Just ids ->
-          "authors.author_id =" <>
-          Sql.any (Sql.param . map getAuthorId $ toList ids)
+      ("authors.author_id =" <>) .
+      Sql.any . Sql.param . map getAuthorId . toList
     nameCondition =
-      case gnfAuthorNames of
-        Nothing -> mempty
-        Just names ->
-          fullName <>
-          "ilike" <> Sql.any (Sql.param $ map patternFromName $ toList names)
+      (fullName <>) .
+      ("ilike" <>) . Sql.any . Sql.param . map Sql.substringLikePattern . toList
     fullName =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
-    patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
 
 selectNewsCategoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
 selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
-  idCondition `Sql.or` nameCondition
+  maybe mempty idCondition gnfCategoryIds `Sql.or`
+  maybe mempty nameCondition gnfCategoryNames
   where
     idCondition =
-      case gnfCategoryIds of
-        Nothing -> mempty
-        Just ids ->
-          "category_id in (select * from descendants_of_categories_with_ids(" <>
-          Sql.param (map getCategoryId $ toList ids) <> "))"
+      ("category_id in (select * from descendants_of_categories_with_ids(" <>) .
+      (<> "))") . Sql.param . map getCategoryId . toList
     nameCondition =
-      case gnfCategoryNames of
-        Nothing -> mempty
-        Just names ->
-          "category_id in (select * from descendants_of_categories_named_like(" <>
-          Sql.param (map patternFromName $ toList names) <> "))"
-    patternFromName = T.cons '%' . (`T.snoc` '%') . Sql.escapeLikePattern
+      ("category_id in (select * from descendants_of_categories_named_like(" <>) .
+      (<> "))") . Sql.param . map Sql.substringLikePattern . toList
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =
