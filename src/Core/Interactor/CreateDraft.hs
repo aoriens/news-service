@@ -23,8 +23,7 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthenticationHandle :: AuthenticationHandle m
-    , hAuthorizationHandle :: AuthorizationHandle
+    { hAuthorizationHandle :: AuthorizationHandle
     , hGetAuthorIdByUserIdIfExactlyOne :: UserId -> m (Maybe AuthorId)
     , hCreateNewsVersion :: CreateNewsVersionCommand -> m (Either GatewayFailure NewsVersion)
     , hRejectDisallowedImage :: MonadThrow m =>
@@ -34,13 +33,12 @@ data Handle m =
 run ::
      MonadThrow m
   => Handle m
-  -> Maybe Credentials
+  -> AuthenticatedUser
   -> CreateDraftRequest
   -> m NewsVersion
-run h@Handle {..} credentials request = do
-  actor <- authenticate hAuthenticationHandle credentials
-  authorId' <- guessAuthorId h actor request
-  requireAuthorshipPermission hAuthorizationHandle authorId' actor actionName
+run h@Handle {..} authUser request = do
+  authorId' <- guessAuthorId h authUser request
+  requireAuthorshipPermission hAuthorizationHandle authorId' authUser actionName
   rejectRequestIfInvalid h request
   hCreateNewsVersion (makeCommand request authorId') >>=
     either (throwM . exceptionFromGatewayFailure) pure

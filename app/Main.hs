@@ -459,8 +459,7 @@ createDraftHandlerHandle deps@Deps {..} session =
   HCreateDraft.Handle
     { hCreateDraftHandle =
         ICreateDraft.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hGetAuthorIdByUserIdIfExactlyOne =
               Database.getAuthorIdByUserIdIfExactlyOne $
               sessionDatabaseHandle deps session
@@ -473,6 +472,7 @@ createDraftHandlerHandle deps@Deps {..} session =
     , hPresenter =
         draftCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 publishDraftHandlerHandle :: Deps -> Web.Session -> HPublishDraft.Handle

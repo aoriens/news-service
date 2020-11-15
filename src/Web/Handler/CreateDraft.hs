@@ -7,6 +7,7 @@ module Web.Handler.CreateDraft
   ) where
 
 import Control.Monad.Catch
+import Core.Authentication
 import Core.Author
 import Core.Category
 import Core.Image
@@ -34,14 +35,16 @@ data Handle =
                                           Request -> IO a
     , hPresenter :: NewsVersion -> Response
     , hParseAppURI :: T.Text -> Maybe AppURI
+    , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
 run :: Handle -> Application
 run h@Handle {..} request respond = do
-  creds <- getCredentialsFromRequest request
+  authUser <-
+    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   inDraft <- hLoadJSONRequestBody request
   createDraftRequest <- makeCreateDraftRequest h inDraft
-  version <- I.run hCreateDraftHandle creds createDraftRequest
+  version <- I.run hCreateDraftHandle authUser createDraftRequest
   respond $ hPresenter version
 
 data InDraft =

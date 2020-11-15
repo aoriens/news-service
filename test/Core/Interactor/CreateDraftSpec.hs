@@ -26,17 +26,15 @@ spec
  =
   describe "run" $ do
     let creatorId = AuthorId 6
-    itShouldAuthenticateAndAuthorizeBeforeOperation
-      (AuthorshipPermission creatorId) $ \credentials authenticationHandle authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation (AuthorshipPermission creatorId) $ \authUser authorizationHandle onSuccess -> do
       let h =
             stubHandle
               { hCreateNewsVersion =
                   \_ -> onSuccess >> pure (Right stubNewsVersion)
-              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
           request = stubRequest {cdAuthorId = Just creatorId}
-      _ <- run h credentials request
+      _ <- run h authUser request
       pure ()
     it "should pass author id from request in the AuthorshipPermission" $ do
       let aid = AuthorId 2
@@ -44,13 +42,12 @@ spec
           h =
             stubHandle
               { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
-              , hAuthenticationHandle = noOpAuthenticationHandle
               , hAuthorizationHandle =
                   AuthorizationHandle
                     {hHasPermission = \perm _ -> perm == expectedPermission}
               }
           request = stubRequest {cdAuthorId = Just aid}
-      _ <- run h noCredentials request
+      _ <- run h anyAuthenticatedUser request
       pure ()
     it
       "should pass title, text, author id, category id, main photo, other photos, and tag ids to the gateway" $ do
@@ -79,7 +76,7 @@ spec
                     writeIORef acceptedCommandRef (Just cmd)
                     pure $ Right stubNewsVersion
               }
-      _ <- run h noCredentials request
+      _ <- run h anyAuthenticatedUser request
       acceptedCommand <- readIORef acceptedCommandRef
       cnvTitle <$> acceptedCommand `shouldBe` Just (cdTitle request)
       cnvText <$> acceptedCommand `shouldBe` Just (cdText request)
@@ -94,7 +91,7 @@ spec
           expectedVersion = stubNewsVersion {nvId = NewsVersionId 2}
           h =
             stubHandle {hCreateNewsVersion = \_ -> pure $ Right expectedVersion}
-      version <- run h noCredentials request
+      version <- run h anyAuthenticatedUser request
       version `shouldBe` expectedVersion
     it
       "should throw DependentEntitiesNotFoundException if hCreateNewsVersion returned GUnknownEntityId" $ do
@@ -103,7 +100,7 @@ spec
           h =
             stubHandle
               {hCreateNewsVersion = \_ -> pure . Left $ GUnknownEntityId ids}
-      result <- try $ run h noCredentials request
+      result <- try $ run h anyAuthenticatedUser request
       result `shouldBe` Left (DependentEntitiesNotFoundException ids)
     it "should pass main photo to hRejectDisallowedImage if it's Right Image" $ do
       passedPhotosRef <- newIORef []
@@ -116,7 +113,7 @@ spec
               { hRejectDisallowedImage =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
-      _ <- run h noCredentials request
+      _ <- run h anyAuthenticatedUser request
       readIORef passedPhotosRef `shouldReturn` [photo]
     it
       "should pass all additional photos that are Right Image to hRejectDisallowedImage" $ do
@@ -131,7 +128,7 @@ spec
               { hRejectDisallowedImage =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
-      _ <- run h noCredentials request
+      _ <- run h anyAuthenticatedUser request
       passedPhotos <- readIORef passedPhotosRef
       passedPhotos `shouldMatchList` rightImages
     it
@@ -146,7 +143,7 @@ spec
               { hRejectDisallowedImage =
                   \img -> error $ "Must not invoke with parameter " ++ show img
               }
-      _ <- run h noCredentials request
+      _ <- run h anyAuthenticatedUser request
       pure ()
     it
       "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on main photo" $ do
@@ -157,7 +154,7 @@ spec
               { hRejectDisallowedImage = \_ -> error expectedError
               , hCreateNewsVersion = \_ -> error "Must not invoke"
               }
-      run h noCredentials request `shouldThrow` errorCall expectedError
+      run h anyAuthenticatedUser request `shouldThrow` errorCall expectedError
     it
       "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on an additional photo" $ do
       let expectedError = "expected"
@@ -169,57 +166,53 @@ spec
               { hRejectDisallowedImage = \_ -> error expectedError
               , hCreateNewsVersion = \_ -> error "Must not invoke"
               }
-      run h noCredentials request `shouldThrow` errorCall expectedError
+      run h anyAuthenticatedUser request `shouldThrow` errorCall expectedError
     it
       "should pass authorId to hCreateNewsVersion from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
       passedAuthorsId <- newIORef []
       let request = stubRequest {cdAuthorId = Nothing}
           expectedAuthorId = AuthorId 1
+          authUser = IdentifiedUser (UserId 1) False []
           h =
             stubHandle
-              { hAuthenticationHandle =
-                  authenticationHandleReturningIdentifiedUser
-              , hGetAuthorIdByUserIdIfExactlyOne =
+              { hGetAuthorIdByUserIdIfExactlyOne =
                   \_ -> pure $ Just expectedAuthorId
               , hCreateNewsVersion =
                   \cmd -> do
                     modifyIORef' passedAuthorsId (cnvAuthorId cmd :)
                     pure (Right stubNewsVersion)
               }
-      _ <- run h noCredentials request
+      _ <- run h authUser request
       readIORef passedAuthorsId `shouldReturn` [expectedAuthorId]
     it
       "should pass authorId to authorization from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
       let request = stubRequest {cdAuthorId = Nothing}
           expectedAuthorId = AuthorId 1
+          authUser = IdentifiedUser (UserId 1) False []
           h =
             stubHandle
-              { hAuthenticationHandle =
-                  authenticationHandleReturningIdentifiedUser
-              , hGetAuthorIdByUserIdIfExactlyOne =
+              { hGetAuthorIdByUserIdIfExactlyOne =
                   \_ -> pure $ Just expectedAuthorId
               , hAuthorizationHandle =
                   AuthorizationHandle $ \perm _ ->
                     perm == AuthorshipPermission expectedAuthorId
               }
-      _ <- run h noCredentials request
+      _ <- run h authUser request
       pure ()
     it
       "should pass UserId from AuthenticatedUser from authenticate to hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
       passedUserIds <- newIORef []
       let request = stubRequest {cdAuthorId = Nothing}
           expectedUserId = UserId 1
+          authUser = IdentifiedUser expectedUserId False []
           h =
             stubHandle
               { hGetAuthorIdByUserIdIfExactlyOne =
                   \userId' -> do
                     modifyIORef' passedUserIds (userId' :)
                     pure $ Just $ AuthorId 2
-              , hAuthenticationHandle =
-                  AuthenticationHandle $ \_ ->
-                    pure $ IdentifiedUser expectedUserId False []
               }
-      _ <- run h noCredentials request
+      _ <- run h authUser request
       readIORef passedUserIds `shouldReturn` [expectedUserId]
     it
       "should not invoke hGetAuthorsOfUser if author is specified in CreateDraftRequest" $ do
@@ -230,29 +223,24 @@ spec
               { hGetAuthorIdByUserIdIfExactlyOne =
                   \_ -> modifyIORef' invoked succ >> pure Nothing
               }
-      _ <- run h noCredentials request
+      _ <- run h anyAuthenticatedUser request
       readIORef invoked `shouldReturn` False
     it
       "should throw QueryException if CreateDraftRequest has no author and hGetAuthorIdByUserIdIfExactlyOne returns Nothing" $ do
       let request = stubRequest {cdAuthorId = Nothing}
-          h =
-            stubHandle
-              { hAuthenticationHandle =
-                  authenticationHandleReturningIdentifiedUser
-              , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
-              }
-      run h noCredentials request `shouldThrow` isQueryException
+          authUser = IdentifiedUser (UserId 1) False []
+          h = stubHandle {hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing}
+      run h authUser request `shouldThrow` isQueryException
     it
       "should throw UserNotIdentifiedException if CreateDraftRequest has no author and authenticate returns AnonymousUser" $ do
       let request = stubRequest {cdAuthorId = Nothing}
+          authUser = AnonymousUser
           h =
             stubHandle
-              { hAuthenticationHandle =
-                  AuthenticationHandle $ \_ -> pure AnonymousUser
-              , hGetAuthorIdByUserIdIfExactlyOne =
+              { hGetAuthorIdByUserIdIfExactlyOne =
                   \_ -> pure $ Just $ AuthorId 1
               }
-      run h noCredentials request `shouldThrow` isUserNotIdentifiedException
+      run h authUser request `shouldThrow` isUserNotIdentifiedException
 
 stubNewsVersion :: NewsVersion
 stubNewsVersion =
@@ -302,7 +290,6 @@ stubHandle =
   Handle
     { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
     , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
-    , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     , hRejectDisallowedImage = \_ -> pure ()
     }
