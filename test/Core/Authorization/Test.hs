@@ -22,37 +22,33 @@ itShouldAuthenticateAndAuthorizeBeforeOperation ::
 itShouldAuthenticateAndAuthorizeBeforeOperation expectedPerm test = do
   itShouldAuthenticateBeforeOperation $ \creds authenticationH ->
     test creds authenticationH noOpAuthorizationHandle
-  itShouldAuthorizeBeforeOperation expectedPerm $ test Nothing
+  itShouldAuthorizeBeforeOperation expectedPerm $ \authUser ->
+    test Nothing $ AuthenticationHandle $ \_ -> pure authUser
 
 itShouldAuthorizeBeforeOperation ::
      HasCallStack
   => Permission
-  -> (AuthenticationHandle IO -> AuthorizationHandle -> OnSuccess -> IO ())
+  -> (AuthenticatedUser -> AuthorizationHandle -> OnSuccess -> IO ())
   -> Spec
 itShouldAuthorizeBeforeOperation expectedPerm test = do
   it "should perform action if authorization succeeds" $ do
-    let authenticationH = noOpAuthenticationHandle
-        authorizationH = noOpAuthorizationHandle
+    let authorizationH = noOpAuthorizationHandle
     shouldInvokeAtLeastOnce "authorization" $ \onSuccess ->
-      test authenticationH authorizationH onSuccess
+      test anyAuthenticatedUser authorizationH onSuccess
   it
     "should throw NoPermissionException if AuthorizationHandle.hHasPermission returns False" $ do
-    let authenticationH = noOpAuthenticationHandle
-        authorizationH = AuthorizationHandle $ \_ _ -> False
+    let authorizationH = AuthorizationHandle $ \_ _ -> False
         onSuccess = expectationFailure "Action must not succeed"
-    test authenticationH authorizationH onSuccess `shouldThrow`
+    test anyAuthenticatedUser authorizationH onSuccess `shouldThrow`
       isNoPermissionException
-  it
-    "should pass AuthenticatedUser from AuthenticationHandle to AuthorizationHandle" $ do
+  it "should pass the given AuthenticatedUser to AuthorizationHandle" $ do
     let expectedUser = IdentifiedUser (UserId 1872134) False []
-        authenticationHandle = AuthenticationHandle $ \_ -> pure expectedUser
         authorizationHandle = AuthorizationHandle $ const (== expectedUser)
-    test authenticationHandle authorizationHandle (pure ())
+    test expectedUser authorizationHandle (pure ())
   it "should pass a correct permission to AuthorizationHandle" $ do
-    let authenticationHandle = noOpAuthenticationHandle
-        authorizationHandle =
+    let authorizationHandle =
           AuthorizationHandle $ \perm _ -> perm == expectedPerm
-    test authenticationHandle authorizationHandle (pure ())
+    test anyAuthenticatedUser authorizationHandle (pure ())
 
 noOpAuthorizationHandle :: AuthorizationHandle
 noOpAuthorizationHandle = AuthorizationHandle $ \_ _ -> True
