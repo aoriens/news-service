@@ -17,15 +17,14 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
       let catId = CategoryId 1
           h =
             stubHandle
               { hDeleteCategory = \_ _ -> onSuccess >> pure (Right ())
-              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
-      run h credentials catId
+      run h authUser catId
     it
       "should throw DependentEntitiesPreventDeletionException if \
        \the gateway returned Left DependentEntitiesPreventDeletion" $ do
@@ -37,7 +36,7 @@ spec =
                   \_ _ ->
                     pure . Left $ DependentEntitiesPreventDeletion childCatIds
               }
-      r <- try $ run h noCredentials catId
+      r <- try $ run h anyAuthenticatedUser catId
       r `shouldBe`
         Left
           (DependentEntitiesPreventDeletionException
@@ -48,7 +47,7 @@ spec =
        \the gateway returned Left UnknownCategory" $ do
       let catId = CategoryId 1
           h = stubHandle {hDeleteCategory = \_ _ -> pure $ Left UnknownCategory}
-      r <- try $ run h noCredentials catId
+      r <- try $ run h anyAuthenticatedUser catId
       r `shouldBe`
         Left (RequestedEntityNotFoundException $ CategoryEntityId catId)
     it "should pass the CategoryId argument to the gateway delete command" $ do
@@ -60,14 +59,13 @@ spec =
                   \catId _ ->
                     writeIORef passedCategoryId catId >> pure (Right ())
               }
-      run h noCredentials expectedCatId
+      run h anyAuthenticatedUser expectedCatId
       readIORef passedCategoryId `shouldReturn` expectedCatId
 
 stubHandle :: Handle IO
 stubHandle =
   Handle
     { hDeleteCategory = \_ _ -> pure (Right ())
-    , hAuthenticationHandle = noOpAuthenticationHandle
     , hDefaultEntityListRange = PageSpec (PageOffset 0) (PageLimit 0)
     , hAuthorizationHandle = noOpAuthorizationHandle
     }

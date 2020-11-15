@@ -14,15 +14,13 @@ import Core.Pagination
 data Handle m =
   Handle
     { hDeleteCategory :: CategoryId -> PageSpec -> m (Either Failure ())
-    , hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
     , hDefaultEntityListRange :: PageSpec
     }
 
-run :: MonadThrow m => Handle m -> Maybe Credentials -> CategoryId -> m ()
-run Handle {..} credentials categoryId' = do
-  actor <- authenticate hAuthenticationHandle credentials
-  requireAdminPermission hAuthorizationHandle actor "deleting category"
+run :: MonadThrow m => Handle m -> AuthenticatedUser -> CategoryId -> m ()
+run Handle {..} authUser categoryId' = do
+  requireAdminPermission hAuthorizationHandle authUser "deleting category"
   either (throwM . failureToException) pure =<<
     hDeleteCategory categoryId' hDefaultEntityListRange
   where

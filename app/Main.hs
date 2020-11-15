@@ -333,11 +333,11 @@ deleteCategoryHandlerHandle deps@Deps {..} session =
         IDeleteCategory.Handle
           { hDeleteCategory =
               Database.deleteCategory $ sessionDatabaseHandle deps session
-          , hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hDefaultEntityListRange = dDefaultEntityListRange
           }
     , hPresenter = categoryDeletedPresenter
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
