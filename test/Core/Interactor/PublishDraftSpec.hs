@@ -22,17 +22,15 @@ spec
  =
   describe "run" $ do
     let documentAuthorId = AuthorId 6
-    itShouldAuthenticateAndAuthorizeBeforeOperation
-      (AuthorshipPermission documentAuthorId) $ \credentials authenticationHandle authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation (AuthorshipPermission documentAuthorId) $ \authUser authorizationHandle onSuccess -> do
       let h =
             stubHandle
-              { hAuthenticationHandle = authenticationHandle
-              , hAuthorizationHandle = authorizationHandle
+              { hAuthorizationHandle = authorizationHandle
               , hGetDraftAuthor = \_ -> pure $ Right documentAuthorId
               , hCreateNews = \_ _ -> onSuccess >> pure stubNews
               }
           draftId = NewsVersionId 1
-      _ <- run h credentials draftId
+      _ <- run h authUser draftId
       pure ()
     it
       "should throw RequestedEntityNotFoundException if hGetDraftAuthor returns Left UnknownNewsVersionId" $ do
@@ -42,7 +40,7 @@ spec
               , hCreateNews = \_ _ -> error "Must not invoke"
               }
           draftId = NewsVersionId 1
-      run h noCredentials draftId `shouldThrow`
+      run h anyAuthenticatedUser draftId `shouldThrow`
         isRequestedEntityNotFoundException
     it "should pass authorId to authorization from hGetDraftAuthor" $ do
       let authorId' = AuthorId 1
@@ -54,7 +52,7 @@ spec
                     perm == AuthorshipPermission authorId'
               }
           draftId = NewsVersionId 1
-      _ <- run h noCredentials draftId
+      _ <- run h anyAuthenticatedUser draftId
       pure ()
     it "should pass draftId to hGetDraftAuthor" $ do
       passedDraftIds <- newIORef []
@@ -66,7 +64,7 @@ spec
                     pure . Right $ AuthorId 1
               }
           draftId = NewsVersionId 1
-      _ <- run h noCredentials draftId
+      _ <- run h anyAuthenticatedUser draftId
       readIORef passedDraftIds `shouldReturn` [draftId]
     it "should pass date from hGetCurrentDay to hCreateNews" $ do
       passedDates <- newIORef []
@@ -78,7 +76,7 @@ spec
                   \_ day -> modifyIORef' passedDates (day :) >> pure stubNews
               }
           draftId = NewsVersionId 1
-      _ <- run h noCredentials draftId
+      _ <- run h anyAuthenticatedUser draftId
       readIORef passedDates `shouldReturn` [expectedDay]
     it "should pass draftId to hCreateNews" $ do
       passedIds <- newIORef []
@@ -88,13 +86,13 @@ spec
                   \id' _ -> modifyIORef' passedIds (id' :) >> pure stubNews
               }
           draftId = NewsVersionId 1
-      _ <- run h noCredentials draftId
+      _ <- run h anyAuthenticatedUser draftId
       readIORef passedIds `shouldReturn` [draftId]
     it "should return news from hCreateNews" $ do
       let expectedNews = stubNews {newsId = NewsId 1}
           h = stubHandle {hCreateNews = \_ _ -> pure expectedNews}
           draftId = NewsVersionId 1
-      news <- run h noCredentials draftId
+      news <- run h anyAuthenticatedUser draftId
       news `shouldBe` expectedNews
 
 stubNews :: News
@@ -136,8 +134,7 @@ stubNews =
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    { hAuthenticationHandle = noOpAuthenticationHandle
-    , hAuthorizationHandle = noOpAuthorizationHandle
+    { hAuthorizationHandle = noOpAuthorizationHandle
     , hGetDraftAuthor = \_ -> pure $ Right $ AuthorId 999
     , hGetCurrentDay = pure $ ModifiedJulianDay 0
     , hCreateNews = \_ _ -> pure stubNews

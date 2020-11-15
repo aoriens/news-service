@@ -3,6 +3,7 @@ module Web.Handler.PublishDraft
   , Handle(..)
   ) where
 
+import Core.Authentication
 import qualified Core.Interactor.PublishDraft as I
 import Core.News
 import Web.Application
@@ -12,10 +13,12 @@ data Handle =
   Handle
     { hPublishDraftHandle :: I.Handle IO
     , hPresenter :: News -> Response
+    , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
 run :: Handle -> NewsVersionId -> Application
 run Handle {..} vId request respond = do
-  creds <- getCredentialsFromRequest request
-  news <- I.run hPublishDraftHandle creds vId
+  authUser <-
+    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  news <- I.run hPublishDraftHandle authUser vId
   respond $ hPresenter news

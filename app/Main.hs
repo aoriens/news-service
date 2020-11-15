@@ -480,8 +480,7 @@ publishDraftHandlerHandle deps@Deps {..} session =
   HPublishDraft.Handle
     { hPublishDraftHandle =
         IPublishDraft.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hGetDraftAuthor =
               Database.getDraftAuthor $ sessionDatabaseHandle deps session
           , hGetCurrentDay = getCurrentDay
@@ -490,6 +489,7 @@ publishDraftHandlerHandle deps@Deps {..} session =
           }
     , hPresenter =
         newsCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be
