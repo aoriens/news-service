@@ -268,11 +268,11 @@ getAuthorHandlerHandle deps@Deps {..} session =
   HGetAuthor.Handle
     { hGetAuthorHandle =
         IGetAuthor.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hGetAuthor = Database.getAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter = authorPresenter dRepresentationBuilderHandle
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 deleteAuthorHandlerHandle :: Deps -> Web.Session -> HDeleteAuthor.Handle

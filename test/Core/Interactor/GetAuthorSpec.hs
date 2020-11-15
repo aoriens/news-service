@@ -16,18 +16,17 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
       let h =
             defaultHandle
               { hGetAuthor = \_ -> onSuccess >> pure (Just stubAuthor)
-              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
-      void $ run h credentials stubAuthorId
+      void $ run h authUser stubAuthorId
     it "should return gateway output if the actor is admin" $ do
       let expectedAuthor = Just stubAuthor {authorId = AuthorId 9}
           h = defaultHandle {hGetAuthor = const $ pure expectedAuthor}
-      author <- run h noCredentials stubAuthorId
+      author <- run h anyAuthenticatedUser stubAuthorId
       author `shouldBe` expectedAuthor
     it "should pass author id to the gateway" $ do
       passedAuthorId <- newIORef undefined
@@ -35,14 +34,13 @@ spec =
           h =
             defaultHandle
               {hGetAuthor = \i -> writeIORef passedAuthorId i >> pure Nothing}
-      _ <- run h noCredentials expectedAuthorId
+      _ <- run h anyAuthenticatedUser expectedAuthorId
       readIORef passedAuthorId `shouldReturn` expectedAuthorId
 
 defaultHandle :: Handle IO
 defaultHandle =
   Handle
     { hGetAuthor = const $ pure Nothing
-    , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     }
 
