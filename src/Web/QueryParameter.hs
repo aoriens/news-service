@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 -- | Reading parameters from URI query. The module is intended for
 -- being imported qualified.
@@ -88,7 +87,9 @@ instance Applicative Parser where
 data Failure
   = MissingKey Key
   | BadValue Key RawValue
-  deriving (Eq, Show, Generic, NFData)
+  deriving (Eq, Show, Generic)
+
+instance NFData Failure
 
 -- | Runs the query parser on the given query.
 parseQuery :: Http.Query -> Parser a -> Either Failure a
