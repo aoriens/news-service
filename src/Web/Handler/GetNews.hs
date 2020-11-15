@@ -64,6 +64,7 @@ parseNewsFilter = do
   requiredTagNameSubstrings <- collectQueryParameter "required_tag"
   titleSubstrings <- collectQueryParameter "title"
   bodySubstrings <- collectQueryParameter "body"
+  substringEverywhere <- lookupQueryParameter "q"
   pure
     I.NewsFilter
       { nfDateRanges = N.nonEmpty dateRanges
@@ -78,6 +79,7 @@ parseNewsFilter = do
           nonEmptySet requiredTagNameSubstrings
       , nfTitleSubstrings = nonEmptySet titleSubstrings
       , nfBodySubstrings = nonEmptySet bodySubstrings
+      , nfSubstringsAnywhere = Set.singleton <$> substringEverywhere
       }
 
 nonEmptySet :: (Eq a, Hashable a) => [a] -> Maybe (Set.HashSet a)

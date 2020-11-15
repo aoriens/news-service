@@ -57,6 +57,7 @@ data NewsFilter =
     , nfTagNameSubstringsAllRequiredToMatch :: Maybe (Set.HashSet T.Text)
     , nfTitleSubstrings :: Maybe (Set.HashSet T.Text)
     , nfBodySubstrings :: Maybe (Set.HashSet T.Text)
+    , nfSubstringsAnywhere :: Maybe (Set.HashSet T.Text)
     }
 
 emptyNewsFilter :: NewsFilter
@@ -73,6 +74,7 @@ emptyNewsFilter =
     , nfTagNameSubstringsAllRequiredToMatch = Nothing
     , nfTitleSubstrings = Nothing
     , nfBodySubstrings = Nothing
+    , nfSubstringsAnywhere = Nothing
     }
 
 -- | The inclusive range of dates.
@@ -96,6 +98,7 @@ data GatewayNewsFilter =
     , gnfAllTagsFilter :: GatewayNewsAllTagsFilter
     , gnfTitleSubstrings :: Maybe (Set.HashSet T.Text)
     , gnfBodySubstrings :: Maybe (Set.HashSet T.Text)
+    , gnfSubstringsAnywhere :: Maybe (Set.HashSet T.Text)
     }
 
 -- | An author filter. Its fields correspond to filters that should be
@@ -152,6 +155,7 @@ gatewayNewsFilterFromNewsFilter NewsFilter {..} =
     { gnfDateRanges = nfDateRanges
     , gnfTitleSubstrings = excludeEmptyString nfTitleSubstrings
     , gnfBodySubstrings = excludeEmptyString nfBodySubstrings
+    , gnfSubstringsAnywhere = excludeEmptyString nfSubstringsAnywhere
     , gnfAuthorFilter =
         GatewayNewsAuthorFilter
           { gnfAuthorIds = nfAuthorIds

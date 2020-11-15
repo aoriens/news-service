@@ -2,6 +2,7 @@ module Database.Service.SQLBuilders
   ( escapeLikePattern
   , substringLikePattern
   , any
+  , bracket
   , or
   , and
   , between
@@ -34,6 +35,9 @@ substringLikePattern = T.cons '%' . (`T.snoc` '%') . escapeLikePattern
 -- | Wraps an expression into ANY (...) expression.
 any :: Sql.Builder -> Sql.Builder
 any e = "any (" <> e <> ")"
+
+bracket :: Sql.Builder -> Sql.Builder
+bracket e = "(" <> e <> ")"
 
 -- | Creates OR expression to combine two SQL expressions. If either
 -- expression is empty, OR is not used and just another expression is

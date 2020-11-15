@@ -158,6 +158,9 @@ The response contains the image data with the corresponding MIME type.
 Returns a list of [News](#News) entities. Additional parameters may be passed in
 the URI query to filter articles to output:
 
+- `q` - a substring to search everywhere: the article title, body, author name,
+  tags, category. The search is case-insensitive. A news article is output if at
+  least one of the fields contains the substring.
 - `date` - a date or a date range when news is published. The parameter may be
   used many times to specify multiple dates or date ranges. The following
   formats are accepted:
@@ -210,6 +213,7 @@ The parameters are logically combined as follows:
 - AND (`required_tag_id` OR `required_tag`)
 - AND `title`
 - AND `body`
+- AND `q`
 
 If a parameter is missing, it should be excluded, as well as the binary operator
 lacking a parameter.

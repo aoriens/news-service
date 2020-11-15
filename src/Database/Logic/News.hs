@@ -74,7 +74,8 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
       selectNewsAnyTagCondition gnfAnyTagFilter `Sql.and`
       selectNewsAllTagsCondition gnfAllTagsFilter `Sql.and`
       selectNewsTitleCondition gnfTitleSubstrings `Sql.and`
-      selectNewsBodyCondition gnfBodySubstrings
+      selectNewsBodyCondition gnfBodySubstrings `Sql.and`
+      selectNewsSubstringsAnywhereCondition gnfSubstringsAnywhere
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec
 
@@ -95,38 +96,48 @@ sqlWithinDateRange expr dateRange =
 selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
 selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
   maybe mempty idCondition gnfAuthorIds `Sql.or`
-  maybe mempty nameCondition gnfAuthorNameSubstrings
+  maybe mempty selectNewsAuthorSubstringsCondition gnfAuthorNameSubstrings
   where
     idCondition =
       ("authors.author_id =" <>) .
       Sql.any . Sql.param . map getAuthorId . toList
-    nameCondition =
-      (fullName <>) .
-      ("ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
+
+selectNewsAuthorSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
+selectNewsAuthorSubstringsCondition =
+  (fullName <>) .
+  ("ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
+  where
     fullName =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
 
 selectNewsCategoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
 selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
   maybe mempty idCondition gnfCategoryIds `Sql.or`
-  maybe mempty nameCondition gnfCategoryNameSubstrings
+  maybe mempty selectNewsCategorySubstringsCondition gnfCategoryNameSubstrings
   where
     idCondition =
       ("category_id in (select * from descendants_of_categories_with_ids(" <>) .
       (<> "))") . Sql.param . map getCategoryId . toList
-    nameCondition =
-      ("category_id in (select * from descendants_of_categories_named_like(" <>) .
-      (<> "))") . stringsToLikeSubstringPatternsParameter
+
+selectNewsCategorySubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
+selectNewsCategorySubstringsCondition =
+  ("category_id in (select * from descendants_of_categories_named_like(" <>) .
+  (<> "))") . stringsToLikeSubstringPatternsParameter
 
 selectNewsAnyTagCondition :: IGetNews.GatewayNewsAnyTagFilter -> Sql.Builder
 selectNewsAnyTagCondition IGetNews.GatewayNewsAnyTagFilter {..} =
   maybe mempty idCondition gnfTagIdsToMatchAnyTag `Sql.or`
-  maybe mempty nameCondition gnfTagNameSubstringsToMatchAnyTag
+  maybe
+    mempty
+    selectNewsAnyTagSubstringsCondition
+    gnfTagNameSubstringsToMatchAnyTag
   where
     idCondition =
       ("tags.tag_id =" <>) . Sql.any . Sql.param . map getTagId . toList
-    nameCondition =
-      ("tags.name ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
+
+selectNewsAnyTagSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
+selectNewsAnyTagSubstringsCondition =
+  ("tags.name ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
 
 selectNewsAllTagsCondition :: IGetNews.GatewayNewsAllTagsFilter -> Sql.Builder
 selectNewsAllTagsCondition IGetNews.GatewayNewsAllTagsFilter {..} =
@@ -151,6 +162,17 @@ selectNewsBodyCondition =
   maybe mempty $
   ("news_versions.body ilike" <>) .
   Sql.any . stringsToLikeSubstringPatternsParameter
+
+selectNewsSubstringsAnywhereCondition ::
+     Maybe (Set.HashSet T.Text) -> Sql.Builder
+selectNewsSubstringsAnywhereCondition Nothing = mempty
+selectNewsSubstringsAnywhereCondition (Just substrings) =
+  Sql.bracket $
+  selectNewsTitleCondition (Just substrings) `Sql.or`
+  selectNewsAuthorSubstringsCondition substrings `Sql.or`
+  selectNewsCategorySubstringsCondition substrings `Sql.or`
+  selectNewsAnyTagSubstringsCondition substrings `Sql.or`
+  selectNewsBodyCondition (Just substrings)
 
 stringsToLikeSubstringPatternsParameter :: Foldable t => t T.Text -> Sql.Builder
 stringsToLikeSubstringPatternsParameter =
