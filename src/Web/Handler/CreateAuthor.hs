@@ -7,6 +7,7 @@ module Web.Handler.CreateAuthor
   ) where
 
 import Control.Exception
+import Core.Authentication
 import Core.Author
 import qualified Core.Interactor.CreateAuthor as I
 import Core.User
@@ -26,16 +27,18 @@ data Handle =
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
     , hPresenter :: Author -> Response
+    , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
 run :: Handle -> Application
 run Handle {..} request respond = do
-  creds <- getCredentialsFromRequest request
+  authUser <-
+    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   inAuthor <- hLoadJSONRequestBody request
   result <-
     I.run
       hCreateAuthorHandle
-      creds
+      authUser
       (UserId $ iaUserId inAuthor)
       (iaDescription inAuthor)
   author <-

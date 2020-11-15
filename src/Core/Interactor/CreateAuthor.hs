@@ -12,21 +12,19 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthenticationHandle :: AuthenticationHandle m
-    , hCreateAuthor :: UserId -> T.Text -> m (Either Failure Author)
+    { hCreateAuthor :: UserId -> T.Text -> m (Either Failure Author)
     , hAuthorizationHandle :: AuthorizationHandle
     }
 
 run ::
      MonadThrow m
   => Handle m
-  -> Maybe Credentials
+  -> AuthenticatedUser
   -> UserId
   -> T.Text
   -> m (Either Failure Author)
-run Handle {..} credentials uid description = do
-  actor <- authenticate hAuthenticationHandle credentials
-  requireAdminPermission hAuthorizationHandle actor "create an author"
+run Handle {..} authUser uid description = do
+  requireAdminPermission hAuthorizationHandle authUser "create an author"
   hCreateAuthor uid description
 
 data Failure =

@@ -18,16 +18,15 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
       let uid = UserId 1
           description = ""
           h =
             stubHandle
               { hCreateAuthor = \_ _ -> onSuccess >> pure (Right stubAuthor)
-              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
-      void $ run h credentials uid description
+      void $ run h authUser uid description
     it "should pass userId and description data to the gateway in a normal case" $ do
       userIdAndDescription <- newIORef undefined
       let expectedUid = UserId 1
@@ -39,7 +38,7 @@ spec
                     writeIORef userIdAndDescription (uid, desc)
                     pure $ Right stubAuthor
               }
-      _ <- run h noCredentials expectedUid expectedDescription
+      _ <- run h anyAuthenticatedUser expectedUid expectedDescription
       readIORef userIdAndDescription `shouldReturn`
         (expectedUid, expectedDescription)
     it "should return author returned from the gateway if created successfully" $ do
@@ -47,14 +46,14 @@ spec
           description = "q"
           expectedResult = Right stubAuthor
           h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
-      r <- run h noCredentials uid description
+      r <- run h anyAuthenticatedUser uid description
       r `shouldBe` expectedResult
     it "should return failure returned from the gateway if any" $ do
       let uid = UserId 1
           description = "q"
           expectedResult = Left UnknownUserId
           h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
-      r <- run h noCredentials uid description
+      r <- run h anyAuthenticatedUser uid description
       r `shouldBe` expectedResult
 
 stubAuthor :: Author
@@ -76,7 +75,4 @@ stubAuthor =
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    { hCreateAuthor = undefined
-    , hAuthenticationHandle = noOpAuthenticationHandle
-    , hAuthorizationHandle = noOpAuthorizationHandle
-    }
+    {hCreateAuthor = undefined, hAuthorizationHandle = noOpAuthorizationHandle}

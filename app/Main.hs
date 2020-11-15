@@ -224,14 +224,14 @@ createAuthorHandlerHandle deps@Deps {..} session =
   HCreateAuthor.Handle
     { hCreateAuthorHandle =
         ICreateAuthor.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateAuthor =
               Database.createAuthor $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
         authorCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 getAuthorsHandlerHandle :: Deps -> Web.Session -> HGetAuthors.Handle
