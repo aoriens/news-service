@@ -19,7 +19,7 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
       let aid = AuthorId 1
           description = ""
           h =
@@ -28,10 +28,9 @@ spec
                   \_ _ -> do
                     onSuccess
                     pure $ Just stubAuthor
-              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
-      void $ run h credentials aid description
+      void $ run h authUser aid description
     it
       "should pass authorId and description data to the gateway in a normal case" $ do
       authorIdAndDescription <- newIORef undefined
@@ -44,7 +43,7 @@ spec
                     writeIORef authorIdAndDescription (aid, desc)
                     pure $ Just stubAuthor
               }
-      _ <- run h noCredentials expectedAuthorId expectedDescription
+      _ <- run h anyAuthenticatedUser expectedAuthorId expectedDescription
       readIORef authorIdAndDescription `shouldReturn`
         (expectedAuthorId, expectedDescription)
     it "should return author returned from the gateway if updated successfully" $ do
@@ -52,21 +51,20 @@ spec
           description = "q"
           expectedAuthor = stubAuthor
           h = stubHandle {hUpdateAuthor = \_ _ -> pure $ Just expectedAuthor}
-      r <- run h noCredentials aid description
+      r <- run h anyAuthenticatedUser aid description
       r `shouldBe` expectedAuthor
     it
       "should throw RequestedEntityNotFoundException if the gateway returned Nothing" $ do
       let aid = AuthorId 1
           description = "q"
           h = stubHandle {hUpdateAuthor = \_ _ -> pure Nothing}
-      run h noCredentials aid description `shouldThrow`
+      run h anyAuthenticatedUser aid description `shouldThrow`
         isRequestedEntityNotFoundException
 
 stubHandle :: Handle IO
 stubHandle =
   Handle
     { hUpdateAuthor = \_ _ -> pure $ Just stubAuthor {authorId = AuthorId 99993}
-    , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     }
 

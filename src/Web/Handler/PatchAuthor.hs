@@ -6,6 +6,7 @@ module Web.Handler.PatchAuthor
   , Handle(..)
   ) where
 
+import Core.Authentication
 import Core.Author
 import qualified Core.Interactor.UpdateAuthor as I
 import qualified Data.Aeson as A
@@ -22,13 +23,15 @@ data Handle =
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
     , hPresenter :: Author -> Response
+    , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
 run :: Handle -> AuthorId -> Application
 run Handle {..} authorId' request respond = do
-  creds <- getCredentialsFromRequest request
+  authUser <-
+    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   InAuthor {inDescription} <- hLoadJSONRequestBody request
-  newAuthor <- I.run hUpdateAuthorHandle creds authorId' inDescription
+  newAuthor <- I.run hUpdateAuthorHandle authUser authorId' inDescription
   respond $ hPresenter newAuthor
 
 newtype InAuthor =

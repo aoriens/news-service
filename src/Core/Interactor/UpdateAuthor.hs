@@ -12,21 +12,19 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthenticationHandle :: AuthenticationHandle m
-    , hAuthorizationHandle :: AuthorizationHandle
+    { hAuthorizationHandle :: AuthorizationHandle
     , hUpdateAuthor :: AuthorId -> T.Text -> m (Maybe Author)
     }
 
 run ::
      MonadThrow m
   => Handle m
-  -> Maybe Credentials
+  -> AuthenticatedUser
   -> AuthorId
   -> T.Text
   -> m Author
-run Handle {..} credentials aid newDescription = do
-  actor <- authenticate hAuthenticationHandle credentials
-  requireAdminPermission hAuthorizationHandle actor "update author"
+run Handle {..} authUser aid newDescription = do
+  requireAdminPermission hAuthorizationHandle authUser "update author"
   optAuthor' <- hUpdateAuthor aid newDescription
   case optAuthor' of
     Just author' -> pure author'

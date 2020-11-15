@@ -253,14 +253,14 @@ patchAuthorHandlerHandle deps@Deps {..} session =
   HPatchAuthor.Handle
     { hUpdateAuthorHandle =
         IUpdateAuthor.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hUpdateAuthor =
               Database.updateAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter =
         authorUpdatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hLoadJSONRequestBody = dLoadJSONRequestBody
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 getAuthorHandlerHandle :: Deps -> Web.Session -> HGetAuthor.Handle
