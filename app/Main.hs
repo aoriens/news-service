@@ -239,13 +239,13 @@ getAuthorsHandlerHandle deps@Deps {..} session =
   HGetAuthors.Handle
     { hGetAuthorsHandle =
         IGetAuthors.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hGetAuthors =
               Database.getAuthors $ sessionDatabaseHandle deps session
           , hPageSpecParserHandle = dPageSpecParserHandle
           }
     , hPresenter = authorListPresenter dRepresentationBuilderHandle
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 patchAuthorHandlerHandle :: Deps -> Web.Session -> HPatchAuthor.Handle

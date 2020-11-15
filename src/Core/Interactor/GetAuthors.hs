@@ -11,7 +11,6 @@ import Core.Pagination
 data Handle m =
   Handle
     { hGetAuthors :: PageSpec -> m [Author]
-    , hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
     , hPageSpecParserHandle :: PageSpecParserHandle
     }
@@ -19,11 +18,10 @@ data Handle m =
 run ::
      MonadThrow m
   => Handle m
-  -> Maybe Credentials
+  -> AuthenticatedUser
   -> PageSpecQuery
   -> m [Author]
-run Handle {..} credentials pageQuery = do
-  actor <- authenticate hAuthenticationHandle credentials
-  requireAdminPermission hAuthorizationHandle actor "get authors"
+run Handle {..} authUser pageQuery = do
+  requireAdminPermission hAuthorizationHandle authUser "get authors"
   page <- parsePageSpecM hPageSpecParserHandle pageQuery
   hGetAuthors page

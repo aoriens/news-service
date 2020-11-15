@@ -3,6 +3,7 @@ module Web.Handler.GetAuthors
   , Handle(..)
   ) where
 
+import Core.Authentication
 import Core.Author
 import qualified Core.Interactor.GetAuthors as I
 import Web.Application
@@ -14,11 +15,13 @@ data Handle =
   Handle
     { hGetAuthorsHandle :: I.Handle IO
     , hPresenter :: [Author] -> Response
+    , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
 run :: Handle -> Application
 run Handle {..} request respond = do
-  credentials <- getCredentialsFromRequest request
+  authUser <-
+    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
-  authors <- I.run hGetAuthorsHandle credentials pageQuery
+  authors <- I.run hGetAuthorsHandle authUser pageQuery
   respond $ hPresenter authors
