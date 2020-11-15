@@ -18,23 +18,22 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthenticateAndAuthorizeBeforeOperation AdminPermission $ \credentials authenticationHandle authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
       let name = "a"
           h =
             stubHandle
               { hCreateTagNamed = \_ -> onSuccess >> pure stubTag
               , hFindTagByName = \_ -> onSuccess >> pure Nothing
-              , hAuthenticationHandle = authenticationHandle
               , hAuthorizationHandle = authorizationHandle
               }
-      void $ run h credentials name
+      void $ run h authUser name
     it "should pass the name to hFindTagByName in a normal case" $ do
       let expectedName = "a"
       shouldPassValue expectedName "hFindTagByName" $ \onSuccess -> do
         let h =
               stubHandle
                 {hFindTagByName = \name -> onSuccess name >> pure Nothing}
-        void $ run h noCredentials expectedName
+        void $ run h anyAuthenticatedUser expectedName
     it
       "should pass the name to hCreateTagNamed if hFindTagByName returned Nothing" $ do
       let expectedName = "a"
@@ -44,7 +43,7 @@ spec
                 { hFindTagByName = \_ -> pure Nothing
                 , hCreateTagNamed = \name -> onSuccess name >> pure stubTag
                 }
-        void $ run h noCredentials expectedName
+        void $ run h anyAuthenticatedUser expectedName
     it "should not invoke hCreateTagNamed if hFindTagByName returned Just _" $ do
       createTagIsInvoked <- newIORef False
       let name = "a"
@@ -54,7 +53,7 @@ spec
               , hCreateTagNamed =
                   \_ -> writeIORef createTagIsInvoked True >> pure stubTag
               }
-      _ <- run h noCredentials name
+      _ <- run h anyAuthenticatedUser name
       readIORef createTagIsInvoked `shouldReturn` False
     it
       "should return ExistingTagFound with the tag returned from the gateway if such a tag found" $ do
@@ -62,7 +61,7 @@ spec
           tag = stubTag {tagName = "pascal"}
           expectedResult = ExistingTagFound tag
           h = stubHandle {hFindTagByName = \_ -> pure $ Just tag}
-      r <- run h noCredentials name
+      r <- run h anyAuthenticatedUser name
       r `shouldBe` expectedResult
     it
       "should return TagCreated with the tag returned from the gateway if no existing tag found" $ do
@@ -74,12 +73,12 @@ spec
               { hFindTagByName = \_ -> pure Nothing
               , hCreateTagNamed = \_ -> pure tag
               }
-      r <- run h noCredentials name
+      r <- run h anyAuthenticatedUser name
       r `shouldBe` expectedResult
     it "should throw CoreException if the tag name is empty" $ do
       let name = ""
           h = stubHandle
-      run h noCredentials name `shouldThrow` isQueryException
+      run h anyAuthenticatedUser name `shouldThrow` isQueryException
 
 stubTag :: Tag
 stubTag = Tag {tagName = "q", tagId = TagId 1}
@@ -89,6 +88,5 @@ stubHandle =
   Handle
     { hCreateTagNamed = \_ -> pure stubTag
     , hFindTagByName = \_ -> pure Nothing
-    , hAuthenticationHandle = noOpAuthenticationHandle
     , hAuthorizationHandle = noOpAuthorizationHandle
     }

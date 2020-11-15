@@ -422,8 +422,7 @@ createTagHandlerHandle deps@Deps {..} session =
   HCreateTag.Handle
     { hCreateTagHandle =
         ICreateTag.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateTagNamed =
               Database.createTagNamed $ sessionDatabaseHandle deps session
           , hFindTagByName =
@@ -432,6 +431,7 @@ createTagHandlerHandle deps@Deps {..} session =
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
         tagCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 getTagHandlerHandle :: Deps -> Web.Session -> HGetTag.Handle

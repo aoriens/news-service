@@ -13,8 +13,7 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthenticationHandle :: AuthenticationHandle m
-    , hCreateTagNamed :: T.Text -> m Tag
+    { hCreateTagNamed :: T.Text -> m Tag
     , hFindTagByName :: T.Text -> m (Maybe Tag)
     , hAuthorizationHandle :: AuthorizationHandle
     }
@@ -24,10 +23,9 @@ data Result
   | ExistingTagFound Tag
   deriving (Show, Eq)
 
-run :: MonadThrow m => Handle m -> Maybe Credentials -> T.Text -> m Result
-run Handle {..} credentials newTagName = do
-  actor <- authenticate hAuthenticationHandle credentials
-  requireAdminPermission hAuthorizationHandle actor "create a tag"
+run :: MonadThrow m => Handle m -> AuthenticatedUser -> T.Text -> m Result
+run Handle {..} authUser newTagName = do
+  requireAdminPermission hAuthorizationHandle authUser "create a tag"
   when (T.null newTagName) $
     throwM (QueryException "The tag name must not be empty")
   optExistingTag <- hFindTagByName newTagName
