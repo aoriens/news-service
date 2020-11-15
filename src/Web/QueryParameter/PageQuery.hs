@@ -5,10 +5,10 @@ module Web.QueryParameter.PageQuery
   ) where
 
 import Core.Pagination
-import Web.QueryParameter
+import qualified Web.QueryParameter as QueryParameter
 
-parsePageQuery :: QueryParser PageSpecQuery
+parsePageQuery :: QueryParameter.Parser PageSpecQuery
 parsePageQuery = do
-  pageQueryLimit <- lookupQueryParameter "limit"
-  pageQueryOffset <- lookupQueryParameter "offset"
+  pageQueryLimit <- QueryParameter.lookup "limit"
+  pageQueryOffset <- QueryParameter.lookup "offset"
   pure PageSpecQuery {..}

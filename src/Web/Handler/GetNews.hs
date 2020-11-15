@@ -22,7 +22,7 @@ import qualified Data.List.NonEmpty as N
 import qualified Data.Text as T
 import Data.Time.Format.ISO8601
 import Web.Application
-import Web.QueryParameter
+import qualified Web.QueryParameter as QueryParameter
 import Web.QueryParameter.PageQuery
 
 data Handle =
@@ -36,35 +36,35 @@ data Handle =
 run :: Handle -> Application
 run Handle {..} request respond = do
   (pageQuery, newsFilter) <-
-    parseQueryM (requestQueryString request) parseParams
+    QueryParameter.parseQueryM (requestQueryString request) parseParams
   news <- I.getNews hGetNewsHandle newsFilter pageQuery
   respond $ hPresenter news
 
-parseParams :: QueryParser (PageSpecQuery, I.Filter)
+parseParams :: QueryParameter.Parser (PageSpecQuery, I.Filter)
 parseParams = liftA2 (,) parsePageQuery parseFilter
 
-parseFilter :: QueryParser I.Filter
+parseFilter :: QueryParameter.Parser I.Filter
 parseFilter = do
-  dateRanges <- fmap getDateRange <$> collectQueryParameter "date"
+  dateRanges <- fmap getDateRange <$> QueryParameter.collect "date"
   authorIds <-
-    map AuthorId . concatMap getCommaSeparatedList <$>
-    collectQueryParameter "author_id"
-  authorNameSubstrings <- collectQueryParameter "author"
+    map AuthorId . concatMap QueryParameter.getCommaSeparatedList <$>
+    QueryParameter.collect "author_id"
+  authorNameSubstrings <- QueryParameter.collect "author"
   categoryIds <-
-    map CategoryId . concatMap getCommaSeparatedList <$>
-    collectQueryParameter "category_id"
-  categoryNameSubstrings <- collectQueryParameter "category"
+    map CategoryId . concatMap QueryParameter.getCommaSeparatedList <$>
+    QueryParameter.collect "category_id"
+  categoryNameSubstrings <- QueryParameter.collect "category"
   anyTagIds <-
-    map TagId . concatMap getCommaSeparatedList <$>
-    collectQueryParameter "tag_id"
-  anyTagNameSubstrings <- collectQueryParameter "tag"
+    map TagId . concatMap QueryParameter.getCommaSeparatedList <$>
+    QueryParameter.collect "tag_id"
+  anyTagNameSubstrings <- QueryParameter.collect "tag"
   requiredTagIds <-
-    map TagId . concatMap getCommaSeparatedList <$>
-    collectQueryParameter "required_tag_id"
-  requiredTagNameSubstrings <- collectQueryParameter "required_tag"
-  titleSubstrings <- collectQueryParameter "title"
-  bodySubstrings <- collectQueryParameter "body"
-  substringEverywhere <- lookupQueryParameter "q"
+    map TagId . concatMap QueryParameter.getCommaSeparatedList <$>
+    QueryParameter.collect "required_tag_id"
+  requiredTagNameSubstrings <- QueryParameter.collect "required_tag"
+  titleSubstrings <- QueryParameter.collect "title"
+  bodySubstrings <- QueryParameter.collect "body"
+  substringEverywhere <- QueryParameter.lookup "q"
   pure
     I.Filter
       { fDateRanges = N.nonEmpty dateRanges
@@ -92,12 +92,13 @@ newtype DateRange =
     { getDateRange :: I.NewsDateRange
     }
 
-instance QueryParameter DateRange where
-  parseQueryParameter = fmap DateRange . parseDateRange
+instance QueryParameter.Parses DateRange where
+  parse = fmap DateRange . parseDateRange
 
 parseDateRange :: Maybe B.ByteString -> Maybe I.NewsDateRange
 parseDateRange str =
-  case map T.unpack . getCommaSeparatedList <$> parseQueryParameter str of
+  case map T.unpack . QueryParameter.getCommaSeparatedList <$>
+       QueryParameter.parse str of
     Just [s] -> (\day -> I.NewsSinceUntil day day) <$> iso8601ParseM s
     Just ["", s2] -> I.NewsUntil <$> iso8601ParseM s2
     Just [s1, ""] -> I.NewsSince <$> iso8601ParseM s1

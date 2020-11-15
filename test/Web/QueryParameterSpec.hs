@@ -14,173 +14,177 @@ import Data.Proxy
 import Prelude hiding (lookup)
 import Test.Hspec
 import Test.QuickCheck
-import Web.QueryParameter
+import qualified Web.QueryParameter as QueryParameter
 
 spec :: Spec
 spec = do
-  describe "parseQueryParameter" $ do
+  describe "parse" $ do
     it "should parse values in range" $ do
-      parseQueryParameter (Just "1") `shouldBe` Just (1 :: Int)
-      parseQueryParameter (Just "1") `shouldBe` Just (1 :: Int32)
+      QueryParameter.parse (Just "1") `shouldBe` Just (1 :: Int)
+      QueryParameter.parse (Just "1") `shouldBe` Just (1 :: Int32)
     it "should not parse from Nothing" $ do
-      parseQueryParameter Nothing `shouldBe` (Nothing :: Maybe Int)
-      parseQueryParameter Nothing `shouldBe` (Nothing :: Maybe Int32)
+      QueryParameter.parse Nothing `shouldBe` (Nothing :: Maybe Int)
+      QueryParameter.parse Nothing `shouldBe` (Nothing :: Maybe Int32)
     it "should not parse from malformed values" $ do
-      parseQueryParameter (Just "") `shouldBe` (Nothing :: Maybe Int)
-      parseQueryParameter (Just "q") `shouldBe` (Nothing :: Maybe Int)
-      parseQueryParameter (Just "1q") `shouldBe` (Nothing :: Maybe Int)
-      parseQueryParameter (Just "1.0") `shouldBe` (Nothing :: Maybe Int)
-      parseQueryParameter (Just "") `shouldBe` (Nothing :: Maybe Int32)
-      parseQueryParameter (Just "q") `shouldBe` (Nothing :: Maybe Int32)
-      parseQueryParameter (Just "1.0") `shouldBe` (Nothing :: Maybe Int32)
-      parseQueryParameter (Just "1q") `shouldBe` (Nothing :: Maybe Int32)
+      QueryParameter.parse (Just "") `shouldBe` (Nothing :: Maybe Int)
+      QueryParameter.parse (Just "q") `shouldBe` (Nothing :: Maybe Int)
+      QueryParameter.parse (Just "1q") `shouldBe` (Nothing :: Maybe Int)
+      QueryParameter.parse (Just "1.0") `shouldBe` (Nothing :: Maybe Int)
+      QueryParameter.parse (Just "") `shouldBe` (Nothing :: Maybe Int32)
+      QueryParameter.parse (Just "q") `shouldBe` (Nothing :: Maybe Int32)
+      QueryParameter.parse (Just "1.0") `shouldBe` (Nothing :: Maybe Int32)
+      QueryParameter.parse (Just "1q") `shouldBe` (Nothing :: Maybe Int32)
     it "should not parse from values out of range" $ do
-      parseQueryParameter (Just (greaterMaxBoundString (Proxy :: Proxy Int32))) `shouldBe`
+      QueryParameter.parse (Just (greaterMaxBoundString (Proxy :: Proxy Int32))) `shouldBe`
         (Nothing :: Maybe Int32)
-      parseQueryParameter (Just (lessMinBoundString (Proxy :: Proxy Int32))) `shouldBe`
+      QueryParameter.parse (Just (lessMinBoundString (Proxy :: Proxy Int32))) `shouldBe`
         (Nothing :: Maybe Int32)
-      parseQueryParameter (Just (greaterMaxBoundString (Proxy :: Proxy Int))) `shouldBe`
+      QueryParameter.parse (Just (greaterMaxBoundString (Proxy :: Proxy Int))) `shouldBe`
         (Nothing :: Maybe Int)
-      parseQueryParameter (Just (lessMinBoundString (Proxy :: Proxy Int))) `shouldBe`
+      QueryParameter.parse (Just (lessMinBoundString (Proxy :: Proxy Int))) `shouldBe`
         (Nothing :: Maybe Int)
-  describe "lookupRawQueryParameter" $ do
+  describe "lookupRaw" $ do
     it "should find an existing key with a value" $ do
-      let parser = lookupRawQueryParameter "k"
+      let parser = QueryParameter.lookupRaw "k"
           query = [("k", Just "value")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right (Just (Just "value"))
     it
-      "should find an existing key with a value if collectRawQueryParameter is invoked with the same key too" $ do
+      "should find an existing key with a value if collectRaw is invoked with the same key too" $ do
       let parser =
-            collectRawQueryParameter "k" *> lookupRawQueryParameter "k" <*
-            collectRawQueryParameter "k"
+            QueryParameter.collectRaw "k" *> QueryParameter.lookupRaw "k" <*
+            QueryParameter.collectRaw "k"
           query = [("k", Just "value")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right (Just (Just "value"))
     it "should find an existing key with a missing value" $ do
-      let parser = lookupRawQueryParameter "k"
+      let parser = QueryParameter.lookupRaw "k"
           query = [("k", Nothing)]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right (Just Nothing)
     it "should return Nothing for missing key" $ do
-      let parser = lookupRawQueryParameter "k"
+      let parser = QueryParameter.lookupRaw "k"
           query = [("bad", Just "value")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right Nothing
-  describe "collectRawQueryParameter" $ do
+  describe "QueryParameter.collectRaw" $ do
     it "should find all existing values for key value while keeping order" $ do
-      let parser = collectRawQueryParameter "k"
+      let parser = QueryParameter.collectRaw "k"
           query = [("k", Just "1"), ("k", Just "1"), ("k", Just "2")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right [Just "1", Just "1", Just "2"]
     it
-      "should find all existing values for the key while keeping order if collectRawQueryParameter invoked twice with the same key" $ do
-      let parser = collectRawQueryParameter "k" *> collectRawQueryParameter "k"
-          query = [("k", Just "1"), ("k", Just "1"), ("k", Just "2")]
-          r = parseQuery query parser
-      r `shouldBe` Right [Just "1", Just "1", Just "2"]
-    it
-      "should find all existing values for the key while keeping order if lookupRawQueryParameter invoked with the same key too" $ do
+      "should find all existing values for the key while keeping order if QueryParameter.collectRaw invoked twice with the same key" $ do
       let parser =
-            lookupRawQueryParameter "k" *> collectRawQueryParameter "k" <*
-            lookupRawQueryParameter "k"
+            QueryParameter.collectRaw "k" *> QueryParameter.collectRaw "k"
           query = [("k", Just "1"), ("k", Just "1"), ("k", Just "2")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Right [Just "1", Just "1", Just "2"]
+    it
+      "should find all existing values for the key while keeping order if QueryParameter.lookupRaw invoked with the same key too" $ do
+      let parser =
+            QueryParameter.lookupRaw "k" *> QueryParameter.collectRaw "k" <*
+            QueryParameter.lookupRaw "k"
+          query = [("k", Just "1"), ("k", Just "1"), ("k", Just "2")]
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right [Just "1", Just "1", Just "2"]
     it "should find all existing keys with missing values" $ do
-      let parser = collectRawQueryParameter "k"
+      let parser = QueryParameter.collectRaw "k"
           query = [("k", Nothing), ("k", Just "")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right [Nothing, Just ""]
     it "should return [] for missing key" $ do
-      let parser = collectRawQueryParameter "k"
+      let parser = QueryParameter.collectRaw "k"
           query = [("bad", Just "value")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right []
     it "should not return values for non-matching keys" $ do
-      let parser = collectRawQueryParameter "k"
+      let parser = QueryParameter.collectRaw "k"
           query = [("bad", Just "bad"), ("k", Just "good")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right [Just "good"]
-  describe "lookupQueryParameter" $ do
+  describe "lookup" $ do
     it "should parse a valid value for a found key" $ do
-      let parser = lookupQueryParameter "k"
+      let parser = QueryParameter.lookup "k"
           query = [("k", Just "1")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right (Just (1 :: Int))
     it "should return Nothing for a missing key" $ do
-      let parser = lookupQueryParameter "k" :: QueryParser (Maybe Int)
+      let parser =
+            QueryParameter.lookup "k" :: QueryParameter.Parser (Maybe Int)
           query = [("bad", Just "1")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right Nothing
     it "should return BadValue when parsing fails" $ do
-      let parser = lookupQueryParameter "k" :: QueryParser (Maybe DoesNotParse)
+      let parser =
+            QueryParameter.lookup "k" :: QueryParameter.Parser (Maybe DoesNotParse)
           query = [("k", Just "")]
-          r = parseQuery query parser
-      r `shouldBe` Left (BadValue "k" (Just ""))
-  describe "requireQueryParameter" $ do
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Left (QueryParameter.BadValue "k" (Just ""))
+  describe "require" $ do
     it "should parse a valid value for a found key" $ do
-      let parser = requireQueryParameter "k"
+      let parser = QueryParameter.require "k"
           query = [("k", Just "1")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right (1 :: Int)
     it "should return MissingKey for a missing key" $ do
-      let parser = requireQueryParameter "k" :: QueryParser Int
+      let parser = QueryParameter.require "k" :: QueryParameter.Parser Int
           query = [("bad", Just "1")]
-          r = parseQuery query parser
-      r `shouldBe` Left (MissingKey "k")
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Left (QueryParameter.MissingKey "k")
     it "should return BadValue when parsing fails" $ do
-      let parser = requireQueryParameter "k" :: QueryParser DoesNotParse
+      let parser =
+            QueryParameter.require "k" :: QueryParameter.Parser DoesNotParse
           query = [("k", Just "")]
-          r = parseQuery query parser
-      r `shouldBe` Left (BadValue "k" (Just ""))
-  describe "collectQueryParameter" $ do
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Left (QueryParameter.BadValue "k" (Just ""))
+  describe "collect" $ do
     it "should parse all values if they are valid for a found key" $ do
-      let parser = collectQueryParameter "k"
+      let parser = QueryParameter.collect "k"
           query = [("k", Just "1"), ("k", Just "2")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right ([1, 2] :: [Int])
     it "should return [] for a missing key" $ do
-      let parser = collectQueryParameter "k" :: QueryParser [Int]
+      let parser = QueryParameter.collect "k" :: QueryParameter.Parser [Int]
           query = [("bad", Just "1")]
-          r = parseQuery query parser
+          r = QueryParameter.parseQuery query parser
       r `shouldBe` Right []
     it
       "should return BadValue if the last parameter with the key among several ones cannot be parsed" $ do
-      let parser = collectQueryParameter "k" :: QueryParser [Int]
+      let parser = QueryParameter.collect "k" :: QueryParameter.Parser [Int]
           query = [("k", Just "1"), ("k", Just "bad")]
-          r = parseQuery query parser
-      r `shouldBe` Left (BadValue "k" (Just "bad"))
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Left (QueryParameter.BadValue "k" (Just "bad"))
     it
       "should return BadValue if the first parameter with the key among several ones cannot be parsed" $ do
-      let parser = collectQueryParameter "k" :: QueryParser [Int]
+      let parser = QueryParameter.collect "k" :: QueryParameter.Parser [Int]
           query = [("k", Just "bad"), ("k", Just "1")]
-          r = parseQuery query parser
-      r `shouldBe` Left (BadValue "k" (Just "bad"))
-  describe "parseQuery" $ do
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Left (QueryParameter.BadValue "k" (Just "bad"))
+  describe "QueryParameter.parseQuery" $ do
     it "should not evaluate query items after all keys are found" $ do
       let query = [("a", Nothing), ("b", Nothing), error "Must not evaluate"]
           parser =
             liftA2
               (,)
-              (lookupRawQueryParameter "a")
-              (lookupRawQueryParameter "b")
-          r = parseQuery query parser
+              (QueryParameter.lookupRaw "a")
+              (QueryParameter.lookupRaw "b")
+          r = QueryParameter.parseQuery query parser
       -- assert: does not throw
       void $ evaluate $ force r
     it "should find all parameters if they are in the query" $
       property $ \keys -> do
         let bsKeys = map (BS8.pack . getASCIIString) keys
             query = map (, Nothing) bsKeys
-            parser = traverse lookupRawQueryParameter bsKeys
-            (Right rs) = parseQuery query parser
+            parser = traverse QueryParameter.lookupRaw bsKeys
+            (Right rs) = QueryParameter.parseQuery query parser
         rs `shouldSatisfy` all (== Just Nothing)
     it "should not evaluate the query when using pure parser" $
       property $ \x -> do
         let _ = x :: Int
             query = error "Must not evaluate"
             parser = pure x
-            r = parseQuery query parser
+            r = QueryParameter.parseQuery query parser
       -- assert: does not throw
         void $ evaluate $ force r
     it "should not evaluate the query when using liftA2 of pure parsers" $
@@ -189,7 +193,7 @@ spec = do
             query = error "Must not evaluate"
             parser1 = pure x
             parser = liftA2 (+) parser1 (pure y)
-            r = parseQuery query parser
+            r = QueryParameter.parseQuery query parser
       -- assert: does not throw
         void $ evaluate $ force r
     it "should not evaluate the query when using fmap over a pure parser" $
@@ -198,7 +202,7 @@ spec = do
             query = error "Must not evaluate"
             parser1 = pure x
             parser = (10 +) <$> parser1
-            r = parseQuery query parser
+            r = QueryParameter.parseQuery query parser
       -- assert: does not throw
         void $ evaluate $ force r
 
@@ -216,5 +220,5 @@ data DoesNotParse =
   DoesNotParse
   deriving (Show, Eq)
 
-instance QueryParameter DoesNotParse where
-  parseQueryParameter _ = Nothing
+instance QueryParameter.Parses DoesNotParse where
+  parse _ = Nothing

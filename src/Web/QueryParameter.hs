@@ -1,18 +1,19 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
--- | Reading parameters from URI query.
+-- | Reading parameters from URI query. The module is intended for
+-- being imported qualified.
 module Web.QueryParameter
-  ( QueryParser
+  ( Parser
   , parseQuery
   , parseQueryM
-  , requireQueryParameter
-  , lookupQueryParameter
-  , collectQueryParameter
-  , lookupRawQueryParameter
-  , collectRawQueryParameter
+  , require
+  , lookup
+  , collect
+  , lookupRaw
+  , collectRaw
   , Failure(..)
-  , QueryParameter(..)
+  , Parses(..)
   , CommaSeparatedList(..)
   ) where
 
@@ -35,6 +36,7 @@ import Data.Time
 import Data.Time.Format.ISO8601
 import GHC.Generics
 import qualified Network.HTTP.Types as Http
+import Prelude hiding (lookup)
 import qualified Web.Exception as E
 
 type Key = B.ByteString
@@ -48,8 +50,8 @@ type RawValue = Maybe B.ByteString
 -- parsing query parameters in the applicative style. It traverses the
 -- query once only and stops as soon as all interesting parameters are
 -- found.
-data QueryParser a =
-  QueryParser
+data Parser a =
+  Parser
     { qKeys :: !(DL.DList (Key, SearchType))
     , qParameterReader :: !(ParameterReader a)
     , qMayScanPartially :: !Bool
@@ -69,15 +71,15 @@ data Searched
   | FoundOne !RawValue
   | Collected !(DL.DList RawValue)
 
-instance Functor QueryParser where
+instance Functor Parser where
   fmap f parser = parser {qParameterReader = f <$> qParameterReader parser}
 
-instance Applicative QueryParser where
+instance Applicative Parser where
   pure v =
-    QueryParser
+    Parser
       {qKeys = DL.empty, qParameterReader = pure v, qMayScanPartially = True}
   pf <*> px =
-    QueryParser
+    Parser
       { qKeys = qKeys pf <> qKeys px
       , qParameterReader = qParameterReader pf <*> qParameterReader px
       , qMayScanPartially = qMayScanPartially pf && qMayScanPartially px
@@ -89,8 +91,8 @@ data Failure
   deriving (Eq, Show, Generic, NFData)
 
 -- | Runs the query parser on the given query.
-parseQuery :: Http.Query -> QueryParser a -> Either Failure a
-parseQuery items QueryParser {..} = runReaderT qParameterReader resultingMap
+parseQuery :: Http.Query -> Parser a -> Either Failure a
+parseQuery items Parser {..} = runReaderT qParameterReader resultingMap
   where
     resultingMap
       | qMayScanPartially =
@@ -133,7 +135,7 @@ mergeValue skip save lookedUp newValue =
 
 -- | Runs 'parseQuery' and throws 'BadExceptionRequest' in case of
 -- parse failure.
-parseQueryM :: MonadThrow m => Http.Query -> QueryParser a -> m a
+parseQueryM :: MonadThrow m => Http.Query -> Parser a -> m a
 parseQueryM query parser =
   either (throwM . formatException) pure $ parseQuery query parser
   where
@@ -152,9 +154,9 @@ parseQueryM query parser =
         ]
 
 -- | Finds a raw value for the given key. If none found, returns Nothing.
-lookupRawQueryParameter :: Key -> QueryParser (Maybe RawValue)
-lookupRawQueryParameter key =
-  QueryParser
+lookupRaw :: Key -> Parser (Maybe RawValue)
+lookupRaw key =
+  Parser
     { qKeys = DL.singleton (key, FindFirst)
     , qParameterReader = ReaderT $ Right . (searchedToMaybe <=< HM.lookup key)
     , qMayScanPartially = True
@@ -165,14 +167,14 @@ searchedToMaybe SearchedOne = Nothing
 searchedToMaybe (FoundOne v) = Just v
 searchedToMaybe (Collected list) = listToMaybe $ DL.toList list
 
-collectQueryParameter :: QueryParameter a => Key -> QueryParser [a]
-collectQueryParameter key = collectRawQueryParameter key `bindReader` f
+collect :: Parses a => Key -> Parser [a]
+collect key = collectRaw key `bindReader` f
   where
-    f = lift . mapM (parseQueryParameterE key)
+    f = lift . mapM (parseE key)
 
-collectRawQueryParameter :: Key -> QueryParser [RawValue]
-collectRawQueryParameter key =
-  QueryParser
+collectRaw :: Key -> Parser [RawValue]
+collectRaw key =
+  Parser
     { qKeys = DL.singleton (key, FindAll)
     , qParameterReader =
         ReaderT $ Right . (searchedToList <=< maybeToList . HM.lookup key)
@@ -187,50 +189,50 @@ searchedToList (Collected list) = DL.toList list
 -- | Finds a value for the given key and tries to parse it. If none
 -- found, returns Nothing. If a wrong value is found, generates a
 -- failure.
-lookupQueryParameter :: QueryParameter a => Key -> QueryParser (Maybe a)
-lookupQueryParameter key = lookupRawQueryParameter key `bindReader` (lift . f)
+lookup :: Parses a => Key -> Parser (Maybe a)
+lookup key = lookupRaw key `bindReader` (lift . f)
   where
     f Nothing = Right Nothing
-    f (Just rawValue) = Just <$> parseQueryParameterE key rawValue
+    f (Just rawValue) = Just <$> parseE key rawValue
 
 -- | Finds a value for the given key and tries to parse it. If none
 -- found or parsing failed, generates a failure.
-requireQueryParameter :: QueryParameter a => Key -> QueryParser a
-requireQueryParameter key = lookupRawQueryParameter key `bindReader` (lift . f)
+require :: Parses a => Key -> Parser a
+require key = lookupRaw key `bindReader` (lift . f)
   where
     f Nothing = Left (MissingKey key)
-    f (Just rawValue) = parseQueryParameterE key rawValue
+    f (Just rawValue) = parseE key rawValue
 
-bindReader :: QueryParser a -> (a -> ParameterReader b) -> QueryParser b
+bindReader :: Parser a -> (a -> ParameterReader b) -> Parser b
 bindReader parser f = parser {qParameterReader = qParameterReader parser >>= f}
 
-parseQueryParameterE :: QueryParameter a => Key -> RawValue -> Either Failure a
-parseQueryParameterE key bs =
-  case parseQueryParameter bs of
+parseE :: Parses a => Key -> RawValue -> Either Failure a
+parseE key bs =
+  case parse bs of
     Just v -> Right v
     Nothing -> Left (BadValue key bs)
 
 -- | Types that can be parsed from an HTTP request query item.
-class QueryParameter a where
-  parseQueryParameter :: RawValue -> Maybe a -- ^ Parses a value from an optional bytestring value. It should
+class Parses a where
+  parse :: RawValue -> Maybe a -- ^ Parses a value from an optional bytestring value. It should
   -- return Nothing in case of parse error.
 
 -- | Parsing always succeeds. It may be used to check for parameter
 -- existence.
-instance QueryParameter () where
-  parseQueryParameter _ = Just ()
+instance Parses () where
+  parse _ = Just ()
 
-instance QueryParameter Int where
-  parseQueryParameter = (readExactIntegral . B.unpack =<<)
+instance Parses Int where
+  parse = (readExactIntegral . B.unpack =<<)
 
-instance QueryParameter Int32 where
-  parseQueryParameter = (readExactIntegral . B.unpack =<<)
+instance Parses Int32 where
+  parse = (readExactIntegral . B.unpack =<<)
 
-instance QueryParameter Day where
-  parseQueryParameter = (iso8601ParseM . B.unpack =<<)
+instance Parses Day where
+  parse = (iso8601ParseM . B.unpack =<<)
 
-instance QueryParameter T.Text where
-  parseQueryParameter = (eitherToMaybe . T.decodeUtf8' =<<)
+instance Parses T.Text where
+  parse = (eitherToMaybe . T.decodeUtf8' =<<)
 
 -- | A wrapper over a list of values that parses from a
 -- comma-separated list parameter. Note that parsing values containing
@@ -241,6 +243,5 @@ newtype CommaSeparatedList a =
     { getCommaSeparatedList :: [a]
     }
 
-instance QueryParameter a => QueryParameter (CommaSeparatedList a) where
-  parseQueryParameter =
-    (fmap CommaSeparatedList . mapM (parseQueryParameter . Just) . B.split ',' =<<)
+instance Parses a => Parses (CommaSeparatedList a) where
+  parse = (fmap CommaSeparatedList . mapM (parse . Just) . B.split ',' =<<)
