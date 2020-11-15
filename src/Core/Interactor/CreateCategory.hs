@@ -14,8 +14,7 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthenticationHandle :: AuthenticationHandle m
-    , hCreateCategory :: Maybe CategoryId -> NonEmpty T.Text -> m (Either CreateCategoryFailure Category)
+    { hCreateCategory :: Maybe CategoryId -> NonEmpty T.Text -> m (Either CreateCategoryFailure Category)
     , hAuthorizationHandle :: AuthorizationHandle
     }
 
@@ -33,16 +32,15 @@ type Reason = T.Text
 run ::
      MonadThrow m
   => Handle m
-  -> Maybe Credentials
+  -> AuthenticatedUser
   -> Maybe CategoryId
   -> NonEmpty T.Text
   -> m (Either Failure Category)
-run Handle {..} creds parentCatId catNames
+run Handle {..} authUser parentCatId catNames
   | any T.null catNames =
     pure . Left $ IncorrectParameter "Category name must not be empty"
   | otherwise = do
-    actor <- authenticate hAuthenticationHandle creds
-    requireAdminPermission hAuthorizationHandle actor "create category"
+    requireAdminPermission hAuthorizationHandle authUser "create category"
     first toFailure <$> hCreateCategory parentCatId catNames
   where
     toFailure CCFUnknownParentCategoryId = UnknownParentCategoryId

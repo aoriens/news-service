@@ -293,14 +293,14 @@ createCategoryHandlerHandle deps@Deps {..} session =
   HCreateCategory.Handle
     { hCreateCategoryHandle =
         ICreateCategory.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hCreateCategory =
               Database.createCategory $ sessionDatabaseHandle deps session
           }
     , hLoadJSONRequestBody = dLoadJSONRequestBody
     , hPresenter =
         categoryCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 getCategoryHandlerHandle :: Deps -> Web.Session -> HGetCategory.Handle

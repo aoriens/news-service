@@ -7,6 +7,7 @@ module Web.Handler.CreateCategory
   ) where
 
 import Control.Exception
+import Core.Authentication
 import Core.Category
 import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Data.Aeson as A
@@ -26,11 +27,13 @@ data Handle =
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
     , hPresenter :: Category -> Response
+    , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
 run :: Handle -> Application
 run Handle {..} request respond = do
-  credentials <- getCredentialsFromRequest request
+  authUser <-
+    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   InCategory {inNames, inParentCategoryItemId} <- hLoadJSONRequestBody request
   names <-
     maybe
@@ -40,7 +43,7 @@ run Handle {..} request respond = do
   r <-
     ICreateCategory.run
       hCreateCategoryHandle
-      credentials
+      authUser
       (CategoryId <$> inParentCategoryItemId)
       names
   case r of
