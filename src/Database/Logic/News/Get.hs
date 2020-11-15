@@ -52,7 +52,7 @@ selectNewsRows f pageSpec =
           from news
                join news_versions using (news_version_id)
                join authors using (author_id)
-               join users using (user_id)
+               join extended_users as users using (user_id)
                left join news_versions_and_tags_relation using (news_version_id)
                left join tags using (tag_id)
         |]

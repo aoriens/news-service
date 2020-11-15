@@ -48,11 +48,8 @@ authorCondition IGetNews.GatewayAuthorFilter {..} =
 
 authorSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
 authorSubstringsCondition =
-  (fullName <>) .
-  ("ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
-  where
-    fullName =
-      "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
+  ("first_to_last_name ilike" <>) .
+  Sql.any . stringsToLikeSubstringPatternsParameter
 
 categoryCondition :: IGetNews.GatewayCategoryFilter -> Sql.Builder
 categoryCondition IGetNews.GatewayCategoryFilter {..} =

@@ -32,6 +32,11 @@ create table users (
        token_hash bytea not null
 );
 
+create view extended_users as
+select *,
+       coalesce(users.first_name || ' ' || users.last_name, users.last_name) as first_to_last_name
+from users;
+
 create table authors (
        author_id serial not null primary key,
        user_id integer not null references users,
