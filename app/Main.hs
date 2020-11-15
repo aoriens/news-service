@@ -399,11 +399,11 @@ deleteUserHandlerHandle deps@Deps {..} session =
         IDeleteUser.Handle
           { hDeleteUser =
               Database.deleteUser $ sessionDatabaseHandle deps session
-          , hAuthenticationHandle = dMakeAuthenticationHandle session
           , hAuthorizationHandle = Core.Authorization.Impl.new
           , hDefaultEntityListRange = dDefaultEntityListRange
           }
     , hPresenter = userDeletedPresenter
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 getUsersHandlerHandle :: Deps -> Web.Session -> HGetUsers.Handle

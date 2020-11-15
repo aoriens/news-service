@@ -3,6 +3,7 @@ module Web.Handler.DeleteUser
   , Handle(..)
   ) where
 
+import Core.Authentication
 import qualified Core.Interactor.DeleteUser as I
 import Core.User
 import Web.Application
@@ -12,10 +13,12 @@ data Handle =
   Handle
     { hDeleteUserHandle :: I.Handle IO
     , hPresenter :: Response
+    , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
 run :: Handle -> UserId -> Application
 run Handle {..} uid request respond = do
-  credentials <- getCredentialsFromRequest request
-  I.run hDeleteUserHandle credentials uid
+  authUser <-
+    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  I.run hDeleteUserHandle authUser uid
   respond hPresenter
