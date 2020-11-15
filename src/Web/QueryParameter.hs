@@ -8,6 +8,7 @@ module Web.QueryParameter
   , parseQueryM
   , require
   , lookup
+  , exists
   , collect
   , lookupRaw
   , collectRaw
@@ -162,6 +163,9 @@ lookupRaw key =
     , qParameterReader = ReaderT $ Right . (searchedToMaybe <=< HM.lookup key)
     , qMayScanPartially = True
     }
+
+exists :: Key -> Parser Bool
+exists key = isJust <$> lookupRaw key
 
 searchedToMaybe :: Searched -> Maybe RawValue
 searchedToMaybe SearchedOne = Nothing

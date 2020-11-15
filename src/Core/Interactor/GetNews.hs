@@ -4,6 +4,9 @@ module Core.Interactor.GetNews
   , Filter(..)
   , NewsDateRange(..)
   , emptyFilter
+  , SortOptions(..)
+  , SortKey(..)
+  , defaultSortOptions
   , GatewayFilter(..)
   , GatewayAuthorFilter(..)
   , GatewayCategoryFilter(..)
@@ -22,14 +25,20 @@ import qualified Data.List.NonEmpty as N
 import qualified Data.Text as T
 import Data.Time
 
-getNews :: MonadThrow m => Handle m -> Filter -> PageSpecQuery -> m [News]
-getNews Handle {..} newsFilter pageQuery = do
+getNews ::
+     MonadThrow m
+  => Handle m
+  -> Filter
+  -> SortOptions
+  -> PageSpecQuery
+  -> m [News]
+getNews Handle {..} newsFilter sortOptions pageQuery = do
   pageSpec <- parsePageSpecM hPageSpecParserHandle pageQuery
-  hGetNews (gatewayFilterFromFilter newsFilter) pageSpec
+  hGetNews (gatewayFilterFromFilter newsFilter) sortOptions pageSpec
 
 data Handle m =
   Handle
-    { hGetNews :: GatewayFilter -> PageSpec -> m [News]
+    { hGetNews :: GatewayFilter -> SortOptions -> PageSpec -> m [News]
     , hPageSpecParserHandle :: PageSpecParserHandle
     }
 
@@ -100,6 +109,21 @@ data GatewayFilter =
     , gfBodySubstrings :: Maybe (Set.HashSet T.Text)
     , gfSubstringsAnywhere :: Maybe (Set.HashSet T.Text)
     }
+
+data SortOptions =
+  SortOptions
+    { sortReverse :: Bool
+    , sortKey :: SortKey
+    }
+  deriving (Eq, Show)
+
+data SortKey
+  = SortKeyDate
+  | SortKeyAuthorName
+  deriving (Eq, Show)
+
+defaultSortOptions :: SortOptions
+defaultSortOptions = SortOptions {sortReverse = False, sortKey = SortKeyDate}
 
 -- | An author filter. Its fields correspond to filters that should be
 -- combined using logical OR.

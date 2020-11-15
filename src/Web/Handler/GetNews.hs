@@ -35,13 +35,13 @@ data Handle =
 
 run :: Handle -> Application
 run Handle {..} request respond = do
-  (pageQuery, newsFilter) <-
+  (pageQuery, newsFilter, sortOptions) <-
     QueryParameter.parseQueryM (requestQueryString request) parseParams
-  news <- I.getNews hGetNewsHandle newsFilter pageQuery
+  news <- I.getNews hGetNewsHandle newsFilter sortOptions pageQuery
   respond $ hPresenter news
 
-parseParams :: QueryParameter.Parser (PageSpecQuery, I.Filter)
-parseParams = liftA2 (,) parsePageQuery parseFilter
+parseParams :: QueryParameter.Parser (PageSpecQuery, I.Filter, I.SortOptions)
+parseParams = liftA3 (,,) parsePageQuery parseFilter parseSortOptions
 
 parseFilter :: QueryParameter.Parser I.Filter
 parseFilter = do
@@ -105,3 +105,21 @@ parseDateRange str =
     Just [s1, s2] ->
       liftA2 I.NewsSinceUntil (iso8601ParseM s1) (iso8601ParseM s2)
     _ -> Nothing
+
+parseSortOptions :: QueryParameter.Parser I.SortOptions
+parseSortOptions = do
+  sortReverse <- QueryParameter.exists "reverse_sort"
+  sortKey <-
+    maybe (I.sortKey I.defaultSortOptions) unwrapSortKey <$>
+    QueryParameter.lookup "sort"
+  pure I.SortOptions {sortReverse, sortKey}
+
+newtype SortKey =
+  SortKey
+    { unwrapSortKey :: I.SortKey
+    }
+
+instance QueryParameter.Parses SortKey where
+  parse (Just "date") = Just $ SortKey I.SortKeyDate
+  parse (Just "author") = Just $ SortKey I.SortKeyAuthorName
+  parse _ = Nothing

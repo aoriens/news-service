@@ -17,6 +17,7 @@ import Core.Tag
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
+import Data.List
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
@@ -32,19 +33,29 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
-getNewsList :: IGetNews.GatewayFilter -> PageSpec -> Transaction [News]
-getNewsList newsFilter = mapM loadNewsWithRow <=< selectNewsRows newsFilter
+getNewsList ::
+     IGetNews.GatewayFilter
+  -> IGetNews.SortOptions
+  -> PageSpec
+  -> Transaction [News]
+getNewsList filter' sortOptions =
+  mapM loadNewsWithRow <=< selectNewsRows filter' sortOptions
 
 getNews :: NewsId -> Transaction (Maybe News)
 getNews = mapM loadNewsWithRow <=< selectNewsRow
 
-selectNewsRows :: IGetNews.GatewayFilter -> PageSpec -> Transaction [NewsRow]
-selectNewsRows f pageSpec =
+selectNewsRows ::
+     IGetNews.GatewayFilter
+  -> IGetNews.SortOptions
+  -> PageSpec
+  -> Transaction [NewsRow]
+selectNewsRows filter' sortOptions pageSpec =
   runStatementWithColumns sql newsRowColumns (fmap toList . D.rowVector) True
   where
     sql =
       topClause <>
-      whereClauseToFilterNews f <> orderByClause <> limitOffsetClause
+      whereClauseToFilterNews filter' <>
+      orderByClauseForListingNews sortOptions <> limitOffsetClause
     topClause =
       Sql.text
         [TH.uncheckedSql|
@@ -56,8 +67,21 @@ selectNewsRows f pageSpec =
                left join news_versions_and_tags_relation using (news_version_id)
                left join tags using (tag_id)
         |]
-    orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec
+
+orderByClauseForListingNews :: IGetNews.SortOptions -> Sql.Builder
+orderByClauseForListingNews IGetNews.SortOptions {..} =
+  ("order by" <>) .
+  mconcat . intersperse "," . map (<> direction) . (++ ["news_id"]) $
+  fields
+  where
+    direction
+      | sortReverse = "desc"
+      | otherwise = mempty
+    fields =
+      case sortKey of
+        IGetNews.SortKeyDate -> ["date"]
+        IGetNews.SortKeyAuthorName -> ["users.last_name", "users.first_name"]
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =

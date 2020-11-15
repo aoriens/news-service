@@ -35,16 +35,16 @@ spec =
                       {nvId = NewsVersionId 2, nvTitle = "B", nvText = "Text2"}
                 }
             ]
-          h = stubHandle {hGetNews = \_ _ -> pure expectedNews}
-      results <- I.getNews h emptyFilter noPageQuery
+          h = stubHandle {hGetNews = \_ _ _ -> pure expectedNews}
+      results <- I.getNews h emptyFilter defaultSortOptions noPageQuery
       results `shouldBe` expectedNews
     itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
       let h =
             stubHandle
-              { hGetNews = \_ pageQuery -> onSuccess pageQuery >> pure []
+              { hGetNews = \_ _ pageQuery -> onSuccess pageQuery >> pure []
               , hPageSpecParserHandle
               }
-      void $ I.getNews h emptyFilter pageSpecQuery
+      void $ I.getNews h emptyFilter defaultSortOptions pageSpecQuery
     it "should pass Filter data to hGetNews" $ do
       ref <- newIORef []
       let newsFilter =
@@ -67,8 +67,9 @@ spec =
               , fBodySubstrings = Just $ Set.fromList ["body"]
               , fSubstringsAnywhere = Just $ Set.fromList ["q"]
               }
-          h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
-      _ <- I.getNews h newsFilter noPageQuery
+          h =
+            stubHandle {hGetNews = \f _ _ -> modifyIORef' ref (f :) >> pure []}
+      _ <- I.getNews h newsFilter defaultSortOptions noPageQuery
       passedFilters <- readIORef ref
       fmap gfDateRanges passedFilters `shouldBe` [I.fDateRanges newsFilter]
       fmap (gfAuthorIds . gfAuthorFilter) passedFilters `shouldBe`
@@ -124,8 +125,9 @@ spec =
               , fSubstringsAnywhere =
                   Just $ Set.insert "" expectedSubstringsAnywhere
               }
-          h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
-      _ <- I.getNews h newsFilter noPageQuery
+          h =
+            stubHandle {hGetNews = \f _ _ -> modifyIORef' ref (f :) >> pure []}
+      _ <- I.getNews h newsFilter defaultSortOptions noPageQuery
       passedFilters <- readIORef ref
       fmap (gfAuthorNameSubstrings . gfAuthorFilter) passedFilters `shouldBe`
         [Just expectedAuthorNameSubstrings]
@@ -161,8 +163,9 @@ spec =
               , fBodySubstrings = Just $ Set.singleton ""
               , fSubstringsAnywhere = Just $ Set.singleton ""
               }
-          h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
-      _ <- I.getNews h newsFilter noPageQuery
+          h =
+            stubHandle {hGetNews = \f _ _ -> modifyIORef' ref (f :) >> pure []}
+      _ <- I.getNews h newsFilter defaultSortOptions noPageQuery
       passedFilters <- readIORef ref
       fmap (gfAuthorNameSubstrings . gfAuthorFilter) passedFilters `shouldBe`
         [Nothing]
@@ -177,6 +180,15 @@ spec =
       fmap gfTitleSubstrings passedFilters `shouldBe` [Nothing]
       fmap gfBodySubstrings passedFilters `shouldBe` [Nothing]
       fmap gfSubstringsAnywhere passedFilters `shouldBe` [Nothing]
+    it "should pass SortOptions to hGetNews" $ do
+      ref <- newIORef []
+      let sortOptions =
+            I.SortOptions {sortReverse = True, sortKey = I.SortKeyAuthorName}
+          h =
+            stubHandle
+              {hGetNews = \_ opts _ -> modifyIORef' ref (opts :) >> pure []}
+      _ <- I.getNews h I.emptyFilter sortOptions noPageQuery
+      readIORef ref `shouldReturn` [sortOptions]
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing
@@ -187,7 +199,7 @@ stubHandle =
     { hPageSpecParserHandle =
         PageSpecParserHandle . const . Right $
         PageSpec (PageOffset 0) (PageLimit 0)
-    , hGetNews = \_ _ -> pure []
+    , hGetNews = \_ _ _ -> pure []
     }
 
 stubNews :: News

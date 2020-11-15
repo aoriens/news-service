@@ -67,6 +67,22 @@ spec = do
           query = [("bad", Just "value")]
           r = QueryParameter.parseQuery query parser
       r `shouldBe` Right Nothing
+  describe "exists" $ do
+    it "should return True for an existing key with a value" $ do
+      let parser = QueryParameter.exists "k"
+          query = [("k", Just "value")]
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Right True
+    it "should return True for an existing key with a missing value" $ do
+      let parser = QueryParameter.exists "k"
+          query = [("k", Nothing)]
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Right True
+    it "should return False for a missing key" $ do
+      let parser = QueryParameter.exists "k"
+          query = [("bad", Just "value")]
+          r = QueryParameter.parseQuery query parser
+      r `shouldBe` Right False
   describe "QueryParameter.collectRaw" $ do
     it "should find all existing values for key value while keeping order" $ do
       let parser = QueryParameter.collectRaw "k"

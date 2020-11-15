@@ -155,8 +155,22 @@ The response contains the image data with the corresponding MIME type.
 
 ### `GET /news`
 
-Returns a list of [News](#News) entities. Additional parameters may be passed in
-the URI query to filter articles to output:
+Returns a list of [News](#News) entities.
+
+#### Sorting
+
+The following URI query parameters may be passed to affect sort order:
+
+- `sort` - the sort key. When missing, it is assumed to be `date`. The following
+  values are accepted:
+  - `date` - sort by news article date.
+  - `author` - sort by the author name, the last name first.
+- `reverse_sort` - a flag to reverse the sort order. The parameter value is
+  ignored.
+
+#### Filtering
+
+The following URI query parameters may be passed to filter the list of articles:
 
 - `q` - a substring to search everywhere: the article title, body, author name,
   tags, category. The search is case-insensitive. A news article is output if at
