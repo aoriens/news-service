@@ -65,6 +65,7 @@ library
     , Database.Logic.Categories
     , Database.Logic.Images
     , Database.Logic.News
+    , Database.Logic.News.Filter
     , Database.Logic.Pagination
     , Database.Logic.Tags
     , Database.Logic.Users
