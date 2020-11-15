@@ -36,7 +36,7 @@ spec =
                 }
             ]
           h = stubHandle {hGetNews = \_ _ -> pure expectedNews}
-      results <- I.getNews h emptyNewsFilter noPageQuery
+      results <- I.getNews h emptyFilter noPageQuery
       results `shouldBe` expectedNews
     itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
       let h =
@@ -44,58 +44,57 @@ spec =
               { hGetNews = \_ pageQuery -> onSuccess pageQuery >> pure []
               , hPageSpecParserHandle
               }
-      void $ I.getNews h emptyNewsFilter pageSpecQuery
-    it "should pass NewsFilter data to hGetNews" $ do
+      void $ I.getNews h emptyFilter pageSpecQuery
+    it "should pass Filter data to hGetNews" $ do
       ref <- newIORef []
       let newsFilter =
-            I.NewsFilter
-              { nfDateRanges =
+            I.Filter
+              { fDateRanges =
                   N.nonEmpty
                     [ I.NewsSinceUntil
                         (ModifiedJulianDay 1)
                         (ModifiedJulianDay 2)
                     ]
-              , nfAuthorIds = Just $ Set.fromList [AuthorId 1]
-              , nfAuthorNameSubstrings = Just $ Set.fromList ["a"]
-              , nfCategoryIds = Just $ Set.fromList [CategoryId 1]
-              , nfCategoryNameSubstrings = Just $ Set.fromList ["c"]
-              , nfTagIdsToMatchAnyTag = Just $ Set.fromList [TagId 1]
-              , nfTagNameSubstringsToMatchAnyTag = Just $ Set.fromList ["t"]
-              , nfTagIdsAllRequiredToMatch = Just $ Set.fromList [TagId 2]
-              , nfTagNameSubstringsAllRequiredToMatch =
-                  Just $ Set.fromList ["T"]
-              , nfTitleSubstrings = Just $ Set.fromList ["title"]
-              , nfBodySubstrings = Just $ Set.fromList ["body"]
-              , nfSubstringsAnywhere = Just $ Set.fromList ["q"]
+              , fAuthorIds = Just $ Set.fromList [AuthorId 1]
+              , fAuthorNameSubstrings = Just $ Set.fromList ["a"]
+              , fCategoryIds = Just $ Set.fromList [CategoryId 1]
+              , fCategoryNameSubstrings = Just $ Set.fromList ["c"]
+              , fTagIdsToMatchAnyTag = Just $ Set.fromList [TagId 1]
+              , fTagNameSubstringsToMatchAnyTag = Just $ Set.fromList ["t"]
+              , fTagIdsAllRequiredToMatch = Just $ Set.fromList [TagId 2]
+              , fTagNameSubstringsAllRequiredToMatch = Just $ Set.fromList ["T"]
+              , fTitleSubstrings = Just $ Set.fromList ["title"]
+              , fBodySubstrings = Just $ Set.fromList ["body"]
+              , fSubstringsAnywhere = Just $ Set.fromList ["q"]
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
       passedFilters <- readIORef ref
-      fmap gnfDateRanges passedFilters `shouldBe` [I.nfDateRanges newsFilter]
-      fmap (gnfAuthorIds . gnfAuthorFilter) passedFilters `shouldBe`
-        [I.nfAuthorIds newsFilter]
-      fmap (gnfAuthorNameSubstrings . gnfAuthorFilter) passedFilters `shouldBe`
-        [I.nfAuthorNameSubstrings newsFilter]
-      fmap (gnfCategoryIds . gnfCategoryFilter) passedFilters `shouldBe`
-        [I.nfCategoryIds newsFilter]
-      fmap (gnfCategoryNameSubstrings . gnfCategoryFilter) passedFilters `shouldBe`
-        [I.nfCategoryNameSubstrings newsFilter]
-      fmap (gnfTagIdsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
-        [I.nfTagIdsToMatchAnyTag newsFilter]
-      fmap (gnfTagNameSubstringsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
-        [I.nfTagNameSubstringsToMatchAnyTag newsFilter]
-      fmap (gnfTagIdsAllRequiredToMatch . gnfAllTagsFilter) passedFilters `shouldBe`
-        [I.nfTagIdsAllRequiredToMatch newsFilter]
+      fmap gfDateRanges passedFilters `shouldBe` [I.fDateRanges newsFilter]
+      fmap (gfAuthorIds . gfAuthorFilter) passedFilters `shouldBe`
+        [I.fAuthorIds newsFilter]
+      fmap (gfAuthorNameSubstrings . gfAuthorFilter) passedFilters `shouldBe`
+        [I.fAuthorNameSubstrings newsFilter]
+      fmap (gfCategoryIds . gfCategoryFilter) passedFilters `shouldBe`
+        [I.fCategoryIds newsFilter]
+      fmap (gfCategoryNameSubstrings . gfCategoryFilter) passedFilters `shouldBe`
+        [I.fCategoryNameSubstrings newsFilter]
+      fmap (gfTagIdsToMatchAnyTag . gfAnyTagFilter) passedFilters `shouldBe`
+        [I.fTagIdsToMatchAnyTag newsFilter]
+      fmap (gfTagNameSubstringsToMatchAnyTag . gfAnyTagFilter) passedFilters `shouldBe`
+        [I.fTagNameSubstringsToMatchAnyTag newsFilter]
+      fmap (gfTagIdsAllRequiredToMatch . gfAllTagsFilter) passedFilters `shouldBe`
+        [I.fTagIdsAllRequiredToMatch newsFilter]
       fmap
-        (gnfTagNameSubstringsAllRequiredToMatch . gnfAllTagsFilter)
+        (gfTagNameSubstringsAllRequiredToMatch . gfAllTagsFilter)
         passedFilters `shouldBe`
-        [I.nfTagNameSubstringsAllRequiredToMatch newsFilter]
-      fmap gnfTitleSubstrings passedFilters `shouldBe`
-        [I.nfTitleSubstrings newsFilter]
-      fmap gnfBodySubstrings passedFilters `shouldBe`
-        [I.nfBodySubstrings newsFilter]
-      fmap gnfSubstringsAnywhere passedFilters `shouldBe`
-        [I.nfSubstringsAnywhere newsFilter]
+        [I.fTagNameSubstringsAllRequiredToMatch newsFilter]
+      fmap gfTitleSubstrings passedFilters `shouldBe`
+        [I.fTitleSubstrings newsFilter]
+      fmap gfBodySubstrings passedFilters `shouldBe`
+        [I.fBodySubstrings newsFilter]
+      fmap gfSubstringsAnywhere passedFilters `shouldBe`
+        [I.fSubstringsAnywhere newsFilter]
     it "should not pass empty substring filters to hGetNews to optimize search" $ do
       ref <- newIORef []
       let expectedAuthorNameSubstrings = Set.fromList ["a"]
@@ -106,78 +105,78 @@ spec =
           expectedBodySubstrings = Set.fromList ["body"]
           expectedSubstringsAnywhere = Set.fromList ["q"]
           newsFilter =
-            I.NewsFilter
-              { nfDateRanges = Nothing
-              , nfAuthorIds = Nothing
-              , nfAuthorNameSubstrings =
+            I.Filter
+              { fDateRanges = Nothing
+              , fAuthorIds = Nothing
+              , fAuthorNameSubstrings =
                   Just $ Set.insert "" expectedAuthorNameSubstrings
-              , nfCategoryIds = Nothing
-              , nfCategoryNameSubstrings =
+              , fCategoryIds = Nothing
+              , fCategoryNameSubstrings =
                   Just $ Set.insert "" expectedCategoryNameSubstrings
-              , nfTagIdsToMatchAnyTag = Nothing
-              , nfTagNameSubstringsToMatchAnyTag =
+              , fTagIdsToMatchAnyTag = Nothing
+              , fTagNameSubstringsToMatchAnyTag =
                   Just $ Set.insert "" expectedAnyTagNameSubstrings
-              , nfTagIdsAllRequiredToMatch = Nothing
-              , nfTagNameSubstringsAllRequiredToMatch =
+              , fTagIdsAllRequiredToMatch = Nothing
+              , fTagNameSubstringsAllRequiredToMatch =
                   Just $ Set.insert "" expectedAllTagsNameSubstrings
-              , nfTitleSubstrings = Just $ Set.insert "" expectedTitleSubstrings
-              , nfBodySubstrings = Just $ Set.insert "" expectedBodySubstrings
-              , nfSubstringsAnywhere =
+              , fTitleSubstrings = Just $ Set.insert "" expectedTitleSubstrings
+              , fBodySubstrings = Just $ Set.insert "" expectedBodySubstrings
+              , fSubstringsAnywhere =
                   Just $ Set.insert "" expectedSubstringsAnywhere
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
       passedFilters <- readIORef ref
-      fmap (gnfAuthorNameSubstrings . gnfAuthorFilter) passedFilters `shouldBe`
+      fmap (gfAuthorNameSubstrings . gfAuthorFilter) passedFilters `shouldBe`
         [Just expectedAuthorNameSubstrings]
-      fmap (gnfCategoryNameSubstrings . gnfCategoryFilter) passedFilters `shouldBe`
+      fmap (gfCategoryNameSubstrings . gfCategoryFilter) passedFilters `shouldBe`
         [Just expectedCategoryNameSubstrings]
-      fmap (gnfTagNameSubstringsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
+      fmap (gfTagNameSubstringsToMatchAnyTag . gfAnyTagFilter) passedFilters `shouldBe`
         [Just expectedAnyTagNameSubstrings]
       fmap
-        (gnfTagNameSubstringsAllRequiredToMatch . gnfAllTagsFilter)
+        (gfTagNameSubstringsAllRequiredToMatch . gfAllTagsFilter)
         passedFilters `shouldBe`
         [Just expectedAllTagsNameSubstrings]
-      fmap gnfTitleSubstrings passedFilters `shouldBe`
+      fmap gfTitleSubstrings passedFilters `shouldBe`
         [Just expectedTitleSubstrings]
-      fmap gnfBodySubstrings passedFilters `shouldBe`
+      fmap gfBodySubstrings passedFilters `shouldBe`
         [Just expectedBodySubstrings]
-      fmap gnfSubstringsAnywhere passedFilters `shouldBe`
+      fmap gfSubstringsAnywhere passedFilters `shouldBe`
         [Just expectedSubstringsAnywhere]
     it
       "should pass Nothing as a substrings filter to hGetNews if the filter contains an empty string only" $ do
       ref <- newIORef []
       let newsFilter =
-            I.NewsFilter
-              { nfDateRanges = Nothing
-              , nfAuthorIds = Nothing
-              , nfAuthorNameSubstrings = Just $ Set.singleton ""
-              , nfCategoryIds = Nothing
-              , nfCategoryNameSubstrings = Just $ Set.singleton ""
-              , nfTagIdsToMatchAnyTag = Nothing
-              , nfTagNameSubstringsToMatchAnyTag = Just $ Set.singleton ""
-              , nfTagIdsAllRequiredToMatch = Nothing
-              , nfTagNameSubstringsAllRequiredToMatch = Just $ Set.singleton ""
-              , nfTitleSubstrings = Just $ Set.singleton ""
-              , nfBodySubstrings = Just $ Set.singleton ""
-              , nfSubstringsAnywhere = Just $ Set.singleton ""
+            I.Filter
+              { fDateRanges = Nothing
+              , fAuthorIds = Nothing
+              , fAuthorNameSubstrings = Just $ Set.singleton ""
+              , fCategoryIds = Nothing
+              , fCategoryNameSubstrings = Just $ Set.singleton ""
+              , fTagIdsToMatchAnyTag = Nothing
+              , fTagNameSubstringsToMatchAnyTag = Just $ Set.singleton ""
+              , fTagIdsAllRequiredToMatch = Nothing
+              , fTagNameSubstringsAllRequiredToMatch = Just $ Set.singleton ""
+              , fTitleSubstrings = Just $ Set.singleton ""
+              , fBodySubstrings = Just $ Set.singleton ""
+              , fSubstringsAnywhere = Just $ Set.singleton ""
               }
           h = stubHandle {hGetNews = \f _ -> modifyIORef' ref (f :) >> pure []}
       _ <- I.getNews h newsFilter noPageQuery
       passedFilters <- readIORef ref
-      fmap (gnfAuthorNameSubstrings . gnfAuthorFilter) passedFilters `shouldBe`
+      fmap (gfAuthorNameSubstrings . gfAuthorFilter) passedFilters `shouldBe`
         [Nothing]
-      fmap (gnfCategoryNameSubstrings . gnfCategoryFilter) passedFilters `shouldBe`
+      fmap (gfCategoryNameSubstrings . gfCategoryFilter) passedFilters `shouldBe`
         [Nothing]
-      fmap (gnfTagNameSubstringsToMatchAnyTag . gnfAnyTagFilter) passedFilters `shouldBe`
+      fmap (gfTagNameSubstringsToMatchAnyTag . gfAnyTagFilter) passedFilters `shouldBe`
         [Nothing]
       fmap
-        (gnfTagNameSubstringsAllRequiredToMatch . gnfAllTagsFilter)
+        (gfTagNameSubstringsAllRequiredToMatch . gfAllTagsFilter)
         passedFilters `shouldBe`
         [Nothing]
-      fmap gnfTitleSubstrings passedFilters `shouldBe` [Nothing]
-      fmap gnfBodySubstrings passedFilters `shouldBe` [Nothing]
-      fmap gnfSubstringsAnywhere passedFilters `shouldBe` [Nothing]
+      fmap gfTitleSubstrings passedFilters `shouldBe` [Nothing]
+      fmap gfBodySubstrings passedFilters `shouldBe` [Nothing]
+      fmap gfSubstringsAnywhere passedFilters `shouldBe` [Nothing]
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing

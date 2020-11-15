@@ -32,14 +32,13 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
-getNewsList :: IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [News]
+getNewsList :: IGetNews.GatewayFilter -> PageSpec -> Transaction [News]
 getNewsList newsFilter = mapM loadNewsWithRow <=< selectNewsRows newsFilter
 
 getNews :: NewsId -> Transaction (Maybe News)
 getNews = mapM loadNewsWithRow <=< selectNewsRow
 
-selectNewsRows ::
-     IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
+selectNewsRows :: IGetNews.GatewayFilter -> PageSpec -> Transaction [NewsRow]
 selectNewsRows f pageSpec =
   runStatementWithColumns sql newsRowColumns (fmap toList . D.rowVector) True
   where

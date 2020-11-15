@@ -104,7 +104,7 @@ deleteCategory h = (runTransactionRW h .) . DCategories.deleteCategory
 getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
 getImage h = DB.runTransactionRO h . DImages.selectImage
 
-getNewsList :: DB.Handle -> IGetNews.GatewayNewsFilter -> PageSpec -> IO [News]
+getNewsList :: DB.Handle -> IGetNews.GatewayFilter -> PageSpec -> IO [News]
 getNewsList h nf = DB.runTransactionRO h . DNews.getNewsList nf
 
 createNewsVersion ::

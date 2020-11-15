@@ -13,16 +13,16 @@ import qualified Data.Text as T
 import qualified Database.Service.SQLBuilder as Sql
 import qualified Database.Service.SQLBuilders as Sql
 
-whereClauseToFilterNews :: IGetNews.GatewayNewsFilter -> Sql.Builder
-whereClauseToFilterNews IGetNews.GatewayNewsFilter {..} =
+whereClauseToFilterNews :: IGetNews.GatewayFilter -> Sql.Builder
+whereClauseToFilterNews IGetNews.GatewayFilter {..} =
   Sql.mapNonEmpty ("where" <>) $
-  dateCondition gnfDateRanges `Sql.and` authorCondition gnfAuthorFilter `Sql.and`
-  categoryCondition gnfCategoryFilter `Sql.and`
-  anyTagCondition gnfAnyTagFilter `Sql.and`
-  allTagsCondition gnfAllTagsFilter `Sql.and`
-  titleCondition gnfTitleSubstrings `Sql.and`
-  bodyCondition gnfBodySubstrings `Sql.and`
-  substringsAnywhereCondition gnfSubstringsAnywhere
+  dateCondition gfDateRanges `Sql.and` authorCondition gfAuthorFilter `Sql.and`
+  categoryCondition gfCategoryFilter `Sql.and`
+  anyTagCondition gfAnyTagFilter `Sql.and`
+  allTagsCondition gfAllTagsFilter `Sql.and`
+  titleCondition gfTitleSubstrings `Sql.and`
+  bodyCondition gfBodySubstrings `Sql.and`
+  substringsAnywhereCondition gfSubstringsAnywhere
 
 dateCondition :: Maybe (N.NonEmpty IGetNews.NewsDateRange) -> Sql.Builder
 dateCondition =
@@ -37,10 +37,10 @@ sqlWithinDateRange expr dateRange =
     IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` Sql.param day
     IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` Sql.param day
 
-authorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
-authorCondition IGetNews.GatewayNewsAuthorFilter {..} =
-  maybe mempty idCondition gnfAuthorIds `Sql.or`
-  maybe mempty authorSubstringsCondition gnfAuthorNameSubstrings
+authorCondition :: IGetNews.GatewayAuthorFilter -> Sql.Builder
+authorCondition IGetNews.GatewayAuthorFilter {..} =
+  maybe mempty idCondition gfAuthorIds `Sql.or`
+  maybe mempty authorSubstringsCondition gfAuthorNameSubstrings
   where
     idCondition =
       ("authors.author_id =" <>) .
@@ -54,10 +54,10 @@ authorSubstringsCondition =
     fullName =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
 
-categoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
-categoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
-  maybe mempty idCondition gnfCategoryIds `Sql.or`
-  maybe mempty categorySubstringsCondition gnfCategoryNameSubstrings
+categoryCondition :: IGetNews.GatewayCategoryFilter -> Sql.Builder
+categoryCondition IGetNews.GatewayCategoryFilter {..} =
+  maybe mempty idCondition gfCategoryIds `Sql.or`
+  maybe mempty categorySubstringsCondition gfCategoryNameSubstrings
   where
     idCondition =
       ("category_id in (select * from descendants_of_categories_with_ids(" <>) .
@@ -68,10 +68,10 @@ categorySubstringsCondition =
   ("category_id in (select * from descendants_of_categories_named_like(" <>) .
   (<> "))") . stringsToLikeSubstringPatternsParameter
 
-anyTagCondition :: IGetNews.GatewayNewsAnyTagFilter -> Sql.Builder
-anyTagCondition IGetNews.GatewayNewsAnyTagFilter {..} =
-  maybe mempty idCondition gnfTagIdsToMatchAnyTag `Sql.or`
-  maybe mempty anyTagSubstringsCondition gnfTagNameSubstringsToMatchAnyTag
+anyTagCondition :: IGetNews.GatewayAnyTagFilter -> Sql.Builder
+anyTagCondition IGetNews.GatewayAnyTagFilter {..} =
+  maybe mempty idCondition gfTagIdsToMatchAnyTag `Sql.or`
+  maybe mempty anyTagSubstringsCondition gfTagNameSubstringsToMatchAnyTag
   where
     idCondition =
       ("tags.tag_id =" <>) . Sql.any . Sql.param . map getTagId . toList
@@ -80,10 +80,10 @@ anyTagSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
 anyTagSubstringsCondition =
   ("tags.name ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
 
-allTagsCondition :: IGetNews.GatewayNewsAllTagsFilter -> Sql.Builder
-allTagsCondition IGetNews.GatewayNewsAllTagsFilter {..} =
-  maybe mempty idCondition gnfTagIdsAllRequiredToMatch `Sql.or`
-  maybe mempty nameCondition gnfTagNameSubstringsAllRequiredToMatch
+allTagsCondition :: IGetNews.GatewayAllTagsFilter -> Sql.Builder
+allTagsCondition IGetNews.GatewayAllTagsFilter {..} =
+  maybe mempty idCondition gfTagIdsAllRequiredToMatch `Sql.or`
+  maybe mempty nameCondition gfTagNameSubstringsAllRequiredToMatch
   where
     idCondition =
       ("news.news_version_id in (select * from news_version_ids_connected_with_all_tags_with_ids(" <>) .

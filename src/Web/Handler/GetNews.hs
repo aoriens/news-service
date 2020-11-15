@@ -40,11 +40,11 @@ run Handle {..} request respond = do
   news <- I.getNews hGetNewsHandle newsFilter pageQuery
   respond $ hPresenter news
 
-parseParams :: QueryParser (PageSpecQuery, I.NewsFilter)
-parseParams = liftA2 (,) parsePageQuery parseNewsFilter
+parseParams :: QueryParser (PageSpecQuery, I.Filter)
+parseParams = liftA2 (,) parsePageQuery parseFilter
 
-parseNewsFilter :: QueryParser I.NewsFilter
-parseNewsFilter = do
+parseFilter :: QueryParser I.Filter
+parseFilter = do
   dateRanges <- fmap getDateRange <$> collectQueryParameter "date"
   authorIds <-
     map AuthorId . concatMap getCommaSeparatedList <$>
@@ -66,20 +66,20 @@ parseNewsFilter = do
   bodySubstrings <- collectQueryParameter "body"
   substringEverywhere <- lookupQueryParameter "q"
   pure
-    I.NewsFilter
-      { nfDateRanges = N.nonEmpty dateRanges
-      , nfAuthorIds = nonEmptySet authorIds
-      , nfAuthorNameSubstrings = nonEmptySet authorNameSubstrings
-      , nfCategoryIds = nonEmptySet categoryIds
-      , nfCategoryNameSubstrings = nonEmptySet categoryNameSubstrings
-      , nfTagIdsToMatchAnyTag = nonEmptySet anyTagIds
-      , nfTagNameSubstringsToMatchAnyTag = nonEmptySet anyTagNameSubstrings
-      , nfTagIdsAllRequiredToMatch = nonEmptySet requiredTagIds
-      , nfTagNameSubstringsAllRequiredToMatch =
+    I.Filter
+      { fDateRanges = N.nonEmpty dateRanges
+      , fAuthorIds = nonEmptySet authorIds
+      , fAuthorNameSubstrings = nonEmptySet authorNameSubstrings
+      , fCategoryIds = nonEmptySet categoryIds
+      , fCategoryNameSubstrings = nonEmptySet categoryNameSubstrings
+      , fTagIdsToMatchAnyTag = nonEmptySet anyTagIds
+      , fTagNameSubstringsToMatchAnyTag = nonEmptySet anyTagNameSubstrings
+      , fTagIdsAllRequiredToMatch = nonEmptySet requiredTagIds
+      , fTagNameSubstringsAllRequiredToMatch =
           nonEmptySet requiredTagNameSubstrings
-      , nfTitleSubstrings = nonEmptySet titleSubstrings
-      , nfBodySubstrings = nonEmptySet bodySubstrings
-      , nfSubstringsAnywhere = Set.singleton <$> substringEverywhere
+      , fTitleSubstrings = nonEmptySet titleSubstrings
+      , fBodySubstrings = nonEmptySet bodySubstrings
+      , fSubstringsAnywhere = Set.singleton <$> substringEverywhere
       }
 
 nonEmptySet :: (Eq a, Hashable a) => [a] -> Maybe (Set.HashSet a)
