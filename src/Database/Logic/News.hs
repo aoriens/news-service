@@ -51,10 +51,11 @@ getNews = mapM loadNewsWithRow <=< selectNewsRow
 
 selectNewsRows ::
      IGetNews.GatewayNewsFilter -> PageSpec -> Transaction [NewsRow]
-selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
+selectNewsRows f pageSpec =
   runStatementWithColumns sql newsRowColumns (fmap toList . D.rowVector) True
   where
-    sql = topClause <> whereClause <> orderByClause <> limitOffsetClause
+    sql =
+      topClause <> selectNewsWhereClause f <> orderByClause <> limitOffsetClause
     topClause =
       Sql.text
         [TH.uncheckedSql|
@@ -66,18 +67,20 @@ selectNewsRows IGetNews.GatewayNewsFilter {..} pageSpec =
                left join news_versions_and_tags_relation using (news_version_id)
                left join tags using (tag_id)
         |]
-    whereClause =
-      Sql.mapNonEmpty ("where" <>) $
-      selectNewsDateCondition gnfDateRanges `Sql.and`
-      selectNewsAuthorCondition gnfAuthorFilter `Sql.and`
-      selectNewsCategoryCondition gnfCategoryFilter `Sql.and`
-      selectNewsAnyTagCondition gnfAnyTagFilter `Sql.and`
-      selectNewsAllTagsCondition gnfAllTagsFilter `Sql.and`
-      selectNewsTitleCondition gnfTitleSubstrings `Sql.and`
-      selectNewsBodyCondition gnfBodySubstrings `Sql.and`
-      selectNewsSubstringsAnywhereCondition gnfSubstringsAnywhere
     orderByClause = "order by date desc, news_id desc"
     limitOffsetClause = pageSpecToLimitOffset pageSpec
+
+selectNewsWhereClause :: IGetNews.GatewayNewsFilter -> Sql.Builder
+selectNewsWhereClause IGetNews.GatewayNewsFilter {..} =
+  Sql.mapNonEmpty ("where" <>) $
+  selectNewsDateCondition gnfDateRanges `Sql.and`
+  selectNewsAuthorCondition gnfAuthorFilter `Sql.and`
+  selectNewsCategoryCondition gnfCategoryFilter `Sql.and`
+  selectNewsAnyTagCondition gnfAnyTagFilter `Sql.and`
+  selectNewsAllTagsCondition gnfAllTagsFilter `Sql.and`
+  selectNewsTitleCondition gnfTitleSubstrings `Sql.and`
+  selectNewsBodyCondition gnfBodySubstrings `Sql.and`
+  selectNewsSubstringsAnywhereCondition gnfSubstringsAnywhere
 
 selectNewsDateCondition ::
      Maybe (N.NonEmpty IGetNews.NewsDateRange) -> Sql.Builder
