@@ -16,18 +16,16 @@ import qualified Database.Service.SQLBuilders as Sql
 whereClauseToFilterNews :: IGetNews.GatewayNewsFilter -> Sql.Builder
 whereClauseToFilterNews IGetNews.GatewayNewsFilter {..} =
   Sql.mapNonEmpty ("where" <>) $
-  selectNewsDateCondition gnfDateRanges `Sql.and`
-  selectNewsAuthorCondition gnfAuthorFilter `Sql.and`
-  selectNewsCategoryCondition gnfCategoryFilter `Sql.and`
-  selectNewsAnyTagCondition gnfAnyTagFilter `Sql.and`
-  selectNewsAllTagsCondition gnfAllTagsFilter `Sql.and`
-  selectNewsTitleCondition gnfTitleSubstrings `Sql.and`
-  selectNewsBodyCondition gnfBodySubstrings `Sql.and`
-  selectNewsSubstringsAnywhereCondition gnfSubstringsAnywhere
+  dateCondition gnfDateRanges `Sql.and` authorCondition gnfAuthorFilter `Sql.and`
+  categoryCondition gnfCategoryFilter `Sql.and`
+  anyTagCondition gnfAnyTagFilter `Sql.and`
+  allTagsCondition gnfAllTagsFilter `Sql.and`
+  titleCondition gnfTitleSubstrings `Sql.and`
+  bodyCondition gnfBodySubstrings `Sql.and`
+  substringsAnywhereCondition gnfSubstringsAnywhere
 
-selectNewsDateCondition ::
-     Maybe (N.NonEmpty IGetNews.NewsDateRange) -> Sql.Builder
-selectNewsDateCondition =
+dateCondition :: Maybe (N.NonEmpty IGetNews.NewsDateRange) -> Sql.Builder
+dateCondition =
   maybe mempty $ foldr (Sql.or . sqlWithinDateRange "\"date\"") mempty
 
 sqlWithinDateRange :: Sql.Builder -> IGetNews.NewsDateRange -> Sql.Builder
@@ -39,54 +37,51 @@ sqlWithinDateRange expr dateRange =
     IGetNews.NewsSince day -> expr `Sql.greaterOrEqual` Sql.param day
     IGetNews.NewsUntil day -> expr `Sql.lessOrEqual` Sql.param day
 
-selectNewsAuthorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
-selectNewsAuthorCondition IGetNews.GatewayNewsAuthorFilter {..} =
+authorCondition :: IGetNews.GatewayNewsAuthorFilter -> Sql.Builder
+authorCondition IGetNews.GatewayNewsAuthorFilter {..} =
   maybe mempty idCondition gnfAuthorIds `Sql.or`
-  maybe mempty selectNewsAuthorSubstringsCondition gnfAuthorNameSubstrings
+  maybe mempty authorSubstringsCondition gnfAuthorNameSubstrings
   where
     idCondition =
       ("authors.author_id =" <>) .
       Sql.any . Sql.param . map getAuthorId . toList
 
-selectNewsAuthorSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
-selectNewsAuthorSubstringsCondition =
+authorSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
+authorSubstringsCondition =
   (fullName <>) .
   ("ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
   where
     fullName =
       "coalesce(users.first_name || ' ' || users.last_name, users.last_name)"
 
-selectNewsCategoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
-selectNewsCategoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
+categoryCondition :: IGetNews.GatewayNewsCategoryFilter -> Sql.Builder
+categoryCondition IGetNews.GatewayNewsCategoryFilter {..} =
   maybe mempty idCondition gnfCategoryIds `Sql.or`
-  maybe mempty selectNewsCategorySubstringsCondition gnfCategoryNameSubstrings
+  maybe mempty categorySubstringsCondition gnfCategoryNameSubstrings
   where
     idCondition =
       ("category_id in (select * from descendants_of_categories_with_ids(" <>) .
       (<> "))") . Sql.param . map getCategoryId . toList
 
-selectNewsCategorySubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
-selectNewsCategorySubstringsCondition =
+categorySubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
+categorySubstringsCondition =
   ("category_id in (select * from descendants_of_categories_named_like(" <>) .
   (<> "))") . stringsToLikeSubstringPatternsParameter
 
-selectNewsAnyTagCondition :: IGetNews.GatewayNewsAnyTagFilter -> Sql.Builder
-selectNewsAnyTagCondition IGetNews.GatewayNewsAnyTagFilter {..} =
+anyTagCondition :: IGetNews.GatewayNewsAnyTagFilter -> Sql.Builder
+anyTagCondition IGetNews.GatewayNewsAnyTagFilter {..} =
   maybe mempty idCondition gnfTagIdsToMatchAnyTag `Sql.or`
-  maybe
-    mempty
-    selectNewsAnyTagSubstringsCondition
-    gnfTagNameSubstringsToMatchAnyTag
+  maybe mempty anyTagSubstringsCondition gnfTagNameSubstringsToMatchAnyTag
   where
     idCondition =
       ("tags.tag_id =" <>) . Sql.any . Sql.param . map getTagId . toList
 
-selectNewsAnyTagSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
-selectNewsAnyTagSubstringsCondition =
+anyTagSubstringsCondition :: Set.HashSet T.Text -> Sql.Builder
+anyTagSubstringsCondition =
   ("tags.name ilike" <>) . Sql.any . stringsToLikeSubstringPatternsParameter
 
-selectNewsAllTagsCondition :: IGetNews.GatewayNewsAllTagsFilter -> Sql.Builder
-selectNewsAllTagsCondition IGetNews.GatewayNewsAllTagsFilter {..} =
+allTagsCondition :: IGetNews.GatewayNewsAllTagsFilter -> Sql.Builder
+allTagsCondition IGetNews.GatewayNewsAllTagsFilter {..} =
   maybe mempty idCondition gnfTagIdsAllRequiredToMatch `Sql.or`
   maybe mempty nameCondition gnfTagNameSubstringsAllRequiredToMatch
   where
@@ -97,28 +92,26 @@ selectNewsAllTagsCondition IGetNews.GatewayNewsAllTagsFilter {..} =
       ("news.news_version_id in (select * from news_version_ids_connected_with_all_tags_like(" <>) .
       (<> "))") . stringsToLikeSubstringPatternsParameter
 
-selectNewsTitleCondition :: Maybe (Set.HashSet T.Text) -> Sql.Builder
-selectNewsTitleCondition =
+titleCondition :: Maybe (Set.HashSet T.Text) -> Sql.Builder
+titleCondition =
   maybe mempty $
   ("news_versions.title ilike" <>) .
   Sql.any . stringsToLikeSubstringPatternsParameter
 
-selectNewsBodyCondition :: Maybe (Set.HashSet T.Text) -> Sql.Builder
-selectNewsBodyCondition =
+bodyCondition :: Maybe (Set.HashSet T.Text) -> Sql.Builder
+bodyCondition =
   maybe mempty $
   ("news_versions.body ilike" <>) .
   Sql.any . stringsToLikeSubstringPatternsParameter
 
-selectNewsSubstringsAnywhereCondition ::
-     Maybe (Set.HashSet T.Text) -> Sql.Builder
-selectNewsSubstringsAnywhereCondition Nothing = mempty
-selectNewsSubstringsAnywhereCondition (Just substrings) =
+substringsAnywhereCondition :: Maybe (Set.HashSet T.Text) -> Sql.Builder
+substringsAnywhereCondition Nothing = mempty
+substringsAnywhereCondition (Just substrings) =
   Sql.bracket $
-  selectNewsTitleCondition (Just substrings) `Sql.or`
-  selectNewsAuthorSubstringsCondition substrings `Sql.or`
-  selectNewsCategorySubstringsCondition substrings `Sql.or`
-  selectNewsAnyTagSubstringsCondition substrings `Sql.or`
-  selectNewsBodyCondition (Just substrings)
+  titleCondition (Just substrings) `Sql.or` authorSubstringsCondition substrings `Sql.or`
+  categorySubstringsCondition substrings `Sql.or`
+  anyTagSubstringsCondition substrings `Sql.or`
+  bodyCondition (Just substrings)
 
 stringsToLikeSubstringPatternsParameter :: Foldable t => t T.Text -> Sql.Builder
 stringsToLikeSubstringPatternsParameter =
