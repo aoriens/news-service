@@ -1,6 +1,5 @@
 module Core.Authorization.Test
-  ( itShouldAuthenticateAndAuthorizeBeforeOperation
-  , itShouldAuthorizeBeforeOperation
+  ( itShouldAuthorizeBeforeOperation
   , noOpAuthorizationHandle
   ) where
 
@@ -13,17 +12,6 @@ import Test.AsyncExpectation
 import Test.Hspec
 
 type OnSuccess = IO ()
-
-itShouldAuthenticateAndAuthorizeBeforeOperation ::
-     HasCallStack
-  => Permission
-  -> (Maybe Credentials -> AuthenticationHandle IO -> AuthorizationHandle -> OnSuccess -> IO ())
-  -> Spec
-itShouldAuthenticateAndAuthorizeBeforeOperation expectedPerm test = do
-  itShouldAuthenticateBeforeOperation $ \creds authenticationH ->
-    test creds authenticationH noOpAuthorizationHandle
-  itShouldAuthorizeBeforeOperation expectedPerm $ \authUser ->
-    test Nothing $ AuthenticationHandle $ \_ -> pure authUser
 
 itShouldAuthorizeBeforeOperation ::
      HasCallStack
