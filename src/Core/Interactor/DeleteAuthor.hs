@@ -13,16 +13,14 @@ import Core.Exception
 data Handle m =
   Handle
     { hDeleteAuthor :: AuthorId -> m Success
-    , hAuthenticationHandle :: AuthenticationHandle m
     , hAuthorizationHandle :: AuthorizationHandle
     }
 
 type Success = Bool
 
-run :: MonadThrow m => Handle m -> Maybe Credentials -> AuthorId -> m ()
-run Handle {..} credentials authorId' = do
-  actor <- authenticate hAuthenticationHandle credentials
-  requireAdminPermission hAuthorizationHandle actor "deleting author"
+run :: MonadThrow m => Handle m -> AuthenticatedUser -> AuthorId -> m ()
+run Handle {..} authUser authorId' = do
+  requireAdminPermission hAuthorizationHandle authUser "deleting author"
   ok <- hDeleteAuthor authorId'
   unless ok $
     throwM . RequestedEntityNotFoundException $ AuthorEntityId authorId'

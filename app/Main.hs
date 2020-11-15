@@ -280,12 +280,12 @@ deleteAuthorHandlerHandle deps@Deps {..} session =
   HDeleteAuthor.Handle
     { hDeleteAuthorHandle =
         IDeleteAuthor.Handle
-          { hAuthenticationHandle = dMakeAuthenticationHandle session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
+          { hAuthorizationHandle = Core.Authorization.Impl.new
           , hDeleteAuthor =
               Database.deleteAuthor $ sessionDatabaseHandle deps session
           }
     , hPresenter = authorDeletedPresenter
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
 createCategoryHandlerHandle :: Deps -> Web.Session -> HCreateCategory.Handle
