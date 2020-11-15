@@ -49,8 +49,9 @@ import Data.Time
 import qualified Database.Logic.Authors as DAuthors
 import qualified Database.Logic.Categories as DCategories
 import qualified Database.Logic.Images as DImages
-import qualified Database.Logic.News as DNews
+import qualified Database.Logic.News.Create as DNews
 import qualified Database.Logic.News.Get as DNews
+import qualified Database.Logic.News.GetDraftAuthor as DNews
 import qualified Database.Logic.Tags as DTags
 import qualified Database.Logic.Users as DUsers
 import Database.Service.Primitives as DB

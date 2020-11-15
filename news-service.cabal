@@ -64,9 +64,10 @@ library
     , Database.Logic.Authors
     , Database.Logic.Categories
     , Database.Logic.Images
-    , Database.Logic.News
+    , Database.Logic.News.Create
     , Database.Logic.News.Filter
     , Database.Logic.News.Get
+    , Database.Logic.News.GetDraftAuthor
     , Database.Logic.Pagination
     , Database.Logic.Tags
     , Database.Logic.Users

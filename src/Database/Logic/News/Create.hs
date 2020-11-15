@@ -1,9 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE ApplicativeDo #-}
 
-module Database.Logic.News
+module Database.Logic.News.Create
   ( createNewsVersion
-  , getDraftAuthor
   , createNews
   ) where
 
@@ -16,7 +14,6 @@ import Core.Category
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
-import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Tag
 import Data.Foldable
@@ -156,19 +153,6 @@ insertVersionAndTagAssociation =
         $1 :: integer,
         $2 :: integer
       ) on conflict do nothing
-    |]
-
-getDraftAuthor ::
-     NewsVersionId -> Transaction (Either IPublishDraft.GatewayFailure AuthorId)
-getDraftAuthor =
-  runStatement $
-  dimap
-    getNewsVersionId
-    (maybe (Left IPublishDraft.UnknownDraftId) (Right . AuthorId))
-    [TH.maybeStatement|
-      select author_id :: integer
-      from drafts
-      where news_version_id = $1 :: integer
     |]
 
 createNews :: NewsVersionId -> Day -> Transaction News
