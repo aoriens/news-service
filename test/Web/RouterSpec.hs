@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Web.RouterSpec
   ( spec
   ) where
@@ -23,21 +25,31 @@ spec
       let appURI = U.ImageURI (ImageId 1)
           method = Http.methodGet
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
-          router = R.new $ \U.ImageURI {} -> R.method method expectedHandler
+          router =
+            R.new $ \case
+              U.ImageURI {} -> R.method method expectedHandler
+              _ -> pure ()
           request =
             defaultRequest
               { requestPathInfo = U.relativeURIPath $ U.toRelativeURI appURI
               , requestMethod = method
               }
-          (R.HandlerResult handler) = R.route router request
+          result = R.route router request
+          handler =
+            case result of
+              R.HandlerResult h -> h
+              _ -> error "UnexpectedResult"
       handler `shouldEmitSameHeadersAs` expectedHandler
     it "should return ResourceNotFoundRequest for an empty router" $ do
-      let router = R.new $ \U.ImageURI {} -> pure ()
+      let router = R.new $ \_ -> pure ()
           request = defaultRequest {requestPathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it "should return ResourceNotFoundRequest if no match found" $ do
-      let router = R.new $ \U.ImageURI {} -> R.method "GET" noOpHandler
+      let router =
+            R.new $ \case
+              U.ImageURI {} -> R.method "GET" noOpHandler
+              _ -> pure ()
           request = defaultRequest {requestPathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
@@ -45,7 +57,10 @@ spec
       "should return ResourceNotFoundRequest if a URI match is found, but no methods available" $ do
       let uri = U.ImageURI (ImageId 0)
           U.RelativeURI path = U.toRelativeURI uri
-          router = R.new $ \U.ImageURI {} -> pure ()
+          router =
+            R.new $ \case
+              U.ImageURI {} -> pure ()
+              _ -> pure ()
           request = defaultRequest {requestPathInfo = path}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
@@ -55,14 +70,20 @@ spec
           U.RelativeURI path = U.toRelativeURI uri
           unknownMethod = "UNKNOWN"
           router =
-            R.new $ \U.ImageURI {} -> do
-              R.method Http.methodPost noOpHandler
-              R.method Http.methodPut noOpHandler
-              R.method Http.methodDelete noOpHandler
+            R.new $ \case
+              U.ImageURI {} -> do
+                R.method Http.methodPost noOpHandler
+                R.method Http.methodPut noOpHandler
+                R.method Http.methodDelete noOpHandler
+              _ -> pure ()
           request =
             defaultRequest
               {requestPathInfo = path, requestMethod = unknownMethod}
-          result@(R.MethodNotSupportedResult methods) = R.route router request
+          result = R.route router request
+          methods =
+            case result of
+              R.MethodNotSupportedResult m -> m
+              _ -> error "Unexpected result"
       result `shouldSatisfy` R.isMethodNotSupportedResult
       methods `shouldBe`
         sort [Http.methodPost, Http.methodPut, Http.methodDelete]

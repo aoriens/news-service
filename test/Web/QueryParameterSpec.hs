@@ -193,7 +193,8 @@ spec = do
         let bsKeys = map (BS8.pack . getASCIIString) keys
             query = map (, Nothing) bsKeys
             parser = traverse QueryParameter.lookupRaw bsKeys
-            (Right rs) = QueryParameter.parseQuery query parser
+            result = QueryParameter.parseQuery query parser
+            rs = either (error "Expected Right") id result
         rs `shouldSatisfy` all (== Just Nothing)
     it "should not evaluate the query when using pure parser" $
       property $ \x -> do
@@ -222,13 +223,11 @@ spec = do
       -- assert: does not throw
         void $ evaluate $ force r
 
-greaterMaxBoundString ::
-     (Bounded a, Integral a, Show a) => Proxy a -> BS8.ByteString
+greaterMaxBoundString :: (Bounded a, Integral a) => Proxy a -> BS8.ByteString
 greaterMaxBoundString p =
   BS8.pack . show $ toInteger (maxBound `asProxyTypeOf` p) + 1
 
-lessMinBoundString ::
-     (Bounded a, Integral a, Show a) => Proxy a -> BS8.ByteString
+lessMinBoundString :: (Bounded a, Integral a) => Proxy a -> BS8.ByteString
 lessMinBoundString p =
   BS8.pack . show $ toInteger (minBound `asProxyTypeOf` p) - 1
 
