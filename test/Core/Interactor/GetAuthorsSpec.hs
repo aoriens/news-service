@@ -27,7 +27,7 @@ spec =
     it "should return authors from the gateway, if the actor is admin" $ do
       let expectedAuthors = [stubAuthor {authorId = AuthorId 9}]
           h = defaultHandle {hGetAuthors = const $ pure expectedAuthors}
-      authors <- run h anyAuthenticatedUser noPageQuery
+      authors <- run h anyAuthUser noPageQuery
       authors `shouldBe` expectedAuthors
     itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
       let h =
@@ -35,7 +35,7 @@ spec =
               { hGetAuthors = \pageQuery -> onSuccess pageQuery >> pure []
               , hPageSpecParserHandle
               }
-      void $ run h anyAuthenticatedUser pageSpecQuery
+      void $ run h anyAuthUser pageSpecQuery
 
 defaultHandle :: Handle IO
 defaultHandle =

@@ -22,12 +22,12 @@ itShouldAuthorizeBeforeOperation expectedPerm test = do
   it "should perform action if authorization succeeds" $ do
     let authorizationH = noOpAuthorizationHandle
     shouldInvokeAtLeastOnce "authorization" $ \onSuccess ->
-      test anyAuthenticatedUser authorizationH onSuccess
+      test anyAuthUser authorizationH onSuccess
   it
     "should throw NoPermissionException if AuthorizationHandle.hHasPermission returns False" $ do
     let authorizationH = AuthorizationHandle $ \_ _ -> False
         onSuccess = expectationFailure "Action must not succeed"
-    test anyAuthenticatedUser authorizationH onSuccess `shouldThrow`
+    test anyAuthUser authorizationH onSuccess `shouldThrow`
       isNoPermissionException
   it "should pass the given AuthenticatedUser to AuthorizationHandle" $ do
     let expectedUser = IdentifiedUser (UserId 1872134) False []
@@ -36,7 +36,7 @@ itShouldAuthorizeBeforeOperation expectedPerm test = do
   it "should pass a correct permission to AuthorizationHandle" $ do
     let authorizationHandle =
           AuthorizationHandle $ \perm _ -> perm == expectedPerm
-    test anyAuthenticatedUser authorizationHandle (pure ())
+    test anyAuthUser authorizationHandle (pure ())
 
 noOpAuthorizationHandle :: AuthorizationHandle
 noOpAuthorizationHandle = AuthorizationHandle $ \_ _ -> True

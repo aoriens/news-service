@@ -26,7 +26,7 @@ spec =
     it "should return gateway output if the actor is admin" $ do
       let expectedAuthor = Just stubAuthor {authorId = AuthorId 9}
           h = defaultHandle {hGetAuthor = const $ pure expectedAuthor}
-      author <- run h anyAuthenticatedUser stubAuthorId
+      author <- run h anyAuthUser stubAuthorId
       author `shouldBe` expectedAuthor
     it "should pass author id to the gateway" $ do
       passedAuthorId <- newIORef undefined
@@ -34,7 +34,7 @@ spec =
           h =
             defaultHandle
               {hGetAuthor = \i -> writeIORef passedAuthorId i >> pure Nothing}
-      _ <- run h anyAuthenticatedUser expectedAuthorId
+      _ <- run h anyAuthUser expectedAuthorId
       readIORef passedAuthorId `shouldReturn` expectedAuthorId
 
 defaultHandle :: Handle IO

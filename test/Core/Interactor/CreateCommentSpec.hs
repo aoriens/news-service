@@ -25,7 +25,7 @@ spec
           h =
             stubHandle
               {hCreateComment = \_ _ _ _ -> pure $ Right expectedComment}
-      r <- run h anyAuthenticatedUser "" (NewsId 0)
+      r <- run h anyAuthUser "" (NewsId 0)
       r `shouldBe` expectedComment
     it
       "should throw DependentEntitiesNotFoundException with failing entities ID if hCreateComment returns Left GUnknownEntityId" $ do
@@ -35,7 +35,7 @@ spec
               { hCreateComment =
                   \_ _ _ _ -> pure $ Left $ GUnknownEntityId expectedEntityId
               }
-      r <- try $ run h anyAuthenticatedUser "" (NewsId 0)
+      r <- try $ run h anyAuthUser "" (NewsId 0)
       r `shouldBe` Left (DependentEntitiesNotFoundException [expectedEntityId])
     it "should pass comment text to hCreateComment" $ do
       let expectedText = "1"
@@ -44,7 +44,7 @@ spec
               { hCreateComment =
                   \text _ _ _ -> pure $ Right stubComment {commentText = text}
               }
-      r <- run h anyAuthenticatedUser expectedText (NewsId 0)
+      r <- run h anyAuthUser expectedText (NewsId 0)
       commentText r `shouldBe` expectedText
     it "should pass newsId to hCreateComment" $ do
       let expectedNewsId = NewsId 1
@@ -54,7 +54,7 @@ spec
                   \_ _ newsId' _ ->
                     pure $ Right stubComment {commentNewsId = newsId'}
               }
-      r <- run h anyAuthenticatedUser "" expectedNewsId
+      r <- run h anyAuthUser "" expectedNewsId
       commentNewsId r `shouldBe` expectedNewsId
     it "should pass result of hGetCurrentTime to hCreateComment" $ do
       let expectedTime = UTCTime (ModifiedJulianDay 1) 1
@@ -65,7 +65,7 @@ spec
                     pure $ Right stubComment {commentCreatedAt = time}
               , hGetCurrentTime = pure expectedTime
               }
-      r <- run h anyAuthenticatedUser "" (NewsId 0)
+      r <- run h anyAuthUser "" (NewsId 0)
       commentCreatedAt r `shouldBe` expectedTime
     it
       "should pass Nothing as userId to hCreateComment if the auth user is anonymous" $ do

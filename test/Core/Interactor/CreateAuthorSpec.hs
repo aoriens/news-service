@@ -38,7 +38,7 @@ spec
                     writeIORef userIdAndDescription (uid, desc)
                     pure $ Right stubAuthor
               }
-      _ <- run h anyAuthenticatedUser expectedUid expectedDescription
+      _ <- run h anyAuthUser expectedUid expectedDescription
       readIORef userIdAndDescription `shouldReturn`
         (expectedUid, expectedDescription)
     it "should return author returned from the gateway if created successfully" $ do
@@ -46,14 +46,14 @@ spec
           description = "q"
           expectedResult = Right stubAuthor
           h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
-      r <- run h anyAuthenticatedUser uid description
+      r <- run h anyAuthUser uid description
       r `shouldBe` expectedResult
     it "should return failure returned from the gateway if any" $ do
       let uid = UserId 1
           description = "q"
           expectedResult = Left UnknownUserId
           h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
-      r <- run h anyAuthenticatedUser uid description
+      r <- run h anyAuthUser uid description
       r `shouldBe` expectedResult
 
 stubAuthor :: Author

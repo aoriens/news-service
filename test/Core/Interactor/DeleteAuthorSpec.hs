@@ -30,13 +30,13 @@ spec =
               { hDeleteAuthor =
                   \authorId' -> writeIORef passedAuthorId authorId' >> pure True
               }
-      run h anyAuthenticatedUser expectedAuthorId
+      run h anyAuthUser expectedAuthorId
       readIORef passedAuthorId `shouldReturn` expectedAuthorId
     it
       "should throw RequestedEntityNotFoundException if the gateway returned False" $ do
       let authorId = AuthorId 8
           h = stubHandle {hDeleteAuthor = \_ -> pure False}
-      run h anyAuthenticatedUser authorId `shouldThrow`
+      run h anyAuthUser authorId `shouldThrow`
         isRequestedEntityNotFoundException
 
 stubHandle :: Handle IO

@@ -43,7 +43,7 @@ spec
                     writeIORef authorIdAndDescription (aid, desc)
                     pure $ Just stubAuthor
               }
-      _ <- run h anyAuthenticatedUser expectedAuthorId expectedDescription
+      _ <- run h anyAuthUser expectedAuthorId expectedDescription
       readIORef authorIdAndDescription `shouldReturn`
         (expectedAuthorId, expectedDescription)
     it "should return author returned from the gateway if updated successfully" $ do
@@ -51,14 +51,14 @@ spec
           description = "q"
           expectedAuthor = stubAuthor
           h = stubHandle {hUpdateAuthor = \_ _ -> pure $ Just expectedAuthor}
-      r <- run h anyAuthenticatedUser aid description
+      r <- run h anyAuthUser aid description
       r `shouldBe` expectedAuthor
     it
       "should throw RequestedEntityNotFoundException if the gateway returned Nothing" $ do
       let aid = AuthorId 1
           description = "q"
           h = stubHandle {hUpdateAuthor = \_ _ -> pure Nothing}
-      run h anyAuthenticatedUser aid description `shouldThrow`
+      run h anyAuthUser aid description `shouldThrow`
         isRequestedEntityNotFoundException
 
 stubHandle :: Handle IO
