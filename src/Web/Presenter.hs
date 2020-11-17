@@ -165,4 +165,4 @@ commentCreatedPresenter uriConfig h comment =
   commentRep comment
 
 commentURI :: Comment -> AppURI
-commentURI Comment {..} = CommentURI commentNewsId commentId
+commentURI Comment {..} = CommentURI commentId

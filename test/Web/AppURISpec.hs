@@ -131,7 +131,7 @@ appURIsForAllPossibleConstructors =
   , DraftURI $ NewsVersionId 1
   , PublishDraftURI $ NewsVersionId 1
   , CommentsForNewsURI $ NewsId 1
-  , CommentURI (NewsId 1) (CommentId 2)
+  , CommentURI (CommentId 1)
   ]
   where
     _addNewElementToTheListAboveIfDoesNotCompile =
