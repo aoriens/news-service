@@ -220,7 +220,7 @@ router deps =
     PublishDraftURI draftId ->
       R.post $ \session ->
         HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
-    CommentsURI newsId' ->
+    CommentsForNewsURI newsId' ->
       R.post $ \session ->
         HCreateComment.run (createCommentHandlerHandle deps session) newsId'
     CommentURI {} -> pure ()

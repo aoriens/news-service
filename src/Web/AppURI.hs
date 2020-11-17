@@ -58,7 +58,7 @@ data AppURI
   | DraftsURI
   | DraftURI NewsVersionId
   | PublishDraftURI NewsVersionId
-  | CommentsURI NewsId
+  | CommentsForNewsURI NewsId
   | CommentURI NewsId CommentId
   deriving (Eq, Show)
 
@@ -93,7 +93,8 @@ toRelativeURI uri =
     DraftURI (NewsVersionId vid) -> ["drafts", T.pack $ show vid]
     PublishDraftURI (NewsVersionId vid) ->
       ["drafts", T.pack $ show vid, "publish"]
-    CommentsURI (NewsId newsId') -> ["news", T.pack $ show newsId', "comments"]
+    CommentsForNewsURI (NewsId newsId') ->
+      ["news", T.pack $ show newsId', "comments"]
     CommentURI (NewsId newsId') (CommentId commentId') ->
       ["news", T.pack $ show newsId', "comments", T.pack $ show commentId']
 
@@ -126,7 +127,7 @@ fromRelativeURI (RelativeURI path) =
     ["news"] -> Just NewsURI
     ["news", id'] -> NewsItemURI . NewsId <$> readExactIntegral (T.unpack id')
     ["news", newsId', "comments"] ->
-      CommentsURI . NewsId <$> readExactIntegral (T.unpack newsId')
+      CommentsForNewsURI . NewsId <$> readExactIntegral (T.unpack newsId')
     ["news", newsId', "comments", commentId'] ->
       liftA2
         CommentURI

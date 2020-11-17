@@ -130,7 +130,7 @@ appURIsForAllPossibleConstructors =
   , DraftsURI
   , DraftURI $ NewsVersionId 1
   , PublishDraftURI $ NewsVersionId 1
-  , CommentsURI $ NewsId 1
+  , CommentsForNewsURI $ NewsId 1
   , CommentURI (NewsId 1) (CommentId 2)
   ]
   where
@@ -150,5 +150,5 @@ appURIsForAllPossibleConstructors =
         DraftsURI -> ()
         DraftURI {} -> ()
         PublishDraftURI {} -> ()
-        CommentsURI {} -> ()
+        CommentsForNewsURI {} -> ()
         CommentURI {} -> ()
