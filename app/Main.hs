@@ -16,6 +16,7 @@ import qualified Core.Authorization.Impl
 import Core.ImageValidator
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
+import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateTag as ICreateTag
 import qualified Core.Interactor.CreateUser as ICreateUser
@@ -55,6 +56,7 @@ import qualified Web.Application as Web
 import qualified Web.EntryPoint
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateCategory as HCreateCategory
+import qualified Web.Handler.CreateComment as HCreateComment
 import qualified Web.Handler.CreateDraft as HCreateDraft
 import qualified Web.Handler.CreateTag as HCreateTag
 import qualified Web.Handler.CreateUser as HCreateUser
@@ -218,6 +220,10 @@ router deps =
     PublishDraftURI draftId ->
       R.post $ \session ->
         HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
+    CommentsURI newsId' ->
+      R.post $ \session ->
+        HCreateComment.run (createCommentHandlerHandle deps session) newsId'
+    CommentURI {} -> pure ()
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =
@@ -490,6 +496,21 @@ publishDraftHandlerHandle deps@Deps {..} session =
     , hPresenter =
         newsCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hAuthenticationHandle = dMakeAuthenticationHandle session
+    }
+
+createCommentHandlerHandle :: Deps -> Web.Session -> HCreateComment.Handle
+createCommentHandlerHandle deps@Deps {..} session =
+  HCreateComment.Handle
+    { hCreateCommentHandle =
+        ICreateComment.Handle
+          { hCreateComment =
+              Database.createComment $ sessionDatabaseHandle deps session
+          , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
+          }
+    , hPresenter =
+        commentCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
+    , hLoadJSONRequestBody = dLoadJSONRequestBody
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be

@@ -12,9 +12,11 @@ module Web.AppURI
   , fromRelativeURI
   ) where
 
+import Control.Applicative
 import Control.Monad
 import Core.Author
 import Core.Category
+import Core.Comment
 import Core.Image
 import Core.News
 import Core.Tag
@@ -56,6 +58,8 @@ data AppURI
   | DraftsURI
   | DraftURI NewsVersionId
   | PublishDraftURI NewsVersionId
+  | CommentsURI NewsId
+  | CommentURI NewsId CommentId
   deriving (Eq, Show)
 
 renderAppURI :: AppURIConfig -> AppURI -> T.Text
@@ -89,6 +93,9 @@ toRelativeURI uri =
     DraftURI (NewsVersionId vid) -> ["drafts", T.pack $ show vid]
     PublishDraftURI (NewsVersionId vid) ->
       ["drafts", T.pack $ show vid, "publish"]
+    CommentsURI (NewsId newsId') -> ["news", T.pack $ show newsId', "comments"]
+    CommentURI (NewsId newsId') (CommentId commentId') ->
+      ["news", T.pack $ show newsId', "comments", T.pack $ show commentId']
 
 parseAppURI :: AppURIConfig -> T.Text -> Maybe AppURI
 parseAppURI config uriText = do
@@ -118,6 +125,13 @@ fromRelativeURI (RelativeURI path) =
       CategoryURI . CategoryId <$> readExactIntegral (T.unpack id')
     ["news"] -> Just NewsURI
     ["news", id'] -> NewsItemURI . NewsId <$> readExactIntegral (T.unpack id')
+    ["news", newsId', "comments"] ->
+      CommentsURI . NewsId <$> readExactIntegral (T.unpack newsId')
+    ["news", newsId', "comments", commentId'] ->
+      liftA2
+        CommentURI
+        (NewsId <$> readExactIntegral (T.unpack newsId'))
+        (CommentId <$> readExactIntegral (T.unpack commentId'))
     ["tags"] -> Just TagsURI
     ["tags", id'] -> TagURI . TagId <$> readExactIntegral (T.unpack id')
     ["drafts"] -> Just DraftsURI

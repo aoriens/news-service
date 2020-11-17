@@ -19,11 +19,13 @@ module Web.Presenter
   , tagListPresenter
   , draftCreatedPresenter
   , newsCreatedPresenter
+  , commentCreatedPresenter
   ) where
 
 import Core.Authentication
 import Core.Author
 import Core.Category
+import Core.Comment
 import Core.Image
 import Core.Interactor.CreateTag as ICreateTag
 import Core.News
@@ -35,6 +37,7 @@ import Web.AppURI
 import Web.Application
 import Web.Representation.Author
 import Web.Representation.Category
+import Web.Representation.Comment
 import Web.Representation.Draft
 import Web.Representation.News
 import Web.Representation.Tag
@@ -153,3 +156,13 @@ newsCreatedPresenter uriConfig h news =
 
 newsItemURI :: News -> AppURI
 newsItemURI = NewsItemURI . newsId
+
+commentCreatedPresenter ::
+     AppURIConfig -> RepBuilderHandle -> Comment -> Response
+commentCreatedPresenter uriConfig h comment =
+  resourceCreatedAndReturnedResponse uriConfig (commentURI comment) .
+  runRepBuilder h $
+  commentRep comment
+
+commentURI :: Comment -> AppURI
+commentURI Comment {..} = CommentURI commentNewsId commentId

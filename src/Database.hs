@@ -23,14 +23,17 @@ module Database
   , getUsers
   , getUserAuthData
   , deleteUser
+  , createComment
   ) where
 
 import Core.Authentication.Impl
 import Core.Author
 import Core.Category
+import Core.Comment
 import Core.Image
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
+import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
@@ -48,6 +51,7 @@ import qualified Data.Text as T
 import Data.Time
 import qualified Database.Logic.Authors as DAuthors
 import qualified Database.Logic.Categories as DCategories
+import qualified Database.Logic.Comments as DComments
 import qualified Database.Logic.Images as DImages
 import qualified Database.Logic.News.Create as DNews
 import qualified Database.Logic.News.Get as DNews
@@ -159,3 +163,13 @@ deleteUser ::
      DB.Handle -> UserId -> PageSpec -> IO (Either IDeleteUser.Failure ())
 deleteUser h uid defaultRange =
   runSession h $ DUsers.deleteUser uid defaultRange
+
+createComment ::
+     DB.Handle
+  -> T.Text
+  -> Maybe UserId
+  -> NewsId
+  -> UTCTime
+  -> IO (Either ICreateComment.GatewayFailure Comment)
+createComment h text optUserId newsId' time =
+  runTransactionRW h $ DComments.createComment text optUserId newsId' time

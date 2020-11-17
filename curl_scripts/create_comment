@@ -1,0 +1,27 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test X"$2" = X
+then
+    die "Usage: $0 news_id comment_text"
+fi
+
+allow_token
+
+if test X"$TOKEN" = X
+then
+    auth=
+else
+    auth="-u $TOKEN:"
+fi
+
+run_curl "$DOMAIN/news/$1/comments" \
+         -X POST  \
+         -H "Content-Type: application/json" \
+         $auth \
+         --data-binary @- <<EOF
+{
+  "text": "$2"
+}
+EOF

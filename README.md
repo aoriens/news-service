@@ -166,7 +166,7 @@ The following URI query parameters may be passed to affect sort order:
   - `date` - sort by news article date.
   - `author` - sort by the author name, the last name first.
 - `reverse_sort` - a flag to reverse the sort order. The parameter value is
-  ignored.
+  ignored. Multiple occurrence is treated as if the parameter is used once.
 
 #### Filtering
 
@@ -232,6 +232,13 @@ The parameters are logically combined as follows:
 If a parameter is missing, it should be excluded, as well as the binary operator
 lacking a parameter.
 
+### POST `/news/{news_id}/comments`
+
+Accepts a [CreateComment](#CreateComment) entity in the request body, creates
+comment, and returns a [Comment](#Comment) entity just created. If the user is
+authenticated, they will be saved as the comment author, otherwise the comment
+will be posted anonymously.
+
 ### `GET /tags`
 
 Returns a list of [Tag](#Tag) entities.
@@ -291,6 +298,19 @@ item or no one, which is represented by the parent-to-child order of elements in
 
 A string in `YYYY-mm-dd` format to specify a calendar day.
 
+### Comment
+
+A comment posted by a user for a news article. Fields:
+
+- `comment_id` - the identifier of a comment. An integer, required.
+- `news_id` - the identifier of a commented [News](#News) article. An integer,
+  required.
+- `text` - the comment body text. A string, required.
+- `user` - a user who created the comment. If the user is missing or null, the
+  comment is posted anonymously. A [User](#User), optional.
+- `created_at` - date and time time the comment is posted at. A
+  [UTCTime](#UTCTime), required.
+
 ### CreateAuthor
 
 A request to create an author. Fields:
@@ -310,6 +330,12 @@ A request to create categories. Fields:
 - `parent_category_item_id` - the identifier of an existing
   [CategoryItem](#CategoryItem) where a new category will be created. When no
   one specified, a new root category will be created. An integer, optional.
+
+### CreateComment
+
+A request to create a comment for a news article. Fields:
+
+- `text` - the comment body text. A string, required.
 
 ### CreateDraft
 

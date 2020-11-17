@@ -164,4 +164,12 @@ create view drafts as
        from news_versions left join news using (news_version_id)
        where news_id is null;
 
+create table comments (
+       comment_id serial not null primary key,
+       news_id integer not null references news,
+       user_id integer references users,
+       text varchar not null,
+       created_at timestamp with time zone not null
+);
+
 commit;

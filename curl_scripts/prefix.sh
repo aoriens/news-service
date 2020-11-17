@@ -21,3 +21,14 @@ You need to specify TOKEN variable containing the authentication token value:
     fi
 }
 
+allow_token () {
+    if test X"${TOKEN+1}" = X
+    then
+        echo "\
+Note: you may specify TOKEN variable containing the authentication token value:
+\$ TOKEN=mytoken $0 ARGS...
+It is not needed, though, but it can affect operation.
+"
+    fi
+}
+

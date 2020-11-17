@@ -6,6 +6,7 @@ module Web.AppURISpec
 
 import Core.Author
 import Core.Category
+import Core.Comment
 import Core.Image
 import Core.News
 import Core.Tag
@@ -129,21 +130,25 @@ appURIsForAllPossibleConstructors =
   , DraftsURI
   , DraftURI $ NewsVersionId 1
   , PublishDraftURI $ NewsVersionId 1
+  , CommentsURI $ NewsId 1
+  , CommentURI (NewsId 1) (CommentId 2)
   ]
   where
     _addNewElementToTheListAboveIfDoesNotCompile =
       \case
-        ImageURI _ -> ()
+        ImageURI {} -> ()
         UsersURI -> ()
-        UserURI _ -> ()
+        UserURI {} -> ()
         AuthorsURI -> ()
-        AuthorURI _ -> ()
+        AuthorURI {} -> ()
         CategoriesURI -> ()
-        CategoryURI _ -> ()
+        CategoryURI {} -> ()
         NewsURI -> ()
-        NewsItemURI _ -> ()
+        NewsItemURI {} -> ()
         TagsURI -> ()
-        TagURI _ -> ()
+        TagURI {} -> ()
         DraftsURI -> ()
-        DraftURI _ -> ()
-        PublishDraftURI _ -> ()
+        DraftURI {} -> ()
+        PublishDraftURI {} -> ()
+        CommentsURI {} -> ()
+        CommentURI {} -> ()
