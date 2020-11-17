@@ -204,6 +204,7 @@ test-suite news-service-test
     , Core.ImageValidatorSpec
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateCategorySpec
+    , Core.Interactor.CreateCommentSpec
     , Core.Interactor.CreateDraftSpec
     , Core.Interactor.CreateTagSpec
     , Core.Interactor.CreateUserSpec
