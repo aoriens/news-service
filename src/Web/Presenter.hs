@@ -1,25 +1,33 @@
 module Web.Presenter
+  -- * Authors
   ( authorCreatedPresenter
   , authorUpdatedPresenter
   , authorDeletedPresenter
   , authorPresenter
   , authorListPresenter
+  -- * Users
   , userCreatedPresenter
   , userDeletedPresenter
   , userPresenter
   , userListPresenter
+  -- * Images
   , imagePresenter
+  -- * News and drafts
   , newsListPresenter
+  , draftCreatedPresenter
+  , newsCreatedPresenter
+  -- * Categories
   , categoryCreatedPresenter
   , categoryPresenter
   , categoryListPresenter
   , categoryDeletedPresenter
+  -- * Tags
   , tagCreatedPresenter
   , tagPresenter
   , tagListPresenter
-  , draftCreatedPresenter
-  , newsCreatedPresenter
+  -- * Comments
   , commentCreatedPresenter
+  , commentPresenter
   ) where
 
 import Core.Authentication
@@ -166,3 +174,6 @@ commentCreatedPresenter uriConfig h comment =
 
 commentURI :: Comment -> AppURI
 commentURI Comment {..} = CommentURI commentId
+
+commentPresenter :: RepBuilderHandle -> Comment -> Response
+commentPresenter h = dataResponse . runRepBuilder h . commentRep

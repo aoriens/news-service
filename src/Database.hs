@@ -1,29 +1,37 @@
 module Database
+  -- * Authors
   ( createAuthor
   , getAuthors
   , getAuthorIdByUserIdIfExactlyOne
   , getAuthor
   , deleteAuthor
   , updateAuthor
+  -- * Categories
   , createCategory
   , getCategory
   , getCategories
   , deleteCategory
+  -- * Images
   , getImage
+  -- * News
   , getNewsList
   , createNewsVersion
   , getDraftAuthor
   , createNews
+  -- * Tags
   , findTagByName
   , findTagById
   , getTags
   , createTagNamed
+  -- * Users
   , createUser
   , getUser
   , getUsers
   , getUserAuthData
   , deleteUser
+  -- * Comments
   , createComment
+  , getComment
   ) where
 
 import Core.Authentication.Impl
@@ -173,3 +181,6 @@ createComment ::
   -> IO (Either ICreateComment.GatewayFailure Comment)
 createComment h text optUserId newsId' time =
   runTransactionRW h $ DComments.createComment text optUserId newsId' time
+
+getComment :: DB.Handle -> CommentId -> IO (Maybe Comment)
+getComment h = runTransactionRO h . DComments.getComment

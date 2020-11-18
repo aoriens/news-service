@@ -27,6 +27,7 @@ import qualified Core.Interactor.GetAuthor as IGetAuthor
 import qualified Core.Interactor.GetAuthors as IGetAuthors
 import qualified Core.Interactor.GetCategories as IGetCategories
 import qualified Core.Interactor.GetCategory as IGetCategory
+import qualified Core.Interactor.GetComment as IGetComment
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetTag as IGetTag
@@ -67,6 +68,7 @@ import qualified Web.Handler.GetAuthor as HGetAuthor
 import qualified Web.Handler.GetAuthors as HGetAuthors
 import qualified Web.Handler.GetCategories as HGetCategories
 import qualified Web.Handler.GetCategory as HGetCategory
+import qualified Web.Handler.GetComment as HGetComment
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetTag as HGetTag
@@ -223,7 +225,9 @@ router deps =
     CommentsForNewsURI newsId' ->
       R.post $ \session ->
         HCreateComment.run (createCommentHandlerHandle deps session) newsId'
-    CommentURI {} -> pure ()
+    CommentURI commentId ->
+      R.get $ \session ->
+        HGetComment.run (getCommentHandlerHandle deps session) commentId
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =
@@ -511,6 +515,17 @@ createCommentHandlerHandle deps@Deps {..} session =
         commentCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hAuthenticationHandle = dMakeAuthenticationHandle session
     , hLoadJSONRequestBody = dLoadJSONRequestBody
+    }
+
+getCommentHandlerHandle :: Deps -> Web.Session -> HGetComment.Handle
+getCommentHandlerHandle deps@Deps {..} session =
+  HGetComment.Handle
+    { hGetCommentHandle =
+        IGetComment.Handle
+          { hGetComment =
+              Database.getComment $ sessionDatabaseHandle deps session
+          }
+    , hPresenter = commentPresenter dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be

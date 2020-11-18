@@ -133,6 +133,10 @@ Deletes the identified category and returns no content. Only the least
 significant [CategoryItem](#CategoryItem) of the category will be deleted.
 Requires authentication of a user having the administrator privilege.
 
+### `GET /comments/{comment_id}`
+
+Returns the [Comment](#Comment) identified with the given `comment_id`.
+
 ### `POST /drafts`
 
 Creates a draft version of news. Accepts [CreateDraft](#CreateDraft) entity in
