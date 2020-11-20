@@ -32,6 +32,7 @@ module Database
   -- * Comments
   , createComment
   , getComment
+  , getCommentsForNews
   ) where
 
 import Core.Authentication.Impl
@@ -46,6 +47,7 @@ import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.DeleteUser as IDeleteUser
+import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
@@ -184,3 +186,11 @@ createComment h text optUserId newsId' time =
 
 getComment :: DB.Handle -> CommentId -> IO (Maybe Comment)
 getComment h = runTransactionRO h . DComments.getComment
+
+getCommentsForNews ::
+     DB.Handle
+  -> NewsId
+  -> PageSpec
+  -> IO (Either IGetCommentsForNews.GatewayFailure [Comment])
+getCommentsForNews h newsId pageSpec =
+  runTransactionRO h $ DComments.getCommentsForNews newsId pageSpec

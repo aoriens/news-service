@@ -170,7 +170,7 @@ The following URI query parameters may be passed to affect sort order:
   - `date` - sort by news article date.
   - `author` - sort by the author name, the last name first.
 - `reverse_sort` - a flag to reverse the sort order. The parameter value is
-  ignored. Multiple occurrence is treated as if the parameter is used once.
+  ignored. Multiple occurrences are treated as if the parameter is used once.
 
 #### Filtering
 
@@ -234,7 +234,12 @@ The parameters are logically combined as follows:
 - AND `q`
 
 If a parameter is missing, it should be excluded, as well as the binary operator
-lacking a parameter.
+lacking the parameter.
+
+### GET `/news/{news_id}/comments`
+
+Returns an array of [Comment](#Comment) entities for the news article identified
+with `news_id`.
 
 ### POST `/news/{news_id}/comments`
 

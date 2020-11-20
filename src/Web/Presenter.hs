@@ -28,6 +28,7 @@ module Web.Presenter
   -- * Comments
   , commentCreatedPresenter
   , commentPresenter
+  , commentsPresenter
   ) where
 
 import Core.Authentication
@@ -177,3 +178,6 @@ commentURI Comment {..} = CommentURI commentId
 
 commentPresenter :: RepBuilderHandle -> Comment -> Response
 commentPresenter h = dataResponse . runRepBuilder h . commentRep
+
+commentsPresenter :: RepBuilderHandle -> [Comment] -> Response
+commentsPresenter h = dataResponse . runRepBuilder h . mapM commentRep

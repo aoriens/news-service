@@ -4,6 +4,7 @@
 module Database.Logic.Comments
   ( createComment
   , getComment
+  , getCommentsForNews
   ) where
 
 import Control.Monad
@@ -12,12 +13,15 @@ import Control.Monad.Trans.Except
 import Core.Comment
 import Core.EntityId
 import qualified Core.Interactor.CreateComment as ICreateComment
+import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import Core.News
+import Core.Pagination
 import Core.User
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
 import Database.Logic.News.Exists
+import Database.Logic.Pagination
 import Database.Logic.Users
 import Database.Service.Columns
 import Database.Service.Primitives
@@ -88,6 +92,35 @@ getComment (CommentId commentId) =
            where comment_id =
         |] <>
       Sql.param commentId
+
+getCommentsForNews ::
+     NewsId
+  -> PageSpec
+  -> Transaction (Either IGetCommentsForNews.GatewayFailure [Comment])
+getCommentsForNews newsId pageSpec = do
+  comments <- getCommentsForNewsUnchecked newsId pageSpec
+  if null comments
+    then do
+      newsExists' <- newsExists newsId
+      if newsExists'
+        then pure $ Right comments
+        else pure $ Left IGetCommentsForNews.GUnknownNewsId
+    else pure $ Right comments
+
+getCommentsForNewsUnchecked :: NewsId -> PageSpec -> Transaction [Comment]
+getCommentsForNewsUnchecked (NewsId newsId) pageSpec =
+  runStatementWithColumns sql commentColumns D.rowList True
+  where
+    sql =
+      Sql.text
+        [TH.uncheckedSql|
+           select $COLUMNS
+           from comments
+                left join users using (user_id)
+           where news_id =
+        |] <>
+      Sql.param newsId <>
+      "order by comment_id" <> pageSpecToLimitOffset pageSpec
 
 commentColumns :: Columns Comment
 commentColumns = do

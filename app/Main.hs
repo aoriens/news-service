@@ -28,6 +28,7 @@ import qualified Core.Interactor.GetAuthors as IGetAuthors
 import qualified Core.Interactor.GetCategories as IGetCategories
 import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetComment as IGetComment
+import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetTag as IGetTag
@@ -69,6 +70,7 @@ import qualified Web.Handler.GetAuthors as HGetAuthors
 import qualified Web.Handler.GetCategories as HGetCategories
 import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetComment as HGetComment
+import qualified Web.Handler.GetCommentsForNews as HGetCommentsForNews
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetTag as HGetTag
@@ -222,7 +224,11 @@ router deps =
     PublishDraftURI draftId ->
       R.post $ \session ->
         HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
-    CommentsForNewsURI newsId' ->
+    CommentsForNewsURI newsId' -> do
+      R.get $ \session ->
+        HGetCommentsForNews.run
+          (getCommentsForNewsHandlerHandle deps session)
+          newsId'
       R.post $ \session ->
         HCreateComment.run (createCommentHandlerHandle deps session) newsId'
     CommentURI commentId ->
@@ -526,6 +532,19 @@ getCommentHandlerHandle deps@Deps {..} session =
               Database.getComment $ sessionDatabaseHandle deps session
           }
     , hPresenter = commentPresenter dRepresentationBuilderHandle
+    }
+
+getCommentsForNewsHandlerHandle ::
+     Deps -> Web.Session -> HGetCommentsForNews.Handle
+getCommentsForNewsHandlerHandle deps@Deps {..} session =
+  HGetCommentsForNews.Handle
+    { hGetCommentsForNewsHandle =
+        IGetCommentsForNews.Handle
+          { hGetCommentsForNews =
+              Database.getCommentsForNews $ sessionDatabaseHandle deps session
+          , hPageSpecParserHandle = dPageSpecParserHandle
+          }
+    , hPresenter = commentsPresenter dRepresentationBuilderHandle
     }
 
 -- | Creates an IO action and a logger handle. The IO action must be
