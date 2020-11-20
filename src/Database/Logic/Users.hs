@@ -8,6 +8,7 @@ module Database.Logic.Users
   , selectUserAuthData
   , deleteUser
   , userColumns
+  , optUserColumns
   ) where
 
 import Control.Monad.Trans.Class
@@ -100,6 +101,21 @@ userColumns = do
   userCreatedAt <- column usersTable "created_at"
   userIsAdmin <- column usersTable "is_admin"
   pure User {..}
+
+-- | Allows all columns to be nullable (e.g. when using outer joins).
+optUserColumns :: Columns (Maybe User)
+optUserColumns = do
+  optUserId <- fmap UserId <$> column usersTable "user_id"
+  userFirstName <- column usersTable "first_name"
+  optUserLastName <- column usersTable "last_name"
+  userAvatarId <- fmap ImageId <$> column usersTable "avatar_id"
+  optUserCreatedAt <- column usersTable "created_at"
+  optUserIsAdmin <- column usersTable "is_admin"
+  pure $
+    case (optUserId, optUserLastName, optUserCreatedAt, optUserIsAdmin) of
+      (Just userId, Just userLastName, Just userCreatedAt, Just userIsAdmin) ->
+        Just User {..}
+      _ -> Nothing
 
 usersTable :: TableName
 usersTable = "users"
