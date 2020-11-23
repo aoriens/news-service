@@ -120,7 +120,7 @@ getCommentsForNewsUnchecked (NewsId newsId) pageSpec =
            where news_id =
         |] <>
       Sql.param newsId <>
-      "order by comment_id" <> pageSpecToLimitOffset pageSpec
+      "order by comment_id" <> limitOffsetClauseWithPageSpec pageSpec
 
 commentColumns :: Columns Comment
 commentColumns = do

@@ -67,7 +67,7 @@ selectNewsRows filter' sortOptions pageSpec =
                left join news_versions_and_tags_relation using (news_version_id)
                left join tags using (tag_id)
         |]
-    limitOffsetClause = pageSpecToLimitOffset pageSpec
+    limitOffsetClause = limitOffsetClauseWithPageSpec pageSpec
 
 orderByClauseForListingNews :: IGetNews.SortOptions -> Sql.Builder
 orderByClauseForListingNews IGetNews.SortOptions {..} =
