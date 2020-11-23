@@ -1,4 +1,4 @@
-module Core.Interactor.GetNews
+module Core.Interactor.GetNewsList
   ( getNews
   , Handle(..)
   , Filter(..)

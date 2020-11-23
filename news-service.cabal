@@ -48,7 +48,7 @@ library
     , Core.Interactor.GetComment
     , Core.Interactor.GetCommentsForNews
     , Core.Interactor.GetImage
-    , Core.Interactor.GetNews
+    , Core.Interactor.GetNewsList
     , Core.Interactor.GetTag
     , Core.Interactor.GetTags
     , Core.Interactor.GetUser
@@ -113,7 +113,7 @@ library
     , Web.Handler.GetComment
     , Web.Handler.GetCommentsForNews
     , Web.Handler.GetImage
-    , Web.Handler.GetNews
+    , Web.Handler.GetNewsList
     , Web.Handler.GetTag
     , Web.Handler.GetTags
     , Web.Handler.GetUser
@@ -219,7 +219,7 @@ test-suite news-service-test
     , Core.Interactor.GetAuthorsSpec
     , Core.Interactor.GetCategoriesSpec
     , Core.Interactor.GetCommentsForNewsSpec
-    , Core.Interactor.GetNewsSpec
+    , Core.Interactor.GetNewsListSpec
     , Core.Interactor.GetTagsSpec
     , Core.Interactor.GetUsersSpec
     , Core.Interactor.PublishDraftSpec

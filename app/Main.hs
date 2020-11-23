@@ -30,7 +30,7 @@ import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetComment as IGetComment
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetImage as IGetImage
-import qualified Core.Interactor.GetNews as IGetNews
+import qualified Core.Interactor.GetNewsList as IListNews
 import qualified Core.Interactor.GetTag as IGetTag
 import qualified Core.Interactor.GetTags as IGetTags
 import qualified Core.Interactor.GetUser as IGetUser
@@ -72,7 +72,7 @@ import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetComment as HGetComment
 import qualified Web.Handler.GetCommentsForNews as HGetCommentsForNews
 import qualified Web.Handler.GetImage as HGetImage
-import qualified Web.Handler.GetNews as HGetNews
+import qualified Web.Handler.GetNewsList as HListNews
 import qualified Web.Handler.GetTag as HGetTag
 import qualified Web.Handler.GetTags as HGetTags
 import qualified Web.Handler.GetUser as HGetUser
@@ -212,7 +212,7 @@ router deps =
         HDeleteCategory.run
           (deleteCategoryHandlerHandle deps session)
           categoryId
-    NewsURI -> R.get $ HGetNews.run . newsHandlerHandle deps
+    NewsListURI -> R.get $ HListNews.run . getNewsListHandlerHandle deps
     NewsItemURI _ -> pure ()
     TagsURI -> do
       R.get $ HGetTags.run . getTagsHandlerHandle deps
@@ -356,16 +356,16 @@ deleteCategoryHandlerHandle deps@Deps {..} session =
     , hAuthenticationHandle = dMakeAuthenticationHandle session
     }
 
-newsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
-newsHandlerHandle deps@Deps {..} session =
-  HGetNews.Handle
+getNewsListHandlerHandle :: Deps -> Web.Session -> HListNews.Handle
+getNewsListHandlerHandle deps@Deps {..} session =
+  HListNews.Handle
     { hGetNewsHandle = interactorHandle
     , hJSONEncode = dJSONEncode
     , hPresenter = newsListPresenter dRepresentationBuilderHandle
     }
   where
     interactorHandle =
-      IGetNews.Handle
+      IListNews.Handle
         { hGetNews = Database.getNewsList $ sessionDatabaseHandle deps session
         , hPageSpecParserHandle = dPageSpecParserHandle
         }

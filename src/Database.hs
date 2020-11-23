@@ -48,7 +48,7 @@ import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
-import qualified Core.Interactor.GetNews as IGetNews
+import qualified Core.Interactor.GetNewsList as IListNews
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
@@ -120,8 +120,8 @@ getImage h = DB.runTransactionRO h . DImages.selectImage
 
 getNewsList ::
      DB.Handle
-  -> IGetNews.GatewayFilter
-  -> IGetNews.SortOptions
+  -> IListNews.GatewayFilter
+  -> IListNews.SortOptions
   -> PageSpec
   -> IO [News]
 getNewsList h nf sortOptions =

@@ -1,11 +1,11 @@
-module Core.Interactor.GetNewsSpec
+module Core.Interactor.GetNewsListSpec
   ( spec
   ) where
 
 import Control.Monad
 import Core.Author
 import Core.Category
-import Core.Interactor.GetNews as I
+import Core.Interactor.GetNewsList as I
 import Core.News
 import Core.Pagination
 import Core.Pagination.Test

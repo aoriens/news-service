@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ApplicativeDo #-}
 
-module Web.Handler.GetNews
+module Web.Handler.GetNewsList
   ( Handle(..)
   , run
   ) where
@@ -9,7 +9,7 @@ module Web.Handler.GetNews
 import Control.Applicative
 import Core.Author
 import Core.Category
-import qualified Core.Interactor.GetNews as I
+import qualified Core.Interactor.GetNewsList as I
 import Core.News
 import Core.Pagination
 import Core.Tag

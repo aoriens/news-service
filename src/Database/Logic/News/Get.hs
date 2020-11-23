@@ -10,7 +10,7 @@ import Control.Monad
 import Core.Author
 import Core.Category
 import Core.Image
-import qualified Core.Interactor.GetNews as IGetNews
+import qualified Core.Interactor.GetNewsList as IListNews
 import Core.News
 import Core.Pagination
 import Core.Tag
@@ -34,8 +34,8 @@ import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
 getNewsList ::
-     IGetNews.GatewayFilter
-  -> IGetNews.SortOptions
+     IListNews.GatewayFilter
+  -> IListNews.SortOptions
   -> PageSpec
   -> Transaction [News]
 getNewsList filter' sortOptions =
@@ -45,8 +45,8 @@ getNews :: NewsId -> Transaction (Maybe News)
 getNews = mapM loadNewsWithRow <=< selectNewsRow
 
 selectNewsRows ::
-     IGetNews.GatewayFilter
-  -> IGetNews.SortOptions
+     IListNews.GatewayFilter
+  -> IListNews.SortOptions
   -> PageSpec
   -> Transaction [NewsRow]
 selectNewsRows filter' sortOptions pageSpec =
@@ -69,8 +69,8 @@ selectNewsRows filter' sortOptions pageSpec =
         |]
     limitOffsetClause = limitOffsetClauseWithPageSpec pageSpec
 
-orderByClauseForListingNews :: IGetNews.SortOptions -> Sql.Builder
-orderByClauseForListingNews IGetNews.SortOptions {..} =
+orderByClauseForListingNews :: IListNews.SortOptions -> Sql.Builder
+orderByClauseForListingNews IListNews.SortOptions {..} =
   ("order by" <>) .
   mconcat . intersperse "," . map (<> direction) . (++ ["news_id"]) $
   fields
@@ -80,8 +80,8 @@ orderByClauseForListingNews IGetNews.SortOptions {..} =
       | otherwise = mempty
     fields =
       case sortKey of
-        IGetNews.SortKeyDate -> ["date"]
-        IGetNews.SortKeyAuthorName -> ["users.last_name", "users.first_name"]
+        IListNews.SortKeyDate -> ["date"]
+        IListNews.SortKeyAuthorName -> ["users.last_name", "users.first_name"]
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =

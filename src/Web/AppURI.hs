@@ -50,7 +50,7 @@ data AppURI
   | AuthorURI AuthorId
   | CategoriesURI
   | CategoryURI CategoryId
-  | NewsURI
+  | NewsListURI
   | NewsItemURI NewsId
   | TagsURI
   | TagURI TagId
@@ -84,7 +84,7 @@ toRelativeURI uri =
     AuthorURI (AuthorId authorId) -> ["authors", T.pack $ show authorId]
     CategoriesURI -> ["categories"]
     CategoryURI (CategoryId catId) -> ["categories", T.pack $ show catId]
-    NewsURI -> ["news"]
+    NewsListURI -> ["news"]
     NewsItemURI (NewsId newsId) -> ["news", T.pack $ show newsId]
     TagsURI -> ["tags"]
     TagURI (TagId tid) -> ["tags", T.pack $ show tid]
@@ -122,7 +122,7 @@ fromRelativeURI (RelativeURI path) =
     ["categories"] -> Just CategoriesURI
     ["categories", id'] ->
       CategoryURI . CategoryId <$> readExactIntegral (T.unpack id')
-    ["news"] -> Just NewsURI
+    ["news"] -> Just NewsListURI
     ["news", id'] -> NewsItemURI . NewsId <$> readExactIntegral (T.unpack id')
     ["news", newsId', "comments"] ->
       CommentsForNewsURI . NewsId <$> readExactIntegral (T.unpack newsId')

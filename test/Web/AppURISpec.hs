@@ -123,7 +123,7 @@ appURIsForAllPossibleConstructors =
   , AuthorURI $ AuthorId 1
   , CategoriesURI
   , CategoryURI $ CategoryId 1
-  , NewsURI
+  , NewsListURI
   , NewsItemURI $ NewsId 1
   , TagsURI
   , TagURI $ TagId 1
@@ -143,7 +143,7 @@ appURIsForAllPossibleConstructors =
         AuthorURI {} -> ()
         CategoriesURI -> ()
         CategoryURI {} -> ()
-        NewsURI -> ()
+        NewsListURI -> ()
         NewsItemURI {} -> ()
         TagsURI -> ()
         TagURI {} -> ()
