@@ -1,0 +1,5 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+run_curl "$DOMAIN/news/${1?Pass a news ID as an argument}"

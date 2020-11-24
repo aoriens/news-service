@@ -14,6 +14,7 @@ module Web.Presenter
   , imagePresenter
   -- * News and drafts
   , newsListPresenter
+  , newsPresenter
   , draftCreatedPresenter
   , newsCreatedPresenter
   -- * Categories
@@ -106,6 +107,9 @@ imagePresenter Image {..} =
 
 newsListPresenter :: RepBuilderHandle -> [News] -> Response
 newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRep
+
+newsPresenter :: RepBuilderHandle -> News -> Response
+newsPresenter h = dataResponse . runRepBuilder h . newsRep
 
 categoryCreatedPresenter ::
      AppURIConfig -> RepBuilderHandle -> Category -> Response

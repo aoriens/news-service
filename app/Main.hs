@@ -30,6 +30,7 @@ import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetComment as IGetComment
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetImage as IGetImage
+import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetNewsList as IListNews
 import qualified Core.Interactor.GetTag as IGetTag
 import qualified Core.Interactor.GetTags as IGetTags
@@ -72,6 +73,7 @@ import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetComment as HGetComment
 import qualified Web.Handler.GetCommentsForNews as HGetCommentsForNews
 import qualified Web.Handler.GetImage as HGetImage
+import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetNewsList as HListNews
 import qualified Web.Handler.GetTag as HGetTag
 import qualified Web.Handler.GetTags as HGetTags
@@ -213,7 +215,9 @@ router deps =
           (deleteCategoryHandlerHandle deps session)
           categoryId
     NewsListURI -> R.get $ HListNews.run . getNewsListHandlerHandle deps
-    NewsItemURI _ -> pure ()
+    NewsItemURI newsId ->
+      R.get $ \session ->
+        HGetNews.run (getNewsHandlerHandle deps session) newsId
     TagsURI -> do
       R.get $ HGetTags.run . getTagsHandlerHandle deps
       R.post $ HCreateTag.run . createTagHandlerHandle deps
@@ -369,6 +373,15 @@ getNewsListHandlerHandle deps@Deps {..} session =
         { hGetNews = Database.getNewsList $ sessionDatabaseHandle deps session
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
+
+getNewsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
+getNewsHandlerHandle deps@Deps {..} session =
+  HGetNews.Handle
+    { hGetNewsHandle =
+        IGetNews.Handle
+          {hGetNews = Database.getNews $ sessionDatabaseHandle deps session}
+    , hPresenter = newsPresenter dRepresentationBuilderHandle
+    }
 
 createUserHandle :: Deps -> Web.Session -> HCreateUser.Handle
 createUserHandle deps@Deps {..} session =

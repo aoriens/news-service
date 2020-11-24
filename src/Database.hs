@@ -15,6 +15,7 @@ module Database
   , getImage
   -- * News
   , getNewsList
+  , getNews
   , createNewsVersion
   , getDraftAuthor
   , createNews
@@ -126,6 +127,9 @@ getNewsList ::
   -> IO [News]
 getNewsList h nf sortOptions =
   DB.runTransactionRO h . DNews.getNewsList nf sortOptions
+
+getNews :: DB.Handle -> NewsId -> IO (Maybe News)
+getNews h = DB.runTransactionRO h . DNews.getNews
 
 createNewsVersion ::
      DB.Handle

@@ -236,10 +236,14 @@ The parameters are logically combined as follows:
 If a parameter is missing, it should be excluded, as well as the binary operator
 lacking the parameter.
 
+### `GET /news/{news_id}`
+
+Returns a [News](#News) article identified with `{news_id}`.
+
 ### GET `/news/{news_id}/comments`
 
 Returns an array of [Comment](#Comment) entities for the news article identified
-with `news_id`.
+with `{news_id}`.
 
 ### POST `/news/{news_id}/comments`
 
