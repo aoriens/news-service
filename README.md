@@ -240,12 +240,12 @@ lacking the parameter.
 
 Returns a [News](#News) article identified with `{news_id}`.
 
-### GET `/news/{news_id}/comments`
+### `GET /news/{news_id}/comments`
 
 Returns an array of [Comment](#Comment) entities for the news article identified
 with `{news_id}`.
 
-### POST `/news/{news_id}/comments`
+### `POST /news/{news_id}/comments`
 
 Accepts a [CreateComment](#CreateComment) entity in the request body, creates
 comment, and returns a [Comment](#Comment) entity just created. If the user is
