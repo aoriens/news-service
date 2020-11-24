@@ -22,6 +22,6 @@ run ::
   -> PageSpecQuery
   -> m [Author]
 run Handle {..} authUser pageQuery = do
-  requireAdminPermission hAuthorizationHandle authUser "get authors"
+  requirePermission hAuthorizationHandle AdminPermission authUser "get authors"
   page <- parsePageSpecM hPageSpecParserHandle pageQuery
   hGetAuthors page

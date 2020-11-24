@@ -20,5 +20,9 @@ run ::
   -> AuthorId
   -> m (Maybe Author)
 run Handle {..} authUser authorId' = do
-  requireAdminPermission hAuthorizationHandle authUser "get an author"
+  requirePermission
+    hAuthorizationHandle
+    AdminPermission
+    authUser
+    "get an author"
   hGetAuthor authorId'

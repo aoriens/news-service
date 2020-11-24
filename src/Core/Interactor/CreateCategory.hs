@@ -40,7 +40,11 @@ run Handle {..} authUser parentCatId catNames
   | any T.null catNames =
     pure . Left $ IncorrectParameter "Category name must not be empty"
   | otherwise = do
-    requireAdminPermission hAuthorizationHandle authUser "create category"
+    requirePermission
+      hAuthorizationHandle
+      AdminPermission
+      authUser
+      "create category"
     first toFailure <$> hCreateCategory parentCatId catNames
   where
     toFailure CCFUnknownParentCategoryId = UnknownParentCategoryId

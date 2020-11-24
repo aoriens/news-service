@@ -38,7 +38,11 @@ run ::
   -> m NewsVersion
 run h@Handle {..} authUser request = do
   authorId' <- guessAuthorId h authUser request
-  requireAuthorshipPermission hAuthorizationHandle authorId' authUser actionName
+  requirePermission
+    hAuthorizationHandle
+    (AuthorshipPermission authorId')
+    authUser
+    actionName
   rejectRequestIfInvalid h request
   hCreateNewsVersion (makeCommand request authorId') >>=
     either (throwM . exceptionFromGatewayFailure) pure

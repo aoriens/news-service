@@ -20,7 +20,11 @@ type Success = Bool
 
 run :: MonadThrow m => Handle m -> AuthenticatedUser -> AuthorId -> m ()
 run Handle {..} authUser authorId' = do
-  requireAdminPermission hAuthorizationHandle authUser "deleting author"
+  requirePermission
+    hAuthorizationHandle
+    AdminPermission
+    authUser
+    "deleting author"
   ok <- hDeleteAuthor authorId'
   unless ok $
     throwM . RequestedEntityNotFoundException $ AuthorEntityId authorId'

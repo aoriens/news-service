@@ -24,7 +24,11 @@ run ::
   -> T.Text
   -> m Author
 run Handle {..} authUser aid newDescription = do
-  requireAdminPermission hAuthorizationHandle authUser "update author"
+  requirePermission
+    hAuthorizationHandle
+    AdminPermission
+    authUser
+    "update author"
   optAuthor' <- hUpdateAuthor aid newDescription
   case optAuthor' of
     Just author' -> pure author'

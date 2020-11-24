@@ -23,9 +23,9 @@ data Handle m =
 run :: MonadThrow m => Handle m -> AuthenticatedUser -> NewsVersionId -> m News
 run Handle {..} authUser vId = do
   documentAuthorId <- hGetDraftAuthor vId >>= fromGatewayResult vId
-  requireAuthorshipPermission
+  requirePermission
     hAuthorizationHandle
-    documentAuthorId
+    (AuthorshipPermission documentAuthorId)
     authUser
     "publish a draft"
   day <- hGetCurrentDay

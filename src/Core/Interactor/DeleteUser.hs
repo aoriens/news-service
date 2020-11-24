@@ -20,7 +20,11 @@ data Handle m =
 
 run :: MonadThrow m => Handle m -> AuthenticatedUser -> UserId -> m ()
 run Handle {..} authUser userId' = do
-  requireAdminPermission hAuthorizationHandle authUser "deleting user"
+  requirePermission
+    hAuthorizationHandle
+    AdminPermission
+    authUser
+    "deleting user"
   either (throwM . failureToException) pure =<<
     hDeleteUser userId' hDefaultEntityListRange
   where

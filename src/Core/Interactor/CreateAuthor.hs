@@ -24,7 +24,11 @@ run ::
   -> T.Text
   -> m (Either Failure Author)
 run Handle {..} authUser uid description = do
-  requireAdminPermission hAuthorizationHandle authUser "create an author"
+  requirePermission
+    hAuthorizationHandle
+    AdminPermission
+    authUser
+    "create an author"
   hCreateAuthor uid description
 
 data Failure =
