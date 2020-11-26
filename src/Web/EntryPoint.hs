@@ -126,7 +126,7 @@ coreExceptionToResponse e =
   case e of
     QueryException reason -> badRequestResponse reason
     BadCredentialsException _ -> notFoundResponse
-    AuthenticationRequired -> stubErrorResponse Http.unauthorized401 []
+    AuthenticationRequired -> unauthorizedResponse
     NoPermissionException perm _
       | AdminPermission <- perm -> notFoundResponse
       | AuthorshipPermission _ <- perm ->
@@ -191,6 +191,12 @@ routerApplication Handle {..} session request respond =
 
 notFoundResponse :: Response
 notFoundResponse = stubErrorResponse Http.notFound404 []
+
+unauthorizedResponse :: Response
+unauthorizedResponse =
+  stubErrorResponse
+    Http.unauthorized401
+    [("WWW-Authenticate", "Basic realm=\"\"")]
 
 stubErrorResponse :: Http.Status -> [Http.Header] -> Response
 stubErrorResponse status additionalHeaders =
