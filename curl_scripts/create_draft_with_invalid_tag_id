@@ -10,11 +10,10 @@ fi
 author_id=$1
 category_id=$2
 
-require_token
+allow_token
 run_curl "$DOMAIN/drafts$Q" \
          -X POST  \
          -H "Content-Type: application/json" \
-         -u "$TOKEN:" \
          --data-binary @- <<EOF
 {
   "title": "GHC 19.0 has been released",

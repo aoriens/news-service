@@ -7,11 +7,10 @@ then
     die "Usage: $0 user_id"
 fi
 
-require_token
+allow_token
 run_curl "$DOMAIN/authors$Q" \
          -X POST  \
          -H "Content-Type: application/json" \
-         -u "$TOKEN:" \
          --data-binary @- <<EOF
 {
   "user_id": $1,

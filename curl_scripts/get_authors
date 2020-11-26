@@ -2,5 +2,5 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-require_token
-run_curl "$DOMAIN/authors$Q" -u "$TOKEN:"
+allow_token
+run_curl "$DOMAIN/authors$Q"

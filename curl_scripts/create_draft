@@ -16,11 +16,10 @@ else
     category_id=$2
 fi
 
-require_token
+allow_token
 run_curl "$DOMAIN/drafts$Q" \
          -X POST  \
          -H "Content-Type: application/json" \
-         -u "$TOKEN:" \
          --data-binary @- <<EOF
 {
   "title": "GHC 19.0 has been released",

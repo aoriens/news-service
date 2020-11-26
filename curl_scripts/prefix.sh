@@ -3,8 +3,15 @@
 : ${DOMAIN=localhost:3000}
 
 run_curl() {
-    echo "curl -i $@"
-    curl -i "$@"
+    if test -z "${TOKEN+1}"
+    then
+        run_curl_auth=
+    else
+        run_curl_auth="-u $TOKEN:"
+    fi
+    
+    echo "curl -i $@ $run_curl_auth"
+    curl -i "$@" $run_curl_auth
 }
 
 die () {
@@ -12,22 +19,12 @@ die () {
     exit 1
 }
 
-require_token () {
-    if test X"${TOKEN+1}" = X
-    then
-        die "\
-You need to specify TOKEN variable containing the authentication token value:
-\$ TOKEN=mytoken $0 ARGS... "
-    fi
-}
-
 allow_token () {
-    if test X"${TOKEN+1}" = X
+    if test -z "${TOKEN+1}"
     then
         echo "\
 Note: you may specify TOKEN variable containing the authentication token value:
-\$ TOKEN=mytoken $0 ARGS...
-It is not needed, though, but it can affect operation.
+    \$ TOKEN=mytoken $0 ARGS...
 "
     fi
 }

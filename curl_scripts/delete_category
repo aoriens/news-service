@@ -7,5 +7,5 @@ then
     die "Usage: $0 user_id"
 fi
 
-require_token
-run_curl -X DELETE -u "$TOKEN:" "$DOMAIN/categories/$Q"
+allow_token
+run_curl -X DELETE "$DOMAIN/categories/$Q"

@@ -2,5 +2,5 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-require_token
-run_curl "$DOMAIN/authors/${1?Pass an author ID as an argument}$Q" -u "$TOKEN:"
+allow_token
+run_curl "$DOMAIN/authors/${1?Pass an author ID as an argument}$Q"

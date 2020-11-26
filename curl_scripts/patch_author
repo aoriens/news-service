@@ -7,11 +7,10 @@ then
     die "Usage: $0 author_id new_author_description"
 fi
 
-require_token
+allow_token
 run_curl "$DOMAIN/authors/$1$Q" \
          -X PATCH  \
          -H "Content-Type: application/json" \
-         -u "$TOKEN:" \
          --data-binary @- <<EOF
 {
   "description": "$2"

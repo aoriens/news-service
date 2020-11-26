@@ -21,11 +21,10 @@ else
     parent_fragment=
 fi
 
-require_token
+allow_token
 run_curl "$DOMAIN/categories$Q" \
          -X POST  \
          -H "Content-Type: application/json" \
-         -u "$TOKEN:" \
          --data-binary @- <<EOF
 {
   "names": $names_json_array

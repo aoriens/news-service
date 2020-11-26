@@ -8,18 +8,9 @@ then
 fi
 
 allow_token
-
-if test X"$TOKEN" = X
-then
-    auth=
-else
-    auth="-u $TOKEN:"
-fi
-
 run_curl "$DOMAIN/news/$1/comments$Q" \
          -X POST  \
          -H "Content-Type: application/json" \
-         $auth \
          --data-binary @- <<EOF
 {
   "text": "$2"
