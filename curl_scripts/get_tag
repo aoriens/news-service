@@ -2,4 +2,4 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-run_curl "$DOMAIN/tags/${1?Pass a user ID as an argument}"
+run_curl "$DOMAIN/tags/${1?Pass a user ID as an argument}$Q"

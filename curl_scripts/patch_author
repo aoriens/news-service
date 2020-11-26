@@ -8,7 +8,7 @@ then
 fi
 
 require_token
-run_curl "$DOMAIN/authors/$1" \
+run_curl "$DOMAIN/authors/$1$Q" \
          -X PATCH  \
          -H "Content-Type: application/json" \
          -u "$TOKEN:" \

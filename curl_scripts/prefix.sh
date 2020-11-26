@@ -32,3 +32,9 @@ It is not needed, though, but it can affect operation.
     fi
 }
 
+disallow_Q() {
+    if test -n "${Q+1}"
+    then
+        die "The Q variable is not supported for passing URI query"
+    fi
+}

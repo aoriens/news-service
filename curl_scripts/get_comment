@@ -2,4 +2,4 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-run_curl "$DOMAIN/comments/${1?Pass a comment ID as an argument}"
+run_curl "$DOMAIN/comments/${1?Pass a comment ID as an argument}$Q"

@@ -22,7 +22,7 @@ else
 fi
 
 require_token
-run_curl "$DOMAIN/categories" \
+run_curl "$DOMAIN/categories$Q" \
          -X POST  \
          -H "Content-Type: application/json" \
          -u "$TOKEN:" \

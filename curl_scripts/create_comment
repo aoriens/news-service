@@ -16,7 +16,7 @@ else
     auth="-u $TOKEN:"
 fi
 
-run_curl "$DOMAIN/news/$1/comments" \
+run_curl "$DOMAIN/news/$1/comments$Q" \
          -X POST  \
          -H "Content-Type: application/json" \
          $auth \
