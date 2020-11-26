@@ -24,6 +24,9 @@ type ContentType = Text
 data CoreException
   = QueryException Reason
   | BadCredentialsException Reason
+  | AuthenticationRequired
+   -- ^ should be used when no permission check is performed;
+   -- otherwise 'NoPermissionException' is more appropriate.
   | NoPermissionException Permission ActionName
   | UserNotIdentifiedException ActionName
   | DependentEntitiesPreventDeletionException EntityId [EntityId]

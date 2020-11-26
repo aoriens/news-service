@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test -z "${1+q}"
+then
+    echo "Note: you may pass more parameters: $0 [author_id]"
+    uri_path=drafts
+else
+    uri_path=authors/$1/drafts
+fi
+
+allow_token
+run_curl "$DOMAIN/$uri_path$Q"

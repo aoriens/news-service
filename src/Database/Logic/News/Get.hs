@@ -4,6 +4,8 @@
 module Database.Logic.News.Get
   ( getNewsList
   , getNews
+  , getDraftsOfAuthor
+  , getDraftsOfUser
   ) where
 
 import Control.Monad
@@ -14,6 +16,7 @@ import qualified Core.Interactor.GetNewsList as IListNews
 import Core.News
 import Core.Pagination
 import Core.Tag
+import Core.User
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
@@ -102,6 +105,44 @@ selectNewsRow =
              join users using (user_id)
         where news_id = $1
       |]
+
+getDraftsOfAuthor :: AuthorId -> PageSpec -> Transaction [NewsVersion]
+getDraftsOfAuthor authorId pageSpec =
+  mapM loadVersionWithRow =<< getDraftRowsOfAuthor authorId pageSpec
+
+getDraftsOfUser :: UserId -> PageSpec -> Transaction [NewsVersion]
+getDraftsOfUser userId pageSpec =
+  mapM loadVersionWithRow =<< getDraftRowsOfUser userId pageSpec
+
+getDraftRowsOfAuthor :: AuthorId -> PageSpec -> Transaction [VersionRow]
+getDraftRowsOfAuthor authorId pageSpec =
+  runStatementWithColumns sql versionRowColumns D.rowList True
+  where
+    sql =
+      Sql.text
+        [TH.uncheckedSql|
+          select $COLUMNS
+          from drafts as news_versions
+               join authors using (author_id)
+               join users using (user_id)
+          where news_versions.author_id =
+        |] <>
+      Sql.param (getAuthorId authorId) <> limitOffsetClauseWithPageSpec pageSpec
+
+getDraftRowsOfUser :: UserId -> PageSpec -> Transaction [VersionRow]
+getDraftRowsOfUser userId pageSpec =
+  runStatementWithColumns sql versionRowColumns D.rowList True
+  where
+    sql =
+      Sql.text
+        [TH.uncheckedSql|
+          select $COLUMNS
+          from drafts as news_versions
+               join authors using (author_id)
+               join users using (user_id)
+          where authors.user_id =
+        |] <>
+      Sql.param (getUserId userId) <> limitOffsetClauseWithPageSpec pageSpec
 
 -- Part of news we can extract from the database with the first query.
 data NewsRow =

@@ -29,6 +29,7 @@ import qualified Core.Interactor.GetCategories as IGetCategories
 import qualified Core.Interactor.GetCategory as IGetCategory
 import qualified Core.Interactor.GetComment as IGetComment
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
+import qualified Core.Interactor.GetDrafts as IGetDrafts
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetNewsList as IListNews
@@ -72,6 +73,7 @@ import qualified Web.Handler.GetCategories as HGetCategories
 import qualified Web.Handler.GetCategory as HGetCategory
 import qualified Web.Handler.GetComment as HGetComment
 import qualified Web.Handler.GetCommentsForNews as HGetCommentsForNews
+import qualified Web.Handler.GetDrafts as HGetDrafts
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetNewsList as HListNews
@@ -223,7 +225,13 @@ router deps =
       R.post $ HCreateTag.run . createTagHandlerHandle deps
     TagURI tagId' ->
       R.get $ \session -> HGetTag.run (getTagHandlerHandle deps session) tagId'
-    DraftsURI -> R.post $ HCreateDraft.run . createDraftHandlerHandle deps
+    DraftsURI -> do
+      R.get $ \session ->
+        HGetDrafts.run (getDraftsHandlerHandle deps session) Nothing
+      R.post $ HCreateDraft.run . createDraftHandlerHandle deps
+    AuthorDraftsURI authorId ->
+      R.get $ \session ->
+        HGetDrafts.run (getDraftsHandlerHandle deps session) (Just authorId)
     DraftURI _ -> pure ()
     PublishDraftURI draftId ->
       R.post $ \session ->
@@ -519,6 +527,22 @@ publishDraftHandlerHandle deps@Deps {..} session =
     , hPresenter =
         newsCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
     , hAuthenticationHandle = dMakeAuthenticationHandle session
+    }
+
+getDraftsHandlerHandle :: Deps -> Web.Session -> HGetDrafts.Handle
+getDraftsHandlerHandle deps@Deps {..} session =
+  HGetDrafts.Handle
+    { hGetDraftsHandle =
+        IGetDrafts.Handle
+          { hGetDraftsOfAuthor =
+              Database.getDraftsOfAuthor $ sessionDatabaseHandle deps session
+          , hGetDraftsOfUser =
+              Database.getDraftsOfUser $ sessionDatabaseHandle deps session
+          , hAuthorizationHandle = Core.Authorization.Impl.new
+          , hPageSpecParserHandle = dPageSpecParserHandle
+          }
+    , hAuthenticationHandle = dMakeAuthenticationHandle session
+    , hPresenter = draftListPresenter dRepresentationBuilderHandle
     }
 
 createCommentHandlerHandle :: Deps -> Web.Session -> HCreateComment.Handle

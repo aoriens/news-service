@@ -15,8 +15,9 @@ module Web.Presenter
   -- * News and drafts
   , newsListPresenter
   , newsPresenter
-  , draftCreatedPresenter
   , newsCreatedPresenter
+  , draftCreatedPresenter
+  , draftListPresenter
   -- * Categories
   , categoryCreatedPresenter
   , categoryPresenter
@@ -110,6 +111,9 @@ newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRep
 
 newsPresenter :: RepBuilderHandle -> News -> Response
 newsPresenter h = dataResponse . runRepBuilder h . newsRep
+
+draftListPresenter :: RepBuilderHandle -> [NewsVersion] -> Response
+draftListPresenter h = dataResponse . runRepBuilder h . mapM draftRep
 
 categoryCreatedPresenter ::
      AppURIConfig -> RepBuilderHandle -> Category -> Response

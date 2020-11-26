@@ -112,6 +112,12 @@ Accepts [UpdateAuthor](#UpdateAuthor) entity, updates the corresponding author
 entity, and returns the updated [Author](#Author) representation. Requires the
 administrator privilege.
 
+### `GET /authors/{author_id}/drafts`
+
+Returns the list of [Draft](#Draft) entities created by an author identified
+with `{author_id}`. It is only allowed to the user related to the specified
+author. Requires authentication.
+
 ### `GET /categories`
 
 Returns a list of [Category](#Category) entities.
@@ -136,6 +142,11 @@ Requires authentication of a user having the administrator privilege.
 ### `GET /comments/{comment_id}`
 
 Returns the [Comment](#Comment) identified with the given `comment_id`.
+
+### `GET /drafts`
+
+Returns the list of [Draft](#Draft) entities created by all authors related to
+the authenticated user. Requires authentication.
 
 ### `POST /drafts`
 

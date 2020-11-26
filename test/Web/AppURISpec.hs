@@ -121,6 +121,7 @@ appURIsForAllPossibleConstructors =
   , UserURI $ UserId 1
   , AuthorsURI
   , AuthorURI $ AuthorId 1
+  , AuthorDraftsURI $ AuthorId 1
   , CategoriesURI
   , CategoryURI $ CategoryId 1
   , NewsListURI
@@ -140,6 +141,7 @@ appURIsForAllPossibleConstructors =
         UsersURI -> ()
         UserURI {} -> ()
         AuthorsURI -> ()
+        AuthorDraftsURI {} -> ()
         AuthorURI {} -> ()
         CategoriesURI -> ()
         CategoryURI {} -> ()

@@ -18,6 +18,8 @@ module Database
   , getNews
   , createNewsVersion
   , getDraftAuthor
+  , getDraftsOfAuthor
+  , getDraftsOfUser
   , createNews
   -- * Tags
   , findTagByName
@@ -142,6 +144,14 @@ getDraftAuthor ::
   -> NewsVersionId
   -> IO (Either IPublishDraft.GatewayFailure AuthorId)
 getDraftAuthor h = DB.runTransactionRO h . DNews.getDraftAuthor
+
+getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [NewsVersion]
+getDraftsOfAuthor h authorId pageSpec =
+  DB.runTransactionRO h $ DNews.getDraftsOfAuthor authorId pageSpec
+
+getDraftsOfUser :: DB.Handle -> UserId -> PageSpec -> IO [NewsVersion]
+getDraftsOfUser h userId pageSpec =
+  DB.runTransactionRO h $ DNews.getDraftsOfUser userId pageSpec
 
 createNews :: DB.Handle -> NewsVersionId -> Day -> IO News
 createNews h vId day = DB.runTransactionRW h $ DNews.createNews vId day

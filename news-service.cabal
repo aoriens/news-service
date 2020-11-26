@@ -47,6 +47,7 @@ library
     , Core.Interactor.GetCategory
     , Core.Interactor.GetComment
     , Core.Interactor.GetCommentsForNews
+    , Core.Interactor.GetDrafts
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetNewsList
@@ -113,6 +114,7 @@ library
     , Web.Handler.GetCategory
     , Web.Handler.GetComment
     , Web.Handler.GetCommentsForNews
+    , Web.Handler.GetDrafts
     , Web.Handler.GetImage
     , Web.Handler.GetNews
     , Web.Handler.GetNewsList

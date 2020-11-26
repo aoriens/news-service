@@ -126,6 +126,7 @@ coreExceptionToResponse e =
   case e of
     QueryException reason -> badRequestResponse reason
     BadCredentialsException _ -> notFoundResponse
+    AuthenticationRequired -> stubErrorResponse Http.unauthorized401 []
     NoPermissionException perm _
       | AdminPermission <- perm -> notFoundResponse
       | AuthorshipPermission _ <- perm ->
