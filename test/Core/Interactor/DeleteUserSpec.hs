@@ -37,7 +37,7 @@ spec =
                   \_ _ ->
                     pure . Left $ DependentEntitiesPreventDeletion authorIds
               }
-      r <- try $ run h anyAuthUser uid
+      r <- try $ run h someAuthUser uid
       r `shouldBe`
         Left
           (DependentEntitiesPreventDeletionException
@@ -48,7 +48,7 @@ spec =
        \the gateway returned Left UnknownUser" $ do
       let uid = UserId 1
           h = stubHandle {hDeleteUser = \_ _ -> pure $ Left UnknownUser}
-      r <- try $ run h anyAuthUser uid
+      r <- try $ run h someAuthUser uid
       r `shouldBe` Left (RequestedEntityNotFoundException $ UserEntityId uid)
     it "should pass the UserId argument to the gateway delete command" $ do
       passedUserId <- newIORef undefined
@@ -58,7 +58,7 @@ spec =
               { hDeleteUser =
                   \uid _ -> writeIORef passedUserId uid >> pure (Right ())
               }
-      run h anyAuthUser expectedUid
+      run h someAuthUser expectedUid
       readIORef passedUserId `shouldReturn` expectedUid
 
 stubHandle :: Handle IO

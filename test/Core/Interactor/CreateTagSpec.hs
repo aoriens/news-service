@@ -33,7 +33,7 @@ spec
         let h =
               stubHandle
                 {hFindTagByName = \name -> onSuccess name >> pure Nothing}
-        void $ run h anyAuthUser expectedName
+        void $ run h someAuthUser expectedName
     it
       "should pass the name to hCreateTagNamed if hFindTagByName returned Nothing" $ do
       let expectedName = "a"
@@ -43,7 +43,7 @@ spec
                 { hFindTagByName = \_ -> pure Nothing
                 , hCreateTagNamed = \name -> onSuccess name >> pure stubTag
                 }
-        void $ run h anyAuthUser expectedName
+        void $ run h someAuthUser expectedName
     it "should not invoke hCreateTagNamed if hFindTagByName returned Just _" $ do
       createTagIsInvoked <- newIORef False
       let name = "a"
@@ -53,7 +53,7 @@ spec
               , hCreateTagNamed =
                   \_ -> writeIORef createTagIsInvoked True >> pure stubTag
               }
-      _ <- run h anyAuthUser name
+      _ <- run h someAuthUser name
       readIORef createTagIsInvoked `shouldReturn` False
     it
       "should return ExistingTagFound with the tag returned from the gateway if such a tag found" $ do
@@ -61,7 +61,7 @@ spec
           tag = stubTag {tagName = "pascal"}
           expectedResult = ExistingTagFound tag
           h = stubHandle {hFindTagByName = \_ -> pure $ Just tag}
-      r <- run h anyAuthUser name
+      r <- run h someAuthUser name
       r `shouldBe` expectedResult
     it
       "should return TagCreated with the tag returned from the gateway if no existing tag found" $ do
@@ -73,12 +73,12 @@ spec
               { hFindTagByName = \_ -> pure Nothing
               , hCreateTagNamed = \_ -> pure tag
               }
-      r <- run h anyAuthUser name
+      r <- run h someAuthUser name
       r `shouldBe` expectedResult
     it "should throw CoreException if the tag name is empty" $ do
       let name = ""
           h = stubHandle
-      run h anyAuthUser name `shouldThrow` isQueryException
+      run h someAuthUser name `shouldThrow` isQueryException
 
 stubTag :: Tag
 stubTag = Tag {tagName = "q", tagId = TagId 1}

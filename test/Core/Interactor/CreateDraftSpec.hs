@@ -47,7 +47,7 @@ spec
                     {hHasPermission = \perm _ -> perm == expectedPermission}
               }
           request = stubRequest {cdAuthorId = Just aid}
-      _ <- run h anyAuthUser request
+      _ <- run h someAuthUser request
       pure ()
     it
       "should pass title, text, author id, category id, main photo, other photos, and tag ids to the gateway" $ do
@@ -76,7 +76,7 @@ spec
                     writeIORef acceptedCommandRef (Just cmd)
                     pure $ Right stubNewsVersion
               }
-      _ <- run h anyAuthUser request
+      _ <- run h someAuthUser request
       acceptedCommand <- readIORef acceptedCommandRef
       cnvTitle <$> acceptedCommand `shouldBe` Just (cdTitle request)
       cnvText <$> acceptedCommand `shouldBe` Just (cdText request)
@@ -91,7 +91,7 @@ spec
           expectedVersion = stubNewsVersion {nvId = NewsVersionId 2}
           h =
             stubHandle {hCreateNewsVersion = \_ -> pure $ Right expectedVersion}
-      version <- run h anyAuthUser request
+      version <- run h someAuthUser request
       version `shouldBe` expectedVersion
     it
       "should throw DependentEntitiesNotFoundException if hCreateNewsVersion returned GUnknownEntityId" $ do
@@ -100,7 +100,7 @@ spec
           h =
             stubHandle
               {hCreateNewsVersion = \_ -> pure . Left $ GUnknownEntityId ids}
-      result <- try $ run h anyAuthUser request
+      result <- try $ run h someAuthUser request
       result `shouldBe` Left (DependentEntitiesNotFoundException ids)
     it "should pass main photo to hRejectDisallowedImage if it's Right Image" $ do
       passedPhotosRef <- newIORef []
@@ -113,7 +113,7 @@ spec
               { hRejectDisallowedImage =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
-      _ <- run h anyAuthUser request
+      _ <- run h someAuthUser request
       readIORef passedPhotosRef `shouldReturn` [photo]
     it
       "should pass all additional photos that are Right Image to hRejectDisallowedImage" $ do
@@ -128,7 +128,7 @@ spec
               { hRejectDisallowedImage =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
-      _ <- run h anyAuthUser request
+      _ <- run h someAuthUser request
       passedPhotos <- readIORef passedPhotosRef
       passedPhotos `shouldMatchList` rightImages
     it
@@ -143,7 +143,7 @@ spec
               { hRejectDisallowedImage =
                   \img -> error $ "Must not invoke with parameter " ++ show img
               }
-      _ <- run h anyAuthUser request
+      _ <- run h someAuthUser request
       pure ()
     it
       "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on main photo" $ do
@@ -154,7 +154,7 @@ spec
               { hRejectDisallowedImage = \_ -> error expectedError
               , hCreateNewsVersion = \_ -> error "Must not invoke"
               }
-      run h anyAuthUser request `shouldThrow` errorCall expectedError
+      run h someAuthUser request `shouldThrow` errorCall expectedError
     it
       "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on an additional photo" $ do
       let expectedError = "expected"
@@ -166,7 +166,7 @@ spec
               { hRejectDisallowedImage = \_ -> error expectedError
               , hCreateNewsVersion = \_ -> error "Must not invoke"
               }
-      run h anyAuthUser request `shouldThrow` errorCall expectedError
+      run h someAuthUser request `shouldThrow` errorCall expectedError
     it
       "should pass authorId to hCreateNewsVersion from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
       passedAuthorsId <- newIORef []
@@ -223,7 +223,7 @@ spec
               { hGetAuthorIdByUserIdIfExactlyOne =
                   \_ -> modifyIORef' invoked succ >> pure Nothing
               }
-      _ <- run h anyAuthUser request
+      _ <- run h someAuthUser request
       readIORef invoked `shouldReturn` False
     it
       "should throw QueryException if CreateDraftRequest has no author and hGetAuthorIdByUserIdIfExactlyOne returns Nothing" $ do

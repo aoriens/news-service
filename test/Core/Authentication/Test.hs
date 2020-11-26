@@ -1,6 +1,6 @@
 module Core.Authentication.Test
   ( noCredentials
-  , anyAuthUser
+  , someAuthUser
   , noOpAuthenticationHandle
   , authenticationHandleReturningIdentifiedUser
   ) where
@@ -18,5 +18,5 @@ authenticationHandleReturningIdentifiedUser =
 noCredentials :: Maybe Credentials
 noCredentials = Nothing
 
-anyAuthUser :: AuthenticatedUser
-anyAuthUser = AnonymousUser
+someAuthUser :: AuthenticatedUser
+someAuthUser = AnonymousUser

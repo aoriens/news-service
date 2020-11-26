@@ -36,7 +36,7 @@ spec =
                   \_ _ ->
                     pure . Left $ DependentEntitiesPreventDeletion childCatIds
               }
-      r <- try $ run h anyAuthUser catId
+      r <- try $ run h someAuthUser catId
       r `shouldBe`
         Left
           (DependentEntitiesPreventDeletionException
@@ -47,7 +47,7 @@ spec =
        \the gateway returned Left UnknownCategory" $ do
       let catId = CategoryId 1
           h = stubHandle {hDeleteCategory = \_ _ -> pure $ Left UnknownCategory}
-      r <- try $ run h anyAuthUser catId
+      r <- try $ run h someAuthUser catId
       r `shouldBe`
         Left (RequestedEntityNotFoundException $ CategoryEntityId catId)
     it "should pass the CategoryId argument to the gateway delete command" $ do
@@ -59,7 +59,7 @@ spec =
                   \catId _ ->
                     writeIORef passedCategoryId catId >> pure (Right ())
               }
-      run h anyAuthUser expectedCatId
+      run h someAuthUser expectedCatId
       readIORef passedCategoryId `shouldReturn` expectedCatId
 
 stubHandle :: Handle IO

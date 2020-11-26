@@ -39,7 +39,7 @@ spec
                       onSuccess (parentId, names)
                       pure $ Right stubCategory
                 }
-        void $ run h anyAuthUser expectedParentId expectedNames
+        void $ run h someAuthUser expectedParentId expectedNames
     it
       "should return a category returned from the gateway if created successfully" $ do
       let parentId = Just $ CategoryId 0
@@ -48,7 +48,7 @@ spec
             Right
               stubCategory {categoryName = "pascal", categoryId = CategoryId 6}
           h = stubHandle {hCreateCategory = \_ _ -> pure expectedResult}
-      r <- run h anyAuthUser parentId names
+      r <- run h someAuthUser parentId names
       r `shouldBe` expectedResult
     it
       "should return UnknownParentCategoryId if the gateway returns CCFUnknownParentCategoryId" $ do
@@ -57,14 +57,14 @@ spec
           h =
             stubHandle
               {hCreateCategory = \_ _ -> pure $ Left CCFUnknownParentCategoryId}
-      r <- run h anyAuthUser parentId names
+      r <- run h someAuthUser parentId names
       r `shouldBe` Left UnknownParentCategoryId
     it
       "should return IncorrectParameter if the least significant category name is empty" $ do
       let parentId = Nothing
           names = "" :| []
           h = stubHandle {hCreateCategory = \_ _ -> pure $ Right stubCategory}
-      r <- run h anyAuthUser parentId names
+      r <- run h someAuthUser parentId names
       r `shouldSatisfy` \case
         Left (IncorrectParameter _) -> True
         _ -> False
@@ -73,7 +73,7 @@ spec
       let parentId = Nothing
           names = "nonempty" :| [""]
           h = stubHandle {hCreateCategory = \_ _ -> pure $ Right stubCategory}
-      r <- run h anyAuthUser parentId names
+      r <- run h someAuthUser parentId names
       r `shouldSatisfy` \case
         Left (IncorrectParameter _) -> True
         _ -> False
