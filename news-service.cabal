@@ -223,6 +223,7 @@ test-suite news-service-test
     , Core.Interactor.GetAuthorsSpec
     , Core.Interactor.GetCategoriesSpec
     , Core.Interactor.GetCommentsForNewsSpec
+    , Core.Interactor.GetDraftsSpec
     , Core.Interactor.GetNewsListSpec
     , Core.Interactor.GetTagsSpec
     , Core.Interactor.GetUsersSpec

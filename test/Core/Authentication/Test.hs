@@ -1,6 +1,7 @@
 module Core.Authentication.Test
   ( noCredentials
   , someAuthUser
+  , someIdentifiedAuthUser
   , noOpAuthenticationHandle
   , authenticationHandleReturningIdentifiedUser
   ) where
@@ -20,3 +21,6 @@ noCredentials = Nothing
 
 someAuthUser :: AuthenticatedUser
 someAuthUser = AnonymousUser
+
+someIdentifiedAuthUser :: AuthenticatedUser
+someIdentifiedAuthUser = IdentifiedUser (UserId (-1)) False []
