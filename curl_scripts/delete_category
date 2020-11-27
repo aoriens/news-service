@@ -2,10 +2,5 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-if test X"$1" = X
-then
-    die "Usage: $0 user_id"
-fi
-
 allow_token
-run_curl -X DELETE "$DOMAIN/categories/$Q"
+run_curl -X DELETE "$DOMAIN/categories/${1?Pass a category ID as an argument}$Q"
