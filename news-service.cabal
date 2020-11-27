@@ -47,6 +47,7 @@ library
     , Core.Interactor.GetCategory
     , Core.Interactor.GetComment
     , Core.Interactor.GetCommentsForNews
+    , Core.Interactor.GetDraft
     , Core.Interactor.GetDrafts
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
@@ -114,6 +115,7 @@ library
     , Web.Handler.GetCategory
     , Web.Handler.GetComment
     , Web.Handler.GetCommentsForNews
+    , Web.Handler.GetDraft
     , Web.Handler.GetDrafts
     , Web.Handler.GetImage
     , Web.Handler.GetNews
@@ -223,6 +225,7 @@ test-suite news-service-test
     , Core.Interactor.GetAuthorsSpec
     , Core.Interactor.GetCategoriesSpec
     , Core.Interactor.GetCommentsForNewsSpec
+    , Core.Interactor.GetDraftSpec
     , Core.Interactor.GetDraftsSpec
     , Core.Interactor.GetNewsListSpec
     , Core.Interactor.GetTagsSpec

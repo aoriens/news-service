@@ -1,0 +1,6 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+allow_token
+run_curl "$DOMAIN/drafts/${1?Pass a draft ID as an argument}$Q"

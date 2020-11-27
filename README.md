@@ -155,6 +155,11 @@ the request body and returns [Draft](#Draft) entity. The method requires
 authentication. Your cannot perform the operation on behalf of an
 [Author](#Author) that you do not own.
 
+### `GET /drafts/{draft_id}`
+
+Returns a [Draft](#Draft) entity identified with `{draft_id}`. It requires
+authentication. You must be a user related to the author of the draft.
+
 ### `POST /drafts/{draft_id}/publish`
 
 Publishes a [Draft](#Draft) with the given identifier as a news article. Returns

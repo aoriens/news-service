@@ -20,6 +20,7 @@ module Database
   , getDraftAuthor
   , getDraftsOfAuthor
   , getDraftsOfUser
+  , getDraft
   , createNews
   -- * Tags
   , findTagByName
@@ -152,6 +153,9 @@ getDraftsOfAuthor h authorId pageSpec =
 getDraftsOfUser :: DB.Handle -> UserId -> PageSpec -> IO [NewsVersion]
 getDraftsOfUser h userId pageSpec =
   DB.runTransactionRO h $ DNews.getDraftsOfUser userId pageSpec
+
+getDraft :: DB.Handle -> NewsVersionId -> IO (Maybe NewsVersion)
+getDraft h = DB.runTransactionRO h . DNews.getDraft
 
 createNews :: DB.Handle -> NewsVersionId -> Day -> IO News
 createNews h vId day = DB.runTransactionRW h $ DNews.createNews vId day

@@ -6,6 +6,7 @@ module Database.Logic.News.Get
   , getNews
   , getDraftsOfAuthor
   , getDraftsOfUser
+  , getDraft
   ) where
 
 import Control.Monad
@@ -114,6 +115,9 @@ getDraftsOfUser :: UserId -> PageSpec -> Transaction [NewsVersion]
 getDraftsOfUser userId pageSpec =
   mapM loadVersionWithRow =<< getDraftRowsOfUser userId pageSpec
 
+getDraft :: NewsVersionId -> Transaction (Maybe NewsVersion)
+getDraft = mapM loadVersionWithRow <=< getDraftRow
+
 getDraftRowsOfAuthor :: AuthorId -> PageSpec -> Transaction [VersionRow]
 getDraftRowsOfAuthor authorId pageSpec =
   runStatementWithColumns sql versionRowColumns D.rowList True
@@ -143,6 +147,20 @@ getDraftRowsOfUser userId pageSpec =
           where authors.user_id =
         |] <>
       Sql.param (getUserId userId) <> limitOffsetClauseWithPageSpec pageSpec
+
+getDraftRow :: NewsVersionId -> Transaction (Maybe VersionRow)
+getDraftRow nvId = runStatementWithColumns sql versionRowColumns D.rowMaybe True
+  where
+    sql =
+      Sql.text
+        [TH.uncheckedSql|
+          select $COLUMNS
+          from drafts as news_versions
+               join authors using (author_id)
+               join users using (user_id)
+          where news_version_id =
+        |] <>
+      Sql.param (getNewsVersionId nvId)
 
 -- Part of news we can extract from the database with the first query.
 data NewsRow =
