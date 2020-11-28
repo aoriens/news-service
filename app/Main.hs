@@ -300,9 +300,7 @@ getAuthorHandlerHandle deps@Deps {..} session =
   HGetAuthor.Handle
     { hGetAuthorHandle =
         IGetAuthor.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hGetAuthor = Database.getAuthor $ sessionDatabaseHandle deps session
-          }
+          {hGetAuthor = Database.getAuthor $ sessionDatabaseHandle deps session}
     , hPresenter = authorPresenter dRepresentationBuilderHandle
     , hAuthenticationHandle = dMakeAuthenticationHandle session
     }

@@ -25,6 +25,7 @@ library
     , Core.Authentication.Impl
     , Core.Author
     , Core.Authorization
+    , Core.AuthorizationNG
     , Core.Authorization.Impl
     , Core.Category
     , Core.Comment

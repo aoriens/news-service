@@ -5,12 +5,11 @@ module Core.Interactor.GetAuthor
 
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
+import Core.AuthorizationNG
 
-data Handle m =
+newtype Handle m =
   Handle
     { hGetAuthor :: AuthorId -> m (Maybe Author)
-    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 run ::
@@ -20,9 +19,5 @@ run ::
   -> AuthorId
   -> m (Maybe Author)
 run Handle {..} authUser authorId' = do
-  requirePermission
-    hAuthorizationHandle
-    AdminPermission
-    authUser
-    "get an author"
+  authUserMustBeAdmin authUser "get an author"
   hGetAuthor authorId'

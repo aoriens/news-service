@@ -4,6 +4,7 @@ module Core.Exception
   , isQueryException
   , isBadCredentialsException
   , isNoPermissionException
+  , isNoPermissionExceptionWithPermission
   , isUserNotIdentifiedException
   , isRequestedEntityNotFoundException
   , isDisallowedImageContentTypeException
@@ -48,6 +49,11 @@ isBadCredentialsException _ = False
 isNoPermissionException :: CoreException -> Bool
 isNoPermissionException NoPermissionException {} = True
 isNoPermissionException _ = False
+
+isNoPermissionExceptionWithPermission :: Permission -> CoreException -> Bool
+isNoPermissionExceptionWithPermission perm e
+  | NoPermissionException p _ <- e = p == perm
+  | otherwise = False
 
 isUserNotIdentifiedException :: CoreException -> Bool
 isUserNotIdentifiedException UserNotIdentifiedException {} = True
