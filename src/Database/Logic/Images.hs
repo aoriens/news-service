@@ -5,11 +5,13 @@ module Database.Logic.Images
   , imageExists
   , createImage
   , deleteImageIfNotReferenced
+  , deleteImagesIfNotReferenced
   ) where
 
 import Core.Image
 import Data.Profunctor
 import qualified Data.Text as T
+import qualified Data.Vector.Unboxed
 import Database.Service.Primitives
 import qualified Hasql.TH as TH
 
@@ -62,16 +64,25 @@ createImageSt =
       ) returning image_id :: integer
     |]
 
-deleteImageIfNotReferenced :: ImageId -> Session ()
-deleteImageIfNotReferenced =
-  ignoringForeignKeyViolation . transactionRW . deleteImage
+deleteImageIfNotReferenced :: ImageId -> Transaction ()
+deleteImageIfNotReferenced = deleteImagesIfNotReferenced . (: [])
 
-deleteImage :: ImageId -> Transaction ()
-deleteImage =
-  runStatement $
+deleteImagesIfNotReferenced :: [ImageId] -> Transaction ()
+deleteImagesIfNotReferenced [] = pure ()
+deleteImagesIfNotReferenced ids =
+  flip runStatement ids $
   lmap
-    getImageId
+    (Data.Vector.Unboxed.fromList . map getImageId)
     [TH.resultlessStatement|
       delete from images
-      where image_id = $1 :: integer
+      where image_id in (
+              select * from unnest($1 :: integer[])
+              except
+              select main_photo_id from news_versions
+              except
+              select avatar_id from users
+              except
+              select image_id from news_versions_and_additional_photos_relation
+            )
+
     |]

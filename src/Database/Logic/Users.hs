@@ -141,7 +141,7 @@ getUserHashAndIsAdmin =
     where user_id = $1 :: integer
     |]
 
-deleteUser :: UserId -> PageSpec -> Session (Either IDeleteUser.Failure ())
+deleteUser :: UserId -> PageSpec -> Transaction (Either IDeleteUser.Failure ())
 deleteUser uid defaultRange =
   runExceptT $ do
     optAvatarId <- ExceptT deleteUserReturningAvatarId
@@ -150,12 +150,11 @@ deleteUser uid defaultRange =
       Just Nothing -> pure ()
       Just (Just avatarId) -> lift $ deleteImageIfNotReferenced avatarId
   where
-    deleteUserReturningAvatarId =
-      transactionRW $ do
-        authors <- selectAuthorsByUserId uid (Just defaultRange)
-        if null authors
-          then Right <$> deleteUserSt uid
-          else pure $ dependencyFailure authors
+    deleteUserReturningAvatarId = do
+      authors <- selectAuthorsByUserId uid (Just defaultRange)
+      if null authors
+        then Right <$> deleteUserSt uid
+        else pure $ dependencyFailure authors
     dependencyFailure =
       Left . DependentEntitiesPreventDeletion . map AuthorEntityId . toList
 

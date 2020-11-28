@@ -186,7 +186,7 @@ getUserAuthData h = runTransactionRO h . DUsers.selectUserAuthData
 deleteUser ::
      DB.Handle -> UserId -> PageSpec -> IO (Either IDeleteUser.Failure ())
 deleteUser h uid defaultRange =
-  runSession h $ DUsers.deleteUser uid defaultRange
+  runTransactionRW h $ DUsers.deleteUser uid defaultRange
 
 createComment ::
      DB.Handle
