@@ -26,7 +26,7 @@ spec
       let h =
             stubHandle
               { hAuthorizationHandle = authorizationHandle
-              , hGetDraftAuthor = \_ -> pure $ Right documentAuthorId
+              , hGetDraftAuthor = \_ -> pure $ Just documentAuthorId
               , hCreateNews = \_ _ -> onSuccess >> pure stubNews
               }
           draftId = NewsVersionId 1
@@ -36,7 +36,7 @@ spec
       "should throw RequestedEntityNotFoundException if hGetDraftAuthor returns Left UnknownNewsVersionId" $ do
       let h =
             stubHandle
-              { hGetDraftAuthor = \_ -> pure $ Left UnknownDraftId
+              { hGetDraftAuthor = \_ -> pure Nothing
               , hCreateNews = \_ _ -> error "Must not invoke"
               }
           draftId = NewsVersionId 1
@@ -46,7 +46,7 @@ spec
       let authorId' = AuthorId 1
           h =
             stubHandle
-              { hGetDraftAuthor = \_ -> pure $ Right authorId'
+              { hGetDraftAuthor = \_ -> pure $ Just authorId'
               , hAuthorizationHandle =
                   AuthorizationHandle $ \perm _ ->
                     perm == AuthorshipPermission authorId'
@@ -61,7 +61,7 @@ spec
               { hGetDraftAuthor =
                   \id' -> do
                     modifyIORef' passedDraftIds (id' :)
-                    pure . Right $ AuthorId 1
+                    pure . Just $ AuthorId 1
               }
           draftId = NewsVersionId 1
       _ <- run h someAuthUser draftId
@@ -135,7 +135,7 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hAuthorizationHandle = noOpAuthorizationHandle
-    , hGetDraftAuthor = \_ -> pure $ Right $ AuthorId 999
+    , hGetDraftAuthor = \_ -> pure $ Just $ AuthorId 999
     , hGetCurrentDay = pure $ ModifiedJulianDay 0
     , hCreateNews = \_ _ -> pure stubNews
     }

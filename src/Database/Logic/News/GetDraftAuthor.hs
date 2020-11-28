@@ -5,19 +5,17 @@ module Database.Logic.News.GetDraftAuthor
   ) where
 
 import Core.Author
-import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Data.Profunctor
 import Database.Service.Primitives
 import qualified Hasql.TH as TH
 
-getDraftAuthor ::
-     NewsVersionId -> Transaction (Either IPublishDraft.GatewayFailure AuthorId)
+getDraftAuthor :: NewsVersionId -> Transaction (Maybe AuthorId)
 getDraftAuthor =
   runStatement $
   dimap
     getNewsVersionId
-    (maybe (Left IPublishDraft.UnknownDraftId) (Right . AuthorId))
+    (fmap AuthorId)
     [TH.maybeStatement|
       select author_id :: integer
       from drafts

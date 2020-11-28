@@ -53,7 +53,6 @@ import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
-import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Pagination
 import Core.Tag
@@ -140,10 +139,7 @@ createNewsVersion ::
   -> IO (Either ICreateDraft.GatewayFailure NewsVersion)
 createNewsVersion h = DB.runTransactionRW h . DNews.createNewsVersion
 
-getDraftAuthor ::
-     DB.Handle
-  -> NewsVersionId
-  -> IO (Either IPublishDraft.GatewayFailure AuthorId)
+getDraftAuthor :: DB.Handle -> NewsVersionId -> IO (Maybe AuthorId)
 getDraftAuthor h = DB.runTransactionRO h . DNews.getDraftAuthor
 
 getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [NewsVersion]
