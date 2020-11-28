@@ -16,6 +16,9 @@ create table mime_types (
        value varchar not null unique
 );
 
+-- Images are shared among news and should be considered immutable. On
+-- deleting an image one should check whether other tables refer to
+-- it.
 create table images (
        image_id serial not null primary key,
        content bytea not null,
@@ -104,8 +107,8 @@ create table news_versions (
 );
 
 create table news_versions_and_tags_relation (
-       news_version_id integer not null references news_versions,
-       tag_id integer not null references tags,
+       news_version_id integer not null references news_versions on delete cascade,
+       tag_id integer not null references tags on delete cascade,
        primary key (news_version_id, tag_id)
 );
 

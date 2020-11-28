@@ -22,6 +22,7 @@ import qualified Core.Interactor.CreateTag as ICreateTag
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
+import qualified Core.Interactor.DeleteDraft as IDeleteDraft
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetAuthor as IGetAuthor
 import qualified Core.Interactor.GetAuthors as IGetAuthors
@@ -67,6 +68,7 @@ import qualified Web.Handler.CreateTag as HCreateTag
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteCategory as HDeleteCategory
+import qualified Web.Handler.DeleteDraft as HDeleteDraft
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetAuthor as HGetAuthor
 import qualified Web.Handler.GetAuthors as HGetAuthors
@@ -234,9 +236,11 @@ router deps =
     AuthorDraftsURI authorId ->
       R.get $ \session ->
         HGetDrafts.run (getDraftsHandlerHandle deps session) (Just authorId)
-    DraftURI draftId ->
+    DraftURI draftId -> do
       R.get $ \session ->
         HGetDraft.run (getDraftHandlerHandle deps session) draftId
+      R.delete $ \session ->
+        HDeleteDraft.run (deleteDraftHandlerHandle deps session) draftId
     PublishDraftURI draftId ->
       R.post $ \session ->
         HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
@@ -557,6 +561,21 @@ getDraftHandlerHandle deps@Deps {..} session =
           }
     , hAuthenticationHandle = dMakeAuthenticationHandle session
     , hPresenter = draftPresenter dRepresentationBuilderHandle
+    }
+
+deleteDraftHandlerHandle :: Deps -> Web.Session -> HDeleteDraft.Handle
+deleteDraftHandlerHandle deps@Deps {..} session =
+  HDeleteDraft.Handle
+    { hDeleteDraft =
+        IDeleteDraft.run
+          IDeleteDraft.Handle
+            { hGetDraftAuthor =
+                Database.getDraftAuthor $ sessionDatabaseHandle deps session
+            , hDeleteNewsVersion =
+                Database.deleteNewsVersion $ sessionDatabaseHandle deps session
+            }
+    , hAuthenticate = authenticate $ dMakeAuthenticationHandle session
+    , hPresent = draftDeletedPresenter
     }
 
 createCommentHandlerHandle :: Deps -> Web.Session -> HCreateComment.Handle

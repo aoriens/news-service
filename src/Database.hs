@@ -16,12 +16,13 @@ module Database
   -- * News
   , getNewsList
   , getNews
-  , createNewsVersion
   , getDraftAuthor
   , getDraftsOfAuthor
   , getDraftsOfUser
   , getDraft
   , createNews
+  , createNewsVersion
+  , deleteNewsVersion
   -- * Tags
   , findTagByName
   , findTagById
@@ -67,6 +68,7 @@ import qualified Database.Logic.Categories as DCategories
 import qualified Database.Logic.Comments as DComments
 import qualified Database.Logic.Images as DImages
 import qualified Database.Logic.News.Create as DNews
+import qualified Database.Logic.News.Delete as DNews
 import qualified Database.Logic.News.Get as DNews
 import qualified Database.Logic.News.GetDraftAuthor as DNews
 import qualified Database.Logic.Tags as DTags
@@ -152,6 +154,9 @@ getDraftsOfUser h userId pageSpec =
 
 getDraft :: DB.Handle -> NewsVersionId -> IO (Maybe NewsVersion)
 getDraft h = DB.runTransactionRO h . DNews.getDraft
+
+deleteNewsVersion :: DB.Handle -> NewsVersionId -> IO ()
+deleteNewsVersion h = DB.runTransactionRW h . DNews.deleteNewsVersion
 
 createNews :: DB.Handle -> NewsVersionId -> Day -> IO News
 createNews h vId day = DB.runTransactionRW h $ DNews.createNews vId day

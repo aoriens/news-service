@@ -41,6 +41,7 @@ library
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteAuthor
     , Core.Interactor.DeleteCategory
+    , Core.Interactor.DeleteDraft
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
@@ -74,6 +75,7 @@ library
     , Database.Logic.Comments
     , Database.Logic.Images
     , Database.Logic.News.Create
+    , Database.Logic.News.Delete
     , Database.Logic.News.Exists
     , Database.Logic.News.Filter
     , Database.Logic.News.Get
@@ -109,6 +111,7 @@ library
     , Web.Handler.CreateUser
     , Web.Handler.DeleteAuthor
     , Web.Handler.DeleteCategory
+    , Web.Handler.DeleteDraft
     , Web.Handler.DeleteUser
     , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
@@ -221,6 +224,7 @@ test-suite news-service-test
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteAuthorSpec
     , Core.Interactor.DeleteCategorySpec
+    , Core.Interactor.DeleteDraftSpec
     , Core.Interactor.DeleteUserSpec
     , Core.Interactor.GetAuthorSpec
     , Core.Interactor.GetAuthorsSpec

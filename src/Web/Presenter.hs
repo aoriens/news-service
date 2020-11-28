@@ -19,6 +19,7 @@ module Web.Presenter
   , draftCreatedPresenter
   , draftListPresenter
   , draftPresenter
+  , draftDeletedPresenter
   -- * Categories
   , categoryCreatedPresenter
   , categoryPresenter
@@ -118,6 +119,9 @@ draftListPresenter h = dataResponse . runRepBuilder h . mapM draftRep
 
 draftPresenter :: RepBuilderHandle -> NewsVersion -> Response
 draftPresenter h = dataResponse . runRepBuilder h . draftRep
+
+draftDeletedPresenter :: Response
+draftDeletedPresenter = noContentResponse
 
 categoryCreatedPresenter ::
      AppURIConfig -> RepBuilderHandle -> Category -> Response

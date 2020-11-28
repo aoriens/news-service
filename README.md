@@ -157,6 +157,12 @@ authentication. Your cannot perform the operation on behalf of an
 
 ### `GET /drafts/{draft_id}`
 
+Deletes the [Draft](#Draft) entity identified with `{draft_id}` and returns no
+content. It requires authentication. You must be a user related to the author of
+the draft, and the draft must exist.
+
+### `GET /drafts/{draft_id}`
+
 Returns a [Draft](#Draft) entity identified with `{draft_id}`. It requires
 authentication. You must be a user related to the author of the draft.
 

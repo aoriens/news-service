@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Core.News
   ( News(..)
   , NewsId(..)
@@ -10,6 +12,7 @@ import Core.Category
 import Core.Image
 import Core.Tag
 import Data.HashSet (HashSet)
+import Data.Hashable
 import Data.Int
 import Data.Text (Text)
 import Data.Time
@@ -45,4 +48,4 @@ newtype NewsVersionId =
   NewsVersionId
     { getNewsVersionId :: Int32
     }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Hashable)
