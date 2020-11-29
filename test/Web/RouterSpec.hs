@@ -27,8 +27,8 @@ spec
           expectedHandler = stubHandlerWithHeader ("X-My-Header", "")
           router =
             R.new $ \case
-              U.ImageURI {} -> R.method method expectedHandler
-              _ -> pure ()
+              U.ImageURI {} -> [R.method method expectedHandler]
+              _ -> []
           request =
             defaultRequest
               { requestPathInfo = U.relativeURIPath $ U.toRelativeURI appURI
@@ -41,15 +41,15 @@ spec
               _ -> error "UnexpectedResult"
       handler `shouldEmitSameHeadersAs` expectedHandler
     it "should return ResourceNotFoundRequest for an empty router" $ do
-      let router = R.new $ \_ -> pure ()
+      let router = R.new $ const []
           request = defaultRequest {requestPathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
     it "should return ResourceNotFoundRequest if no match found" $ do
       let router =
             R.new $ \case
-              U.ImageURI {} -> R.method "GET" noOpHandler
-              _ -> pure ()
+              U.ImageURI {} -> [R.method "GET" noOpHandler]
+              _ -> []
           request = defaultRequest {requestPathInfo = ["unknown_path"]}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
@@ -59,8 +59,8 @@ spec
           U.RelativeURI path = U.toRelativeURI uri
           router =
             R.new $ \case
-              U.ImageURI {} -> pure ()
-              _ -> pure ()
+              U.ImageURI {} -> []
+              _ -> []
           request = defaultRequest {requestPathInfo = path}
           result = R.route router request
       result `shouldSatisfy` R.isResourceNotFoundResult
@@ -71,11 +71,12 @@ spec
           unknownMethod = "UNKNOWN"
           router =
             R.new $ \case
-              U.ImageURI {} -> do
-                R.method Http.methodPost noOpHandler
-                R.method Http.methodPut noOpHandler
-                R.method Http.methodDelete noOpHandler
-              _ -> pure ()
+              U.ImageURI {} ->
+                [ R.method Http.methodPost noOpHandler
+                , R.method Http.methodPut noOpHandler
+                , R.method Http.methodDelete noOpHandler
+                ]
+              _ -> []
           request =
             defaultRequest
               {requestPathInfo = path, requestMethod = unknownMethod}

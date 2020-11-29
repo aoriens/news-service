@@ -190,70 +190,87 @@ router :: Deps -> R.Router Web.EApplication
 router deps =
   R.new $ \case
     ImageURI imageId ->
-      R.get $ \session ->
-        HGetImage.run (getImageHandlerHandle deps session) imageId
-    UsersURI -> do
-      R.get $ HGetUsers.run . getUsersHandlerHandle deps
-      R.post $ HCreateUser.run . createUserHandle deps
-    UserURI userId -> do
-      R.get $ \session ->
-        HGetUser.run (getUserHandlerHandle deps session) userId
-      R.delete $ \session ->
-        HDeleteUser.run (deleteUserHandlerHandle deps session) userId
-    AuthorsURI -> do
-      R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
-      R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
-    AuthorURI authorId -> do
-      R.get $ \session ->
-        HGetAuthor.run (getAuthorHandlerHandle deps session) authorId
-      R.delete $ \session ->
-        HDeleteAuthor.run (deleteAuthorHandlerHandle deps session) authorId
-      R.patch $ \session ->
-        HPatchAuthor.run (patchAuthorHandlerHandle deps session) authorId
-    CategoriesURI -> do
-      R.get $ HGetCategories.run . getCategoriesHandlerHandle deps
-      R.post $ HCreateCategory.run . createCategoryHandlerHandle deps
-    CategoryURI categoryId -> do
-      R.get $ \session ->
-        HGetCategory.run (getCategoryHandlerHandle deps session) categoryId
-      R.delete $ \session ->
-        HDeleteCategory.run
-          (deleteCategoryHandlerHandle deps session)
-          categoryId
-    NewsListURI -> R.get $ HListNews.run . getNewsListHandlerHandle deps
+      [ R.get $ \session ->
+          HGetImage.run (getImageHandlerHandle deps session) imageId
+      ]
+    UsersURI ->
+      [ R.get (HGetUsers.run . getUsersHandlerHandle deps)
+      , R.post (HCreateUser.run . createUserHandle deps)
+      ]
+    UserURI userId ->
+      [ R.get $ \session ->
+          HGetUser.run (getUserHandlerHandle deps session) userId
+      , R.delete $ \session ->
+          HDeleteUser.run (deleteUserHandlerHandle deps session) userId
+      ]
+    AuthorsURI ->
+      [ R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
+      , R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
+      ]
+    AuthorURI authorId ->
+      [ R.get $ \session ->
+          HGetAuthor.run (getAuthorHandlerHandle deps session) authorId
+      , R.delete $ \session ->
+          HDeleteAuthor.run (deleteAuthorHandlerHandle deps session) authorId
+      , R.patch $ \session ->
+          HPatchAuthor.run (patchAuthorHandlerHandle deps session) authorId
+      ]
+    CategoriesURI ->
+      [ R.get $ HGetCategories.run . getCategoriesHandlerHandle deps
+      , R.post $ HCreateCategory.run . createCategoryHandlerHandle deps
+      ]
+    CategoryURI categoryId ->
+      [ R.get $ \session ->
+          HGetCategory.run (getCategoryHandlerHandle deps session) categoryId
+      , R.delete $ \session ->
+          HDeleteCategory.run
+            (deleteCategoryHandlerHandle deps session)
+            categoryId
+      ]
+    NewsListURI -> [R.get $ HListNews.run . getNewsListHandlerHandle deps]
     NewsItemURI newsId ->
-      R.get $ \session ->
-        HGetNews.run (getNewsHandlerHandle deps session) newsId
-    TagsURI -> do
-      R.get $ HGetTags.run . getTagsHandlerHandle deps
-      R.post $ HCreateTag.run . createTagHandlerHandle deps
+      [ R.get $ \session ->
+          HGetNews.run (getNewsHandlerHandle deps session) newsId
+      ]
+    TagsURI ->
+      [ R.get $ HGetTags.run . getTagsHandlerHandle deps
+      , R.post $ HCreateTag.run . createTagHandlerHandle deps
+      ]
     TagURI tagId' ->
-      R.get $ \session -> HGetTag.run (getTagHandlerHandle deps session) tagId'
-    DraftsURI -> do
-      R.get $ \session ->
-        HGetDrafts.run (getDraftsHandlerHandle deps session) Nothing
-      R.post $ HCreateDraft.run . createDraftHandlerHandle deps
+      [ R.get $ \session ->
+          HGetTag.run (getTagHandlerHandle deps session) tagId'
+      ]
+    DraftsURI ->
+      [ R.get $ \session ->
+          HGetDrafts.run (getDraftsHandlerHandle deps session) Nothing
+      , R.post $ HCreateDraft.run . createDraftHandlerHandle deps
+      ]
     AuthorDraftsURI authorId ->
-      R.get $ \session ->
-        HGetDrafts.run (getDraftsHandlerHandle deps session) (Just authorId)
-    DraftURI draftId -> do
-      R.get $ \session ->
-        HGetDraft.run (getDraftHandlerHandle deps session) draftId
-      R.delete $ \session ->
-        HDeleteDraft.run (deleteDraftHandlerHandle deps session) draftId
+      [ R.get $ \session ->
+          HGetDrafts.run (getDraftsHandlerHandle deps session) (Just authorId)
+      ]
+    DraftURI draftId ->
+      [ R.get $ \session ->
+          HGetDraft.run (getDraftHandlerHandle deps session) draftId
+      , R.delete $ \session ->
+          HDeleteDraft.run (deleteDraftHandlerHandle deps session) draftId
+      ]
     PublishDraftURI draftId ->
-      R.post $ \session ->
-        HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
-    CommentsForNewsURI newsId' -> do
-      R.get $ \session ->
-        HGetCommentsForNews.run
-          (getCommentsForNewsHandlerHandle deps session)
-          newsId'
-      R.post $ \session ->
-        HCreateComment.run (createCommentHandlerHandle deps session) newsId'
+      [ R.post $ \session ->
+          HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
+      ]
+    CommentsForNewsURI newsId' ->
+      [ R.get $ \session ->
+          HGetCommentsForNews.run
+            (getCommentsForNewsHandlerHandle deps session)
+            newsId'
+      , R.post $ \session ->
+          HCreateComment.run (createCommentHandlerHandle deps session) newsId'
+      ]
     CommentURI commentId ->
-      R.get $ \session ->
-        HGetComment.run (getCommentHandlerHandle deps session) commentId
+      [ R.get $ \session ->
+          HGetComment.run (getCommentHandlerHandle deps session) commentId
+      ]
 
 createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
 createAuthorHandlerHandle deps@Deps {..} session =

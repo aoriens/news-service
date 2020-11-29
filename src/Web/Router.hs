@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 -- | The module describes a path-driven routing machinery of the web server.
 module Web.Router
   ( Router
@@ -17,7 +15,6 @@ module Web.Router
   , isMethodNotSupportedResult
   ) where
 
-import Control.Monad.Writer.Strict
 import qualified Data.HashMap.Strict as HM
 import Data.List hiding (delete)
 import qualified Network.HTTP.Types as Http
@@ -32,56 +29,39 @@ newtype Router handler =
 
 type MethodsToHandlers = HM.HashMap Http.Method
 
--- | A monad type to make it easier to specify HTTP method to handler
--- mappings.
-newtype MethodsSpec handler a =
-  MethodsSpec (Writer (MethodsToHandlersMonoid handler) a)
-  deriving (Functor, Applicative, Monad)
+data Method handler =
+  Method Http.Method handler
 
-newtype MethodsToHandlersMonoid handler =
-  MethodsToHandlersMonoid (MethodsToHandlers handler)
-
-instance Semigroup (MethodsToHandlersMonoid h) where
-  (MethodsToHandlersMonoid hm1) <> (MethodsToHandlersMonoid hm2) =
-    MethodsToHandlersMonoid $
-    HM.unionWithKey
-      (\path_ _ _ -> error $ "Duplicate entry for path " ++ show path_)
-      hm1
-      hm2
-
-instance Monoid (MethodsToHandlersMonoid h) where
-  mempty = MethodsToHandlersMonoid mempty
-
-execMethodsSpec :: MethodsSpec handler () -> MethodsToHandlers handler
-execMethodsSpec (MethodsSpec w) =
-  let (MethodsToHandlersMonoid table) = execWriter w
-   in table
+execMethodsSpec :: [Method handler] -> MethodsToHandlers handler
+execMethodsSpec = foldl' f HM.empty
+  where
+    f table (Method m h) = HM.insertWith (\_ _ -> failure m) m h table
+    failure k = error $ "Duplicate entry for path " ++ show k
 
 {- |
 
-Creates a router. It is possible to use 'MethodSpec' monad to
-configure HTTP method selection.
+Creates a router.
 
 > new $ \uri -> case uri of
->   UserURI userId -> do
->     get    handleGetForUserId userId
->     put    handlePutForUserId userId
->   UsersURI -> do
->     post handlePostForUser
+>   UserURI userId ->
+>     [ get $ handleGetForUserId userId
+>     , put $ handlePutForUserId userId
+>     ]
+>   UsersURI ->
+>     [post handlePostForUser]
 
 If the found entry does not contain a subentry for the request method,
 it is reported as 'MethodNotSupportedResult'.
 
 -}
-new :: (U.AppURI -> MethodsSpec handler ()) -> Router handler
+new :: (U.AppURI -> [Method handler]) -> Router handler
 new f = Router $ execMethodsSpec . f
 
 -- | Sets a handler for the specified HTTP method.
-method :: Http.Method -> handler -> MethodsSpec handler ()
-method m handler =
-  MethodsSpec . tell . MethodsToHandlersMonoid $ HM.singleton m handler
+method :: Http.Method -> handler -> Method handler
+method = Method
 
-get, post, put, delete, patch :: handler -> MethodsSpec handler ()
+get, post, put, delete, patch :: handler -> Method handler
 get = method Http.methodGet
 
 post = method Http.methodPost
