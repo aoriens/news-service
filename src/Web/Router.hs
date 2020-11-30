@@ -32,6 +32,9 @@ type MethodsToHandlers = HM.HashMap Http.Method
 data Method handler =
   Method Http.Method handler
 
+instance Functor Router where
+  fmap f (Router r) = Router $ fmap f . r
+
 execMethodsSpec :: [Method handler] -> MethodsToHandlers handler
 execMethodsSpec = foldl' f HM.empty
   where

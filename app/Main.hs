@@ -12,7 +12,11 @@ import Control.Exception
 import Control.Exception.Sync
 import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
+import Core.Author
 import qualified Core.Authorization.Impl
+import Core.Category
+import Core.Comment
+import Core.Image
 import Core.ImageValidator
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
@@ -41,8 +45,11 @@ import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
+import Core.News
 import Core.Pagination
 import qualified Core.Pagination.Impl
+import Core.Tag
+import Core.User
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text as T
@@ -165,7 +172,7 @@ getDeps = do
                 AuthImpl.Handle
                   { hGetUserAuthData =
                       Database.getUserAuthData $
-                      sessionDatabaseHandle'
+                      sessionDatabaseHandle
                         dDatabaseConnectionConfig
                         dLoggerHandle
                         session
@@ -186,246 +193,205 @@ getWebAppHandle deps@Deps {..} = do
           Cf.cfShowInternalErrorInfoInResponse dConfig
       }
 
-router :: Deps -> R.Router Web.EApplication
+router :: Deps -> R.Router (Web.Session -> Web.Application)
 router deps =
+  fmap (\h -> h deps . sessionDeps deps) $
   R.new $ \case
-    ImageURI imageId ->
-      [ R.get $ \session ->
-          HGetImage.run (getImageHandlerHandle deps session) imageId
-      ]
-    UsersURI ->
-      [ R.get (HGetUsers.run . getUsersHandlerHandle deps)
-      , R.post (HCreateUser.run . createUserHandle deps)
-      ]
+    ImageURI imageId -> [R.get $ runGetImageHandler imageId]
+    UsersURI -> [R.get runGetUsersHandler, R.post runCreateUserHandler]
     UserURI userId ->
-      [ R.get $ \session ->
-          HGetUser.run (getUserHandlerHandle deps session) userId
-      , R.delete $ \session ->
-          HDeleteUser.run (deleteUserHandlerHandle deps session) userId
-      ]
-    AuthorsURI ->
-      [ R.get $ HGetAuthors.run . getAuthorsHandlerHandle deps
-      , R.post $ HCreateAuthor.run . createAuthorHandlerHandle deps
-      ]
+      [R.get $ runGetUserHandler userId, R.delete $ runDeleteUserHandler userId]
+    AuthorsURI -> [R.get runGetAuthorsHandler, R.post runCreateAuthorHandler]
     AuthorURI authorId ->
-      [ R.get $ \session ->
-          HGetAuthor.run (getAuthorHandlerHandle deps session) authorId
-      , R.delete $ \session ->
-          HDeleteAuthor.run (deleteAuthorHandlerHandle deps session) authorId
-      , R.patch $ \session ->
-          HPatchAuthor.run (patchAuthorHandlerHandle deps session) authorId
+      [ R.get $ runGetAuthorHandler authorId
+      , R.delete $ runDeleteAuthorHandler authorId
+      , R.patch $ runPatchAuthorHandler authorId
       ]
     CategoriesURI ->
-      [ R.get $ HGetCategories.run . getCategoriesHandlerHandle deps
-      , R.post $ HCreateCategory.run . createCategoryHandlerHandle deps
-      ]
+      [R.get runGetCategoriesHandler, R.post runCreateCategoryHandler]
     CategoryURI categoryId ->
-      [ R.get $ \session ->
-          HGetCategory.run (getCategoryHandlerHandle deps session) categoryId
-      , R.delete $ \session ->
-          HDeleteCategory.run
-            (deleteCategoryHandlerHandle deps session)
-            categoryId
+      [ R.get $ runGetCategoryHandler categoryId
+      , R.delete $ runDeleteCategoryHandler categoryId
       ]
-    NewsListURI -> [R.get $ HListNews.run . getNewsListHandlerHandle deps]
-    NewsItemURI newsId ->
-      [ R.get $ \session ->
-          HGetNews.run (getNewsHandlerHandle deps session) newsId
-      ]
-    TagsURI ->
-      [ R.get $ HGetTags.run . getTagsHandlerHandle deps
-      , R.post $ HCreateTag.run . createTagHandlerHandle deps
-      ]
-    TagURI tagId' ->
-      [ R.get $ \session ->
-          HGetTag.run (getTagHandlerHandle deps session) tagId'
-      ]
+    NewsListURI -> [R.get runGetNewsListHandler]
+    NewsItemURI newsId -> [R.get $ runGetNewsHandler newsId]
+    TagsURI -> [R.get runGetTagsHandler, R.post runCreateTagHandler]
+    TagURI tagId -> [R.get $ runGetTagHandler tagId]
     DraftsURI ->
-      [ R.get $ \session ->
-          HGetDrafts.run (getDraftsHandlerHandle deps session) Nothing
-      , R.post $ HCreateDraft.run . createDraftHandlerHandle deps
-      ]
-    AuthorDraftsURI authorId ->
-      [ R.get $ \session ->
-          HGetDrafts.run (getDraftsHandlerHandle deps session) (Just authorId)
-      ]
+      [R.get $ runGetDraftsHandler Nothing, R.post runCreateDraftHandler]
+    AuthorDraftsURI authorId -> [R.get $ runGetDraftsHandler (Just authorId)]
     DraftURI draftId ->
-      [ R.get $ \session ->
-          HGetDraft.run (getDraftHandlerHandle deps session) draftId
-      , R.delete $ \session ->
-          HDeleteDraft.run (deleteDraftHandlerHandle deps session) draftId
+      [ R.get $ runGetDraftHandler draftId
+      , R.delete $ runDeleteDraftHandler draftId
       ]
-    PublishDraftURI draftId ->
-      [ R.post $ \session ->
-          HPublishDraft.run (publishDraftHandlerHandle deps session) draftId
+    PublishDraftURI draftId -> [R.post $ runPublishDraftHandler draftId]
+    CommentsForNewsURI newsId ->
+      [ R.get $ runGetCommentsForNewsHandler newsId
+      , R.post $ runCreateCommentHandler newsId
       ]
-    CommentsForNewsURI newsId' ->
-      [ R.get $ \session ->
-          HGetCommentsForNews.run
-            (getCommentsForNewsHandlerHandle deps session)
-            newsId'
-      , R.post $ \session ->
-          HCreateComment.run (createCommentHandlerHandle deps session) newsId'
-      ]
-    CommentURI commentId ->
-      [ R.get $ \session ->
-          HGetComment.run (getCommentHandlerHandle deps session) commentId
-      ]
+    CommentURI commentId -> [R.get $ runGetCommentHandler commentId]
 
-createAuthorHandlerHandle :: Deps -> Web.Session -> HCreateAuthor.Handle
-createAuthorHandlerHandle deps@Deps {..} session =
-  HCreateAuthor.Handle
-    { hCreateAuthorHandle =
-        ICreateAuthor.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hCreateAuthor =
-              Database.createAuthor $ sessionDatabaseHandle deps session
-          }
-    , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hPresenter =
-        authorCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
+runCreateAuthorHandler :: Deps -> SessionDeps -> Web.Application
+runCreateAuthorHandler Deps {..} SessionDeps {..} =
+  HCreateAuthor.run
+    HCreateAuthor.Handle
+      { hCreateAuthorHandle =
+          ICreateAuthor.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hCreateAuthor = Database.createAuthor sdDatabaseHandle
+            }
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      , hPresenter =
+          authorCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
 
-getAuthorsHandlerHandle :: Deps -> Web.Session -> HGetAuthors.Handle
-getAuthorsHandlerHandle deps@Deps {..} session =
-  HGetAuthors.Handle
-    { hGetAuthorsHandle =
-        IGetAuthors.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hGetAuthors =
-              Database.getAuthors $ sessionDatabaseHandle deps session
-          , hPageSpecParserHandle = dPageSpecParserHandle
-          }
-    , hPresenter = authorListPresenter dRepresentationBuilderHandle
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
+runGetAuthorsHandler :: Deps -> SessionDeps -> Web.Application
+runGetAuthorsHandler Deps {..} SessionDeps {..} =
+  HGetAuthors.run
+    HGetAuthors.Handle
+      { hGetAuthorsHandle =
+          IGetAuthors.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hGetAuthors = Database.getAuthors sdDatabaseHandle
+            , hPageSpecParserHandle = dPageSpecParserHandle
+            }
+      , hPresenter = authorListPresenter dRepresentationBuilderHandle
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
 
-patchAuthorHandlerHandle :: Deps -> Web.Session -> HPatchAuthor.Handle
-patchAuthorHandlerHandle deps@Deps {..} session =
-  HPatchAuthor.Handle
-    { hUpdateAuthorHandle =
-        IUpdateAuthor.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hUpdateAuthor =
-              Database.updateAuthor $ sessionDatabaseHandle deps session
-          }
-    , hPresenter =
-        authorUpdatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
+runPatchAuthorHandler :: AuthorId -> Deps -> SessionDeps -> Web.Application
+runPatchAuthorHandler authorId Deps {..} SessionDeps {..} =
+  HPatchAuthor.run
+    HPatchAuthor.Handle
+      { hUpdateAuthorHandle =
+          IUpdateAuthor.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hUpdateAuthor = Database.updateAuthor sdDatabaseHandle
+            }
+      , hPresenter =
+          authorUpdatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+    authorId
 
-getAuthorHandlerHandle :: Deps -> Web.Session -> HGetAuthor.Handle
-getAuthorHandlerHandle deps@Deps {..} session =
-  HGetAuthor.Handle
-    { hGetAuthorHandle =
-        IGetAuthor.Handle
-          {hGetAuthor = Database.getAuthor $ sessionDatabaseHandle deps session}
-    , hPresenter = authorPresenter dRepresentationBuilderHandle
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
+runGetAuthorHandler :: AuthorId -> Deps -> SessionDeps -> Web.Application
+runGetAuthorHandler authorId Deps {..} SessionDeps {..} =
+  HGetAuthor.run
+    HGetAuthor.Handle
+      { hGetAuthorHandle =
+          IGetAuthor.Handle {hGetAuthor = Database.getAuthor sdDatabaseHandle}
+      , hPresenter = authorPresenter dRepresentationBuilderHandle
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+    authorId
 
-deleteAuthorHandlerHandle :: Deps -> Web.Session -> HDeleteAuthor.Handle
-deleteAuthorHandlerHandle deps@Deps {..} session =
-  HDeleteAuthor.Handle
-    { hDeleteAuthorHandle =
-        IDeleteAuthor.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hDeleteAuthor =
-              Database.deleteAuthor $ sessionDatabaseHandle deps session
-          }
-    , hPresenter = authorDeletedPresenter
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
+runDeleteAuthorHandler :: AuthorId -> Deps -> SessionDeps -> Web.Application
+runDeleteAuthorHandler authorId Deps {..} SessionDeps {..} =
+  HDeleteAuthor.run
+    HDeleteAuthor.Handle
+      { hDeleteAuthorHandle =
+          IDeleteAuthor.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hDeleteAuthor = Database.deleteAuthor sdDatabaseHandle
+            }
+      , hPresenter = authorDeletedPresenter
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+    authorId
 
-createCategoryHandlerHandle :: Deps -> Web.Session -> HCreateCategory.Handle
-createCategoryHandlerHandle deps@Deps {..} session =
-  HCreateCategory.Handle
-    { hCreateCategoryHandle =
-        ICreateCategory.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hCreateCategory =
-              Database.createCategory $ sessionDatabaseHandle deps session
-          }
-    , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hPresenter =
-        categoryCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
+runCreateCategoryHandler :: Deps -> SessionDeps -> Web.Application
+runCreateCategoryHandler Deps {..} SessionDeps {..} =
+  HCreateCategory.run
+    HCreateCategory.Handle
+      { hCreateCategoryHandle =
+          ICreateCategory.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hCreateCategory = Database.createCategory sdDatabaseHandle
+            }
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      , hPresenter =
+          categoryCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
 
-getCategoryHandlerHandle :: Deps -> Web.Session -> HGetCategory.Handle
-getCategoryHandlerHandle deps@Deps {..} session =
-  HGetCategory.Handle
-    { hGetCategoryHandle =
-        IGetCategory.Handle
-          { hGetCategory =
-              Database.getCategory $ sessionDatabaseHandle deps session
-          }
-    , hPresenter = categoryPresenter dRepresentationBuilderHandle
-    }
+runGetCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
+runGetCategoryHandler categoryId Deps {..} SessionDeps {..} =
+  HGetCategory.run
+    HGetCategory.Handle
+      { hGetCategoryHandle =
+          IGetCategory.Handle
+            {hGetCategory = Database.getCategory sdDatabaseHandle}
+      , hPresenter = categoryPresenter dRepresentationBuilderHandle
+      }
+    categoryId
 
-getCategoriesHandlerHandle :: Deps -> Web.Session -> HGetCategories.Handle
-getCategoriesHandlerHandle deps@Deps {..} session =
-  HGetCategories.Handle
-    { hGetCategoriesHandle =
-        IGetCategories.Handle
-          { hGetCategories =
-              Database.getCategories $ sessionDatabaseHandle deps session
-          , hPageSpecParserHandle = dPageSpecParserHandle
-          }
-    , hPresenter = categoryListPresenter dRepresentationBuilderHandle
-    }
+runGetCategoriesHandler :: Deps -> SessionDeps -> Web.Application
+runGetCategoriesHandler Deps {..} SessionDeps {..} =
+  HGetCategories.run
+    HGetCategories.Handle
+      { hGetCategoriesHandle =
+          IGetCategories.Handle
+            { hGetCategories = Database.getCategories sdDatabaseHandle
+            , hPageSpecParserHandle = dPageSpecParserHandle
+            }
+      , hPresenter = categoryListPresenter dRepresentationBuilderHandle
+      }
 
-deleteCategoryHandlerHandle :: Deps -> Web.Session -> HDeleteCategory.Handle
-deleteCategoryHandlerHandle deps@Deps {..} session =
-  HDeleteCategory.Handle
-    { hDeleteCategoryHandle =
-        IDeleteCategory.Handle
-          { hDeleteCategory =
-              Database.deleteCategory $ sessionDatabaseHandle deps session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
-          , hDefaultEntityListRange = dDefaultEntityListRange
-          }
-    , hPresenter = categoryDeletedPresenter
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
+runDeleteCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
+runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
+  HDeleteCategory.run
+    HDeleteCategory.Handle
+      { hDeleteCategoryHandle =
+          IDeleteCategory.Handle
+            { hDeleteCategory = Database.deleteCategory sdDatabaseHandle
+            , hAuthorizationHandle = Core.Authorization.Impl.new
+            , hDefaultEntityListRange = dDefaultEntityListRange
+            }
+      , hPresenter = categoryDeletedPresenter
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+    categoryId
 
-getNewsListHandlerHandle :: Deps -> Web.Session -> HListNews.Handle
-getNewsListHandlerHandle deps@Deps {..} session =
-  HListNews.Handle
-    { hGetNewsHandle = interactorHandle
-    , hJSONEncode = dJSONEncode
-    , hPresenter = newsListPresenter dRepresentationBuilderHandle
-    }
+runGetNewsListHandler :: Deps -> SessionDeps -> Web.Application
+runGetNewsListHandler Deps {..} SessionDeps {..} =
+  HListNews.run
+    HListNews.Handle
+      { hGetNewsHandle = interactorHandle
+      , hJSONEncode = dJSONEncode
+      , hPresenter = newsListPresenter dRepresentationBuilderHandle
+      }
   where
     interactorHandle =
       IListNews.Handle
-        { hGetNews = Database.getNewsList $ sessionDatabaseHandle deps session
+        { hGetNews = Database.getNewsList sdDatabaseHandle
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
-getNewsHandlerHandle :: Deps -> Web.Session -> HGetNews.Handle
-getNewsHandlerHandle deps@Deps {..} session =
-  HGetNews.Handle
-    { hGetNewsHandle =
-        IGetNews.Handle
-          {hGetNews = Database.getNews $ sessionDatabaseHandle deps session}
-    , hPresenter = newsPresenter dRepresentationBuilderHandle
-    }
+runGetNewsHandler :: NewsId -> Deps -> SessionDeps -> Web.Application
+runGetNewsHandler newsId Deps {..} SessionDeps {..} =
+  HGetNews.run
+    HGetNews.Handle
+      { hGetNewsHandle =
+          IGetNews.Handle {hGetNews = Database.getNews sdDatabaseHandle}
+      , hPresenter = newsPresenter dRepresentationBuilderHandle
+      }
+    newsId
 
-createUserHandle :: Deps -> Web.Session -> HCreateUser.Handle
-createUserHandle deps@Deps {..} session =
-  HCreateUser.Handle
-    { hCreateUserHandle = interactorHandle
-    , hPresenter =
-        userCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hLoadJSONRequestBody = dLoadJSONRequestBody
-    }
+runCreateUserHandler :: Deps -> SessionDeps -> Web.Application
+runCreateUserHandler Deps {..} SessionDeps {..} =
+  HCreateUser.run
+    HCreateUser.Handle
+      { hCreateUserHandle = interactorHandle
+      , hPresenter =
+          userCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      }
   where
     interactorHandle =
       ICreateUser.Handle
-        { hCreateUser = Database.createUser $ sessionDatabaseHandle deps session
+        { hCreateUser = Database.createUser sdDatabaseHandle
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
@@ -435,204 +401,210 @@ createUserHandle deps@Deps {..} session =
     secretTokenConfig =
       GSecretToken.Config {cfTokenLength = Cf.cfSecretTokenLength dConfig}
 
-getImageHandlerHandle :: Deps -> Web.Session -> HGetImage.Handle
-getImageHandlerHandle deps@Deps {..} session =
-  HGetImage.Handle
-    { hGetImageHandle =
-        IGetImage.Handle $
-        Database.getImage $ sessionDatabaseHandle deps session
-    , hPresenter = imagePresenter
-    }
+runGetImageHandler :: ImageId -> Deps -> SessionDeps -> Web.Application
+runGetImageHandler imageId Deps {..} SessionDeps {..} =
+  HGetImage.run
+    HGetImage.Handle
+      { hGetImageHandle = IGetImage.Handle $ Database.getImage sdDatabaseHandle
+      , hPresenter = imagePresenter
+      }
+    imageId
 
-getUserHandlerHandle :: Deps -> Web.Session -> HGetUser.Handle
-getUserHandlerHandle deps@Deps {..} session =
-  HGetUser.Handle
-    { hGetUserHandle =
-        IGetUser.Handle $ Database.getUser $ sessionDatabaseHandle deps session
-    , hPresenter = userPresenter dRepresentationBuilderHandle
-    }
+runGetUserHandler :: UserId -> Deps -> SessionDeps -> Web.Application
+runGetUserHandler userId Deps {..} SessionDeps {..} =
+  HGetUser.run
+    HGetUser.Handle
+      { hGetUserHandle = IGetUser.Handle $ Database.getUser sdDatabaseHandle
+      , hPresenter = userPresenter dRepresentationBuilderHandle
+      }
+    userId
 
-deleteUserHandlerHandle :: Deps -> Web.Session -> HDeleteUser.Handle
-deleteUserHandlerHandle deps@Deps {..} session =
-  HDeleteUser.Handle
-    { hDeleteUserHandle =
-        IDeleteUser.Handle
-          { hDeleteUser =
-              Database.deleteUser $ sessionDatabaseHandle deps session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
-          , hDefaultEntityListRange = dDefaultEntityListRange
-          }
-    , hPresenter = userDeletedPresenter
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
-
-getUsersHandlerHandle :: Deps -> Web.Session -> HGetUsers.Handle
-getUsersHandlerHandle deps@Deps {..} session =
-  HGetUsers.Handle
-    { hGetUsersHandle =
-        IGetUsers.Handle
-          { hGetUsers = Database.getUsers $ sessionDatabaseHandle deps session
-          , hPageSpecParserHandle = dPageSpecParserHandle
-          }
-    , hPresenter = userListPresenter dRepresentationBuilderHandle
-    }
-
-createTagHandlerHandle :: Deps -> Web.Session -> HCreateTag.Handle
-createTagHandlerHandle deps@Deps {..} session =
-  HCreateTag.Handle
-    { hCreateTagHandle =
-        ICreateTag.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hCreateTagNamed =
-              Database.createTagNamed $ sessionDatabaseHandle deps session
-          , hFindTagByName =
-              Database.findTagByName $ sessionDatabaseHandle deps session
-          }
-    , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hPresenter =
-        tagCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
-
-getTagHandlerHandle :: Deps -> Web.Session -> HGetTag.Handle
-getTagHandlerHandle deps@Deps {..} session =
-  HGetTag.Handle
-    { hGetTagHandle =
-        IGetTag.Handle $
-        Database.findTagById $ sessionDatabaseHandle deps session
-    , hPresenter = tagPresenter dRepresentationBuilderHandle
-    }
-
-getTagsHandlerHandle :: Deps -> Web.Session -> HGetTags.Handle
-getTagsHandlerHandle deps@Deps {..} session =
-  HGetTags.Handle
-    { hGetTagsHandle =
-        IGetTags.Handle
-          { hGetTags = Database.getTags $ sessionDatabaseHandle deps session
-          , hPageSpecParserHandle = dPageSpecParserHandle
-          }
-    , hPresenter = tagListPresenter dRepresentationBuilderHandle
-    }
-
-createDraftHandlerHandle :: Deps -> Web.Session -> HCreateDraft.Handle
-createDraftHandlerHandle deps@Deps {..} session =
-  HCreateDraft.Handle
-    { hCreateDraftHandle =
-        ICreateDraft.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hGetAuthorIdByUserIdIfExactlyOne =
-              Database.getAuthorIdByUserIdIfExactlyOne $
-              sessionDatabaseHandle deps session
-          , hCreateNewsVersion =
-              Database.createNewsVersion $ sessionDatabaseHandle deps session
-          , hRejectDisallowedImage =
-              rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
-          }
-    , hLoadJSONRequestBody = dLoadJSONRequestBody
-    , hPresenter =
-        draftCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
-
-publishDraftHandlerHandle :: Deps -> Web.Session -> HPublishDraft.Handle
-publishDraftHandlerHandle deps@Deps {..} session =
-  HPublishDraft.Handle
-    { hPublishDraftHandle =
-        IPublishDraft.Handle
-          { hAuthorizationHandle = Core.Authorization.Impl.new
-          , hGetDraftAuthor =
-              Database.getDraftAuthor $ sessionDatabaseHandle deps session
-          , hGetCurrentDay = getCurrentDay
-          , hCreateNews =
-              Database.createNews $ sessionDatabaseHandle deps session
-          }
-    , hPresenter =
-        newsCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    }
-
-getDraftsHandlerHandle :: Deps -> Web.Session -> HGetDrafts.Handle
-getDraftsHandlerHandle deps@Deps {..} session =
-  HGetDrafts.Handle
-    { hGetDraftsHandle =
-        IGetDrafts.Handle
-          { hGetDraftsOfAuthor =
-              Database.getDraftsOfAuthor $ sessionDatabaseHandle deps session
-          , hGetDraftsOfUser =
-              Database.getDraftsOfUser $ sessionDatabaseHandle deps session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
-          , hPageSpecParserHandle = dPageSpecParserHandle
-          }
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    , hPresenter = draftListPresenter dRepresentationBuilderHandle
-    }
-
-getDraftHandlerHandle :: Deps -> Web.Session -> HGetDraft.Handle
-getDraftHandlerHandle deps@Deps {..} session =
-  HGetDraft.Handle
-    { hGetDraftHandle =
-        IGetDraft.Handle
-          { hGetDraft = Database.getDraft $ sessionDatabaseHandle deps session
-          , hAuthorizationHandle = Core.Authorization.Impl.new
-          }
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    , hPresenter = draftPresenter dRepresentationBuilderHandle
-    }
-
-deleteDraftHandlerHandle :: Deps -> Web.Session -> HDeleteDraft.Handle
-deleteDraftHandlerHandle deps@Deps {..} session =
-  HDeleteDraft.Handle
-    { hDeleteDraft =
-        IDeleteDraft.run
-          IDeleteDraft.Handle
-            { hGetDraftAuthor =
-                Database.getDraftAuthor $ sessionDatabaseHandle deps session
-            , hDeleteNewsVersion =
-                Database.deleteNewsVersion $ sessionDatabaseHandle deps session
+runDeleteUserHandler :: UserId -> Deps -> SessionDeps -> Web.Application
+runDeleteUserHandler userId Deps {..} SessionDeps {..} =
+  HDeleteUser.run
+    HDeleteUser.Handle
+      { hDeleteUserHandle =
+          IDeleteUser.Handle
+            { hDeleteUser = Database.deleteUser sdDatabaseHandle
+            , hAuthorizationHandle = Core.Authorization.Impl.new
+            , hDefaultEntityListRange = dDefaultEntityListRange
             }
-    , hAuthenticate = authenticate $ dMakeAuthenticationHandle session
-    , hPresent = draftDeletedPresenter
-    }
+      , hPresenter = userDeletedPresenter
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+    userId
 
-createCommentHandlerHandle :: Deps -> Web.Session -> HCreateComment.Handle
-createCommentHandlerHandle deps@Deps {..} session =
-  HCreateComment.Handle
-    { hCreateCommentHandle =
-        ICreateComment.Handle
-          { hCreateComment =
-              Database.createComment $ sessionDatabaseHandle deps session
-          , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
-          }
-    , hPresenter =
-        commentCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
-    , hAuthenticationHandle = dMakeAuthenticationHandle session
-    , hLoadJSONRequestBody = dLoadJSONRequestBody
-    }
+runGetUsersHandler :: Deps -> SessionDeps -> Web.Application
+runGetUsersHandler Deps {..} SessionDeps {..} =
+  HGetUsers.run
+    HGetUsers.Handle
+      { hGetUsersHandle =
+          IGetUsers.Handle
+            { hGetUsers = Database.getUsers sdDatabaseHandle
+            , hPageSpecParserHandle = dPageSpecParserHandle
+            }
+      , hPresenter = userListPresenter dRepresentationBuilderHandle
+      }
 
-getCommentHandlerHandle :: Deps -> Web.Session -> HGetComment.Handle
-getCommentHandlerHandle deps@Deps {..} session =
-  HGetComment.Handle
-    { hGetCommentHandle =
-        IGetComment.Handle
-          { hGetComment =
-              Database.getComment $ sessionDatabaseHandle deps session
-          }
-    , hPresenter = commentPresenter dRepresentationBuilderHandle
-    }
+runCreateTagHandler :: Deps -> SessionDeps -> Web.Application
+runCreateTagHandler Deps {..} SessionDeps {..} =
+  HCreateTag.run
+    HCreateTag.Handle
+      { hCreateTagHandle =
+          ICreateTag.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hCreateTagNamed = Database.createTagNamed sdDatabaseHandle
+            , hFindTagByName = Database.findTagByName sdDatabaseHandle
+            }
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      , hPresenter =
+          tagCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
 
-getCommentsForNewsHandlerHandle ::
-     Deps -> Web.Session -> HGetCommentsForNews.Handle
-getCommentsForNewsHandlerHandle deps@Deps {..} session =
-  HGetCommentsForNews.Handle
-    { hGetCommentsForNewsHandle =
-        IGetCommentsForNews.Handle
-          { hGetCommentsForNews =
-              Database.getCommentsForNews $ sessionDatabaseHandle deps session
-          , hPageSpecParserHandle = dPageSpecParserHandle
-          }
-    , hPresenter = commentsPresenter dRepresentationBuilderHandle
-    }
+runGetTagHandler :: TagId -> Deps -> SessionDeps -> Web.Application
+runGetTagHandler tagId Deps {..} SessionDeps {..} =
+  HGetTag.run
+    HGetTag.Handle
+      { hGetTagHandle = IGetTag.Handle $ Database.findTagById sdDatabaseHandle
+      , hPresenter = tagPresenter dRepresentationBuilderHandle
+      }
+    tagId
+
+runGetTagsHandler :: Deps -> SessionDeps -> Web.Application
+runGetTagsHandler Deps {..} SessionDeps {..} =
+  HGetTags.run
+    HGetTags.Handle
+      { hGetTagsHandle =
+          IGetTags.Handle
+            { hGetTags = Database.getTags sdDatabaseHandle
+            , hPageSpecParserHandle = dPageSpecParserHandle
+            }
+      , hPresenter = tagListPresenter dRepresentationBuilderHandle
+      }
+
+runCreateDraftHandler :: Deps -> SessionDeps -> Web.Application
+runCreateDraftHandler Deps {..} SessionDeps {..} =
+  HCreateDraft.run
+    HCreateDraft.Handle
+      { hCreateDraftHandle =
+          ICreateDraft.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hGetAuthorIdByUserIdIfExactlyOne =
+                Database.getAuthorIdByUserIdIfExactlyOne sdDatabaseHandle
+            , hCreateNewsVersion = Database.createNewsVersion sdDatabaseHandle
+            , hRejectDisallowedImage =
+                rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
+            }
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      , hPresenter =
+          draftCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+
+runPublishDraftHandler ::
+     NewsVersionId -> Deps -> SessionDeps -> Web.Application
+runPublishDraftHandler nvId Deps {..} SessionDeps {..} =
+  HPublishDraft.run
+    HPublishDraft.Handle
+      { hPublishDraftHandle =
+          IPublishDraft.Handle
+            { hAuthorizationHandle = Core.Authorization.Impl.new
+            , hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
+            , hGetCurrentDay = getCurrentDay
+            , hCreateNews = Database.createNews sdDatabaseHandle
+            }
+      , hPresenter =
+          newsCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+    nvId
+
+runGetDraftsHandler :: Maybe AuthorId -> Deps -> SessionDeps -> Web.Application
+runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
+  HGetDrafts.run
+    HGetDrafts.Handle
+      { hGetDraftsHandle =
+          IGetDrafts.Handle
+            { hGetDraftsOfAuthor = Database.getDraftsOfAuthor sdDatabaseHandle
+            , hGetDraftsOfUser = Database.getDraftsOfUser sdDatabaseHandle
+            , hAuthorizationHandle = Core.Authorization.Impl.new
+            , hPageSpecParserHandle = dPageSpecParserHandle
+            }
+      , hAuthenticationHandle = sdAuthenticationHandle
+      , hPresenter = draftListPresenter dRepresentationBuilderHandle
+      }
+    optAuthorId
+
+runGetDraftHandler :: NewsVersionId -> Deps -> SessionDeps -> Web.Application
+runGetDraftHandler nvId Deps {..} SessionDeps {..} =
+  HGetDraft.run
+    HGetDraft.Handle
+      { hGetDraftHandle =
+          IGetDraft.Handle
+            { hGetDraft = Database.getDraft sdDatabaseHandle
+            , hAuthorizationHandle = Core.Authorization.Impl.new
+            }
+      , hAuthenticationHandle = sdAuthenticationHandle
+      , hPresenter = draftPresenter dRepresentationBuilderHandle
+      }
+    nvId
+
+runDeleteDraftHandler :: NewsVersionId -> Deps -> SessionDeps -> Web.Application
+runDeleteDraftHandler nvId Deps {..} SessionDeps {..} =
+  HDeleteDraft.run
+    HDeleteDraft.Handle
+      { hDeleteDraft =
+          IDeleteDraft.run
+            IDeleteDraft.Handle
+              { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
+              , hDeleteNewsVersion = Database.deleteNewsVersion sdDatabaseHandle
+              }
+      , hAuthenticate = authenticate sdAuthenticationHandle
+      , hPresent = draftDeletedPresenter
+      }
+    nvId
+
+runCreateCommentHandler :: NewsId -> Deps -> SessionDeps -> Web.Application
+runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
+  HCreateComment.run
+    HCreateComment.Handle
+      { hCreateCommentHandle =
+          ICreateComment.Handle
+            { hCreateComment = Database.createComment sdDatabaseHandle
+            , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
+            }
+      , hPresenter =
+          commentCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hAuthenticationHandle = sdAuthenticationHandle
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      }
+    newsId
+
+runGetCommentHandler :: CommentId -> Deps -> SessionDeps -> Web.Application
+runGetCommentHandler commentId Deps {..} SessionDeps {..} =
+  HGetComment.run
+    HGetComment.Handle
+      { hGetCommentHandle =
+          IGetComment.Handle
+            {hGetComment = Database.getComment sdDatabaseHandle}
+      , hPresenter = commentPresenter dRepresentationBuilderHandle
+      }
+    commentId
+
+runGetCommentsForNewsHandler :: NewsId -> Deps -> SessionDeps -> Web.Application
+runGetCommentsForNewsHandler newsId Deps {..} SessionDeps {..} =
+  HGetCommentsForNews.run
+    HGetCommentsForNews.Handle
+      { hGetCommentsForNewsHandle =
+          IGetCommentsForNews.Handle
+            { hGetCommentsForNews = Database.getCommentsForNews sdDatabaseHandle
+            , hPageSpecParserHandle = dPageSpecParserHandle
+            }
+      , hPresenter = commentsPresenter dRepresentationBuilderHandle
+      }
+    newsId
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
@@ -647,17 +619,28 @@ getLoggerHandle Cf.Config {..} = do
         die $ "While opening log file: " ++ displayException (e :: IOException)
     getFileHandle Cf.LogFileStdErr = pure stderr
 
+-- Commonly used dependencies dependent on Web.Session
+data SessionDeps =
+  SessionDeps
+    { sdDatabaseHandle :: Database.Handle
+    , sdAuthenticationHandle :: AuthenticationHandle IO
+    }
+
+sessionDeps :: Deps -> Web.Session -> SessionDeps
+sessionDeps Deps {..} session =
+  SessionDeps
+    { sdDatabaseHandle =
+        sessionDatabaseHandle dDatabaseConnectionConfig dLoggerHandle session
+    , sdAuthenticationHandle = dMakeAuthenticationHandle session
+    }
+
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =
   Logger.mapMessage $ \text -> "SID-" <> T.pack (show sessionId) <> " " <> text
 
-sessionDatabaseHandle :: Deps -> Web.Session -> Database.Handle
-sessionDatabaseHandle Deps {..} =
-  sessionDatabaseHandle' dDatabaseConnectionConfig dLoggerHandle
-
-sessionDatabaseHandle' ::
+sessionDatabaseHandle ::
      DBConnManager.Config -> Logger.Handle IO -> Web.Session -> Database.Handle
-sessionDatabaseHandle' dbConnectionConfig loggerH session =
+sessionDatabaseHandle dbConnectionConfig loggerH session =
   Database.Handle
     { hConnectionConfig = dbConnectionConfig
     , hLoggerHandle = sessionLoggerHandle session loggerH
