@@ -6,6 +6,7 @@ module Database.Logic.Tags
   , findTagById
   , createTagNamed
   , getTags
+  , deleteTag
   , tagColumns
   ) where
 
@@ -51,6 +52,17 @@ findTagById =
   where
     sql = "select $COLUMNS from tags where tag_id = $1"
     encoder = getTagId >$< E.param (E.nonNullable E.int4)
+
+deleteTag :: TagId -> Transaction Bool
+deleteTag =
+  runStatement $
+  dimap
+    getTagId
+    (> 0)
+    [H.rowsAffectedStatement|
+      delete from tags
+      where tag_id = $1 :: integer
+    |]
 
 getTags :: PageSpec -> Transaction [Tag]
 getTags =

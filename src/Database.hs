@@ -27,6 +27,7 @@ module Database
   , findTagByName
   , findTagById
   , getTags
+  , deleteTag
   , createTagNamed
   -- * Users
   , createUser
@@ -169,6 +170,9 @@ findTagById h = runTransactionRO h . DTags.findTagById
 
 getTags :: DB.Handle -> PageSpec -> IO [Tag]
 getTags h = runTransactionRO h . DTags.getTags
+
+deleteTag :: DB.Handle -> TagId -> IO Bool
+deleteTag h = runTransactionRW h . DTags.deleteTag
 
 createTagNamed :: DB.Handle -> Text -> IO Tag
 createTagNamed h = runTransactionRW h . DTags.createTagNamed

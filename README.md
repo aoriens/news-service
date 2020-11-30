@@ -287,6 +287,11 @@ returns either a created or existing [Tag](#Tag) entity.
 
 Returns the specified [Tag](#Tag).
 
+### `GET /delete/{tag_id}`
+
+Deletes a [Tag](#Tag) identified with `{tag_id}` and returns no content. You
+must be an administrator user.
+
 ### `GET /users`
 
 Returns an array of [User](#User) entities.

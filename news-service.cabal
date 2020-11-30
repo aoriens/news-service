@@ -42,6 +42,7 @@ library
     , Core.Interactor.DeleteAuthor
     , Core.Interactor.DeleteCategory
     , Core.Interactor.DeleteDraft
+    , Core.Interactor.DeleteTag
     , Core.Interactor.DeleteUser
     , Core.Interactor.GetAuthor
     , Core.Interactor.GetAuthors
@@ -112,6 +113,7 @@ library
     , Web.Handler.DeleteAuthor
     , Web.Handler.DeleteCategory
     , Web.Handler.DeleteDraft
+    , Web.Handler.DeleteTag
     , Web.Handler.DeleteUser
     , Web.Handler.GetAuthor
     , Web.Handler.GetAuthors
@@ -225,6 +227,7 @@ test-suite news-service-test
     , Core.Interactor.DeleteAuthorSpec
     , Core.Interactor.DeleteCategorySpec
     , Core.Interactor.DeleteDraftSpec
+    , Core.Interactor.DeleteTagSpec
     , Core.Interactor.DeleteUserSpec
     , Core.Interactor.GetAuthorSpec
     , Core.Interactor.GetAuthorsSpec

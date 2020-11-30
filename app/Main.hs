@@ -27,6 +27,7 @@ import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.DeleteDraft as IDeleteDraft
+import qualified Core.Interactor.DeleteTag as IDeleteTag
 import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetAuthor as IGetAuthor
 import qualified Core.Interactor.GetAuthors as IGetAuthors
@@ -76,6 +77,7 @@ import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteCategory as HDeleteCategory
 import qualified Web.Handler.DeleteDraft as HDeleteDraft
+import qualified Web.Handler.DeleteTag as HDeleteTag
 import qualified Web.Handler.DeleteUser as HDeleteUser
 import qualified Web.Handler.GetAuthor as HGetAuthor
 import qualified Web.Handler.GetAuthors as HGetAuthors
@@ -216,7 +218,8 @@ router deps =
     NewsListURI -> [R.get runGetNewsListHandler]
     NewsItemURI newsId -> [R.get $ runGetNewsHandler newsId]
     TagsURI -> [R.get runGetTagsHandler, R.post runCreateTagHandler]
-    TagURI tagId -> [R.get $ runGetTagHandler tagId]
+    TagURI tagId ->
+      [R.get $ runGetTagHandler tagId, R.delete $ runDeleteTagHandler tagId]
     DraftsURI ->
       [R.get $ runGetDraftsHandler Nothing, R.post runCreateDraftHandler]
     AuthorDraftsURI authorId -> [R.get $ runGetDraftsHandler (Just authorId)]
@@ -466,6 +469,18 @@ runGetTagHandler tagId Deps {..} SessionDeps {..} =
     HGetTag.Handle
       { hGetTagHandle = IGetTag.Handle $ Database.findTagById sdDatabaseHandle
       , hPresent = presentTag dRepresentationBuilderHandle
+      }
+    tagId
+
+runDeleteTagHandler :: TagId -> Deps -> SessionDeps -> Web.Application
+runDeleteTagHandler tagId Deps {..} SessionDeps {..} =
+  HDeleteTag.run
+    HDeleteTag.Handle
+      { hDeleteTag =
+          IDeleteTag.run $
+          IDeleteTag.Handle $ Database.deleteTag sdDatabaseHandle
+      , hAuthenticate = authenticate sdAuthenticationHandle
+      , hPresent = presentDeletedTag
       }
     tagId
 
