@@ -1,8 +1,7 @@
 module Core.AuthorizationNG
-  ( authUserMustBeAuthor
-  , authUserMustBeAdmin
-  , authUserIsAuthor
-  , authUserIsAdmin
+  ( authorize
+  , authUserShouldBeAdmin
+  , authUserShouldBeAuthor
   , module Core.Authentication
   ) where
 
@@ -14,23 +13,30 @@ import Core.Exception
 import Core.Permission
 import qualified Data.Text as T
 
-authUserMustBeAuthor ::
-     MonadThrow m => AuthenticatedUser -> AuthorId -> T.Text -> m ()
-authUserMustBeAuthor user authorId actionDescription =
-  unless (authUserIsAuthor user authorId) $
-  throwM
-    (NoPermissionException (AuthorshipPermission authorId) actionDescription)
+type ActionDescription = T.Text
 
-authUserIsAuthor :: AuthenticatedUser -> AuthorId -> Bool
-authUserIsAuthor (IdentifiedUser _ _ authorIds) requiredAuthorId =
-  requiredAuthorId `elem` authorIds
-authUserIsAuthor AnonymousUser _ = False
+-- | The result of a permission check and the permission description.
+type PermissionCheck = (Bool, Permission)
 
-authUserMustBeAdmin :: MonadThrow m => AuthenticatedUser -> T.Text -> m ()
-authUserMustBeAdmin user actionDescription =
-  unless (authUserIsAdmin user) $
-  throwM (NoPermissionException AdminPermission actionDescription)
+-- | Checks a condition and throws authorization exception when the
+-- condition is 'False'.
+authorize :: MonadThrow m => ActionDescription -> PermissionCheck -> m ()
+authorize actionDescription (isAuthorized, perm) =
+  unless isAuthorized $ throwM (NoPermissionException perm actionDescription)
 
-authUserIsAdmin :: AuthenticatedUser -> Bool
-authUserIsAdmin (IdentifiedUser _ isAdmin _) = isAdmin
-authUserIsAdmin AnonymousUser = False
+authUserShouldBeAuthor :: AuthenticatedUser -> AuthorId -> PermissionCheck
+authUserShouldBeAuthor user requiredAuthorId =
+  (r, AuthorshipPermission requiredAuthorId)
+  where
+    r =
+      case user of
+        IdentifiedUser _ _ authorIds -> requiredAuthorId `elem` authorIds
+        AnonymousUser -> False
+
+authUserShouldBeAdmin :: AuthenticatedUser -> PermissionCheck
+authUserShouldBeAdmin user = (r, AdminPermission)
+  where
+    r =
+      case user of
+        IdentifiedUser _ isAdmin _ -> isAdmin
+        AnonymousUser -> False

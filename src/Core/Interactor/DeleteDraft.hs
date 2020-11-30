@@ -21,5 +21,5 @@ run Handle {..} authUser draftId = do
   authorId <-
     maybe (throwM $ RequestedEntityNotFoundException $ toEntityId draftId) pure =<<
     hGetDraftAuthor draftId
-  authUserMustBeAuthor authUser authorId "deleting a draft"
+  authorize "deleting a draft" $ authUserShouldBeAuthor authUser authorId
   hDeleteNewsVersion draftId

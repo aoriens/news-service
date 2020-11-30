@@ -16,5 +16,5 @@ type Success = Bool
 
 run :: MonadThrow m => Handle m -> AuthenticatedUser -> TagId -> m Success
 run Handle {..} authUser tagId = do
-  authUserMustBeAdmin authUser "delete a tag"
+  authorize "delete a tag" $ authUserShouldBeAdmin authUser
   hDeleteTag tagId
