@@ -102,7 +102,7 @@ stubComment =
   Comment
     { commentText = ""
     , commentId = CommentId 1
-    , commentAuthor = Nothing
+    , commentAuthor = AnonymousCommentAuthor
     , commentNewsId = NewsId 0
     , commentCreatedAt = stubTime
     }

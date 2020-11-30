@@ -43,7 +43,7 @@ createComment text optUserId newsId' createdAt =
     pure
       Comment
         { commentText = text
-        , commentAuthor = optUser
+        , commentAuthor = maybe AnonymousCommentAuthor UserCommentAuthor optUser
         , commentCreatedAt = createdAt
         , commentId
         , commentNewsId = newsId'
@@ -126,7 +126,8 @@ commentColumns :: Columns Comment
 commentColumns = do
   commentId <- CommentId <$> column table "comment_id"
   commentNewsId <- NewsId <$> column table "news_id"
-  commentAuthor <- optUserColumns
+  commentAuthor <-
+    maybe AnonymousCommentAuthor UserCommentAuthor <$> optUserColumns
   commentCreatedAt <- column table "created_at"
   commentText <- column table "text"
   pure Comment {..}

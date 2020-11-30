@@ -59,7 +59,7 @@ stubComment =
   Comment
     { commentId = CommentId 0
     , commentNewsId = NewsId 0
-    , commentAuthor = Nothing
+    , commentAuthor = AnonymousCommentAuthor
     , commentCreatedAt = UTCTime (ModifiedJulianDay 0) 0
     , commentText = ""
     }

@@ -1,6 +1,7 @@
 module Core.Comment
   ( Comment(..)
   , CommentId(..)
+  , CommentAuthor(..)
   ) where
 
 import Core.News
@@ -13,7 +14,7 @@ data Comment =
   Comment
     { commentId :: CommentId
     , commentNewsId :: NewsId
-    , commentAuthor :: Maybe User
+    , commentAuthor :: CommentAuthor User
     -- ^ When the author is Nothing, the comment is posted anonymously
     , commentCreatedAt :: UTCTime
     , commentText :: T.Text
@@ -24,4 +25,12 @@ newtype CommentId =
   CommentId
     { getCommentId :: Int32
     }
+  deriving (Eq, Show)
+
+-- | The comment author. It is not a 'Maybe', since nested Maybes look
+-- confusing, and the type can be extended. It is parameterized with a
+-- user type which can be either UserId or User.
+data CommentAuthor userType
+  = UserCommentAuthor userType
+  | AnonymousCommentAuthor
   deriving (Eq, Show)

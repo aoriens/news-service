@@ -28,7 +28,10 @@ data CommentRep =
 
 commentRep :: Comment -> RepBuilder CommentRep
 commentRep Comment {..} = do
-  userR <- mapM (userRep Nothing) commentAuthor
+  userR <-
+    case commentAuthor of
+      UserCommentAuthor user -> Just <$> userRep Nothing user
+      AnonymousCommentAuthor -> pure Nothing
   pure
     CommentRep
       { commentCommentId = getCommentId commentId
