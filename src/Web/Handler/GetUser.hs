@@ -12,11 +12,11 @@ import Web.Exception
 data Handle =
   Handle
     { hGetUserHandle :: I.Handle IO
-    , hPresenter :: User -> Response
+    , hPresent :: User -> Response
     }
 
 run :: Handle -> UserId -> Application
 run Handle {..} userId' _ respond = do
   user <-
     maybe (throwIO NotFoundException) pure =<< I.run hGetUserHandle userId'
-  respond $ hPresenter user
+  respond $ hPresent user

@@ -21,7 +21,7 @@ data Handle =
     { hCreateTagHandle :: ICreateTag.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
-    , hPresenter :: ICreateTag.Result -> Response
+    , hPresent :: ICreateTag.Result -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -31,7 +31,7 @@ run Handle {..} request respond = do
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   InTag {inName} <- hLoadJSONRequestBody request
   result <- ICreateTag.run hCreateTagHandle authUser inName
-  respond $ hPresenter result
+  respond $ hPresent result
 
 newtype InTag =
   InTag

@@ -12,7 +12,7 @@ import Web.Credentials
 data Handle =
   Handle
     { hPublishDraftHandle :: I.Handle IO
-    , hPresenter :: News -> Response
+    , hPresent :: News -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -21,4 +21,4 @@ run Handle {..} vId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   news <- I.run hPublishDraftHandle authUser vId
-  respond $ hPresenter news
+  respond $ hPresent news

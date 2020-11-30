@@ -26,7 +26,7 @@ data Handle =
     { hCreateAuthorHandle :: I.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
-    , hPresenter :: Author -> Response
+    , hPresent :: Author -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -46,7 +46,7 @@ run Handle {..} request respond = do
       Left I.UnknownUserId ->
         throwIO $ IncorrectParameterException "Unknown UserId"
       Right a -> pure a
-  respond $ hPresenter author
+  respond $ hPresent author
 
 data InAuthor =
   InAuthor

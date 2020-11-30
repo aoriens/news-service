@@ -14,7 +14,7 @@ import Web.Exception
 data Handle =
   Handle
     { hGetAuthorHandle :: I.Handle IO
-    , hPresenter :: Author -> Response
+    , hPresent :: Author -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -25,4 +25,4 @@ run Handle {..} authorId' request respond = do
   author <-
     maybe (throwIO NotFoundException) pure =<<
     I.run hGetAuthorHandle authUser authorId'
-  respond $ hPresenter author
+  respond $ hPresent author

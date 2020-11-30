@@ -13,7 +13,7 @@ import Web.QueryParameter.PageQuery
 data Handle =
   Handle
     { hGetCommentsForNewsHandle :: I.Handle IO
-    , hPresenter :: [Comment] -> Response
+    , hPresent :: [Comment] -> Response
     }
 
 run :: Handle -> NewsId -> Application
@@ -21,4 +21,4 @@ run Handle {..} newsId request respond = do
   pageSpecQuery <-
     QueryParameter.parseQueryM (requestQueryString request) parsePageQuery
   comments <- I.run hGetCommentsForNewsHandle newsId pageSpecQuery
-  respond $ hPresenter comments
+  respond $ hPresent comments

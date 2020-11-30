@@ -12,11 +12,11 @@ import Web.Exception
 data Handle =
   Handle
     { hGetTagHandle :: IGetTag.Handle IO
-    , hPresenter :: Tag -> Response
+    , hPresent :: Tag -> Response
     }
 
 run :: Handle -> TagId -> Application
 run Handle {..} tagId' _ respond = do
   tag <-
     maybe (throwIO NotFoundException) pure =<< IGetTag.run hGetTagHandle tagId'
-  respond $ hPresenter tag
+  respond $ hPresent tag

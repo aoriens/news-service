@@ -20,7 +20,7 @@ import Web.Representation.Image
 data Handle =
   Handle
     { hCreateUserHandle :: I.Handle IO
-    , hPresenter :: User -> Credentials -> Response
+    , hPresent :: User -> Credentials -> Response
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
     }
@@ -29,7 +29,7 @@ run :: Handle -> Application
 run Handle {..} request respond = do
   userEntity <- hLoadJSONRequestBody request
   (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)
-  respond $ hPresenter user credentials
+  respond $ hPresent user credentials
 
 queryFromInUser :: InUser -> I.Query
 queryFromInUser InUser {..} =

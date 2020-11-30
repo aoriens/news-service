@@ -14,7 +14,7 @@ import qualified Web.QueryParameter.PageQuery as QP
 data Handle =
   Handle
     { hGetAuthorsHandle :: I.Handle IO
-    , hPresenter :: [Author] -> Response
+    , hPresent :: [Author] -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -24,4 +24,4 @@ run Handle {..} request respond = do
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
   authors <- I.run hGetAuthorsHandle authUser pageQuery
-  respond $ hPresenter authors
+  respond $ hPresent authors

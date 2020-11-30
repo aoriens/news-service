@@ -33,7 +33,7 @@ data Handle =
     { hCreateDraftHandle :: I.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
-    , hPresenter :: NewsVersion -> Response
+    , hPresent :: NewsVersion -> Response
     , hParseAppURI :: T.Text -> Maybe AppURI
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
@@ -45,7 +45,7 @@ run h@Handle {..} request respond = do
   inDraft <- hLoadJSONRequestBody request
   createDraftRequest <- makeCreateDraftRequest h inDraft
   version <- I.run hCreateDraftHandle authUser createDraftRequest
-  respond $ hPresenter version
+  respond $ hPresent version
 
 data InDraft =
   InDraft

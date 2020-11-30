@@ -12,11 +12,11 @@ import Web.QueryParameter.PageQuery
 data Handle =
   Handle
     { hGetCategoriesHandle :: IGetCategories.Handle IO
-    , hPresenter :: [Category] -> Response
+    , hPresent :: [Category] -> Response
     }
 
 run :: Handle -> Application
 run Handle {..} request respond = do
   pageSpecQuery <- parseQueryM (requestQueryString request) parsePageQuery
   categories <- IGetCategories.run hGetCategoriesHandle pageSpecQuery
-  respond $ hPresenter categories
+  respond $ hPresent categories

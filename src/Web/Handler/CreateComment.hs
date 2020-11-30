@@ -24,7 +24,7 @@ data Handle =
                                           Request -> IO a
     , hAuthenticationHandle :: AuthenticationHandle IO
     , hCreateCommentHandle :: I.Handle IO
-    , hPresenter :: Comment -> Response
+    , hPresent :: Comment -> Response
     }
 
 run :: Handle -> NewsId -> Application
@@ -33,7 +33,7 @@ run Handle {..} newsId' request respond = do
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   InComment {inText} <- hLoadJSONRequestBody request
   resultingComment <- I.run hCreateCommentHandle authUser inText newsId'
-  respond $ hPresenter resultingComment
+  respond $ hPresent resultingComment
 
 newtype InComment =
   InComment

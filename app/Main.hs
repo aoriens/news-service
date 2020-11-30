@@ -241,8 +241,8 @@ runCreateAuthorHandler Deps {..} SessionDeps {..} =
             , hCreateAuthor = Database.createAuthor sdDatabaseHandle
             }
       , hLoadJSONRequestBody = dLoadJSONRequestBody
-      , hPresenter =
-          authorCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent =
+          presentCreatedAuthor dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
 
@@ -256,7 +256,7 @@ runGetAuthorsHandler Deps {..} SessionDeps {..} =
             , hGetAuthors = Database.getAuthors sdDatabaseHandle
             , hPageSpecParserHandle = dPageSpecParserHandle
             }
-      , hPresenter = authorListPresenter dRepresentationBuilderHandle
+      , hPresent = presentAuthors dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
 
@@ -269,8 +269,8 @@ runPatchAuthorHandler authorId Deps {..} SessionDeps {..} =
             { hAuthorizationHandle = Core.Authorization.Impl.new
             , hUpdateAuthor = Database.updateAuthor sdDatabaseHandle
             }
-      , hPresenter =
-          authorUpdatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent =
+          presentUpdatedAuthor dAppURIConfig dRepresentationBuilderHandle
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hAuthenticationHandle = sdAuthenticationHandle
       }
@@ -282,7 +282,7 @@ runGetAuthorHandler authorId Deps {..} SessionDeps {..} =
     HGetAuthor.Handle
       { hGetAuthorHandle =
           IGetAuthor.Handle {hGetAuthor = Database.getAuthor sdDatabaseHandle}
-      , hPresenter = authorPresenter dRepresentationBuilderHandle
+      , hPresent = presentAuthor dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
     authorId
@@ -296,7 +296,7 @@ runDeleteAuthorHandler authorId Deps {..} SessionDeps {..} =
             { hAuthorizationHandle = Core.Authorization.Impl.new
             , hDeleteAuthor = Database.deleteAuthor sdDatabaseHandle
             }
-      , hPresenter = authorDeletedPresenter
+      , hPresent = presentDeletedAuthor
       , hAuthenticationHandle = sdAuthenticationHandle
       }
     authorId
@@ -311,8 +311,8 @@ runCreateCategoryHandler Deps {..} SessionDeps {..} =
             , hCreateCategory = Database.createCategory sdDatabaseHandle
             }
       , hLoadJSONRequestBody = dLoadJSONRequestBody
-      , hPresenter =
-          categoryCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent =
+          presentCreatedCategory dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
 
@@ -323,7 +323,7 @@ runGetCategoryHandler categoryId Deps {..} SessionDeps {..} =
       { hGetCategoryHandle =
           IGetCategory.Handle
             {hGetCategory = Database.getCategory sdDatabaseHandle}
-      , hPresenter = categoryPresenter dRepresentationBuilderHandle
+      , hPresent = presentCategory dRepresentationBuilderHandle
       }
     categoryId
 
@@ -336,7 +336,7 @@ runGetCategoriesHandler Deps {..} SessionDeps {..} =
             { hGetCategories = Database.getCategories sdDatabaseHandle
             , hPageSpecParserHandle = dPageSpecParserHandle
             }
-      , hPresenter = categoryListPresenter dRepresentationBuilderHandle
+      , hPresent = presentCategories dRepresentationBuilderHandle
       }
 
 runDeleteCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
@@ -349,7 +349,7 @@ runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
             , hAuthorizationHandle = Core.Authorization.Impl.new
             , hDefaultEntityListRange = dDefaultEntityListRange
             }
-      , hPresenter = categoryDeletedPresenter
+      , hPresent = presentDeletedCategory
       , hAuthenticationHandle = sdAuthenticationHandle
       }
     categoryId
@@ -360,7 +360,7 @@ runGetNewsListHandler Deps {..} SessionDeps {..} =
     HListNews.Handle
       { hGetNewsHandle = interactorHandle
       , hJSONEncode = dJSONEncode
-      , hPresenter = newsListPresenter dRepresentationBuilderHandle
+      , hPresent = presentNewsList dRepresentationBuilderHandle
       }
   where
     interactorHandle =
@@ -375,7 +375,7 @@ runGetNewsHandler newsId Deps {..} SessionDeps {..} =
     HGetNews.Handle
       { hGetNewsHandle =
           IGetNews.Handle {hGetNews = Database.getNews sdDatabaseHandle}
-      , hPresenter = newsPresenter dRepresentationBuilderHandle
+      , hPresent = presentNewsItem dRepresentationBuilderHandle
       }
     newsId
 
@@ -384,8 +384,7 @@ runCreateUserHandler Deps {..} SessionDeps {..} =
   HCreateUser.run
     HCreateUser.Handle
       { hCreateUserHandle = interactorHandle
-      , hPresenter =
-          userCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent = presentCreatedUser dAppURIConfig dRepresentationBuilderHandle
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       }
   where
@@ -406,7 +405,7 @@ runGetImageHandler imageId Deps {..} SessionDeps {..} =
   HGetImage.run
     HGetImage.Handle
       { hGetImageHandle = IGetImage.Handle $ Database.getImage sdDatabaseHandle
-      , hPresenter = imagePresenter
+      , hPresent = presentImage
       }
     imageId
 
@@ -415,7 +414,7 @@ runGetUserHandler userId Deps {..} SessionDeps {..} =
   HGetUser.run
     HGetUser.Handle
       { hGetUserHandle = IGetUser.Handle $ Database.getUser sdDatabaseHandle
-      , hPresenter = userPresenter dRepresentationBuilderHandle
+      , hPresent = presentUser dRepresentationBuilderHandle
       }
     userId
 
@@ -429,7 +428,7 @@ runDeleteUserHandler userId Deps {..} SessionDeps {..} =
             , hAuthorizationHandle = Core.Authorization.Impl.new
             , hDefaultEntityListRange = dDefaultEntityListRange
             }
-      , hPresenter = userDeletedPresenter
+      , hPresent = presentDeletedUser
       , hAuthenticationHandle = sdAuthenticationHandle
       }
     userId
@@ -443,7 +442,7 @@ runGetUsersHandler Deps {..} SessionDeps {..} =
             { hGetUsers = Database.getUsers sdDatabaseHandle
             , hPageSpecParserHandle = dPageSpecParserHandle
             }
-      , hPresenter = userListPresenter dRepresentationBuilderHandle
+      , hPresent = presentUsers dRepresentationBuilderHandle
       }
 
 runCreateTagHandler :: Deps -> SessionDeps -> Web.Application
@@ -457,8 +456,7 @@ runCreateTagHandler Deps {..} SessionDeps {..} =
             , hFindTagByName = Database.findTagByName sdDatabaseHandle
             }
       , hLoadJSONRequestBody = dLoadJSONRequestBody
-      , hPresenter =
-          tagCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent = presentCreatedTag dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
 
@@ -467,7 +465,7 @@ runGetTagHandler tagId Deps {..} SessionDeps {..} =
   HGetTag.run
     HGetTag.Handle
       { hGetTagHandle = IGetTag.Handle $ Database.findTagById sdDatabaseHandle
-      , hPresenter = tagPresenter dRepresentationBuilderHandle
+      , hPresent = presentTag dRepresentationBuilderHandle
       }
     tagId
 
@@ -480,7 +478,7 @@ runGetTagsHandler Deps {..} SessionDeps {..} =
             { hGetTags = Database.getTags sdDatabaseHandle
             , hPageSpecParserHandle = dPageSpecParserHandle
             }
-      , hPresenter = tagListPresenter dRepresentationBuilderHandle
+      , hPresent = presentTags dRepresentationBuilderHandle
       }
 
 runCreateDraftHandler :: Deps -> SessionDeps -> Web.Application
@@ -497,8 +495,8 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
                 rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
             }
       , hLoadJSONRequestBody = dLoadJSONRequestBody
-      , hPresenter =
-          draftCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent =
+          presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
       , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
       , hAuthenticationHandle = sdAuthenticationHandle
       }
@@ -515,8 +513,8 @@ runPublishDraftHandler nvId Deps {..} SessionDeps {..} =
             , hGetCurrentDay = getCurrentDay
             , hCreateNews = Database.createNews sdDatabaseHandle
             }
-      , hPresenter =
-          newsCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent =
+          presentCreatedNewsItem dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
     nvId
@@ -533,7 +531,7 @@ runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
             , hPageSpecParserHandle = dPageSpecParserHandle
             }
       , hAuthenticationHandle = sdAuthenticationHandle
-      , hPresenter = draftListPresenter dRepresentationBuilderHandle
+      , hPresent = presentDrafts dRepresentationBuilderHandle
       }
     optAuthorId
 
@@ -547,7 +545,7 @@ runGetDraftHandler nvId Deps {..} SessionDeps {..} =
             , hAuthorizationHandle = Core.Authorization.Impl.new
             }
       , hAuthenticationHandle = sdAuthenticationHandle
-      , hPresenter = draftPresenter dRepresentationBuilderHandle
+      , hPresent = presentDraft dRepresentationBuilderHandle
       }
     nvId
 
@@ -562,7 +560,7 @@ runDeleteDraftHandler nvId Deps {..} SessionDeps {..} =
               , hDeleteNewsVersion = Database.deleteNewsVersion sdDatabaseHandle
               }
       , hAuthenticate = authenticate sdAuthenticationHandle
-      , hPresent = draftDeletedPresenter
+      , hPresent = presentDeletedDraft
       }
     nvId
 
@@ -575,8 +573,8 @@ runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
             { hCreateComment = Database.createComment sdDatabaseHandle
             , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
             }
-      , hPresenter =
-          commentCreatedPresenter dAppURIConfig dRepresentationBuilderHandle
+      , hPresent =
+          presentCreatedComment dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       }
@@ -589,7 +587,7 @@ runGetCommentHandler commentId Deps {..} SessionDeps {..} =
       { hGetCommentHandle =
           IGetComment.Handle
             {hGetComment = Database.getComment sdDatabaseHandle}
-      , hPresenter = commentPresenter dRepresentationBuilderHandle
+      , hPresent = presentComment dRepresentationBuilderHandle
       }
     commentId
 
@@ -602,7 +600,7 @@ runGetCommentsForNewsHandler newsId Deps {..} SessionDeps {..} =
             { hGetCommentsForNews = Database.getCommentsForNews sdDatabaseHandle
             , hPageSpecParserHandle = dPageSpecParserHandle
             }
-      , hPresenter = commentsPresenter dRepresentationBuilderHandle
+      , hPresent = presentComments dRepresentationBuilderHandle
       }
     newsId
 

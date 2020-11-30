@@ -26,7 +26,7 @@ data Handle =
     { hCreateCategoryHandle :: ICreateCategory.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
-    , hPresenter :: Category -> Response
+    , hPresent :: Category -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -47,7 +47,7 @@ run Handle {..} request respond = do
       (CategoryId <$> inParentCategoryItemId)
       names
   case r of
-    Right category -> respond $ hPresenter category
+    Right category -> respond $ hPresent category
     Left ICreateCategory.UnknownParentCategoryId ->
       throwIO $ IncorrectParameterException "Unknown parent category identifier"
     Left (ICreateCategory.IncorrectParameter reason) ->

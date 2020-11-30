@@ -1,38 +1,38 @@
 module Web.Presenter
   -- * Authors
-  ( authorCreatedPresenter
-  , authorUpdatedPresenter
-  , authorDeletedPresenter
-  , authorPresenter
-  , authorListPresenter
+  ( presentCreatedAuthor
+  , presentUpdatedAuthor
+  , presentDeletedAuthor
+  , presentAuthor
+  , presentAuthors
   -- * Users
-  , userCreatedPresenter
-  , userDeletedPresenter
-  , userPresenter
-  , userListPresenter
+  , presentCreatedUser
+  , presentDeletedUser
+  , presentUser
+  , presentUsers
   -- * Images
-  , imagePresenter
+  , presentImage
   -- * News and drafts
-  , newsListPresenter
-  , newsPresenter
-  , newsCreatedPresenter
-  , draftCreatedPresenter
-  , draftListPresenter
-  , draftPresenter
-  , draftDeletedPresenter
+  , presentNewsList
+  , presentNewsItem
+  , presentCreatedNewsItem
+  , presentCreatedDraft
+  , presentDrafts
+  , presentDraft
+  , presentDeletedDraft
   -- * Categories
-  , categoryCreatedPresenter
-  , categoryPresenter
-  , categoryListPresenter
-  , categoryDeletedPresenter
+  , presentCreatedCategory
+  , presentCategory
+  , presentCategories
+  , presentDeletedCategory
   -- * Tags
-  , tagCreatedPresenter
-  , tagPresenter
-  , tagListPresenter
+  , presentCreatedTag
+  , presentTag
+  , presentTags
   -- * Comments
-  , commentCreatedPresenter
-  , commentPresenter
-  , commentsPresenter
+  , presentCreatedComment
+  , presentComment
+  , presentComments
   ) where
 
 import Core.Authentication
@@ -58,14 +58,14 @@ import Web.Representation.User
 import Web.RepresentationBuilder
 import Web.Response
 
-authorCreatedPresenter :: AppURIConfig -> RepBuilderHandle -> Author -> Response
-authorCreatedPresenter uriConfig h author =
+presentCreatedAuthor :: AppURIConfig -> RepBuilderHandle -> Author -> Response
+presentCreatedAuthor uriConfig h author =
   resourceCreatedAndReturnedResponse uriConfig (authorURI author) .
   runRepBuilder h $
   authorRep author
 
-authorUpdatedPresenter :: AppURIConfig -> RepBuilderHandle -> Author -> Response
-authorUpdatedPresenter uriConfig h author =
+presentUpdatedAuthor :: AppURIConfig -> RepBuilderHandle -> Author -> Response
+presentUpdatedAuthor uriConfig h author =
   resourceModifiedAndReturnedResponse uriConfig (authorURI author) .
   runRepBuilder h $
   authorRep author
@@ -73,34 +73,34 @@ authorUpdatedPresenter uriConfig h author =
 authorURI :: Author -> AppURI
 authorURI = AuthorURI . authorId
 
-authorDeletedPresenter :: Response
-authorDeletedPresenter = noContentResponse
+presentDeletedAuthor :: Response
+presentDeletedAuthor = noContentResponse
 
-authorPresenter :: RepBuilderHandle -> Author -> Response
-authorPresenter h = dataResponse . runRepBuilder h . authorRep
+presentAuthor :: RepBuilderHandle -> Author -> Response
+presentAuthor h = dataResponse . runRepBuilder h . authorRep
 
-authorListPresenter :: RepBuilderHandle -> [Author] -> Response
-authorListPresenter h = dataResponse . runRepBuilder h . mapM authorRep
+presentAuthors :: RepBuilderHandle -> [Author] -> Response
+presentAuthors h = dataResponse . runRepBuilder h . mapM authorRep
 
-userCreatedPresenter ::
+presentCreatedUser ::
      AppURIConfig -> RepBuilderHandle -> User -> Credentials -> Response
-userCreatedPresenter uriConfig h user creds =
+presentCreatedUser uriConfig h user creds =
   resourceCreatedAndReturnedResponse uriConfig uri . runRepBuilder h $
   userRep (Just creds) user
   where
     uri = UserURI $ userId user
 
-userDeletedPresenter :: Response
-userDeletedPresenter = noContentResponse
+presentDeletedUser :: Response
+presentDeletedUser = noContentResponse
 
-userPresenter :: RepBuilderHandle -> User -> Response
-userPresenter h = dataResponse . runRepBuilder h . userRep Nothing
+presentUser :: RepBuilderHandle -> User -> Response
+presentUser h = dataResponse . runRepBuilder h . userRep Nothing
 
-userListPresenter :: RepBuilderHandle -> [User] -> Response
-userListPresenter h = dataResponse . runRepBuilder h . mapM (userRep Nothing)
+presentUsers :: RepBuilderHandle -> [User] -> Response
+presentUsers h = dataResponse . runRepBuilder h . mapM (userRep Nothing)
 
-imagePresenter :: Image -> Response
-imagePresenter Image {..} =
+presentImage :: Image -> Response
+presentImage Image {..} =
   dataResponse
     ResourceRepresentation
       { resourceRepresentationBody = BB.byteString imageData
@@ -108,43 +108,43 @@ imagePresenter Image {..} =
           contentType $ T.encodeUtf8 imageContentType
       }
 
-newsListPresenter :: RepBuilderHandle -> [News] -> Response
-newsListPresenter h = dataResponse . runRepBuilder h . mapM newsRep
+presentNewsList :: RepBuilderHandle -> [News] -> Response
+presentNewsList h = dataResponse . runRepBuilder h . mapM newsRep
 
-newsPresenter :: RepBuilderHandle -> News -> Response
-newsPresenter h = dataResponse . runRepBuilder h . newsRep
+presentNewsItem :: RepBuilderHandle -> News -> Response
+presentNewsItem h = dataResponse . runRepBuilder h . newsRep
 
-draftListPresenter :: RepBuilderHandle -> [NewsVersion] -> Response
-draftListPresenter h = dataResponse . runRepBuilder h . mapM draftRep
+presentDrafts :: RepBuilderHandle -> [NewsVersion] -> Response
+presentDrafts h = dataResponse . runRepBuilder h . mapM draftRep
 
-draftPresenter :: RepBuilderHandle -> NewsVersion -> Response
-draftPresenter h = dataResponse . runRepBuilder h . draftRep
+presentDraft :: RepBuilderHandle -> NewsVersion -> Response
+presentDraft h = dataResponse . runRepBuilder h . draftRep
 
-draftDeletedPresenter :: Response
-draftDeletedPresenter = noContentResponse
+presentDeletedDraft :: Response
+presentDeletedDraft = noContentResponse
 
-categoryCreatedPresenter ::
+presentCreatedCategory ::
      AppURIConfig -> RepBuilderHandle -> Category -> Response
-categoryCreatedPresenter uriConfig h category =
+presentCreatedCategory uriConfig h category =
   resourceCreatedAndReturnedResponse uriConfig (categoryURI category) .
   runRepBuilder h $
   categoryRep category
 
-categoryPresenter :: RepBuilderHandle -> Category -> Response
-categoryPresenter h = dataResponse . runRepBuilder h . categoryRep
+presentCategory :: RepBuilderHandle -> Category -> Response
+presentCategory h = dataResponse . runRepBuilder h . categoryRep
 
-categoryListPresenter :: RepBuilderHandle -> [Category] -> Response
-categoryListPresenter h = dataResponse . runRepBuilder h . mapM categoryRep
+presentCategories :: RepBuilderHandle -> [Category] -> Response
+presentCategories h = dataResponse . runRepBuilder h . mapM categoryRep
 
 categoryURI :: Category -> AppURI
 categoryURI cat = CategoryURI $ categoryId cat
 
-categoryDeletedPresenter :: Response
-categoryDeletedPresenter = noContentResponse
+presentDeletedCategory :: Response
+presentDeletedCategory = noContentResponse
 
-tagCreatedPresenter ::
+presentCreatedTag ::
      AppURIConfig -> RepBuilderHandle -> ICreateTag.Result -> Response
-tagCreatedPresenter uriConfig h result =
+presentCreatedTag uriConfig h result =
   case result of
     ICreateTag.TagCreated tag ->
       resourceCreatedAndReturnedResponse uriConfig (tagURI tag) .
@@ -157,15 +157,15 @@ tagCreatedPresenter uriConfig h result =
 tagURI :: Tag -> AppURI
 tagURI = TagURI . tagId
 
-tagPresenter :: RepBuilderHandle -> Tag -> Response
-tagPresenter h = dataResponse . runRepBuilder h . tagRep
+presentTag :: RepBuilderHandle -> Tag -> Response
+presentTag h = dataResponse . runRepBuilder h . tagRep
 
-tagListPresenter :: RepBuilderHandle -> [Tag] -> Response
-tagListPresenter h = dataResponse . runRepBuilder h . mapM tagRep
+presentTags :: RepBuilderHandle -> [Tag] -> Response
+presentTags h = dataResponse . runRepBuilder h . mapM tagRep
 
-draftCreatedPresenter ::
+presentCreatedDraft ::
      AppURIConfig -> RepBuilderHandle -> NewsVersion -> Response
-draftCreatedPresenter uriConfig h newsVersion =
+presentCreatedDraft uriConfig h newsVersion =
   resourceCreatedAndReturnedResponse uriConfig (draftURI newsVersion) .
   runRepBuilder h $
   draftRep newsVersion
@@ -173,8 +173,8 @@ draftCreatedPresenter uriConfig h newsVersion =
 draftURI :: NewsVersion -> AppURI
 draftURI = DraftURI . nvId
 
-newsCreatedPresenter :: AppURIConfig -> RepBuilderHandle -> News -> Response
-newsCreatedPresenter uriConfig h news =
+presentCreatedNewsItem :: AppURIConfig -> RepBuilderHandle -> News -> Response
+presentCreatedNewsItem uriConfig h news =
   resourceCreatedAndReturnedResponse uriConfig (newsItemURI news) .
   runRepBuilder h $
   newsRep news
@@ -182,9 +182,8 @@ newsCreatedPresenter uriConfig h news =
 newsItemURI :: News -> AppURI
 newsItemURI = NewsItemURI . newsId
 
-commentCreatedPresenter ::
-     AppURIConfig -> RepBuilderHandle -> Comment -> Response
-commentCreatedPresenter uriConfig h comment =
+presentCreatedComment :: AppURIConfig -> RepBuilderHandle -> Comment -> Response
+presentCreatedComment uriConfig h comment =
   resourceCreatedAndReturnedResponse uriConfig (commentURI comment) .
   runRepBuilder h $
   commentRep comment
@@ -192,8 +191,8 @@ commentCreatedPresenter uriConfig h comment =
 commentURI :: Comment -> AppURI
 commentURI Comment {..} = CommentURI commentId
 
-commentPresenter :: RepBuilderHandle -> Comment -> Response
-commentPresenter h = dataResponse . runRepBuilder h . commentRep
+presentComment :: RepBuilderHandle -> Comment -> Response
+presentComment h = dataResponse . runRepBuilder h . commentRep
 
-commentsPresenter :: RepBuilderHandle -> [Comment] -> Response
-commentsPresenter h = dataResponse . runRepBuilder h . mapM commentRep
+presentComments :: RepBuilderHandle -> [Comment] -> Response
+presentComments h = dataResponse . runRepBuilder h . mapM commentRep

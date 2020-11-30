@@ -22,7 +22,7 @@ data Handle =
     { hUpdateAuthorHandle :: I.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
-    , hPresenter :: Author -> Response
+    , hPresent :: Author -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -32,7 +32,7 @@ run Handle {..} authorId' request respond = do
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   InAuthor {inDescription} <- hLoadJSONRequestBody request
   newAuthor <- I.run hUpdateAuthorHandle authUser authorId' inDescription
-  respond $ hPresenter newAuthor
+  respond $ hPresent newAuthor
 
 newtype InAuthor =
   InAuthor

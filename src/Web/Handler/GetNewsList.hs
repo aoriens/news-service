@@ -30,7 +30,7 @@ data Handle =
     { hGetNewsHandle :: I.Handle IO
     , hJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
-    , hPresenter :: [News] -> Response
+    , hPresent :: [News] -> Response
     }
 
 run :: Handle -> Application
@@ -38,7 +38,7 @@ run Handle {..} request respond = do
   (pageQuery, newsFilter, sortOptions) <-
     QueryParameter.parseQueryM (requestQueryString request) parseParams
   news <- I.getNews hGetNewsHandle newsFilter sortOptions pageQuery
-  respond $ hPresenter news
+  respond $ hPresent news
 
 parseParams :: QueryParameter.Parser (PageSpecQuery, I.Filter, I.SortOptions)
 parseParams = liftA3 (,,) parsePageQuery parseFilter parseSortOptions

@@ -16,7 +16,7 @@ data Handle =
   Handle
     { hGetDraftsHandle :: I.Handle IO
     , hAuthenticationHandle :: AuthenticationHandle IO
-    , hPresenter :: [NewsVersion] -> Response
+    , hPresent :: [NewsVersion] -> Response
     }
 
 -- | When 'Nothing' passed as 'Maybe AuthorId', all authors of the
@@ -27,4 +27,4 @@ run Handle {..} optAuthorId request respond = do
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
   drafts <- I.run hGetDraftsHandle authUser optAuthorId pageQuery
-  respond $ hPresenter drafts
+  respond $ hPresent drafts

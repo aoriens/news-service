@@ -12,11 +12,11 @@ import qualified Web.Exception as E
 data Handle =
   Handle
     { hGetImageHandle :: I.Handle IO
-    , hPresenter :: Image -> Response
+    , hPresent :: Image -> Response
     }
 
 run :: Handle -> ImageId -> Application
 run Handle {..} imageId _ respond = do
   optImage <- I.run hGetImageHandle imageId
   image <- maybe (throwIO E.NotFoundException) pure optImage
-  respond $ hPresenter image
+  respond $ hPresent image

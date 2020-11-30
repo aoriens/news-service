@@ -14,7 +14,7 @@ import Web.Exception
 data Handle =
   Handle
     { hGetDraftHandle :: I.Handle IO
-    , hPresenter :: NewsVersion -> Response
+    , hPresent :: NewsVersion -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -25,4 +25,4 @@ run Handle {..} draftId request respond = do
   draft <-
     maybe (throwIO NotFoundException) pure =<<
     I.run hGetDraftHandle authUser draftId
-  respond $ hPresenter draft
+  respond $ hPresent draft

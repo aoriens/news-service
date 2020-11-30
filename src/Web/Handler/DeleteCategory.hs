@@ -12,7 +12,7 @@ import Web.Credentials
 data Handle =
   Handle
     { hDeleteCategoryHandle :: I.Handle IO
-    , hPresenter :: Response
+    , hPresent :: Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -21,4 +21,4 @@ run Handle {..} catId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   I.run hDeleteCategoryHandle authUser catId
-  respond hPresenter
+  respond hPresent
