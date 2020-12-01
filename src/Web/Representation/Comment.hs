@@ -20,7 +20,7 @@ import Web.RepresentationBuilder
 data CommentRep =
   CommentRep
     { commentCommentId :: Int32
-    , commentUser :: Maybe UserRep
+    , commentAuthor :: Maybe UserRep
     , commentNewsId :: Int32
     , commentText :: T.Text
     , commentCreatedAt :: UTCTime
@@ -35,7 +35,7 @@ commentRep Comment {..} = do
   pure
     CommentRep
       { commentCommentId = getCommentId commentId
-      , commentUser = userR
+      , commentAuthor = userR
       , commentNewsId = getNewsId commentNewsId
       , commentText
       , commentCreatedAt

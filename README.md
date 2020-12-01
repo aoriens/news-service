@@ -353,7 +353,7 @@ A comment posted by a user for a news article. Fields:
 - `news_id` - the identifier of a commented [News](#News) article. An integer,
   required.
 - `text` - the comment body text. A string, required.
-- `user` - a user who created the comment. If the user is missing or null, the
+- `author` - a user who created the comment. If the user is missing or null, the
   comment is posted anonymously. A [User](#User), optional.
 - `created_at` - date and time time the comment is posted at. A
   [UTCTime](#UTCTime), required.
