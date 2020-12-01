@@ -34,6 +34,7 @@ module Web.Presenter
   , presentCreatedComment
   , presentComment
   , presentComments
+  , presentDeletedComment
   ) where
 
 import Core.Authentication
@@ -200,3 +201,6 @@ presentComment h = dataResponse . runRepBuilder h . commentRep
 
 presentComments :: RepBuilderHandle -> [Comment] -> Response
 presentComments h = dataResponse . runRepBuilder h . mapM commentRep
+
+presentDeletedComment :: Response
+presentDeletedComment = noContentResponse

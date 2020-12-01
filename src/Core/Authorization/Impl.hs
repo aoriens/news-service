@@ -13,3 +13,4 @@ hasPermission AdminPermission AnonymousUser = False
 hasPermission (AuthorshipPermission requiredAuthorId) (IdentifiedUser _ _ authorIds) =
   requiredAuthorId `elem` authorIds
 hasPermission (AuthorshipPermission _) AnonymousUser = False
+hasPermission (AdminOrSpecificUserPermission _) _ = error "Not implemented"

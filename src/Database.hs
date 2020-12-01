@@ -39,6 +39,8 @@ module Database
   , createComment
   , getComment
   , getCommentsForNews
+  , getCommentAuthor
+  , deleteComment
   ) where
 
 import Core.Authentication.Impl
@@ -217,3 +219,9 @@ getCommentsForNews ::
   -> IO (Either IGetCommentsForNews.GatewayFailure [Comment])
 getCommentsForNews h newsId pageSpec =
   runTransactionRO h $ DComments.getCommentsForNews newsId pageSpec
+
+getCommentAuthor :: DB.Handle -> CommentId -> IO (Maybe (CommentAuthor UserId))
+getCommentAuthor h = runTransactionRO h . DComments.getCommentAuthor
+
+deleteComment :: DB.Handle -> CommentId -> IO Bool
+deleteComment h = runTransactionRW h . DComments.deleteComment

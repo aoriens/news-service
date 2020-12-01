@@ -134,6 +134,7 @@ coreExceptionToResponse e =
           Http.forbidden403
           []
           "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
+      | AdminOrSpecificUserPermission _ <- perm -> unauthorizedResponse
     UserNotIdentifiedException _ ->
       stubErrorResponseWithReason
         Http.forbidden403

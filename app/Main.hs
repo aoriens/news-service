@@ -26,6 +26,7 @@ import qualified Core.Interactor.CreateTag as ICreateTag
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
+import qualified Core.Interactor.DeleteComment as IDeleteComment
 import qualified Core.Interactor.DeleteDraft as IDeleteDraft
 import qualified Core.Interactor.DeleteTag as IDeleteTag
 import qualified Core.Interactor.DeleteUser as IDeleteUser
@@ -76,6 +77,7 @@ import qualified Web.Handler.CreateTag as HCreateTag
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
 import qualified Web.Handler.DeleteCategory as HDeleteCategory
+import qualified Web.Handler.DeleteComment as HDeleteComment
 import qualified Web.Handler.DeleteDraft as HDeleteDraft
 import qualified Web.Handler.DeleteTag as HDeleteTag
 import qualified Web.Handler.DeleteUser as HDeleteUser
@@ -232,7 +234,10 @@ router deps =
       [ R.get $ runGetCommentsForNewsHandler newsId
       , R.post $ runCreateCommentHandler newsId
       ]
-    CommentURI commentId -> [R.get $ runGetCommentHandler commentId]
+    CommentURI commentId ->
+      [ R.get $ runGetCommentHandler commentId
+      , R.delete $ runDeleteCommentHandler commentId
+      ]
 
 runCreateAuthorHandler :: Deps -> SessionDeps -> Web.Application
 runCreateAuthorHandler Deps {..} SessionDeps {..} =
@@ -603,6 +608,21 @@ runGetCommentHandler commentId Deps {..} SessionDeps {..} =
           IGetComment.Handle
             {hGetComment = Database.getComment sdDatabaseHandle}
       , hPresent = presentComment dRepresentationBuilderHandle
+      }
+    commentId
+
+runDeleteCommentHandler :: CommentId -> Deps -> SessionDeps -> Web.Application
+runDeleteCommentHandler commentId Deps {..} SessionDeps {..} =
+  HDeleteComment.run
+    HDeleteComment.Handle
+      { hDeleteComment =
+          IDeleteComment.run $
+          IDeleteComment.Handle
+            { hDeleteComment = Database.deleteComment sdDatabaseHandle
+            , hGetCommentAuthor = Database.getCommentAuthor sdDatabaseHandle
+            }
+      , hAuthenticate = authenticate sdAuthenticationHandle
+      , hPresent = presentDeletedComment
       }
     commentId
 

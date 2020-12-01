@@ -5,8 +5,10 @@ module Core.Permission
   ) where
 
 import Core.Author
+import Core.User
 
 data Permission
   = AdminPermission
   | AuthorshipPermission AuthorId
+  | AdminOrSpecificUserPermission UserId
   deriving (Eq, Show)

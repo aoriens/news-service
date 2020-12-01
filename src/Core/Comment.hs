@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Core.Comment
   ( Comment(..)
   , CommentId(..)
@@ -6,6 +8,7 @@ module Core.Comment
 
 import Core.News
 import Core.User
+import Data.Hashable
 import Data.Int
 import qualified Data.Text as T
 import Data.Time
@@ -25,7 +28,7 @@ newtype CommentId =
   CommentId
     { getCommentId :: Int32
     }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Hashable)
 
 -- | The comment author. It is not a 'Maybe', since nested Maybes look
 -- confusing, and the type can be extended. It is parameterized with a
@@ -34,3 +37,7 @@ data CommentAuthor userType
   = UserCommentAuthor userType
   | AnonymousCommentAuthor
   deriving (Eq, Show)
+
+instance Functor CommentAuthor where
+  fmap _ AnonymousCommentAuthor = AnonymousCommentAuthor
+  fmap f (UserCommentAuthor u) = UserCommentAuthor (f u)

@@ -41,6 +41,7 @@ library
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteAuthor
     , Core.Interactor.DeleteCategory
+    , Core.Interactor.DeleteComment
     , Core.Interactor.DeleteDraft
     , Core.Interactor.DeleteTag
     , Core.Interactor.DeleteUser
@@ -112,6 +113,7 @@ library
     , Web.Handler.CreateUser
     , Web.Handler.DeleteAuthor
     , Web.Handler.DeleteCategory
+    , Web.Handler.DeleteComment
     , Web.Handler.DeleteDraft
     , Web.Handler.DeleteTag
     , Web.Handler.DeleteUser
@@ -226,6 +228,7 @@ test-suite news-service-test
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteAuthorSpec
     , Core.Interactor.DeleteCategorySpec
+    , Core.Interactor.DeleteCommentSpec
     , Core.Interactor.DeleteDraftSpec
     , Core.Interactor.DeleteTagSpec
     , Core.Interactor.DeleteUserSpec

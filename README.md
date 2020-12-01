@@ -139,9 +139,16 @@ Deletes the identified category and returns no content. Only the least
 significant [CategoryItem](#CategoryItem) of the category will be deleted.
 Requires authentication of a user having the administrator privilege.
 
+### `DELETE /comments/{comment_id}`
+
+Deletes the [Comment](#Comment) identified with `{comment_id}` and returns no
+content. It requires authentication. It is only allowed to delete a comment to
+an administrator user or a user who posted the comment. Anonymous comments can
+only be deleted by an administrator.
+
 ### `GET /comments/{comment_id}`
 
-Returns the [Comment](#Comment) identified with the given `comment_id`.
+Returns the [Comment](#Comment) identified with `{comment_id}`.
 
 ### `GET /drafts`
 

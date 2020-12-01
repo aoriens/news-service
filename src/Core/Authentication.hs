@@ -8,6 +8,7 @@ module Core.Authentication
   , AuthenticatedUser(..)
   , IsAdmin
   , authenticatedUserId
+  , authenticatedUserIsAdmin
   ) where
 
 import Control.Monad.Catch
@@ -44,8 +45,12 @@ data AuthenticatedUser
   | IdentifiedUser !UserId !IsAdmin [AuthorId]
   deriving (Eq, Show)
 
+type IsAdmin = Bool
+
 authenticatedUserId :: AuthenticatedUser -> Maybe UserId
 authenticatedUserId AnonymousUser = Nothing
 authenticatedUserId (IdentifiedUser uid _ _) = Just uid
 
-type IsAdmin = Bool
+authenticatedUserIsAdmin :: AuthenticatedUser -> Bool
+authenticatedUserIsAdmin AnonymousUser = False
+authenticatedUserIsAdmin (IdentifiedUser _ isAdmin _) = isAdmin

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+allow_token
+run_curl -X DELETE "$DOMAIN/comments/${1?Pass a comment ID as an argument}$Q"

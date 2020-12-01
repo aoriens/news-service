@@ -2,6 +2,7 @@ module Core.AuthorizationNG
   ( authorize
   , authUserShouldBeAdmin
   , authUserShouldBeAuthor
+  , authUserShouldBeAdminOrSpecificUser
   , module Core.Authentication
   ) where
 
@@ -11,6 +12,7 @@ import Core.Authentication
 import Core.Author
 import Core.Exception
 import Core.Permission
+import Core.User
 import qualified Data.Text as T
 
 type ActionDescription = T.Text
@@ -39,4 +41,14 @@ authUserShouldBeAdmin user = (r, AdminPermission)
     r =
       case user of
         IdentifiedUser _ isAdmin _ -> isAdmin
+        AnonymousUser -> False
+
+authUserShouldBeAdminOrSpecificUser ::
+     AuthenticatedUser -> UserId -> PermissionCheck
+authUserShouldBeAdminOrSpecificUser authUser requiredUserId =
+  (r, AdminOrSpecificUserPermission requiredUserId)
+  where
+    r =
+      case authUser of
+        IdentifiedUser userId isAdmin _ -> isAdmin || userId == requiredUserId
         AnonymousUser -> False

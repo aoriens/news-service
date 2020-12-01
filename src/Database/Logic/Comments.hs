@@ -5,6 +5,8 @@ module Database.Logic.Comments
   ( createComment
   , getComment
   , getCommentsForNews
+  , getCommentAuthor
+  , deleteComment
   ) where
 
 import Control.Monad
@@ -43,7 +45,7 @@ createComment text optUserId newsId' createdAt =
     pure
       Comment
         { commentText = text
-        , commentAuthor = maybe AnonymousCommentAuthor UserCommentAuthor optUser
+        , commentAuthor = commentAuthorFromMaybe optUser
         , commentCreatedAt = createdAt
         , commentId
         , commentNewsId = newsId'
@@ -122,15 +124,40 @@ getCommentsForNewsUnchecked (NewsId newsId) pageSpec =
       Sql.param newsId <>
       "order by comment_id" <> limitOffsetClauseWithPageSpec pageSpec
 
+getCommentAuthor :: CommentId -> Transaction (Maybe (CommentAuthor UserId))
+getCommentAuthor =
+  runStatement $
+  dimap
+    getCommentId
+    (fmap (commentAuthorFromMaybe . fmap UserId))
+    [TH.maybeStatement|
+      select user_id :: integer?
+      from comments
+      where comment_id = $1 :: integer
+    |]
+
+deleteComment :: CommentId -> Transaction Bool
+deleteComment =
+  runStatement $
+  dimap
+    getCommentId
+    (> 0)
+    [TH.rowsAffectedStatement|
+      delete from comments
+      where comment_id = $1 :: integer
+    |]
+
 commentColumns :: Columns Comment
 commentColumns = do
   commentId <- CommentId <$> column table "comment_id"
   commentNewsId <- NewsId <$> column table "news_id"
-  commentAuthor <-
-    maybe AnonymousCommentAuthor UserCommentAuthor <$> optUserColumns
+  commentAuthor <- commentAuthorFromMaybe <$> optUserColumns
   commentCreatedAt <- column table "created_at"
   commentText <- column table "text"
   pure Comment {..}
 
 table :: TableName
 table = "comments"
+
+commentAuthorFromMaybe :: Maybe a -> CommentAuthor a
+commentAuthorFromMaybe = maybe AnonymousCommentAuthor UserCommentAuthor
