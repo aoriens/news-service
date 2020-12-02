@@ -6,13 +6,12 @@ module Core.Interactor.GetDraft
 import Control.Monad
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.News
 
-data Handle m =
+newtype Handle m =
   Handle
     { hGetDraft :: NewsVersionId -> m (Maybe NewsVersion)
-    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 run ::
@@ -24,9 +23,6 @@ run ::
 run Handle {..} authUser draftId = do
   optDraft <- hGetDraft draftId
   forM_ optDraft $ \draft ->
-    requirePermission
-      hAuthorizationHandle
-      (AuthorshipPermission . authorId $ nvAuthor draft)
-      authUser
-      "get a draft"
+    authorize "get a draft" $
+    authUserShouldBeAuthor authUser (authorId $ nvAuthor draft)
   pure optDraft

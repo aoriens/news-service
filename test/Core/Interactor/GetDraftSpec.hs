@@ -2,59 +2,60 @@ module Core.Interactor.GetDraftSpec
   ( spec
   ) where
 
-import Control.Monad
 import Core.Authentication.Test
 import Core.Author
 import Core.Authorization
-import Core.Authorization.Test
 import Core.Category
 import Core.Deletable
+import Core.Exception
 import Core.Interactor.GetDraft
 import Core.News
 import Core.User
 import qualified Data.HashSet as Set
-import Data.IORef
+import Data.List
 import Data.Time
 import Test.Hspec
 
 spec :: Spec
 spec =
   describe "run" $ do
-    describe "check the user for the draft authorship" $ do
-      let draftAuthorId = AuthorId 1
-          expectedPerm = AuthorshipPermission draftAuthorId
-          draft = stubDraft {nvAuthor = stubAuthor {authorId = draftAuthorId}}
-      itShouldAuthorizeBeforeOperation expectedPerm $ \authUser authorizationHandle onSuccess -> do
-        let h =
-              defaultHandle
-                { hGetDraft = \_ -> pure $ Just draft
-                , hAuthorizationHandle = authorizationHandle
-                }
-        void $ run h authUser stubDraftId
-        onSuccess
-    it "should return hGetDraft result if authorization succeeds" $ do
-      let expectedDraft = Just stubDraft {nvId = NewsVersionId 1}
-          h = defaultHandle {hGetDraft = const $ pure expectedDraft}
-      draft <- run h someAuthUser stubDraftId
-      draft `shouldBe` expectedDraft
-    it "should pass draft id to hGetDraft" $ do
-      ref <- newIORef []
-      let expectedDraftId = NewsVersionId 1
-          h =
-            defaultHandle
-              {hGetDraft = \nvId -> modifyIORef' ref (nvId :) >> pure Nothing}
-      _ <- run h someAuthUser expectedDraftId
-      readIORef ref `shouldReturn` [expectedDraftId]
+    it
+      "should return an existing draft for the given id if the user is its author" $ do
+      let draftId = NewsVersionId 1
+          authorId = AuthorId 2
+          draft = draftWithIdAndAuthorId draftId authorId
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          h = handleWithItems [draft]
+      r <- run h authUser draftId
+      r `shouldBe` Just draft
+    it
+      "should throw NoPermissionException for an existing draft if the user is not its author" $ do
+      let draftId = NewsVersionId 1
+          draft = draftWithIdAndAuthorId draftId (AuthorId 2)
+          authUser = IdentifiedUser (UserId 0) False [AuthorId 3]
+          h = handleWithItems [draft]
+      run h authUser draftId `shouldThrow` isNoPermissionException
+    it
+      "should throw NoPermissionException for an existing draft if the user is not its author, but is an admin" $ do
+      let draftId = NewsVersionId 1
+          draft = draftWithIdAndAuthorId draftId (AuthorId 2)
+          authUser = IdentifiedUser (UserId 0) True [AuthorId 3]
+          h = handleWithItems [draft]
+      run h authUser draftId `shouldThrow` isNoPermissionException
+    it "should return Nothing if no draft is found for the given id" $ do
+      let requestedDraftId = NewsVersionId 1
+          draft = draftWithIdAndAuthorId (NewsVersionId 2) (AuthorId 3)
+          h = handleWithItems [draft]
+      r <- run h someNonAdminUser requestedDraftId
+      r `shouldBe` Nothing
 
-defaultHandle :: Handle IO
-defaultHandle =
-  Handle
-    { hGetDraft = const $ pure Nothing
-    , hAuthorizationHandle = noOpAuthorizationHandle
-    }
+handleWithItems :: Applicative m => [NewsVersion] -> Handle m
+handleWithItems items =
+  Handle {hGetDraft = \targetId -> pure $ find (\v -> targetId == nvId v) items}
 
-stubDraftId :: NewsVersionId
-stubDraftId = NewsVersionId 0
+draftWithIdAndAuthorId :: NewsVersionId -> AuthorId -> NewsVersion
+draftWithIdAndAuthorId nvId authorId =
+  stubDraft {nvId, nvAuthor = stubAuthor {authorId}}
 
 stubDraft :: NewsVersion
 stubDraft =

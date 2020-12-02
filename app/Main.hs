@@ -556,11 +556,7 @@ runGetDraftHandler :: NewsVersionId -> Deps -> SessionDeps -> Web.Application
 runGetDraftHandler nvId Deps {..} SessionDeps {..} =
   HGetDraft.run
     HGetDraft.Handle
-      { hGetDraftHandle =
-          IGetDraft.Handle
-            { hGetDraft = Database.getDraft sdDatabaseHandle
-            , hAuthorizationHandle = Core.Authorization.Impl.new
-            }
+      { hGetDraftHandle = IGetDraft.Handle $ Database.getDraft sdDatabaseHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       , hPresent = presentDraft dRepresentationBuilderHandle
       }
