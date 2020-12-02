@@ -32,7 +32,30 @@ create table users (
        avatar_id integer references images,
        created_at timestamp with time zone not null,
        is_admin boolean not null default false,
-       token_hash bytea not null
+       token_hash bytea not null,
+
+       -- A marker of a deleted user.
+       --
+       -- Why not deleting a user indeed? Authors and comments depend
+       -- on users directly. We would have to make user_id references
+       -- nullable, which is worse for data integrity, and comments
+       -- already use NULL user_id to designate an anonymous user,
+       -- which can behave not like a deleted user. We would create a
+       -- fake "deleted" user, but it is hardly easier. According to
+       -- the both approaches, we would have to update a lot of author
+       -- and comment rows before deleting a user, which can be slow
+       -- sometimes. Marking a user with the deleted flag looks the
+       -- best in terms of data integrity, simplicity, and
+       -- performance.
+       --
+       -- A deleted user entity should be considered truly deleted
+       -- from the user's point of view. No information of the user
+       -- entity can leak to the user, except the fact that there was
+       -- a user formerly and it has been deleted. Entitites dependent
+       -- on such a user entity can stay visible to the user. Although
+       -- it is possible to recover a deleted user, it is not a
+       -- purpose of the decision.
+       is_deleted boolean not null default false
 );
 
 create view extended_users as
@@ -170,6 +193,7 @@ create view drafts as
 create table comments (
        comment_id serial not null primary key,
        news_id integer not null references news,
+       -- NULL means anonymous user
        user_id integer references users,
        text varchar not null,
        created_at timestamp with time zone not null
