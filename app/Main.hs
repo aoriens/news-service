@@ -430,12 +430,9 @@ runDeleteUserHandler :: UserId -> Deps -> SessionDeps -> Web.Application
 runDeleteUserHandler userId Deps {..} SessionDeps {..} =
   HDeleteUser.run
     HDeleteUser.Handle
-      { hDeleteUserHandle =
-          IDeleteUser.Handle
-            { hDeleteUser = Database.deleteUser sdDatabaseHandle
-            , hAuthorizationHandle = Core.Authorization.Impl.new
-            , hDefaultEntityListRange = dDefaultEntityListRange
-            }
+      { hDeleteUser =
+          IDeleteUser.run . IDeleteUser.Handle $
+          Database.deleteUser sdDatabaseHandle
       , hPresent = presentDeletedUser
       , hAuthenticationHandle = sdAuthenticationHandle
       }

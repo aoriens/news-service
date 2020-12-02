@@ -1,9 +1,12 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Core.User
   ( User(..)
   , UserId(..)
   ) where
 
 import Core.Image
+import Data.Hashable
 import Data.Int
 import Data.Text (Text)
 import Data.Time
@@ -24,4 +27,4 @@ newtype UserId =
   UserId
     { getUserId :: Int32
     }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Hashable)

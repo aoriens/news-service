@@ -54,7 +54,6 @@ import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
-import qualified Core.Interactor.DeleteUser as IDeleteUser
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
 import Core.News
@@ -194,10 +193,8 @@ getUsers h page = toList <$> runTransactionRO h (DUsers.selectUsers page)
 getUserAuthData :: DB.Handle -> UserId -> IO (Maybe UserAuthData)
 getUserAuthData h = runTransactionRO h . DUsers.selectUserAuthData
 
-deleteUser ::
-     DB.Handle -> UserId -> PageSpec -> IO (Either IDeleteUser.Failure ())
-deleteUser h uid defaultRange =
-  runTransactionRW h $ DUsers.deleteUser uid defaultRange
+deleteUser :: DB.Handle -> UserId -> IO Bool
+deleteUser h = runTransactionRW h . DUsers.deleteUser
 
 createComment ::
      DB.Handle

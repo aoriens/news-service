@@ -3,15 +3,17 @@ module Web.Handler.DeleteUser
   , Handle(..)
   ) where
 
+import Control.Exception
+import Control.Monad
 import Core.Authentication
-import qualified Core.Interactor.DeleteUser as I
 import Core.User
 import Web.Application
 import Web.Credentials
+import Web.Exception
 
 data Handle =
   Handle
-    { hDeleteUserHandle :: I.Handle IO
+    { hDeleteUser :: AuthenticatedUser -> UserId -> IO Bool
     , hPresent :: Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
@@ -20,5 +22,6 @@ run :: Handle -> UserId -> Application
 run Handle {..} uid request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
-  I.run hDeleteUserHandle authUser uid
+  r <- hDeleteUser authUser uid
+  unless r $ throwIO NotFoundException
   respond hPresent

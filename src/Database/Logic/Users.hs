@@ -11,19 +11,14 @@ module Database.Logic.Users
   , optUserColumns
   ) where
 
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Except
 import Core.Authentication
 import Core.Authentication.Impl
 import Core.Deletable
-import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateUser as I
-import Core.Interactor.DeleteUser as IDeleteUser
 import Core.Pagination
 import Core.User
 import Data.Bifunctor
-import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
 import Data.Vector (Vector)
@@ -153,39 +148,20 @@ getUserHashAndIsAdmin =
     getUserId
     (fmap $ first SecretTokenHash)
     [TH.maybeStatement|
-    select token_hash :: bytea, is_admin :: boolean
-    from users
-    where user_id = $1 :: integer and not is_deleted
+      select token_hash :: bytea, is_admin :: boolean
+      from users
+      where user_id = $1 :: integer and not is_deleted
     |]
 
-deleteUser :: UserId -> PageSpec -> Transaction (Either IDeleteUser.Failure ())
-deleteUser uid defaultRange =
-  runExceptT $ do
-    optAvatarId <- ExceptT deleteUserReturningAvatarId
-    case optAvatarId of
-      Nothing -> throwE UnknownUser
-      Just Nothing -> pure ()
-      Just (Just avatarId) -> lift $ deleteImageIfNotReferenced avatarId
-  where
-    deleteUserReturningAvatarId = do
-      authors <- selectAuthorsByUserId uid (Just defaultRange)
-      if null authors
-        then Right <$> deleteUserSt uid
-        else pure $ dependencyFailure authors
-    dependencyFailure =
-      Left . DependentEntitiesPreventDeletion . map AuthorEntityId . toList
-
--- | Returns @Nothing@ if no users found; @Just Nothing@ if a user is
--- deleted and it did not have an avatar; @Just (Just avatarId)@
--- otherwise.
-deleteUserSt :: UserId -> Transaction (Maybe (Maybe ImageId))
-deleteUserSt =
+-- | Returns 'False' when no such _existing_ user is found.
+deleteUser :: UserId -> Transaction Bool
+deleteUser =
   runStatement $
   dimap
     getUserId
-    (fmap (fmap ImageId))
-    [TH.maybeStatement|
-      delete from users
-      where user_id = $1 :: integer and not is_deleted
-      returning avatar_id :: integer?
+    (> 0)
+    [TH.rowsAffectedStatement|
+      update users
+      set is_deleted = true
+      where not is_deleted and user_id = $1 :: integer
     |]

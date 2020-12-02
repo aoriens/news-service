@@ -2,69 +2,75 @@ module Core.Interactor.DeleteUserSpec
   ( spec
   ) where
 
-import Control.Exception
+import Core.Authentication
 import Core.Authentication.Test
-import Core.Author
-import Core.Authorization
-import Core.Authorization.Test
-import Core.EntityId
 import Core.Exception
 import Core.Interactor.DeleteUser
-import Core.Pagination
 import Core.User
+import qualified Data.HashSet as Set
 import Data.IORef
 import Test.Hspec
 
 spec :: Spec
-spec =
+spec
+  {- HLINT ignore spec "Reduce duplication" -}
+ =
   describe "run" $ do
-    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
-      let uid = UserId 1
-          h =
-            stubHandle
-              { hDeleteUser = \_ _ -> onSuccess >> pure (Right ())
-              , hAuthorizationHandle = authorizationHandle
-              }
-      run h authUser uid
+    it "should throw NoPermissionException if the user is not an admin" $ do
+      let userIdToDelete = UserId 1
+          initialData = storageWithItems [userIdToDelete]
+      db <- newIORef initialData
+      run (handleWith db) someNonAdminUser userIdToDelete `shouldThrow`
+        isNoPermissionException
+      readIORef db `shouldReturn` initialData
+    it "should throw NoPermissionException if the user is anonymous" $ do
+      let userIdToDelete = UserId 1
+          initialData = storageWithItems [userIdToDelete]
+      db <- newIORef initialData
+      run (handleWith db) AnonymousUser userIdToDelete `shouldThrow`
+        isNoPermissionException
+      readIORef db `shouldReturn` initialData
+    it "should delete an existing user and return True if the actor is an admin" $ do
+      let userIdToDelete = UserId 1
+          initialData = storageWithItems [userIdToDelete]
+      db <- newIORef initialData
+      r <- run (handleWith db) someAdminUser userIdToDelete
+      r `shouldBe` True
+      readIORef db `shouldReturn`
+        Storage Set.empty (Set.singleton userIdToDelete)
     it
-      "should throw DependentEntitiesPreventDeletionException if \
-       \the gateway returned Left DependentEntitiesPreventDeletion" $ do
-      let uid = UserId 1
-          authorIds = [AuthorEntityId $ AuthorId 0]
-          h =
-            stubHandle
-              { hDeleteUser =
-                  \_ _ ->
-                    pure . Left $ DependentEntitiesPreventDeletion authorIds
-              }
-      r <- try $ run h someAuthUser uid
-      r `shouldBe`
-        Left
-          (DependentEntitiesPreventDeletionException
-             (UserEntityId uid)
-             authorIds)
-    it
-      "should throw RequestedEntityNotFoundException if \
-       \the gateway returned Left UnknownUser" $ do
-      let uid = UserId 1
-          h = stubHandle {hDeleteUser = \_ _ -> pure $ Left UnknownUser}
-      r <- try $ run h someAuthUser uid
-      r `shouldBe` Left (RequestedEntityNotFoundException $ UserEntityId uid)
-    it "should pass the UserId argument to the gateway delete command" $ do
-      passedUserId <- newIORef undefined
-      let expectedUid = UserId 8
-          h =
-            stubHandle
-              { hDeleteUser =
-                  \uid _ -> writeIORef passedUserId uid >> pure (Right ())
-              }
-      run h someAuthUser expectedUid
-      readIORef passedUserId `shouldReturn` expectedUid
+      "should not delete an unknown user and return False if the actor is an admin" $ do
+      let userIdToDelete = UserId 1
+          initialData = storageWithItems [UserId 2]
+      db <- newIORef initialData
+      r <- run (handleWith db) someAdminUser userIdToDelete
+      r `shouldBe` False
+      readIORef db `shouldReturn`
+        initialData {storageRequestedDeletions = Set.singleton userIdToDelete}
 
-stubHandle :: Handle IO
-stubHandle =
+data Storage =
+  Storage
+    { storageItems :: Set.HashSet UserId
+    , storageRequestedDeletions :: Set.HashSet UserId
+    }
+  deriving (Eq, Show)
+
+storageWithItems :: [UserId] -> Storage
+storageWithItems items =
+  Storage
+    {storageItems = Set.fromList items, storageRequestedDeletions = Set.empty}
+
+handleWith :: IORef Storage -> Handle IO
+handleWith db =
   Handle
-    { hDeleteUser = \_ _ -> pure (Right ())
-    , hDefaultEntityListRange = PageSpec (PageOffset 0) (PageLimit 0)
-    , hAuthorizationHandle = noOpAuthorizationHandle
+    { hDeleteUser =
+        \userId -> do
+          found <- Set.member userId . storageItems <$> readIORef db
+          modifyIORef' db $ \Storage {..} ->
+            Storage
+              { storageItems = Set.delete userId storageItems
+              , storageRequestedDeletions =
+                  Set.insert userId storageRequestedDeletions
+              }
+          pure found
     }
