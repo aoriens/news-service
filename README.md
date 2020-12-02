@@ -324,7 +324,8 @@ Returns the specified [User](#User).
 An author of news. Fields:
 
 - `author_id` - the identifier of the author. An integer, required.
-- `user` - the corresponding user. A [User](#User), required.
+- `user` - the corresponding user. It is either a [User](#User) or a string
+  `DELETED`, if the user is deleted. This is a required field.
 - `description` - the author description. A string, required.
 
 ### Category
@@ -353,8 +354,9 @@ A comment posted by a user for a news article. Fields:
 - `news_id` - the identifier of a commented [News](#News) article. An integer,
   required.
 - `text` - the comment body text. A string, required.
-- `author` - a user who created the comment. If the user is missing or null, the
-  comment is posted anonymously. A [User](#User), optional.
+- `author` - a user who created the comment. It may be a [User](#User) entity,
+  string `ANONYMOUS` if the comment is posted anonymously, or string `DELETED`
+  if the comment is posted by a deleted user. This is a required field.
 - `created_at` - date and time time the comment is posted at. A
   [UTCTime](#UTCTime), required.
 

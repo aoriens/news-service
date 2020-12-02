@@ -33,5 +33,6 @@ run Handle {..} authUser commentId
       authorize "delete a comment" $
       case commentAuthor of
         AnonymousCommentAuthor -> authUserShouldBeAdmin authUser
+        DeletedCommentAuthor -> authUserShouldBeAdmin authUser
         UserCommentAuthor userId ->
           authUserShouldBeAdminOrSpecificUser authUser userId

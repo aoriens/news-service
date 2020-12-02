@@ -7,6 +7,7 @@ import Core.Authentication
 import Core.Authentication.Test
 import Core.Author
 import Core.Category
+import Core.Deletable
 import Core.Exception
 import Core.Interactor.DeleteDraft
 import Core.News
@@ -111,13 +112,14 @@ stubAuthor =
   Author
     { authorId = AuthorId 0
     , authorUser =
-        User
-          { userId = UserId 0
-          , userFirstName = Nothing
-          , userLastName = ""
-          , userAvatarId = Nothing
-          , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-          , userIsAdmin = False
-          }
+        Existing
+          User
+            { userId = UserId 0
+            , userFirstName = Nothing
+            , userLastName = ""
+            , userAvatarId = Nothing
+            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+            , userIsAdmin = False
+            }
     , authorDescription = ""
     }

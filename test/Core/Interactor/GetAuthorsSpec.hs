@@ -7,6 +7,7 @@ import Core.Authentication.Test
 import Core.Author
 import Core.Authorization
 import Core.Authorization.Test
+import Core.Deletable
 import Core.Interactor.GetAuthors
 import Core.Pagination
 import Core.Pagination.Test
@@ -57,12 +58,13 @@ stubAuthor =
     { authorId = AuthorId 1
     , authorDescription = ""
     , authorUser =
-        User
-          { userId = UserId 1
-          , userFirstName = Nothing
-          , userLastName = ""
-          , userAvatarId = Nothing
-          , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-          , userIsAdmin = False
-          }
+        Existing
+          User
+            { userId = UserId 1
+            , userFirstName = Nothing
+            , userLastName = ""
+            , userAvatarId = Nothing
+            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+            , userIsAdmin = False
+            }
     }

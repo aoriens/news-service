@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Database.Logic.Comments
   ( createComment
@@ -13,12 +14,14 @@ import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.Comment
+import Core.Deletable
 import Core.EntityId
 import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import Core.News
 import Core.Pagination
 import Core.User
+import Data.Functor
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
@@ -40,12 +43,15 @@ createComment ::
 createComment text optUserId newsId' createdAt =
   runExceptT $ do
     failIfNewsDoesNotExist
-    optUser <- maybe (pure Nothing) (fmap Just . loadUserIdOrFail) optUserId
+    commentAuthor <-
+      case optUserId of
+        Nothing -> pure AnonymousCommentAuthor
+        Just userId -> UserCommentAuthor <$> loadUserIdOrFail userId
     commentId <- lift $ insertComment text optUserId newsId' createdAt
     pure
       Comment
         { commentText = text
-        , commentAuthor = commentAuthorFromMaybe optUser
+        , commentAuthor
         , commentCreatedAt = createdAt
         , commentId
         , commentNewsId = newsId'
@@ -56,7 +62,7 @@ createComment text optUserId newsId' createdAt =
       unless newsExists' $
         throwE $ ICreateComment.GUnknownEntityId $ toEntityId newsId'
     loadUserIdOrFail userId' =
-      lift (selectUserById userId') >>=
+      lift (getExistingUser userId') >>=
       maybe (throwE $ ICreateComment.GUnknownEntityId $ toEntityId userId') pure
 
 insertComment ::
@@ -129,12 +135,17 @@ getCommentAuthor =
   runStatement $
   dimap
     getCommentId
-    (fmap (commentAuthorFromMaybe . fmap UserId))
+    (fmap decodeRow)
     [TH.maybeStatement|
-      select user_id :: integer?
+      select comments.user_id :: integer?, users.is_deleted :: boolean?
       from comments
+           left join users using (user_id)
       where comment_id = $1 :: integer
     |]
+  where
+    decodeRow (Nothing, _) = AnonymousCommentAuthor
+    decodeRow (Just userId, Just False) = UserCommentAuthor $ UserId userId
+    decodeRow (Just _, _) = DeletedCommentAuthor
 
 deleteComment :: CommentId -> Transaction Bool
 deleteComment =
@@ -151,13 +162,14 @@ commentColumns :: Columns Comment
 commentColumns = do
   commentId <- CommentId <$> column table "comment_id"
   commentNewsId <- NewsId <$> column table "news_id"
-  commentAuthor <- commentAuthorFromMaybe <$> optUserColumns
+  commentAuthor <-
+    optUserColumns <&> \case
+      Nothing -> AnonymousCommentAuthor
+      Just Deleted -> DeletedCommentAuthor
+      Just (Existing user) -> UserCommentAuthor user
   commentCreatedAt <- column table "created_at"
   commentText <- column table "text"
   pure Comment {..}
 
 table :: TableName
 table = "comments"
-
-commentAuthorFromMaybe :: Maybe a -> CommentAuthor a
-commentAuthorFromMaybe = maybe AnonymousCommentAuthor UserCommentAuthor

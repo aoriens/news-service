@@ -3,6 +3,7 @@ module Core.Author
   , AuthorId(..)
   ) where
 
+import Core.Deletable
 import Core.User
 import Data.Hashable
 import Data.Int
@@ -20,7 +21,7 @@ instance Hashable AuthorId where
 data Author =
   Author
     { authorId :: AuthorId
-    , authorUser :: User
+    , authorUser :: Deletable User
     , authorDescription :: T.Text
     }
   deriving (Eq, Show)

@@ -14,13 +14,14 @@ import Data.List
 import Data.Maybe
 import qualified Data.Text as T
 import Data.Time
+import Web.Representation.OneOf
 import Web.Representation.User
 import Web.RepresentationBuilder
 
 data CommentRep =
   CommentRep
     { commentCommentId :: Int32
-    , commentAuthor :: Maybe UserRep
+    , commentAuthor :: OneOfRep T.Text UserRep
     , commentNewsId :: Int32
     , commentText :: T.Text
     , commentCreatedAt :: UTCTime
@@ -30,8 +31,9 @@ commentRep :: Comment -> RepBuilder CommentRep
 commentRep Comment {..} = do
   userR <-
     case commentAuthor of
-      UserCommentAuthor user -> Just <$> userRep Nothing user
-      AnonymousCommentAuthor -> pure Nothing
+      UserCommentAuthor user -> RightRep <$> userRep Nothing user
+      AnonymousCommentAuthor -> pure $ LeftRep "ANONYMOUS"
+      DeletedCommentAuthor -> pure $ LeftRep "DELETED"
   pure
     CommentRep
       { commentCommentId = getCommentId commentId

@@ -7,6 +7,7 @@ import Core.Authentication.Test
 import Core.Author
 import Core.Authorization
 import Core.Authorization.Test
+import Core.Deletable
 import Core.Interactor.CreateAuthor
 import Core.User
 import Data.IORef
@@ -62,14 +63,15 @@ stubAuthor =
     { authorId = AuthorId 9
     , authorDescription = ""
     , authorUser =
-        User
-          { userId = UserId 12
-          , userFirstName = Nothing
-          , userLastName = ""
-          , userAvatarId = Nothing
-          , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-          , userIsAdmin = False
-          }
+        Existing
+          User
+            { userId = UserId 12
+            , userFirstName = Nothing
+            , userLastName = ""
+            , userAvatarId = Nothing
+            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+            , userIsAdmin = False
+            }
     }
 
 stubHandle :: Handle IO

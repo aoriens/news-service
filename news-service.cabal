@@ -29,6 +29,7 @@ library
     , Core.Authorization.Impl
     , Core.Category
     , Core.Comment
+    , Core.Deletable
     , Core.EntityId
     , Core.Exception
     , Core.Image
@@ -146,6 +147,7 @@ library
     , Web.Representation.Draft
     , Web.Representation.Image
     , Web.Representation.News
+    , Web.Representation.OneOf
     , Web.Representation.Tag
     , Web.Representation.User
     , Web.RepresentationBuilder

@@ -5,6 +5,7 @@ module Core.Interactor.GetNewsListSpec
 import Control.Monad
 import Core.Author
 import Core.Category
+import Core.Deletable
 import Core.Interactor.GetNewsList as I
 import Core.News
 import Core.Pagination
@@ -221,14 +222,15 @@ stubNewsVersion =
           { authorId = AuthorId 1
           , authorDescription = ""
           , authorUser =
-              User
-                { userId = UserId 1
-                , userLastName = ""
-                , userFirstName = Nothing
-                , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                , userAvatarId = Nothing
-                , userIsAdmin = False
-                }
+              Existing
+                User
+                  { userId = UserId 1
+                  , userLastName = ""
+                  , userFirstName = Nothing
+                  , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+                  , userAvatarId = Nothing
+                  , userIsAdmin = False
+                  }
           }
     , nvCategory =
         Category

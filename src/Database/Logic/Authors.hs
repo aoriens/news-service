@@ -14,6 +14,7 @@ module Database.Logic.Authors
 
 import Control.Arrow
 import Core.Author
+import Core.Deletable
 import qualified Core.Interactor.CreateAuthor as I
 import Core.Pagination
 import Core.User
@@ -33,7 +34,7 @@ import Hasql.TH as TH
 
 createAuthor :: UserId -> T.Text -> Transaction (Either I.Failure Author)
 createAuthor uid description = do
-  optUser <- selectUserById uid
+  optUser <- getExistingUser uid
   case optUser of
     Nothing -> pure $ Left I.UnknownUserId
     Just user -> do
@@ -41,7 +42,10 @@ createAuthor uid description = do
       pure $
         Right
           Author
-            {authorId = aid, authorUser = user, authorDescription = description}
+            { authorId = aid
+            , authorUser = Existing user
+            , authorDescription = description
+            }
 
 insertAuthor :: UserId -> T.Text -> Transaction AuthorId
 insertAuthor =

@@ -4,6 +4,7 @@ module Core.Interactor.GetAuthorSpec
 
 import Core.Authentication.Test
 import Core.Author
+import Core.Deletable
 import Core.Exception
 import Core.Interactor.GetAuthor
 import Core.Permission
@@ -44,12 +45,13 @@ stubAuthor =
     { authorId = AuthorId 1
     , authorDescription = ""
     , authorUser =
-        User
-          { userId = UserId 1
-          , userFirstName = Nothing
-          , userLastName = ""
-          , userAvatarId = Nothing
-          , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-          , userIsAdmin = False
-          }
+        Existing
+          User
+            { userId = UserId 1
+            , userFirstName = Nothing
+            , userLastName = ""
+            , userAvatarId = Nothing
+            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+            , userIsAdmin = False
+            }
     }

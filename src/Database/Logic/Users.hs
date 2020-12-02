@@ -3,7 +3,7 @@
 
 module Database.Logic.Users
   ( createUser
-  , selectUserById
+  , getExistingUser
   , selectUsers
   , selectUserAuthData
   , deleteUser
@@ -15,6 +15,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.Authentication
 import Core.Authentication.Impl
+import Core.Deletable
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateUser as I
@@ -75,25 +76,26 @@ insertUser =
     ) returning user_id :: integer
     |]
 
-selectUserById :: UserId -> Transaction (Maybe User)
-selectUserById =
-  runStatement $ statementWithColumns sql encoder userColumns D.rowMaybe True
+getExistingUser :: UserId -> Transaction (Maybe User)
+getExistingUser =
+  runStatement $
+  statementWithColumns sql encoder existingUserColumns D.rowMaybe True
   where
-    sql = "select $COLUMNS from users where user_id = $1"
+    sql = "select $COLUMNS from users where user_id = $1 and not is_deleted"
     encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
 selectUsers :: PageSpec -> Transaction (Vector User)
 selectUsers =
   runStatement $
   statementWithColumns
-    "select $COLUMNS from users limit $1 offset $2"
+    "select $COLUMNS from users where not is_deleted limit $1 offset $2"
     pageToLimitOffsetEncoder
-    userColumns
+    existingUserColumns
     D.rowVector
     True
 
-userColumns :: Columns User
-userColumns = do
+existingUserColumns :: Columns User
+existingUserColumns = do
   userId <- UserId <$> column usersTable "user_id"
   userFirstName <- column usersTable "first_name"
   userLastName <- column usersTable "last_name"
@@ -102,9 +104,19 @@ userColumns = do
   userIsAdmin <- column usersTable "is_admin"
   pure User {..}
 
+userColumns :: Columns (Deletable User)
+userColumns = do
+  isDeleted <- column usersTable "is_deleted"
+  user <- existingUserColumns
+  pure $
+    if isDeleted
+      then Deleted
+      else Existing user
+
 -- | Allows all columns to be nullable (e.g. when using outer joins).
-optUserColumns :: Columns (Maybe User)
+optUserColumns :: Columns (Maybe (Deletable User))
 optUserColumns = do
+  optIsDeleted <- column usersTable "is_deleted"
   optUserId <- fmap UserId <$> column usersTable "user_id"
   userFirstName <- column usersTable "first_name"
   optUserLastName <- column usersTable "last_name"
@@ -112,9 +124,14 @@ optUserColumns = do
   optUserCreatedAt <- column usersTable "created_at"
   optUserIsAdmin <- column usersTable "is_admin"
   pure $
-    case (optUserId, optUserLastName, optUserCreatedAt, optUserIsAdmin) of
-      (Just userId, Just userLastName, Just userCreatedAt, Just userIsAdmin) ->
-        Just User {..}
+    case ( optIsDeleted
+         , optUserId
+         , optUserLastName
+         , optUserCreatedAt
+         , optUserIsAdmin) of
+      (Just True, _, _, _, _) -> Just Deleted
+      (Just False, Just userId, Just userLastName, Just userCreatedAt, Just userIsAdmin) ->
+        Just $ Existing User {..}
       _ -> Nothing
 
 usersTable :: TableName
@@ -138,7 +155,7 @@ getUserHashAndIsAdmin =
     [TH.maybeStatement|
     select token_hash :: bytea, is_admin :: boolean
     from users
-    where user_id = $1 :: integer
+    where user_id = $1 :: integer and not is_deleted
     |]
 
 deleteUser :: UserId -> PageSpec -> Transaction (Either IDeleteUser.Failure ())
@@ -168,7 +185,7 @@ deleteUserSt =
     getUserId
     (fmap (fmap ImageId))
     [TH.maybeStatement|
-    delete from users
-    where user_id = $1 :: integer
-    returning avatar_id :: integer?
+      delete from users
+      where user_id = $1 :: integer and not is_deleted
+      returning avatar_id :: integer?
     |]

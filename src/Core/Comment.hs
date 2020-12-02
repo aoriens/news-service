@@ -18,7 +18,6 @@ data Comment =
     { commentId :: CommentId
     , commentNewsId :: NewsId
     , commentAuthor :: CommentAuthor User
-    -- ^ When the author is Nothing, the comment is posted anonymously
     , commentCreatedAt :: UTCTime
     , commentText :: T.Text
     }
@@ -36,8 +35,10 @@ newtype CommentId =
 data CommentAuthor userType
   = UserCommentAuthor userType
   | AnonymousCommentAuthor
+  | DeletedCommentAuthor
   deriving (Eq, Show)
 
 instance Functor CommentAuthor where
   fmap _ AnonymousCommentAuthor = AnonymousCommentAuthor
+  fmap _ DeletedCommentAuthor = DeletedCommentAuthor
   fmap f (UserCommentAuthor u) = UserCommentAuthor (f u)

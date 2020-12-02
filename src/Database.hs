@@ -186,7 +186,7 @@ createUser ::
 createUser h = runTransactionRW h . DUsers.createUser
 
 getUser :: DB.Handle -> UserId -> IO (Maybe User)
-getUser h = runTransactionRO h . DUsers.selectUserById
+getUser h = runTransactionRO h . DUsers.getExistingUser
 
 getUsers :: DB.Handle -> PageSpec -> IO [User]
 getUsers h page = toList <$> runTransactionRO h (DUsers.selectUsers page)
