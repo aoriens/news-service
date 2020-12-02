@@ -37,18 +37,19 @@ spec =
       r <- run (handleWith db) someAdminUser missingTagId
       r `shouldBe` False
       readIORef db `shouldReturn`
-        initialData {storageDeletedItems = Set.singleton missingTagId}
+        initialData {storageRequestedDeletions = Set.singleton missingTagId}
 
 data Storage =
   Storage
     { storageItems :: Set.HashSet TagId
-    , storageDeletedItems :: Set.HashSet TagId
+    , storageRequestedDeletions :: Set.HashSet TagId
     }
   deriving (Eq, Show)
 
 storageWithItems :: [TagId] -> Storage
 storageWithItems items =
-  Storage {storageItems = Set.fromList items, storageDeletedItems = Set.empty}
+  Storage
+    {storageItems = Set.fromList items, storageRequestedDeletions = Set.empty}
 
 handleWith :: IORef Storage -> Handle IO
 handleWith db =
@@ -59,7 +60,8 @@ handleWith db =
           modifyIORef' db $ \Storage {..} ->
             Storage
               { storageItems = Set.delete tagId storageItems
-              , storageDeletedItems = Set.insert tagId storageDeletedItems
+              , storageRequestedDeletions =
+                  Set.insert tagId storageRequestedDeletions
               }
           pure found
     }

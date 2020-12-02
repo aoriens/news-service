@@ -64,7 +64,7 @@ spec =
 data Storage =
   Storage
     { storageItems :: Map.HashMap NewsVersionId NewsVersion
-    , storageDeletedIds :: Set.HashSet NewsVersionId
+    , storageRequestedDeletions :: Set.HashSet NewsVersionId
     }
   deriving (Eq, Show)
 
@@ -86,7 +86,7 @@ handleWith ref =
           modifyIORef' ref $ \Storage {..} ->
             Storage
               (Map.delete draftId storageItems)
-              (Set.insert draftId storageDeletedIds)
+              (Set.insert draftId storageRequestedDeletions)
     }
 
 stubDraft :: NewsVersion

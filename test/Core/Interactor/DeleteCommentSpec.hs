@@ -123,7 +123,7 @@ spec
       data' `shouldSatisfy`
         (`elem` [ initialData
                 , initialData
-                    {storageDeletedItems = Set.singleton missingCommentId}
+                    {storageRequestedDeletions = Set.singleton missingCommentId}
                 ])
     it
       "should return False when no comment is found and the user is not an admin" $ do
@@ -138,13 +138,13 @@ spec
       data' `shouldSatisfy`
         (`elem` [ initialData
                 , initialData
-                    {storageDeletedItems = Set.singleton missingCommentId}
+                    {storageRequestedDeletions = Set.singleton missingCommentId}
                 ])
 
 data Storage =
   Storage
     { storageItems :: Map.HashMap CommentId Comment
-    , storageDeletedItems :: Set.HashSet CommentId
+    , storageRequestedDeletions :: Set.HashSet CommentId
     }
   deriving (Eq, Show)
 
@@ -152,7 +152,7 @@ storageWithItems :: [Comment] -> Storage
 storageWithItems items =
   Storage
     { storageItems = Map.fromList $ map (commentId &&& id) items
-    , storageDeletedItems = Set.empty
+    , storageRequestedDeletions = Set.empty
     }
 
 handleWith :: IORef Storage -> Handle IO
@@ -169,7 +169,8 @@ handleWith db =
           modifyIORef' db $ \Storage {..} ->
             Storage
               { storageItems = Map.delete commentId storageItems
-              , storageDeletedItems = Set.insert commentId storageDeletedItems
+              , storageRequestedDeletions =
+                  Set.insert commentId storageRequestedDeletions
               }
           pure found
     }
