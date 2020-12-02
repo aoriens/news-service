@@ -27,6 +27,13 @@ spec
       r <- run (handleWith db) someAdminUser commentId
       r `shouldBe` True
       readIORef db `shouldReturn` Storage Map.empty (Set.singleton commentId)
+    it "should allow an admin to delete a comment with deleted author" $ do
+      let commentId = CommentId 1
+      db <-
+        newIORef $ storageWithItems [commentWithDeletedAuthorWithId commentId]
+      r <- run (handleWith db) someAdminUser commentId
+      r `shouldBe` True
+      readIORef db `shouldReturn` Storage Map.empty (Set.singleton commentId)
     it
       "should allow an admin to delete a comment posted by another registered user" $ do
       let commentId = CommentId 1
@@ -51,6 +58,15 @@ spec
       "should throw NoPermissionException when a user deletes an anonymous comment" $ do
       let commentId = CommentId 1
           comment = anonymousCommentWithId commentId
+          initialData = storageWithItems [comment]
+      db <- newIORef initialData
+      run (handleWith db) someNonAdminUser commentId `shouldThrow`
+        isNoPermissionException
+      readIORef db `shouldReturn` initialData
+    it
+      "should throw NoPermissionException when a user deletes a comment with deleted author" $ do
+      let commentId = CommentId 1
+          comment = commentWithDeletedAuthorWithId commentId
           initialData = storageWithItems [comment]
       db <- newIORef initialData
       run (handleWith db) someNonAdminUser commentId `shouldThrow`
@@ -161,6 +177,10 @@ handleWith db =
 anonymousCommentWithId :: CommentId -> Comment
 anonymousCommentWithId commentId =
   stubComment {commentId, commentAuthor = AnonymousCommentAuthor}
+
+commentWithDeletedAuthorWithId :: CommentId -> Comment
+commentWithDeletedAuthorWithId commentId =
+  stubComment {commentId, commentAuthor = DeletedCommentAuthor}
 
 commentWithIdAndUserId :: CommentId -> UserId -> Comment
 commentWithIdAndUserId commentId userId =
