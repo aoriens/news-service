@@ -42,7 +42,7 @@ create table users (
        -- already use NULL user_id to designate an anonymous user,
        -- which can behave not like a deleted user. We would create a
        -- fake "deleted" user, but it is hardly easier. According to
-       -- the both approaches, we would have to update a lot of author
+       -- the second approach, we would have to update a lot of author
        -- and comment rows before deleting a user, which can be slow
        -- sometimes. Marking a user with the deleted flag looks the
        -- best in terms of data integrity, simplicity, and
