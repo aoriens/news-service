@@ -1,6 +1,7 @@
 module Core.Interactor.DeleteAuthor
   ( run
   , Handle(..)
+  , Failure(..)
   ) where
 
 import Control.Monad.Catch
@@ -9,13 +10,19 @@ import Core.AuthorizationNG
 
 newtype Handle m =
   Handle
-    { hDeleteAuthor :: AuthorId -> m Success
+    { hDeleteAuthor :: AuthorId -> m (Either Failure ())
     }
 
-type Success = Bool
-
--- | Returns 'False' when no such author is found.
-run :: MonadThrow m => Handle m -> AuthenticatedUser -> AuthorId -> m Success
+run ::
+     MonadThrow m
+  => Handle m
+  -> AuthenticatedUser
+  -> AuthorId
+  -> m (Either Failure ())
 run Handle {..} authUser authorId = do
   authorize "delete an author" $ authUserShouldBeAdmin authUser
   hDeleteAuthor authorId
+
+data Failure =
+  UnknownAuthorId
+  deriving (Eq, Show)

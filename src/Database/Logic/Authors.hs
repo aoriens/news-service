@@ -8,7 +8,7 @@ module Database.Logic.Authors
   , updateAuthor
   , selectAuthorsByUserId
   , selectAuthorIdByUserIdIfExactlyOne
-  , deleteAuthorById
+  , deleteAuthor
   , authorColumns
   , deletableAuthorColumns
   ) where
@@ -16,12 +16,13 @@ module Database.Logic.Authors
 import Control.Arrow
 import Core.Author
 import Core.Deletable
-import qualified Core.Interactor.CreateAuthor as I
+import qualified Core.Interactor.CreateAuthor as ICreateAuthor
+import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import Core.Pagination
 import Core.User
+import Data.Bool
 import Data.Foldable
 import Data.Functor.Contravariant
-import Data.Int
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Tuple
@@ -33,11 +34,12 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import Hasql.TH as TH
 
-createAuthor :: UserId -> T.Text -> Transaction (Either I.Failure Author)
+createAuthor ::
+     UserId -> T.Text -> Transaction (Either ICreateAuthor.Failure Author)
 createAuthor uid description = do
   optUser <- getExistingUser uid
   case optUser of
-    Nothing -> pure $ Left I.UnknownUserId
+    Nothing -> pure $ Left ICreateAuthor.UnknownUserId
     Just user -> do
       aid <- insertAuthor uid description
       pure $
@@ -143,11 +145,12 @@ selectAuthorIdByUserIdIfExactlyOne uid = do
   where
     upTo2 = Just PageSpec {pageLimit = PageLimit 2, pageOffset = PageOffset 0}
 
-deleteAuthorById :: AuthorId -> Transaction Int64
-deleteAuthorById =
+deleteAuthor :: AuthorId -> Transaction (Either IDeleteAuthor.Failure ())
+deleteAuthor =
   runStatement $
-  lmap
+  dimap
     getAuthorId
+    (bool (Left IDeleteAuthor.UnknownAuthorId) (Right ()) . (> 0))
     [TH.rowsAffectedStatement|
        delete from authors
        where author_id = $1 :: integer

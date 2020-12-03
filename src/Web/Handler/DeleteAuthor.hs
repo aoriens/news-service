@@ -4,7 +4,6 @@ module Web.Handler.DeleteAuthor
   ) where
 
 import Control.Exception
-import Control.Monad
 import Core.Authentication
 import Core.Author
 import qualified Core.Interactor.DeleteAuthor as I
@@ -20,9 +19,9 @@ data Handle =
     }
 
 run :: Handle -> AuthorId -> Application
-run Handle {..} authorId' request respond = do
+run Handle {..} authorId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
-  r <- I.run hDeleteAuthorHandle authUser authorId'
-  unless r $ throwIO NotFoundException
-  respond hPresent
+  I.run hDeleteAuthorHandle authUser authorId >>= \case
+    Left I.UnknownAuthorId -> throwIO NotFoundException
+    Right () -> respond hPresent

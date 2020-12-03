@@ -54,6 +54,7 @@ import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateUser as ICreateUser
+import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
@@ -93,8 +94,8 @@ getAuthorIdByUserIdIfExactlyOne h =
 getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
 getAuthor h authorId' = runTransactionRO h (DAuthors.selectAuthorById authorId')
 
-deleteAuthor :: DB.Handle -> AuthorId -> IO Bool
-deleteAuthor h = runTransactionRW h . fmap (0 /=) . DAuthors.deleteAuthorById
+deleteAuthor :: DB.Handle -> AuthorId -> IO (Either IDeleteAuthor.Failure ())
+deleteAuthor h = runTransactionRW h . DAuthors.deleteAuthor
 
 updateAuthor :: DB.Handle -> AuthorId -> T.Text -> IO (Maybe Author)
 updateAuthor h aid newDescription =

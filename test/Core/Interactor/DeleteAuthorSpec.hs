@@ -22,22 +22,22 @@ spec =
         isNoPermissionException
       readIORef db `shouldReturn` initialData
     it
-      "should delete an existing author and return True if the user is an admin" $ do
+      "should delete an existing author and return Right () if the user is an admin" $ do
       let existingAuthorId = AuthorId 1
           otherAuthorId = AuthorId 2
           initialData = storageWithAuthors [existingAuthorId, otherAuthorId]
       db <- newIORef initialData
       r <- run (handleWith db) someAdminUser existingAuthorId
-      r `shouldBe` True
+      r `shouldBe` Right ()
       readIORef db `shouldReturn`
         Storage (Set.singleton otherAuthorId) (Set.singleton existingAuthorId)
     it
-      "should not delete an unknown author and return False if the user is an admin" $ do
+      "should not delete an unknown author and return Left UnknownAuthorId if the user is an admin" $ do
       let unknownAuthorId = AuthorId 1
           initialData = storageWithAuthors [AuthorId 2]
       db <- newIORef initialData
       r <- run (handleWith db) someAdminUser unknownAuthorId
-      r `shouldBe` False
+      r `shouldBe` Left UnknownAuthorId
       readIORef db `shouldReturn`
         initialData {storageRequestedDeletions = Set.singleton unknownAuthorId}
 
@@ -60,4 +60,6 @@ handleWith ref =
           , storageRequestedDeletions =
               Set.insert authorId storageRequestedDeletions
           }
-      , authorId `Set.member` storageAuthors)
+      , if authorId `Set.member` storageAuthors
+          then Right ()
+          else Left UnknownAuthorId)
