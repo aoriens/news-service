@@ -299,10 +299,7 @@ runDeleteAuthorHandler authorId Deps {..} SessionDeps {..} =
   HDeleteAuthor.run
     HDeleteAuthor.Handle
       { hDeleteAuthorHandle =
-          IDeleteAuthor.Handle
-            { hAuthorizationHandle = Core.Authorization.Impl.new
-            , hDeleteAuthor = Database.deleteAuthor sdDatabaseHandle
-            }
+          IDeleteAuthor.Handle $ Database.deleteAuthor sdDatabaseHandle
       , hPresent = presentDeletedAuthor
       , hAuthenticationHandle = sdAuthenticationHandle
       }

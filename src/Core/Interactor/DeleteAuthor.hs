@@ -3,28 +3,19 @@ module Core.Interactor.DeleteAuthor
   , Handle(..)
   ) where
 
-import Control.Monad
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
-import Core.EntityId
-import Core.Exception
+import Core.AuthorizationNG
 
-data Handle m =
+newtype Handle m =
   Handle
     { hDeleteAuthor :: AuthorId -> m Success
-    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 type Success = Bool
 
-run :: MonadThrow m => Handle m -> AuthenticatedUser -> AuthorId -> m ()
-run Handle {..} authUser authorId' = do
-  requirePermission
-    hAuthorizationHandle
-    AdminPermission
-    authUser
-    "deleting author"
-  ok <- hDeleteAuthor authorId'
-  unless ok $
-    throwM . RequestedEntityNotFoundException $ AuthorEntityId authorId'
+-- | Returns 'False' when no such author is found.
+run :: MonadThrow m => Handle m -> AuthenticatedUser -> AuthorId -> m Success
+run Handle {..} authUser authorId = do
+  authorize "delete an author" $ authUserShouldBeAdmin authUser
+  hDeleteAuthor authorId

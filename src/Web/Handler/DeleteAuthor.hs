@@ -3,11 +3,14 @@ module Web.Handler.DeleteAuthor
   , Handle(..)
   ) where
 
+import Control.Exception
+import Control.Monad
 import Core.Authentication
 import Core.Author
 import qualified Core.Interactor.DeleteAuthor as I
 import Web.Application
 import Web.Credentials
+import Web.Exception
 
 data Handle =
   Handle
@@ -20,5 +23,6 @@ run :: Handle -> AuthorId -> Application
 run Handle {..} authorId' request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
-  I.run hDeleteAuthorHandle authUser authorId'
+  r <- I.run hDeleteAuthorHandle authUser authorId'
+  unless r $ throwIO NotFoundException
   respond hPresent

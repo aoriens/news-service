@@ -4,44 +4,60 @@ module Core.Interactor.DeleteAuthorSpec
 
 import Core.Authentication.Test
 import Core.Author
-import Core.Authorization
-import Core.Authorization.Test
 import Core.Exception
 import Core.Interactor.DeleteAuthor
+import qualified Data.HashSet as Set
 import Data.IORef
+import Data.IORef.Util
 import Test.Hspec
 
 spec :: Spec
 spec =
   describe "run" $ do
-    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
-      let authorId' = AuthorId 1
-          h =
-            stubHandle
-              { hDeleteAuthor = \_ -> onSuccess >> pure True
-              , hAuthorizationHandle = authorizationHandle
-              }
-      run h authUser authorId'
-    it "should pass the AuthorId argument to the gateway delete command" $ do
-      passedAuthorId <- newIORef undefined
-      let expectedAuthorId = AuthorId 8
-          h =
-            stubHandle
-              { hDeleteAuthor =
-                  \authorId' -> writeIORef passedAuthorId authorId' >> pure True
-              }
-      run h someAuthUser expectedAuthorId
-      readIORef passedAuthorId `shouldReturn` expectedAuthorId
+    it "should throw NoPermissionException if the user is not an admin" $ do
+      let authorId = AuthorId 1
+          initialData = storageWithAuthors [authorId]
+      db <- newIORef initialData
+      run (handleWith db) someNonAdminUser authorId `shouldThrow`
+        isNoPermissionException
+      readIORef db `shouldReturn` initialData
     it
-      "should throw RequestedEntityNotFoundException if the gateway returned False" $ do
-      let authorId = AuthorId 8
-          h = stubHandle {hDeleteAuthor = \_ -> pure False}
-      run h someAuthUser authorId `shouldThrow`
-        isRequestedEntityNotFoundException
+      "should delete an existing author and return True if the user is an admin" $ do
+      let existingAuthorId = AuthorId 1
+          otherAuthorId = AuthorId 2
+          initialData = storageWithAuthors [existingAuthorId, otherAuthorId]
+      db <- newIORef initialData
+      r <- run (handleWith db) someAdminUser existingAuthorId
+      r `shouldBe` True
+      readIORef db `shouldReturn`
+        Storage (Set.singleton otherAuthorId) (Set.singleton existingAuthorId)
+    it
+      "should not delete an unknown author and return False if the user is an admin" $ do
+      let unknownAuthorId = AuthorId 1
+          initialData = storageWithAuthors [AuthorId 2]
+      db <- newIORef initialData
+      r <- run (handleWith db) someAdminUser unknownAuthorId
+      r `shouldBe` False
+      readIORef db `shouldReturn`
+        initialData {storageRequestedDeletions = Set.singleton unknownAuthorId}
 
-stubHandle :: Handle IO
-stubHandle =
-  Handle
-    { hDeleteAuthor = const $ pure True
-    , hAuthorizationHandle = noOpAuthorizationHandle
+data Storage =
+  Storage
+    { storageAuthors :: Set.HashSet AuthorId
+    , storageRequestedDeletions :: Set.HashSet AuthorId
     }
+  deriving (Eq, Show)
+
+storageWithAuthors :: [AuthorId] -> Storage
+storageWithAuthors ids = Storage (Set.fromList ids) Set.empty
+
+handleWith :: IORef Storage -> Handle IO
+handleWith ref =
+  Handle $ \authorId ->
+    updateIORef' ref $ \Storage {..} ->
+      ( Storage
+          { storageAuthors = Set.delete authorId storageAuthors
+          , storageRequestedDeletions =
+              Set.insert authorId storageRequestedDeletions
+          }
+      , authorId `Set.member` storageAuthors)
