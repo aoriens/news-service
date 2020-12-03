@@ -79,7 +79,7 @@ create function descendants_of_categories_with_ids(
     ids integer array
     ) returns table(category_id integer)
 language sql
-$$
+as $$
     with recursive cats as (
       select category_id
       from categories
