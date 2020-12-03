@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Web.RouterSpec
   ( spec
   ) where

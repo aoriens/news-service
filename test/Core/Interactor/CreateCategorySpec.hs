@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Core.Interactor.CreateCategorySpec
   ( spec
   ) where

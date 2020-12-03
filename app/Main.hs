@@ -1,5 +1,4 @@
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE LambdaCase #-}
 
 module Main
   ( main
