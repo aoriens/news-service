@@ -8,6 +8,7 @@ import Core.Authorization
 import Core.Authorization.Test
 import Core.Category
 import Core.Interactor.CreateCategory
+import Core.Stubs
 import Data.List.NonEmpty
 import Test.AsyncExpectation
 import Test.Hspec
@@ -75,20 +76,6 @@ spec
       r `shouldSatisfy` \case
         Left (IncorrectParameter _) -> True
         _ -> False
-
-stubCategory :: Category
-stubCategory =
-  Category
-    { categoryName = "haskell"
-    , categoryId = CategoryId 1
-    , categoryParent =
-        Just
-          Category
-            { categoryName = "programming"
-            , categoryId = CategoryId 2
-            , categoryParent = Nothing
-            }
-    }
 
 stubHandle :: Handle IO
 stubHandle =

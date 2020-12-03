@@ -9,17 +9,14 @@ import Core.Authentication.Test
 import Core.Author
 import Core.Authorization
 import Core.Authorization.Test
-import Core.Category
-import Core.Deletable
 import Core.Exception
 import Core.Interactor.GetDrafts
 import Core.News
 import Core.Pagination
 import Core.Pagination.Test
+import Core.Stubs
 import Core.User
-import qualified Data.HashSet as Set
 import Data.IORef
-import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -87,7 +84,7 @@ spec =
       _ <- run h someIdentifiedAuthUser author noPageQuery
       readIORef ref `shouldReturn` Just expectedPageSpec
     it "should return result of hGetDraftsOfUser if no author is passed" $ do
-      let expectedDrafts = [stubDraft {nvId = NewsVersionId 1}]
+      let expectedDrafts = [stubNewsVersion {nvId = NewsVersionId 1}]
           author = Nothing
           h = defaultHandle {hGetDraftsOfUser = \_ _ -> pure expectedDrafts}
       r <- run h someIdentifiedAuthUser author noPageQuery
@@ -129,7 +126,7 @@ spec =
       _ <- run h someIdentifiedAuthUser author noPageQuery
       readIORef ref `shouldReturn` Just expectedPageSpec
     it "should return result of hGetDraftsOfAuthor if an author is passed" $ do
-      let expectedDrafts = [stubDraft {nvId = NewsVersionId 1}]
+      let expectedDrafts = [stubNewsVersion {nvId = NewsVersionId 1}]
           author = Just $ AuthorId 1
           h = defaultHandle {hGetDraftsOfAuthor = \_ _ -> pure expectedDrafts}
       r <- run h someIdentifiedAuthUser author noPageQuery
@@ -159,36 +156,3 @@ noPageQuery = PageSpecQuery Nothing Nothing
 
 defaultPage :: PageSpec
 defaultPage = PageSpec (PageOffset 0) (PageLimit 0)
-
-stubDraft :: NewsVersion
-stubDraft =
-  NewsVersion
-    { nvId = NewsVersionId 0
-    , nvTitle = "1"
-    , nvText = "2"
-    , nvAuthor =
-        Existing
-          Author
-            { authorId = AuthorId 0
-            , authorUser =
-                Existing
-                  User
-                    { userId = UserId 0
-                    , userFirstName = Nothing
-                    , userLastName = ""
-                    , userAvatarId = Nothing
-                    , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                    , userIsAdmin = False
-                    }
-            , authorDescription = ""
-            }
-    , nvCategory =
-        Category
-          { categoryId = CategoryId 1
-          , categoryName = ""
-          , categoryParent = Nothing
-          }
-    , nvTags = Set.empty
-    , nvAdditionalPhotoIds = Set.empty
-    , nvMainPhotoId = Nothing
-    }

@@ -8,17 +8,16 @@ import Core.Author
 import Core.Authorization
 import Core.Authorization.Test
 import Core.Category
-import Core.Deletable
 import Core.EntityId
 import Core.Exception
 import Core.Image
 import Core.Interactor.CreateDraft
 import Core.News
+import Core.Stubs
 import Core.Tag
 import Core.User
 import qualified Data.HashSet as Set
 import Data.IORef
-import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -242,39 +241,6 @@ spec
                   \_ -> pure $ Just $ AuthorId 1
               }
       run h authUser request `shouldThrow` isUserNotIdentifiedException
-
-stubNewsVersion :: NewsVersion
-stubNewsVersion =
-  NewsVersion
-    { nvId = NewsVersionId 999
-    , nvTitle = "1"
-    , nvText = "2"
-    , nvAuthor =
-        Existing
-          Author
-            { authorId = AuthorId 999
-            , authorUser =
-                Existing
-                  User
-                    { userId = UserId 12
-                    , userFirstName = Nothing
-                    , userLastName = ""
-                    , userAvatarId = Nothing
-                    , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                    , userIsAdmin = False
-                    }
-            , authorDescription = "Yo"
-            }
-    , nvCategory =
-        Category
-          { categoryId = CategoryId 1
-          , categoryName = ""
-          , categoryParent = Nothing
-          }
-    , nvTags = Set.empty
-    , nvAdditionalPhotoIds = Set.empty
-    , nvMainPhotoId = Nothing
-    }
 
 stubRequest :: CreateDraftRequest
 stubRequest =

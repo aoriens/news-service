@@ -8,12 +8,11 @@ import Core.Authentication.Test
 import Core.Comment
 import Core.Exception
 import Core.Interactor.DeleteComment
-import Core.News
+import Core.Stubs
 import Core.User
 import qualified Data.HashMap.Strict as Map
 import qualified Data.HashSet as Set
 import Data.IORef
-import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -186,24 +185,3 @@ commentWithDeletedAuthorWithId commentId =
 commentWithIdAndUserId :: CommentId -> UserId -> Comment
 commentWithIdAndUserId commentId userId =
   stubComment {commentId, commentAuthor = UserCommentAuthor stubUser {userId}}
-
-stubComment :: Comment
-stubComment =
-  Comment
-    { commentId = CommentId 0
-    , commentNewsId = NewsId 0
-    , commentAuthor = AnonymousCommentAuthor
-    , commentCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-    , commentText = ""
-    }
-
-stubUser :: User
-stubUser =
-  User
-    { userId = UserId 0
-    , userFirstName = Nothing
-    , userLastName = ""
-    , userAvatarId = Nothing
-    , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-    , userIsAdmin = False
-    }

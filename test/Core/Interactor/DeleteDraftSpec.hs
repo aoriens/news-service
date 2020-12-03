@@ -6,17 +6,16 @@ import Control.Arrow
 import Core.Authentication
 import Core.Authentication.Test
 import Core.Author
-import Core.Category
 import Core.Deletable
 import Core.Exception
 import Core.Interactor.DeleteDraft
 import Core.News
 import Core.Permission
+import Core.Stubs
 import Core.User
 import qualified Data.HashMap.Strict as Map
 import qualified Data.HashSet as Set
 import Data.IORef
-import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -25,7 +24,7 @@ spec =
     it "should return Left UnknownDraftId if there is no such draft" $ do
       let requestedDraftId = NewsVersionId 1
           existingDraftId = NewsVersionId 2
-          initialStorage = newStorage [stubDraft {nvId = existingDraftId}]
+          initialStorage = newStorage [stubNewsVersion {nvId = existingDraftId}]
       storage <- newIORef initialStorage
       r <- run (handleWith storage) someAuthUser requestedDraftId
       r `shouldBe` Left UnknownDraftId
@@ -34,7 +33,7 @@ spec =
       "should return Left UnknownDraftId for an existing draft with the author deleted" $ do
       let draftId = NewsVersionId 1
           initialStorage =
-            newStorage [stubDraft {nvId = draftId, nvAuthor = Deleted}]
+            newStorage [stubNewsVersion {nvId = draftId, nvAuthor = Deleted}]
       storage <- newIORef initialStorage
       r <- run (handleWith storage) someAuthUser draftId
       r `shouldBe` Left UnknownDraftId
@@ -46,7 +45,7 @@ spec =
           user = IdentifiedUser (UserId 0) False [AuthorId 2]
           initialStorage =
             newStorage
-              [ stubDraft
+              [ stubNewsVersion
                   { nvId = draftId
                   , nvAuthor = Existing stubAuthor {authorId = draftAuthorId}
                   }
@@ -62,15 +61,15 @@ spec =
           user = IdentifiedUser (UserId 0) False [authorId]
           initialStorage =
             newStorage
-              [ stubDraft
+              [ stubNewsVersion
                   {nvId = draftId, nvAuthor = Existing stubAuthor {authorId}}
-              , stubDraft
+              , stubNewsVersion
               ]
       storage <- newIORef initialStorage
       r <- run (handleWith storage) user draftId
       r `shouldBe` Right ()
       readIORef storage `shouldReturn`
-        Storage (itemsMap [stubDraft]) (Set.singleton draftId)
+        Storage (itemsMap [stubNewsVersion]) (Set.singleton draftId)
 
 data Storage =
   Storage
@@ -98,39 +97,4 @@ handleWith ref =
             Storage
               (Map.delete draftId storageDrafts)
               (Set.insert draftId storageRequestedDeletions)
-    }
-
-stubDraft :: NewsVersion
-stubDraft =
-  NewsVersion
-    { nvId = NewsVersionId 0
-    , nvTitle = "1"
-    , nvText = "2"
-    , nvAuthor = Existing stubAuthor
-    , nvCategory =
-        Category
-          { categoryId = CategoryId 1
-          , categoryName = ""
-          , categoryParent = Nothing
-          }
-    , nvTags = Set.empty
-    , nvAdditionalPhotoIds = Set.empty
-    , nvMainPhotoId = Nothing
-    }
-
-stubAuthor :: Author
-stubAuthor =
-  Author
-    { authorId = AuthorId 0
-    , authorUser =
-        Existing
-          User
-            { userId = UserId 0
-            , userFirstName = Nothing
-            , userLastName = ""
-            , userAvatarId = Nothing
-            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-            , userIsAdmin = False
-            }
-    , authorDescription = ""
     }

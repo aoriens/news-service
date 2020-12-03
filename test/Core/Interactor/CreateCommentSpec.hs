@@ -10,6 +10,7 @@ import Core.EntityId
 import Core.Exception
 import Core.Interactor.CreateComment
 import Core.News
+import Core.Stubs
 import Core.User
 import Data.IORef
 import Data.Time
@@ -96,16 +97,6 @@ spec
 
 stubTime :: UTCTime
 stubTime = UTCTime (ModifiedJulianDay 0) 0
-
-stubComment :: Comment
-stubComment =
-  Comment
-    { commentText = ""
-    , commentId = CommentId 1
-    , commentAuthor = AnonymousCommentAuthor
-    , commentNewsId = NewsId 0
-    , commentCreatedAt = stubTime
-    }
 
 stubHandle :: Handle IO
 stubHandle =

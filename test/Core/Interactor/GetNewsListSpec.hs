@@ -5,13 +5,12 @@ module Core.Interactor.GetNewsListSpec
 import Control.Monad
 import Core.Author
 import Core.Category
-import Core.Deletable
 import Core.Interactor.GetNewsList as I
 import Core.News
 import Core.Pagination
 import Core.Pagination.Test
+import Core.Stubs
 import Core.Tag
-import Core.User
 import qualified Data.HashSet as Set
 import Data.IORef
 import qualified Data.List.NonEmpty as N
@@ -201,45 +200,4 @@ stubHandle =
         PageSpecParserHandle . const . Right $
         PageSpec (PageOffset 0) (PageLimit 0)
     , hGetNews = \_ _ _ -> pure []
-    }
-
-stubNews :: News
-stubNews =
-  News
-    { newsId = NewsId (-1)
-    , newsDate = ModifiedJulianDay (-1)
-    , newsVersion = stubNewsVersion
-    }
-
-stubNewsVersion :: NewsVersion
-stubNewsVersion =
-  NewsVersion
-    { nvId = NewsVersionId 0
-    , nvTitle = ""
-    , nvText = ""
-    , nvAuthor =
-        Existing
-          Author
-            { authorId = AuthorId 1
-            , authorDescription = ""
-            , authorUser =
-                Existing
-                  User
-                    { userId = UserId 1
-                    , userLastName = ""
-                    , userFirstName = Nothing
-                    , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                    , userAvatarId = Nothing
-                    , userIsAdmin = False
-                    }
-            }
-    , nvCategory =
-        Category
-          { categoryId = CategoryId 1
-          , categoryName = "q"
-          , categoryParent = Nothing
-          }
-    , nvMainPhotoId = Nothing
-    , nvAdditionalPhotoIds = Set.empty
-    , nvTags = Set.singleton Tag {tagId = TagId 1, tagName = "q"}
     }

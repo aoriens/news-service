@@ -5,13 +5,12 @@ module Core.Interactor.PublishDraftSpec
 import Core.Authentication
 import Core.Authentication.Test
 import Core.Author
-import Core.Category
 import Core.Deletable
 import Core.Exception
 import Core.Interactor.PublishDraft
 import Core.News
+import Core.Stubs
 import Core.User
-import qualified Data.HashSet as Set
 import Data.IORef
 import Data.IORef.Util
 import Data.List
@@ -28,7 +27,7 @@ spec
       let missingDraftId = NewsVersionId 1
           initialData = storageWithDrafts [draftWithId $ NewsVersionId 2]
       db <- newIORef initialData
-      let h = handleWith someDay db
+      let h = handleWith stubDay db
       r <- run h someAdminUser missingDraftId
       r `shouldBe` Left UnknownDraftId
       readIORef db `shouldReturn` initialData
@@ -37,7 +36,7 @@ spec
       let draftId = NewsVersionId 1
           initialData = storageWithDrafts [draftWithIdAndDeletedAuthor draftId]
       db <- newIORef initialData
-      let h = handleWith someDay db
+      let h = handleWith stubDay db
       r <- run h someAdminUser draftId
       r `shouldBe` Left UnknownDraftId
       readIORef db `shouldReturn` initialData
@@ -48,7 +47,7 @@ spec
           initialData =
             storageWithDrafts [draftWithIdAndAuthorId draftId $ AuthorId 3]
       db <- newIORef initialData
-      let h = handleWith someDay db
+      let h = handleWith stubDay db
       run h user draftId `shouldThrow` isNoPermissionException
       readIORef db `shouldReturn` initialData
     it
@@ -109,43 +108,5 @@ draftWithIdAndAuthorId nvId authorId =
 draftWithIdAndDeletedAuthor :: NewsVersionId -> NewsVersion
 draftWithIdAndDeletedAuthor nvId = stubNewsVersion {nvId, nvAuthor = Deleted}
 
-someDay :: Day
-someDay = ModifiedJulianDay 0
-
 createdNewsId :: NewsId
 createdNewsId = NewsId 0
-
-stubNewsVersion :: NewsVersion
-stubNewsVersion =
-  NewsVersion
-    { nvId = NewsVersionId 999
-    , nvTitle = "1"
-    , nvText = "2"
-    , nvAuthor = Existing stubAuthor
-    , nvCategory =
-        Category
-          { categoryId = CategoryId 1
-          , categoryName = ""
-          , categoryParent = Nothing
-          }
-    , nvTags = Set.empty
-    , nvAdditionalPhotoIds = Set.empty
-    , nvMainPhotoId = Nothing
-    }
-
-stubAuthor :: Author
-stubAuthor =
-  Author
-    { authorId = AuthorId 999
-    , authorUser =
-        Existing
-          User
-            { userId = UserId 12
-            , userFirstName = Nothing
-            , userLastName = ""
-            , userAvatarId = Nothing
-            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-            , userIsAdmin = False
-            }
-    , authorDescription = "Yo"
-    }

@@ -6,8 +6,8 @@ import Control.Monad
 import Core.Interactor.GetUsers
 import Core.Pagination
 import Core.Pagination.Test
+import Core.Stubs
 import Core.User
-import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -38,14 +38,3 @@ noPageQuery = PageSpecQuery Nothing Nothing
 
 defaultPage :: PageSpec
 defaultPage = PageSpec (PageOffset 0) (PageLimit 0)
-
-stubUser :: User
-stubUser =
-  User
-    { userId = UserId 1
-    , userFirstName = Nothing
-    , userLastName = "q"
-    , userAvatarId = Nothing
-    , userCreatedAt = UTCTime (fromGregorian 2000 1 1) 0
-    , userIsAdmin = False
-    }

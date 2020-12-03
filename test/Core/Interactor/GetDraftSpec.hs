@@ -5,15 +5,13 @@ module Core.Interactor.GetDraftSpec
 import Core.Authentication.Test
 import Core.Author
 import Core.Authorization
-import Core.Category
 import Core.Deletable
 import Core.Exception
 import Core.Interactor.GetDraft
 import Core.News
+import Core.Stubs
 import Core.User
-import qualified Data.HashSet as Set
 import Data.List
-import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -50,7 +48,7 @@ spec =
       r `shouldBe` Nothing
     it "should return Nothing if the draft is found, but its author is deleted" $ do
       let draftId = NewsVersionId 1
-          draft = stubDraft {nvId = draftId, nvAuthor = Deleted}
+          draft = stubNewsVersion {nvId = draftId, nvAuthor = Deleted}
           h = handleWithItems [draft]
       r <- run h someAdminUser draftId
       r `shouldBe` Nothing
@@ -61,39 +59,4 @@ handleWithItems items =
 
 draftWithIdAndAuthorId :: NewsVersionId -> AuthorId -> NewsVersion
 draftWithIdAndAuthorId nvId authorId =
-  stubDraft {nvId, nvAuthor = Existing stubAuthor {authorId}}
-
-stubDraft :: NewsVersion
-stubDraft =
-  NewsVersion
-    { nvId = NewsVersionId 0
-    , nvTitle = "1"
-    , nvText = "2"
-    , nvAuthor = Existing stubAuthor
-    , nvCategory =
-        Category
-          { categoryId = CategoryId 1
-          , categoryName = ""
-          , categoryParent = Nothing
-          }
-    , nvTags = Set.empty
-    , nvAdditionalPhotoIds = Set.empty
-    , nvMainPhotoId = Nothing
-    }
-
-stubAuthor :: Author
-stubAuthor =
-  Author
-    { authorId = AuthorId 0
-    , authorUser =
-        Existing
-          User
-            { userId = UserId 0
-            , userFirstName = Nothing
-            , userLastName = ""
-            , userAvatarId = Nothing
-            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-            , userIsAdmin = False
-            }
-    , authorDescription = ""
-    }
+  stubNewsVersion {nvId, nvAuthor = Existing stubAuthor {authorId}}

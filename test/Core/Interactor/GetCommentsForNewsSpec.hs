@@ -11,7 +11,7 @@ import Core.Interactor.GetCommentsForNews
 import Core.News
 import Core.Pagination
 import Core.Pagination.Test
-import Data.Time
+import Core.Stubs
 import Test.Hspec
 
 spec :: Spec
@@ -53,13 +53,3 @@ noPageQuery = PageSpecQuery Nothing Nothing
 
 defaultPage :: PageSpec
 defaultPage = PageSpec (PageOffset 0) (PageLimit 0)
-
-stubComment :: Comment
-stubComment =
-  Comment
-    { commentId = CommentId 0
-    , commentNewsId = NewsId 0
-    , commentAuthor = AnonymousCommentAuthor
-    , commentCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-    , commentText = ""
-    }

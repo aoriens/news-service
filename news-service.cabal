@@ -248,6 +248,7 @@ test-suite news-service-test
     , Core.Interactor.UpdateAuthorSpec
     , Core.Pagination.ImplSpec
     , Core.Pagination.Test
+    , Core.Stubs
     , Data.Integral.ExactSpec
     , Gateway.SecretTokenSpec
     , Test.AsyncExpectation

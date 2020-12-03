@@ -7,12 +7,10 @@ import Core.Authentication.Test
 import Core.Author
 import Core.Authorization
 import Core.Authorization.Test
-import Core.Deletable
 import Core.Exception
 import Core.Interactor.UpdateAuthor
-import Core.User
+import Core.Stubs
 import Data.IORef
-import Data.Time
 import Test.Hspec
 
 spec :: Spec
@@ -67,21 +65,4 @@ stubHandle =
   Handle
     { hUpdateAuthor = \_ _ -> pure $ Just stubAuthor {authorId = AuthorId 99993}
     , hAuthorizationHandle = noOpAuthorizationHandle
-    }
-
-stubAuthor :: Author
-stubAuthor =
-  Author
-    { authorId = AuthorId 9
-    , authorDescription = ""
-    , authorUser =
-        Existing
-          User
-            { userId = UserId 12
-            , userFirstName = Nothing
-            , userLastName = ""
-            , userAvatarId = Nothing
-            , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-            , userIsAdmin = False
-            }
     }

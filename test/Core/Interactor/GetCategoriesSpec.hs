@@ -3,10 +3,10 @@ module Core.Interactor.GetCategoriesSpec
   ) where
 
 import Control.Monad
-import Core.Category
 import Core.Interactor.GetCategories as IGetCategories
 import Core.Pagination
 import Core.Pagination.Test
+import Core.Stubs
 import Test.Hspec
 
 spec :: Spec
@@ -27,20 +27,6 @@ spec =
 
 noPageQuery :: PageSpecQuery
 noPageQuery = PageSpecQuery Nothing Nothing
-
-stubCategory :: Category
-stubCategory =
-  Category
-    { categoryName = "haskell"
-    , categoryId = CategoryId 1
-    , categoryParent =
-        Just
-          Category
-            { categoryName = "programming"
-            , categoryId = CategoryId 2
-            , categoryParent = Nothing
-            }
-    }
 
 stubHandle :: Handle IO
 stubHandle =
