@@ -72,6 +72,7 @@ library
     , Data.ByteString.Util
     , Data.Either.Util
     , Data.Integral.Exact
+    , Data.IORef.Util
     , Database
     , Database.Logic.Authors
     , Database.Logic.Categories

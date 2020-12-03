@@ -13,6 +13,7 @@ import Core.News
 import Core.User
 import qualified Data.HashSet as Set
 import Data.IORef
+import Data.IORef.Util
 import Data.List
 import Data.Maybe
 import Data.Time
@@ -97,13 +98,6 @@ handleWith day ref =
                     }
                 , news)
     }
-
-updateIORef' :: IORef a -> (a -> (a, r)) -> IO r
-updateIORef' ref f = do
-  old <- readIORef ref
-  let (new, r) = f old
-  writeIORef ref $! new
-  pure r
 
 draftWithId :: NewsVersionId -> NewsVersion
 draftWithId nvId = stubNewsVersion {nvId}
