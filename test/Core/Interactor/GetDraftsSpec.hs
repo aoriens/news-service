@@ -167,20 +167,21 @@ stubDraft =
     , nvTitle = "1"
     , nvText = "2"
     , nvAuthor =
-        Author
-          { authorId = AuthorId 0
-          , authorUser =
-              Existing
-                User
-                  { userId = UserId 0
-                  , userFirstName = Nothing
-                  , userLastName = ""
-                  , userAvatarId = Nothing
-                  , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                  , userIsAdmin = False
-                  }
-          , authorDescription = ""
-          }
+        Existing
+          Author
+            { authorId = AuthorId 0
+            , authorUser =
+                Existing
+                  User
+                    { userId = UserId 0
+                    , userFirstName = Nothing
+                    , userLastName = ""
+                    , userAvatarId = Nothing
+                    , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+                    , userIsAdmin = False
+                    }
+            , authorDescription = ""
+            }
     , nvCategory =
         Category
           { categoryId = CategoryId 1

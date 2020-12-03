@@ -10,6 +10,7 @@ module Database.Logic.Authors
   , selectAuthorIdByUserIdIfExactlyOne
   , deleteAuthorById
   , authorColumns
+  , deletableAuthorColumns
   ) where
 
 import Control.Arrow
@@ -91,12 +92,27 @@ updateAuthor =
        where author_id = $2 :: integer
     |]
 
+-- | Author columns. This may be used with inner joins with authors
+-- table.
 authorColumns :: Columns Author
 authorColumns = do
   authorUser <- userColumns
   authorId <- AuthorId <$> column authorsTable "author_id"
   authorDescription <- column authorsTable "description"
   pure Author {..}
+
+-- | An author may be considered 'Deleted', if no such author found,
+-- e.g. at least one field declared nonnull is null in an outer join.
+deletableAuthorColumns :: Columns (Deletable Author)
+deletableAuthorColumns = do
+  optUser <- optUserColumns
+  optId <- fmap AuthorId <$> column authorsTable "author_id"
+  optDescription <- column authorsTable "description"
+  pure $
+    case (optId, optUser, optDescription) of
+      (Just authorId, Just authorUser, Just authorDescription) ->
+        Existing Author {..}
+      _ -> Deleted
 
 authorsTable :: TableName
 authorsTable = "authors"

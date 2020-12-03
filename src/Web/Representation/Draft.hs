@@ -5,6 +5,7 @@ module Web.Representation.Draft
   , DraftRep(..)
   ) where
 
+import Core.Deletable
 import Core.News
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -17,12 +18,16 @@ import Web.AppURI hiding (renderAppURI)
 import Web.Representation.AppURI
 import Web.Representation.Author
 import Web.Representation.Category
+import Web.Representation.OneOf
 import Web.Representation.Tag
 import Web.RepresentationBuilder
 
 draftRep :: NewsVersion -> RepBuilder DraftRep
 draftRep NewsVersion {..} = do
-  draftAuthor <- authorRep nvAuthor
+  draftAuthor <-
+    case nvAuthor of
+      Deleted -> pure $ LeftRep "DELETED"
+      Existing author -> RightRep <$> authorRep author
   draftCategory <- categoryRep nvCategory
   draftPhoto <- mapM (renderAppURI . ImageURI) nvMainPhotoId
   draftPhotos <- mapM (renderAppURI . ImageURI) $ toList nvAdditionalPhotoIds
@@ -44,7 +49,7 @@ data DraftRep =
     { draftDraftId :: Int32
     , draftTitle :: T.Text
     , draftText :: T.Text
-    , draftAuthor :: AuthorRep
+    , draftAuthor :: OneOfRep T.Text AuthorRep
     , draftCategory :: CategoryRep
     , draftPhoto :: Maybe AppURIRep
     , draftPhotos :: [AppURIRep]

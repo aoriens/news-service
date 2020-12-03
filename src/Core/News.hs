@@ -9,6 +9,7 @@ module Core.News
 
 import Core.Author
 import Core.Category
+import Core.Deletable
 import Core.Image
 import Core.Tag
 import Data.HashSet (HashSet)
@@ -36,7 +37,7 @@ data NewsVersion =
     { nvId :: NewsVersionId
     , nvTitle :: Text
     , nvText :: Text
-    , nvAuthor :: Author
+    , nvAuthor :: Deletable Author
     , nvCategory :: Category
     , nvMainPhotoId :: Maybe ImageId
     , nvAdditionalPhotoIds :: HashSet ImageId

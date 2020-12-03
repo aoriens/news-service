@@ -250,20 +250,21 @@ stubNewsVersion =
     , nvTitle = "1"
     , nvText = "2"
     , nvAuthor =
-        Author
-          { authorId = AuthorId 999
-          , authorUser =
-              Existing
-                User
-                  { userId = UserId 12
-                  , userFirstName = Nothing
-                  , userLastName = ""
-                  , userAvatarId = Nothing
-                  , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                  , userIsAdmin = False
-                  }
-          , authorDescription = "Yo"
-          }
+        Existing
+          Author
+            { authorId = AuthorId 999
+            , authorUser =
+                Existing
+                  User
+                    { userId = UserId 12
+                    , userFirstName = Nothing
+                    , userLastName = ""
+                    , userAvatarId = Nothing
+                    , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+                    , userIsAdmin = False
+                    }
+            , authorDescription = "Yo"
+            }
     , nvCategory =
         Category
           { categoryId = CategoryId 1

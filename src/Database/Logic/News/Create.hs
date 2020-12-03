@@ -11,6 +11,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.Author
 import Core.Category
+import Core.Deletable
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
@@ -34,7 +35,7 @@ createNewsVersion ::
   -> Transaction (Either ICreateDraft.GatewayFailure NewsVersion)
 createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
   runExceptT $ do
-    nvAuthor <- getExistingEntityBy selectAuthorById cnvAuthorId
+    author <- getExistingEntityBy selectAuthorById cnvAuthorId
     nvCategory <- getExistingEntityBy selectCategory cnvCategoryId
     nvTags <- getExistingTags
     nvMainPhotoId <- mapM createOrGetExistingImage cnvMainPhoto
@@ -47,7 +48,7 @@ createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
         { nvId
         , nvTitle = cnvTitle
         , nvText = cnvText
-        , nvAuthor
+        , nvAuthor = Existing author
         , nvCategory
         , nvMainPhotoId
         , nvAdditionalPhotoIds

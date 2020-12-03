@@ -218,20 +218,21 @@ stubNewsVersion =
     , nvTitle = ""
     , nvText = ""
     , nvAuthor =
-        Author
-          { authorId = AuthorId 1
-          , authorDescription = ""
-          , authorUser =
-              Existing
-                User
-                  { userId = UserId 1
-                  , userLastName = ""
-                  , userFirstName = Nothing
-                  , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
-                  , userAvatarId = Nothing
-                  , userIsAdmin = False
-                  }
-          }
+        Existing
+          Author
+            { authorId = AuthorId 1
+            , authorDescription = ""
+            , authorUser =
+                Existing
+                  User
+                    { userId = UserId 1
+                    , userLastName = ""
+                    , userFirstName = Nothing
+                    , userCreatedAt = UTCTime (ModifiedJulianDay 0) 0
+                    , userAvatarId = Nothing
+                    , userIsAdmin = False
+                    }
+            }
     , nvCategory =
         Category
           { categoryId = CategoryId 1

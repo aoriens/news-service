@@ -31,6 +31,15 @@ spec =
       r `shouldBe` Left UnknownDraftId
       readIORef storage `shouldReturn` initialStorage
     it
+      "should return Left UnknownDraftId for an existing draft with the author deleted" $ do
+      let draftId = NewsVersionId 1
+          initialStorage =
+            newStorage [stubDraft {nvId = draftId, nvAuthor = Deleted}]
+      storage <- newIORef initialStorage
+      r <- run (handleWith storage) someAuthUser draftId
+      r `shouldBe` Left UnknownDraftId
+      readIORef storage `shouldReturn` initialStorage
+    it
       "should throw NoPermissionException if the user is not the author of the draft" $ do
       let draftId = NewsVersionId 1
           draftAuthorId = AuthorId 1
@@ -39,7 +48,7 @@ spec =
             newStorage
               [ stubDraft
                   { nvId = draftId
-                  , nvAuthor = stubAuthor {authorId = draftAuthorId}
+                  , nvAuthor = Existing stubAuthor {authorId = draftAuthorId}
                   }
               ]
       storage <- newIORef initialStorage
@@ -53,7 +62,8 @@ spec =
           user = IdentifiedUser (UserId 0) False [authorId]
           initialStorage =
             newStorage
-              [ stubDraft {nvId = draftId, nvAuthor = stubAuthor {authorId}}
+              [ stubDraft
+                  {nvId = draftId, nvAuthor = Existing stubAuthor {authorId}}
               , stubDraft
               ]
       storage <- newIORef initialStorage
@@ -64,7 +74,7 @@ spec =
 
 data Storage =
   Storage
-    { storageItems :: Map.HashMap NewsVersionId NewsVersion
+    { storageDrafts :: Map.HashMap NewsVersionId NewsVersion
     , storageRequestedDeletions :: Set.HashSet NewsVersionId
     }
   deriving (Eq, Show)
@@ -80,13 +90,13 @@ handleWith ref =
   Handle
     { hGetDraftAuthor =
         \draftId ->
-          fmap (authorId . nvAuthor) . Map.lookup draftId . storageItems <$>
+          fmap (fmap authorId . nvAuthor) . Map.lookup draftId . storageDrafts <$>
           readIORef ref
     , hDeleteNewsVersion =
         \draftId ->
           modifyIORef' ref $ \Storage {..} ->
             Storage
-              (Map.delete draftId storageItems)
+              (Map.delete draftId storageDrafts)
               (Set.insert draftId storageRequestedDeletions)
     }
 
@@ -96,7 +106,7 @@ stubDraft =
     { nvId = NewsVersionId 0
     , nvTitle = "1"
     , nvText = "2"
-    , nvAuthor = stubAuthor
+    , nvAuthor = Existing stubAuthor
     , nvCategory =
         Category
           { categoryId = CategoryId 1

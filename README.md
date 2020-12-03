@@ -436,7 +436,8 @@ A draft of a news article. Fields:
 - `title` - the news title. A string, required.
 - `text` - the news body text. It is considered as a plain Unicode text.
   A string, required.
-- `author` - the news author. An [Author](#Author), required.
+- `author` - the draft author. An [Author](#Author) entity or string `DELETED`,
+  if the author entity is deleted. The field is required.
 - `category` - the news category. A [Category](#Category), required.
 - `photo` - the main illustration photo URI for the news. A string, required.
 - `photos` - additional illustration URIs. An array of strings, required.
@@ -451,7 +452,8 @@ A news article. Fields:
 - `date` - the issue date. A [Day](#Day), required.
 - `text` - the news body text. It is considered as a plain Unicode text.
   A string, required.
-- `author` - the news author. An [Author](#Author), required.
+- `author` - the news author. An [Author](#Author) entity or string `DELETED`,
+  if the news author is deleted. The field is required.
 - `category` - the news category. A [Category](#Category), required.
 - `photo` - the main illustration photo URI for the news. A string, required.
 - `photos` - additional illustration URIs. An array of strings, required.

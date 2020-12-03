@@ -12,6 +12,7 @@ module Database.Logic.News.Get
 import Control.Monad
 import Core.Author
 import Core.Category
+import Core.Deletable
 import Core.Image
 import qualified Core.Interactor.GetNewsList as IListNews
 import Core.News
@@ -66,8 +67,8 @@ selectNewsRows filter' sortOptions pageSpec =
           select distinct $COLUMNS
           from news
                join news_versions using (news_version_id)
-               join authors using (author_id)
-               join extended_users as users using (user_id)
+               left join authors using (author_id)
+               left join extended_users as users using (user_id)
                left join news_versions_and_tags_relation using (news_version_id)
                left join tags using (tag_id)
         |]
@@ -102,8 +103,8 @@ selectNewsRow =
         select $COLUMNS
         from news
              join news_versions using (news_version_id)
-             join authors using (author_id)
-             join users using (user_id)
+             left join authors using (author_id)
+             left join users using (user_id)
         where news_id = $1
       |]
 
@@ -127,8 +128,8 @@ getDraftRowsOfAuthor authorId pageSpec =
         [TH.uncheckedSql|
           select $COLUMNS
           from drafts as news_versions
-               join authors using (author_id)
-               join users using (user_id)
+               left join authors using (author_id)
+               left join users using (user_id)
           where news_versions.author_id =
         |] <>
       Sql.param (getAuthorId authorId) <> limitOffsetClauseWithPageSpec pageSpec
@@ -142,8 +143,8 @@ getDraftRowsOfUser userId pageSpec =
         [TH.uncheckedSql|
           select $COLUMNS
           from drafts as news_versions
-               join authors using (author_id)
-               join users using (user_id)
+               left join authors using (author_id)
+               left join users using (user_id)
           where authors.user_id =
         |] <>
       Sql.param (getUserId userId) <> limitOffsetClauseWithPageSpec pageSpec
@@ -156,8 +157,8 @@ getDraftRow nvId = runStatementWithColumns sql versionRowColumns D.rowMaybe True
         [TH.uncheckedSql|
           select $COLUMNS
           from drafts as news_versions
-               join authors using (author_id)
-               join users using (user_id)
+               left join authors using (author_id)
+               left join users using (user_id)
           where news_version_id =
         |] <>
       Sql.param (getNewsVersionId nvId)
@@ -186,7 +187,7 @@ data VersionRow =
     { nvId :: NewsVersionId
     , nvTitle :: T.Text
     , nvText :: T.Text
-    , nvAuthor :: Author
+    , nvAuthor :: Deletable Author
     , nvCategoryId :: CategoryId
     , nvMainPhotoId :: Maybe ImageId
     }
@@ -196,7 +197,7 @@ versionRowColumns = do
   nvId <- NewsVersionId <$> column versionsTable "news_version_id"
   nvTitle <- column versionsTable "title"
   nvText <- column versionsTable "body"
-  nvAuthor <- authorColumns
+  nvAuthor <- deletableAuthorColumns
   nvCategoryId <- CategoryId <$> column versionsTable "category_id"
   nvMainPhotoId <- fmap ImageId <$> column versionsTable "main_photo_id"
   pure VersionRow {..}

@@ -47,6 +47,7 @@ import Core.Authentication.Impl
 import Core.Author
 import Core.Category
 import Core.Comment
+import Core.Deletable
 import Core.Image
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
@@ -143,7 +144,7 @@ createNewsVersion ::
   -> IO (Either ICreateDraft.GatewayFailure NewsVersion)
 createNewsVersion h = DB.runTransactionRW h . DNews.createNewsVersion
 
-getDraftAuthor :: DB.Handle -> NewsVersionId -> IO (Maybe AuthorId)
+getDraftAuthor :: DB.Handle -> NewsVersionId -> IO (Maybe (Deletable AuthorId))
 getDraftAuthor h = DB.runTransactionRO h . DNews.getDraftAuthor
 
 getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [NewsVersion]

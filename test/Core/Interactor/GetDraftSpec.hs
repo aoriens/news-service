@@ -48,6 +48,12 @@ spec =
           h = handleWithItems [draft]
       r <- run h someNonAdminUser requestedDraftId
       r `shouldBe` Nothing
+    it "should return Nothing if the draft is found, but its author is deleted" $ do
+      let draftId = NewsVersionId 1
+          draft = stubDraft {nvId = draftId, nvAuthor = Deleted}
+          h = handleWithItems [draft]
+      r <- run h someAdminUser draftId
+      r `shouldBe` Nothing
 
 handleWithItems :: Applicative m => [NewsVersion] -> Handle m
 handleWithItems items =
@@ -55,7 +61,7 @@ handleWithItems items =
 
 draftWithIdAndAuthorId :: NewsVersionId -> AuthorId -> NewsVersion
 draftWithIdAndAuthorId nvId authorId =
-  stubDraft {nvId, nvAuthor = stubAuthor {authorId}}
+  stubDraft {nvId, nvAuthor = Existing stubAuthor {authorId}}
 
 stubDraft :: NewsVersion
 stubDraft =
@@ -63,7 +69,7 @@ stubDraft =
     { nvId = NewsVersionId 0
     , nvTitle = "1"
     , nvText = "2"
-    , nvAuthor = stubAuthor
+    , nvAuthor = Existing stubAuthor
     , nvCategory =
         Category
           { categoryId = CategoryId 1

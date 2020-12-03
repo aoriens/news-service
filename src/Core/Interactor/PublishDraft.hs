@@ -7,12 +7,13 @@ module Core.Interactor.PublishDraft
 import Control.Monad.Catch
 import Core.Author
 import Core.AuthorizationNG
+import Core.Deletable
 import Core.News
 import Data.Time
 
 data Handle m =
   Handle
-    { hGetDraftAuthor :: NewsVersionId -> m (Maybe AuthorId)
+    { hGetDraftAuthor :: NewsVersionId -> m (Maybe (Deletable AuthorId))
     , hGetCurrentDay :: m Day
     , hCreateNews :: NewsVersionId -> Day -> m News
     }
@@ -27,8 +28,9 @@ run ::
 run Handle {..} authUser vId = do
   hGetDraftAuthor vId >>= \case
     Nothing -> pure $ Left UnknownDraftId
-    Just author -> do
-      authorize "publish a draft" $ authUserShouldBeAuthor authUser author
+    Just Deleted -> pure $ Left UnknownDraftId
+    Just (Existing authorId) -> do
+      authorize "publish a draft" $ authUserShouldBeAuthor authUser authorId
       day <- hGetCurrentDay
       Right <$> hCreateNews vId day
 

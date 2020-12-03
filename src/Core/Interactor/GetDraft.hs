@@ -3,10 +3,11 @@ module Core.Interactor.GetDraft
   , Handle(..)
   ) where
 
-import Control.Monad
 import Control.Monad.Catch
+import Control.Monad.Trans.Maybe
 import Core.Author
 import Core.AuthorizationNG
+import Core.Deletable
 import Core.News
 
 newtype Handle m =
@@ -20,9 +21,9 @@ run ::
   -> AuthenticatedUser
   -> NewsVersionId
   -> m (Maybe NewsVersion)
-run Handle {..} authUser draftId = do
-  optDraft <- hGetDraft draftId
-  forM_ optDraft $ \draft ->
-    authorize "get a draft" $
-    authUserShouldBeAuthor authUser (authorId $ nvAuthor draft)
-  pure optDraft
+run Handle {..} authUser draftId =
+  runMaybeT $ do
+    draft <- MaybeT $ hGetDraft draftId
+    author <- MaybeT . pure . maybeFromDeletable $ nvAuthor draft
+    authorize "get a draft" $ authUserShouldBeAuthor authUser (authorId author)
+    pure draft

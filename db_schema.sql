@@ -124,7 +124,8 @@ create table news_versions (
        news_version_id serial not null primary key,
        title varchar not null,
        body varchar not null,
-       author_id integer not null references authors,
+       -- A null author means that the author is deleted.
+       author_id integer references authors,
        category_id integer not null references categories,
        main_photo_id integer references images
 );

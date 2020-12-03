@@ -7,11 +7,12 @@ module Core.Interactor.DeleteDraft
 import Control.Monad.Catch
 import Core.Author
 import Core.AuthorizationNG
+import Core.Deletable
 import Core.News
 
 data Handle m =
   Handle
-    { hGetDraftAuthor :: NewsVersionId -> m (Maybe AuthorId)
+    { hGetDraftAuthor :: NewsVersionId -> m (Maybe (Deletable AuthorId))
     , hDeleteNewsVersion :: NewsVersionId -> m ()
     }
 
@@ -24,7 +25,10 @@ run ::
 run Handle {..} authUser draftId = do
   hGetDraftAuthor draftId >>= \case
     Nothing -> pure $ Left UnknownDraftId
-    Just authorId -> do
+     -- There must not be authorless drafts, they should be deleted as
+     -- soon as their author is. So, reporting it as an unknown draft.
+    Just Deleted -> pure $ Left UnknownDraftId
+    Just (Existing authorId) -> do
       authorize "deleting a draft" $ authUserShouldBeAuthor authUser authorId
       hDeleteNewsVersion draftId
       pure $ Right ()

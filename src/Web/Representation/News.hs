@@ -4,6 +4,7 @@ module Web.Representation.News
   ( newsRep
   ) where
 
+import Core.Deletable
 import Core.News
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -12,16 +13,21 @@ import Data.Int
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time
 import Web.AppURI hiding (renderAppURI)
 import Web.Representation.Author
 import Web.Representation.Category
+import Web.Representation.OneOf
 import Web.Representation.Tag
 import Web.RepresentationBuilder
 
 newsRep :: News -> RepBuilder NewsRep
 newsRep News {newsId, newsDate, newsVersion = NewsVersion {..}} = do
-  newsAuthor <- authorRep nvAuthor
+  newsAuthor <-
+    case nvAuthor of
+      Deleted -> pure $ LeftRep "DELETED"
+      Existing author -> RightRep <$> authorRep author
   newsCategory <- categoryRep nvCategory
   newsPhoto <- mapM (renderAppURI . ImageURI) nvMainPhotoId
   newsPhotos <- mapM (renderAppURI . ImageURI) $ toList nvAdditionalPhotoIds
@@ -45,7 +51,7 @@ data NewsRep =
     , newsTitle :: Text
     , newsDate :: Day
     , newsText :: Text
-    , newsAuthor :: AuthorRep
+    , newsAuthor :: OneOfRep T.Text AuthorRep
     , newsCategory :: CategoryRep
     , newsPhoto :: Maybe AppURIRep
     , newsPhotos :: [AppURIRep]

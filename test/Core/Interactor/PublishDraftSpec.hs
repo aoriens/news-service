@@ -32,6 +32,15 @@ spec
       r `shouldBe` Left UnknownDraftId
       readIORef db `shouldReturn` initialData
     it
+      "should return Left UnknownDraftId for an existing draft with the author deleted" $ do
+      let draftId = NewsVersionId 1
+          initialData = storageWithDrafts [draftWithIdAndDeletedAuthor draftId]
+      db <- newIORef initialData
+      let h = handleWith someDay db
+      r <- run h someAdminUser draftId
+      r `shouldBe` Left UnknownDraftId
+      readIORef db `shouldReturn` initialData
+    it
       "should throw NoPermissionException if the user is not an author of an existing draft" $ do
       let draftId = NewsVersionId 1
           user = IdentifiedUser (UserId 0) False [AuthorId 2]
@@ -72,7 +81,7 @@ handleWith day ref =
   Handle
     { hGetDraftAuthor =
         \searchedId ->
-          fmap (authorId . nvAuthor) .
+          fmap (fmap authorId . nvAuthor) .
           find ((searchedId ==) . nvId) . storageDrafts <$>
           readIORef ref
     , hGetCurrentDay = pure day
@@ -101,7 +110,10 @@ draftWithId nvId = stubNewsVersion {nvId}
 
 draftWithIdAndAuthorId :: NewsVersionId -> AuthorId -> NewsVersion
 draftWithIdAndAuthorId nvId authorId =
-  stubNewsVersion {nvId, nvAuthor = stubAuthor {authorId}}
+  stubNewsVersion {nvId, nvAuthor = Existing stubAuthor {authorId}}
+
+draftWithIdAndDeletedAuthor :: NewsVersionId -> NewsVersion
+draftWithIdAndDeletedAuthor nvId = stubNewsVersion {nvId, nvAuthor = Deleted}
 
 someDay :: Day
 someDay = ModifiedJulianDay 0
@@ -115,7 +127,7 @@ stubNewsVersion =
     { nvId = NewsVersionId 999
     , nvTitle = "1"
     , nvText = "2"
-    , nvAuthor = stubAuthor
+    , nvAuthor = Existing stubAuthor
     , nvCategory =
         Category
           { categoryId = CategoryId 1
