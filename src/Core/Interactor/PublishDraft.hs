@@ -1,33 +1,37 @@
 module Core.Interactor.PublishDraft
   ( run
   , Handle(..)
+  , Failure(..)
   ) where
 
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
-import Core.EntityId
-import Core.Exception
+import Core.AuthorizationNG
 import Core.News
 import Data.Time
 
 data Handle m =
   Handle
-    { hAuthorizationHandle :: AuthorizationHandle
-    , hGetDraftAuthor :: NewsVersionId -> m (Maybe AuthorId)
+    { hGetDraftAuthor :: NewsVersionId -> m (Maybe AuthorId)
     , hGetCurrentDay :: m Day
     , hCreateNews :: NewsVersionId -> Day -> m News
     }
 
-run :: MonadThrow m => Handle m -> AuthenticatedUser -> NewsVersionId -> m News
+-- | Returns Nothing when no draft is found.
+run ::
+     MonadThrow m
+  => Handle m
+  -> AuthenticatedUser
+  -> NewsVersionId
+  -> m (Either Failure News)
 run Handle {..} authUser vId = do
-  documentAuthorId <-
-    maybe (throwM . RequestedEntityNotFoundException $ toEntityId vId) pure =<<
-    hGetDraftAuthor vId
-  requirePermission
-    hAuthorizationHandle
-    (AuthorshipPermission documentAuthorId)
-    authUser
-    "publish a draft"
-  day <- hGetCurrentDay
-  hCreateNews vId day
+  hGetDraftAuthor vId >>= \case
+    Nothing -> pure $ Left UnknownDraftId
+    Just author -> do
+      authorize "publish a draft" $ authUserShouldBeAuthor authUser author
+      day <- hGetCurrentDay
+      Right <$> hCreateNews vId day
+
+data Failure =
+  UnknownDraftId
+  deriving (Eq, Show)

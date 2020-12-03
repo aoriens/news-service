@@ -524,8 +524,7 @@ runPublishDraftHandler nvId Deps {..} SessionDeps {..} =
     HPublishDraft.Handle
       { hPublishDraftHandle =
           IPublishDraft.Handle
-            { hAuthorizationHandle = Core.Authorization.Impl.new
-            , hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
+            { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
             , hGetCurrentDay = getCurrentDay
             , hCreateNews = Database.createNews sdDatabaseHandle
             }

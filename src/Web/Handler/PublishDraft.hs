@@ -3,11 +3,13 @@ module Web.Handler.PublishDraft
   , Handle(..)
   ) where
 
+import Control.Exception
 import Core.Authentication
 import qualified Core.Interactor.PublishDraft as I
 import Core.News
 import Web.Application
 import Web.Credentials
+import Web.Exception
 
 data Handle =
   Handle
@@ -20,5 +22,6 @@ run :: Handle -> NewsVersionId -> Application
 run Handle {..} vId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
-  news <- I.run hPublishDraftHandle authUser vId
-  respond $ hPresent news
+  I.run hPublishDraftHandle authUser vId >>= \case
+    Left I.UnknownDraftId -> throwIO NotFoundException
+    Right news -> respond $ hPresent news
