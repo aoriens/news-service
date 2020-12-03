@@ -2,10 +2,10 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-if test X"$1" = X
-then
-    die "Usage: $0 user_id"
-fi
+case $# in
+    1|2) user_id=$1; description=${2-EMPTY} ;;
+    *) die "Usage: $0 user_id [author-description]" ;;
+esac
 
 allow_token
 run_curl "$DOMAIN/authors$Q" \
@@ -13,7 +13,7 @@ run_curl "$DOMAIN/authors$Q" \
          -H "Content-Type: application/json" \
          --data-binary @- <<EOF
 {
-  "user_id": $1,
-  "description": "The administrator of the service"
+  "user_id": $user_id,
+  "description": "$description"
 }
 EOF
