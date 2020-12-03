@@ -1,13 +1,12 @@
 module Core.Interactor.DeleteDraft
   ( run
   , Handle(..)
+  , Failure(..)
   ) where
 
 import Control.Monad.Catch
 import Core.Author
 import Core.AuthorizationNG
-import Core.EntityId
-import Core.Exception
 import Core.News
 
 data Handle m =
@@ -16,10 +15,20 @@ data Handle m =
     , hDeleteNewsVersion :: NewsVersionId -> m ()
     }
 
-run :: MonadThrow m => Handle m -> AuthenticatedUser -> NewsVersionId -> m ()
+run ::
+     MonadThrow m
+  => Handle m
+  -> AuthenticatedUser
+  -> NewsVersionId
+  -> m (Either Failure ())
 run Handle {..} authUser draftId = do
-  authorId <-
-    maybe (throwM $ RequestedEntityNotFoundException $ toEntityId draftId) pure =<<
-    hGetDraftAuthor draftId
-  authorize "deleting a draft" $ authUserShouldBeAuthor authUser authorId
-  hDeleteNewsVersion draftId
+  hGetDraftAuthor draftId >>= \case
+    Nothing -> pure $ Left UnknownDraftId
+    Just authorId -> do
+      authorize "deleting a draft" $ authUserShouldBeAuthor authUser authorId
+      hDeleteNewsVersion draftId
+      pure $ Right ()
+
+data Failure =
+  UnknownDraftId
+  deriving (Eq, Show)

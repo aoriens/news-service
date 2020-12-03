@@ -27,8 +27,8 @@ spec =
           existingDraftId = NewsVersionId 2
           initialStorage = newStorage [stubDraft {nvId = existingDraftId}]
       storage <- newIORef initialStorage
-      run (handleWith storage) someAuthUser requestedDraftId `shouldThrow`
-        isRequestedEntityNotFoundException
+      r <- run (handleWith storage) someAuthUser requestedDraftId
+      r `shouldBe` Left UnknownDraftId
       readIORef storage `shouldReturn` initialStorage
     it
       "should throw NoPermissionException if the user is not the author of the draft" $ do
@@ -57,7 +57,8 @@ spec =
               , stubDraft
               ]
       storage <- newIORef initialStorage
-      run (handleWith storage) user draftId
+      r <- run (handleWith storage) user draftId
+      r `shouldBe` Right ()
       readIORef storage `shouldReturn`
         Storage (itemsMap [stubDraft]) (Set.singleton draftId)
 
