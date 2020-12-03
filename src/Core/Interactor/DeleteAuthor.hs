@@ -8,9 +8,10 @@ import Control.Monad.Catch
 import Core.Author
 import Core.AuthorizationNG
 
-newtype Handle m =
+data Handle m =
   Handle
     { hDeleteAuthor :: AuthorId -> m (Either Failure ())
+    , hDeleteDraftsOfAuthor :: AuthorId -> m ()
     }
 
 run ::
@@ -21,6 +22,7 @@ run ::
   -> m (Either Failure ())
 run Handle {..} authUser authorId = do
   authorize "delete an author" $ authUserShouldBeAdmin authUser
+  hDeleteDraftsOfAuthor authorId
   hDeleteAuthor authorId
 
 data Failure =

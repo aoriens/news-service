@@ -2,17 +2,24 @@
 
 module Database.Logic.News.Delete
   ( deleteNewsVersion
+  , deleteDraftsOfAuthor
   ) where
 
 import Control.Monad
+import Core.Author
 import Core.Image
 import Core.News
 import Data.Foldable
 import Data.Maybe
 import Data.Profunctor
 import Database.Logic.Images
+import Database.Logic.News.Get
 import Database.Service.Primitives
 import qualified Hasql.TH as TH
+
+deleteDraftsOfAuthor :: AuthorId -> Transaction ()
+deleteDraftsOfAuthor authorId =
+  mapM_ deleteNewsVersion =<< getDraftIdsOfAuthor authorId
 
 deleteNewsVersion :: NewsVersionId -> Transaction ()
 deleteNewsVersion vId = do

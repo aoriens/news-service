@@ -4,8 +4,11 @@ module Core.Interactor.DeleteAuthorSpec
 
 import Core.Authentication.Test
 import Core.Author
+import Core.Deletable
 import Core.Exception
 import Core.Interactor.DeleteAuthor
+import Core.News
+import Core.Stubs
 import qualified Data.HashSet as Set
 import Data.IORef
 import Data.IORef.Util
@@ -16,7 +19,7 @@ spec =
   describe "run" $ do
     it "should throw NoPermissionException if the user is not an admin" $ do
       let authorId = AuthorId 1
-          initialData = storageWithAuthors [authorId]
+          initialData = newStorage [authorId] [draftWithAuthorId authorId]
       db <- newIORef initialData
       run (handleWith db) someNonAdminUser authorId `shouldThrow`
         isNoPermissionException
@@ -25,41 +28,91 @@ spec =
       "should delete an existing author and return Right () if the user is an admin" $ do
       let existingAuthorId = AuthorId 1
           otherAuthorId = AuthorId 2
-          initialData = storageWithAuthors [existingAuthorId, otherAuthorId]
+          initialData =
+            newStorage
+              [existingAuthorId, otherAuthorId]
+              [ draftWithAuthorId existingAuthorId
+              , draftWithAuthorId otherAuthorId
+              ]
       db <- newIORef initialData
       r <- run (handleWith db) someAdminUser existingAuthorId
       r `shouldBe` Right ()
       readIORef db `shouldReturn`
-        Storage (Set.singleton otherAuthorId) (Set.singleton existingAuthorId)
+        (newStorage [otherAuthorId] [draftWithAuthorId otherAuthorId])
+          { storageRequestedAuthorDeletions = Set.singleton existingAuthorId
+          , storageRequestedDraftDeletionsByAuthor =
+              Set.singleton existingAuthorId
+          }
     it
-      "should not delete an unknown author and return Left UnknownAuthorId if the user is an admin" $ do
+      "should return Left UnknownAuthorId for an unknown author if the user is an admin" $ do
       let unknownAuthorId = AuthorId 1
-          initialData = storageWithAuthors [AuthorId 2]
+          existingAuthorId = AuthorId 2
+          initialData =
+            newStorage [existingAuthorId] [draftWithAuthorId existingAuthorId]
       db <- newIORef initialData
       r <- run (handleWith db) someAdminUser unknownAuthorId
       r `shouldBe` Left UnknownAuthorId
-      readIORef db `shouldReturn`
-        initialData {storageRequestedDeletions = Set.singleton unknownAuthorId}
+      finalData <- readIORef db
+      storageAuthors finalData `shouldBe` storageAuthors initialData
+      storageDrafts finalData `shouldBe` storageDrafts initialData
+      [Set.empty, Set.singleton unknownAuthorId] `shouldContain`
+        [storageRequestedAuthorDeletions finalData]
+      [Set.empty, Set.singleton unknownAuthorId] `shouldContain`
+        [storageRequestedDraftDeletionsByAuthor finalData]
 
 data Storage =
   Storage
     { storageAuthors :: Set.HashSet AuthorId
-    , storageRequestedDeletions :: Set.HashSet AuthorId
+    , storageDrafts :: [NewsVersion]
+    , storageRequestedAuthorDeletions :: Set.HashSet AuthorId
+    , storageRequestedDraftDeletionsByAuthor :: Set.HashSet AuthorId
     }
   deriving (Eq, Show)
 
-storageWithAuthors :: [AuthorId] -> Storage
-storageWithAuthors ids = Storage (Set.fromList ids) Set.empty
+newStorage :: [AuthorId] -> [NewsVersion] -> Storage
+newStorage authorIds drafts =
+  Storage
+    { storageAuthors = Set.fromList authorIds
+    , storageDrafts = drafts
+    , storageRequestedAuthorDeletions = Set.empty
+    , storageRequestedDraftDeletionsByAuthor = Set.empty
+    }
+
+draftWithAuthorId :: AuthorId -> NewsVersion
+draftWithAuthorId authorId =
+  stubNewsVersion {nvAuthor = Existing stubAuthor {authorId}}
 
 handleWith :: IORef Storage -> Handle IO
 handleWith ref =
-  Handle $ \authorId ->
-    updateIORef' ref $ \Storage {..} ->
-      ( Storage
-          { storageAuthors = Set.delete authorId storageAuthors
-          , storageRequestedDeletions =
-              Set.insert authorId storageRequestedDeletions
-          }
-      , if authorId `Set.member` storageAuthors
-          then Right ()
-          else Left UnknownAuthorId)
+  Handle
+    { hDeleteAuthor =
+        \aid ->
+          updateIORef' ref $ \old@Storage {..} ->
+            ( old
+                { storageAuthors = Set.delete aid storageAuthors
+                , storageDrafts =
+                    map (deleteAuthorWithIdFromDraft aid) storageDrafts
+                , storageRequestedAuthorDeletions =
+                    Set.insert aid storageRequestedAuthorDeletions
+                }
+            , if aid `Set.member` storageAuthors
+                then Right ()
+                else Left UnknownAuthorId)
+    , hDeleteDraftsOfAuthor =
+        \aid ->
+          modifyIORef' ref $ \old@Storage {..} ->
+            old
+              { storageDrafts =
+                  filter
+                    ((Existing aid /=) . (fmap authorId . nvAuthor))
+                    storageDrafts
+              , storageRequestedDraftDeletionsByAuthor =
+                  Set.insert aid storageRequestedDraftDeletionsByAuthor
+              }
+    }
+
+deleteAuthorWithIdFromDraft :: AuthorId -> NewsVersion -> NewsVersion
+deleteAuthorWithIdFromDraft targetAuthorId draft
+  | Existing targetAuthorId == (authorId <$> nvAuthor draft) =
+    draft {nvAuthor = Deleted}
+  | otherwise = draft

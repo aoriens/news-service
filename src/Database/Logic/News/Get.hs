@@ -7,6 +7,7 @@ module Database.Logic.News.Get
   , getDraftsOfAuthor
   , getDraftsOfUser
   , getDraft
+  , getDraftIdsOfAuthor
   ) where
 
 import Control.Monad
@@ -148,6 +149,18 @@ getDraftRowsOfUser userId pageSpec =
           where authors.user_id =
         |] <>
       Sql.param (getUserId userId) <> limitOffsetClauseWithPageSpec pageSpec
+
+getDraftIdsOfAuthor :: AuthorId -> Transaction [NewsVersionId]
+getDraftIdsOfAuthor =
+  runStatement $
+  dimap
+    getAuthorId
+    (toList . fmap NewsVersionId)
+    [TH.vectorStatement|
+      select news_version_id :: integer
+      from drafts
+      where author_id = $1 :: integer
+    |]
 
 getDraftRow :: NewsVersionId -> Transaction (Maybe VersionRow)
 getDraftRow nvId = runStatementWithColumns sql versionRowColumns D.rowMaybe True
