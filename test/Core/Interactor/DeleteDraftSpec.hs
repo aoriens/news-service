@@ -22,7 +22,7 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    it "should throw RequestedEntityNotFoundException if there is no such draft" $ do
+    it "should return Left UnknownDraftId if there is no such draft" $ do
       let requestedDraftId = NewsVersionId 1
           existingDraftId = NewsVersionId 2
           initialStorage = newStorage [stubDraft {nvId = existingDraftId}]
