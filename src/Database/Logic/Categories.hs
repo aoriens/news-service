@@ -5,17 +5,14 @@ module Database.Logic.Categories
   ( createCategory
   , selectCategory
   , selectCategories
-  , deleteCategory
+  , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
+  , deleteCategoryAndDescendants
   ) where
 
 import Control.Arrow
 import Control.Monad
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Except
 import Core.Category
-import Core.EntityId
 import qualified Core.Interactor.CreateCategory as CreateCategory
-import qualified Core.Interactor.DeleteCategory as DeleteCategory
 import Core.Pagination
 import Data.Foldable
 import Data.Int
@@ -132,39 +129,43 @@ categoriesFromRows rows = map toCategory finalRows
       let category = toCategory row
        in Map.insert (getCategoryId $ categoryId category) category amap
 
-deleteCategory ::
-     CategoryId -> PageSpec -> Transaction (Either DeleteCategory.Failure ())
-deleteCategory catId defaultRange =
-  runExceptT $ do
-    dependentCategoryIds <- lift $ selectChildCategoryIdsOf catId defaultRange
-    unless (null dependentCategoryIds) $
-      throwE
-        (DeleteCategory.DependentEntitiesPreventDeletion $
-         map CategoryEntityId dependentCategoryIds)
-    isDeleted <- lift $ deleteCategorySt catId
-    unless isDeleted $ throwE DeleteCategory.UnknownCategory
-
-selectChildCategoryIdsOf :: CategoryId -> PageSpec -> Transaction [CategoryId]
-selectChildCategoryIdsOf =
+setCategoryIdToNewsVersionsInCategoryAndDescendantCategories ::
+     Maybe CategoryId -> CategoryId -> Transaction ()
+setCategoryIdToNewsVersionsInCategoryAndDescendantCategories {- newCatId oldCatId -}
+ =
   curry . runStatement $
-  dimap
-    (\(CategoryId catId, PageSpec {..}) ->
-       (catId, getPageLimit pageLimit, getPageOffset pageOffset))
-    (map CategoryId . toList)
-    [TH.vectorStatement|
-      select category_id :: integer
-      from categories
-      where parent_id = $1 :: integer
-      limit $2 :: integer offset $3 :: integer
+  lmap
+    (fmap getCategoryId *** getCategoryId)
+    [TH.resultlessStatement|
+      with recursive descendant_cats as (
+        select $2 :: integer
+
+        union
+
+        select categories.category_id
+        from categories join descendant_cats
+             on categories.category_id = descendant_cats.parent_id
+      )
+      update news_versions
+      set category_id = $1 :: integer?
+      where category_id = any(descendant_cats)
     |]
 
-deleteCategorySt :: CategoryId -> Transaction Bool
-deleteCategorySt =
+deleteCategoryAndDescendants :: CategoryId -> Transaction ()
+deleteCategoryAndDescendants =
   runStatement $
-  dimap
+  lmap
     getCategoryId
-    (> 0)
-    [TH.rowsAffectedStatement|
+    [TH.resultlessStatement|
+      with recursive descendant_cats as (
+        select $1 :: integer
+
+        union
+
+        select categories.category_id
+        from categories join descendant_cats
+             on categories.category_id = descendant_cats.parent_id
+      )
       delete from categories
-      where category_id = $1 :: integer
+      where category_id = any(descendant_cats)
     |]

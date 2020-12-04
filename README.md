@@ -135,9 +135,11 @@ items](#CategoryItem) up to the item with the specified identifier.
 
 ### `DELETE /categories/{category_id}`
 
-Deletes the identified category and returns no content. Only the least
-significant [CategoryItem](#CategoryItem) of the category will be deleted.
-Requires authentication of a user having the administrator privilege.
+Deletes the identified category and returns no content. Requires the
+administrator privilege. Drafts and news residing in the category or any
+descendant subcategory will be moved to the parent category. If the category to
+be deleted is a root category, the drafts and the news will be made
+uncategorized.
 
 ### `DELETE /comments/{comment_id}`
 

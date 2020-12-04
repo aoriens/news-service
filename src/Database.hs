@@ -10,7 +10,8 @@ module Database
   , createCategory
   , getCategory
   , getCategories
-  , deleteCategory
+  , deleteCategoryAndDescendants
+  , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
   -- * Images
   , getImage
   -- * News
@@ -56,7 +57,6 @@ import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
-import qualified Core.Interactor.DeleteCategory as IDeleteCategory
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
 import Core.News
@@ -118,12 +118,17 @@ getCategory h = runTransactionRO h . DCategories.selectCategory
 getCategories :: DB.Handle -> PageSpec -> IO [Category]
 getCategories h = runTransactionRO h . DCategories.selectCategories
 
-deleteCategory ::
-     DB.Handle
-  -> CategoryId
-  -> PageSpec
-  -> IO (Either IDeleteCategory.Failure ())
-deleteCategory h = (runTransactionRW h .) . DCategories.deleteCategory
+deleteCategoryAndDescendants :: DB.Handle -> CategoryId -> IO ()
+deleteCategoryAndDescendants h =
+  runTransactionRW h . DCategories.deleteCategoryAndDescendants
+
+setCategoryIdToNewsVersionsInCategoryAndDescendantCategories ::
+     DB.Handle -> Maybe CategoryId -> CategoryId -> IO ()
+setCategoryIdToNewsVersionsInCategoryAndDescendantCategories h newCatId oldCatId =
+  runTransactionRW h $
+  DCategories.setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
+    newCatId
+    oldCatId
 
 getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
 getImage h = DB.runTransactionRO h . DImages.selectImage

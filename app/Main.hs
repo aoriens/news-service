@@ -113,7 +113,6 @@ data Deps =
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     , dPageSpecParserHandle :: PageSpecParserHandle
-    , dDefaultEntityListRange :: PageSpec
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
@@ -156,8 +155,6 @@ getDeps = do
         , dDatabaseConnectionConfig
         , dPageSpecParserHandle =
             Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
-        , dDefaultEntityListRange =
-            PageSpec (PageOffset 0) (Cf.cfMaxPageLimit dConfig)
         , dJSONEncode
         , dLoadJSONRequestBody =
             RequestBodyLoader.loadJSONRequestBody
@@ -353,9 +350,12 @@ runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
     HDeleteCategory.Handle
       { hDeleteCategoryHandle =
           IDeleteCategory.Handle
-            { hDeleteCategory = Database.deleteCategory sdDatabaseHandle
-            , hAuthorizationHandle = Core.Authorization.Impl.new
-            , hDefaultEntityListRange = dDefaultEntityListRange
+            { hGetCategory = Database.getCategory sdDatabaseHandle
+            , hSetCategoryIdToNewsVersionsInCategoryAndDescendantCategories =
+                Database.setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
+                  sdDatabaseHandle
+            , hDeleteCategoryAndDescendants =
+                Database.deleteCategoryAndDescendants sdDatabaseHandle
             }
       , hPresent = presentDeletedCategory
       , hAuthenticationHandle = sdAuthenticationHandle

@@ -5,36 +5,33 @@ module Core.Interactor.DeleteCategory
   ) where
 
 import Control.Monad.Catch
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.Category
-import Core.EntityId
-import Core.Exception
-import Core.Pagination
 
 data Handle m =
   Handle
-    { hDeleteCategory :: CategoryId -> PageSpec -> m (Either Failure ())
-    , hAuthorizationHandle :: AuthorizationHandle
-    , hDefaultEntityListRange :: PageSpec
+    { hGetCategory :: CategoryId -> m (Maybe Category)
+    , hSetCategoryIdToNewsVersionsInCategoryAndDescendantCategories :: Maybe CategoryId -> CategoryId -> m ()
+    , hDeleteCategoryAndDescendants :: CategoryId -> m ()
     }
 
-run :: MonadThrow m => Handle m -> AuthenticatedUser -> CategoryId -> m ()
-run Handle {..} authUser categoryId' = do
-  requirePermission
-    hAuthorizationHandle
-    AdminPermission
-    authUser
-    "deleting category"
-  either (throwM . failureToException) pure =<<
-    hDeleteCategory categoryId' hDefaultEntityListRange
-  where
-    failureToException (DependentEntitiesPreventDeletion ids) =
-      DependentEntitiesPreventDeletionException
-        (CategoryEntityId categoryId')
-        ids
-    failureToException UnknownCategory =
-      RequestedEntityNotFoundException $ CategoryEntityId categoryId'
+run ::
+     MonadThrow m
+  => Handle m
+  -> AuthenticatedUser
+  -> CategoryId
+  -> m (Either Failure ())
+run Handle {..} authUser catId = do
+  authorize "delete a category" $ authUserShouldBeAdmin authUser
+  hGetCategory catId >>= \case
+    Nothing -> pure $ Left UnknownCategoryId
+    Just cat -> do
+      hSetCategoryIdToNewsVersionsInCategoryAndDescendantCategories
+        (categoryId <$> categoryParent cat)
+        catId
+      hDeleteCategoryAndDescendants catId
+      pure $ Right ()
 
-data Failure
-  = DependentEntitiesPreventDeletion [EntityId]
-  | UnknownCategory
+data Failure =
+  UnknownCategoryId
+  deriving (Eq, Show)
