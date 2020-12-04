@@ -96,7 +96,7 @@ data CreateDraftRequest =
     { cdTitle :: T.Text
     , cdText :: T.Text
     , cdAuthorId :: Maybe AuthorId
-    , cdCategoryId :: CategoryId
+    , cdCategoryId :: Maybe CategoryId
     , cdMainPhoto :: Maybe (Either ImageId Image)
     , cdAdditionalPhotos :: [Either ImageId Image]
     , cdTagIds :: Set.HashSet TagId
@@ -107,7 +107,7 @@ data CreateNewsVersionCommand =
     { cnvTitle :: T.Text
     , cnvText :: T.Text
     , cnvAuthorId :: AuthorId
-    , cnvCategoryId :: CategoryId
+    , cnvCategoryId :: Maybe CategoryId
     , cnvMainPhoto :: Maybe (Either ImageId Image)
     , cnvAdditionalPhotos :: [Either ImageId Image]
     , cnvTagIds :: Set.HashSet TagId

@@ -36,7 +36,11 @@ createNewsVersion ::
 createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
   runExceptT $ do
     author <- getExistingEntityBy selectAuthorById cnvAuthorId
-    category <- getExistingEntityBy selectCategory cnvCategoryId
+    category <-
+      maybe
+        (pure Nothing)
+        (fmap Just . getExistingEntityBy selectCategory)
+        cnvCategoryId
     nvTags <- getExistingTags
     nvMainPhotoId <- mapM createOrGetExistingImage cnvMainPhoto
     nvId <- lift $ insertVersion' nvMainPhotoId
@@ -49,7 +53,7 @@ createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
         , nvTitle = cnvTitle
         , nvText = cnvText
         , nvAuthor = Existing author
-        , nvCategory = Just category
+        , nvCategory = category
         , nvMainPhotoId
         , nvAdditionalPhotoIds
         , nvTags
@@ -91,7 +95,7 @@ insertVersion =
        ( ivcTitle
        , ivcText
        , getAuthorId ivcAuthorId
-       , getCategoryId ivcCategoryId
+       , getCategoryId <$> ivcCategoryId
        , getImageId <$> ivcMainPhotoId))
     NewsVersionId
     [TH.singletonStatement|
@@ -105,7 +109,7 @@ insertVersion =
         $1 :: varchar,
         $2 :: varchar,
         $3 :: integer,
-        $4 :: integer,
+        $4 :: integer?,
         $5 :: integer?
       ) returning news_version_id :: integer
     |]
@@ -115,7 +119,7 @@ data InsertVersionCommand =
     { ivcTitle :: T.Text
     , ivcText :: T.Text
     , ivcAuthorId :: AuthorId
-    , ivcCategoryId :: CategoryId
+    , ivcCategoryId :: Maybe CategoryId
     , ivcMainPhotoId :: Maybe ImageId
     }
 

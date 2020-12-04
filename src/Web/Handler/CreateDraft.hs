@@ -52,7 +52,7 @@ data InDraft =
     { inTitle :: T.Text
     , inText :: T.Text
     , inAuthorId :: Maybe Int32
-    , inCategoryId :: Int32
+    , inCategoryId :: Maybe Int32
     , inPhoto :: Maybe ExistingOrNewImageRep
     , inPhotos :: Maybe [ExistingOrNewImageRep]
     , inTagIds :: Maybe [Int32]
@@ -68,7 +68,7 @@ makeCreateDraftRequest h InDraft {..} = do
       { cdTitle = inTitle
       , cdText = inText
       , cdAuthorId = AuthorId <$> inAuthorId
-      , cdCategoryId = CategoryId inCategoryId
+      , cdCategoryId = CategoryId <$> inCategoryId
       , cdMainPhoto
       , cdAdditionalPhotos
       , cdTagIds = maybe Set.empty (Set.fromList . map TagId) inTagIds

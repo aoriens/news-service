@@ -57,7 +57,7 @@ spec
               { cdTitle = "title"
               , cdText = "text"
               , cdAuthorId = Just $ AuthorId 1
-              , cdCategoryId = CategoryId 1
+              , cdCategoryId = Just $ CategoryId 1
               , cdMainPhoto = Just . Left $ ImageId 1
               , cdAdditionalPhotos =
                   [ Left $ ImageId 2
@@ -248,7 +248,7 @@ stubRequest =
     { cdTitle = "one"
     , cdText = "two"
     , cdAuthorId = Just $ AuthorId 888
-    , cdCategoryId = CategoryId 888
+    , cdCategoryId = Nothing
     , cdMainPhoto = Nothing
     , cdAdditionalPhotos = []
     , cdTagIds = Set.empty

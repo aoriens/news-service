@@ -396,8 +396,8 @@ A request to create a news draft. Fields:
 - `author_id` - an identifier of an [Author](#Autor) of the news. It is optional
   and may be inferred automatically, if you have exactly one author, otherwise
   it is required. An integer, optional.
-- `category_id` - an identifier of an [Category](#Category) of the news. An
-  integer, required.
+- `category_id` - an identifier of a [Category](#Category) of the news. An
+  integer, optional.
 - `photo` - the primary illustration for the news. This is an optional URL of an
   image returned by the service or an optional [CreateImage](#CreateImage)
   entity.

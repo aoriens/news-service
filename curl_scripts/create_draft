@@ -2,19 +2,36 @@
 
 . "$(dirname "$0")"/prefix.sh
 
-if test X"$1" = X
+usage() {
+    echo "Note: additional parameters are supported"
+    echo "$0 [-category CATEGORY_ID] [-author AUTHOR_ID]"
+}
+
+if test $# -eq 0
 then
-    die "Usage: $0 [author_id] category_id"
+    usage
 fi
 
-if test X"$2" = X
-then
-    author_field=
-    category_id=$1
-else
-    author_field='"author_id": '$1,$'\n'
-    category_id=$2
-fi
+author_field=
+category_field=
+
+while test $# -gt 0
+do
+    arg=$1
+    shift
+    case "$arg" in
+        -category)
+            category_field="\"category_id\": $1,"
+            shift ;;
+        -author)
+            author_field="\"author_id\": $1,"
+            shift ;;
+        *)
+            echo "Unknown parameter $arg"
+            usage
+            die
+    esac
+done
 
 allow_token
 run_curl "$DOMAIN/drafts$Q" \
@@ -25,7 +42,7 @@ run_curl "$DOMAIN/drafts$Q" \
   "title": "GHC 19.0 has been released",
   "text": "See https://ghc.haskell.org",
   $author_field
-  "category_id": $category_id,
+  $category_field
   "photo": "http://localhost:3000/images/1",
   "photos": [
     {

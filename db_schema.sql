@@ -126,7 +126,8 @@ create table news_versions (
        body varchar not null,
        -- A null author means that the author is deleted.
        author_id integer references authors on delete set null,
-       category_id integer not null references categories,
+       -- A null category means an unspecified or a deleted category.
+       category_id integer references categories,
        main_photo_id integer references images
 );
 
