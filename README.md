@@ -330,8 +330,9 @@ An author of news. Fields:
 
 ### Category
 
-A news category. This is a non-empty array of [CategoryItem](#CategoryItem)
-objects, logically nested, starting from the most significant one.
+A news category. This is an array of [CategoryItem](#CategoryItem) objects,
+logically nested, starting from the most significant one. The array may be empty
+to designate an unspecified category.
 
 ### CategoryItem
 

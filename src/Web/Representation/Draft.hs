@@ -28,7 +28,7 @@ draftRep NewsVersion {..} = do
     case nvAuthor of
       Deleted -> pure $ LeftRep "DELETED"
       Existing author -> RightRep <$> authorRep author
-  draftCategory <- categoryRep nvCategory
+  draftCategory <- optCategoryRep nvCategory
   draftPhoto <- mapM (renderAppURI . ImageURI) nvMainPhotoId
   draftPhotos <- mapM (renderAppURI . ImageURI) $ toList nvAdditionalPhotoIds
   draftTags <- mapM tagRep $ toList nvTags

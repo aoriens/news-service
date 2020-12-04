@@ -4,6 +4,7 @@
 module Web.Representation.Category
   ( CategoryRep
   , categoryRep
+  , optCategoryRep
   ) where
 
 import Control.Arrow
@@ -23,6 +24,9 @@ data CategoryItemRep =
     { itemCategoryItemId :: Int32
     , itemName :: T.Text
     }
+
+optCategoryRep :: Maybe Category -> RepBuilder CategoryRep
+optCategoryRep = maybe (pure []) categoryRep
 
 categoryRep :: Category -> RepBuilder CategoryRep
 categoryRep = pure . reverse . unfoldr f . Just

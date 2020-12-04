@@ -28,7 +28,7 @@ newsRep News {newsId, newsDate, newsVersion = NewsVersion {..}} = do
     case nvAuthor of
       Deleted -> pure $ LeftRep "DELETED"
       Existing author -> RightRep <$> authorRep author
-  newsCategory <- categoryRep nvCategory
+  newsCategory <- optCategoryRep nvCategory
   newsPhoto <- mapM (renderAppURI . ImageURI) nvMainPhotoId
   newsPhotos <- mapM (renderAppURI . ImageURI) $ toList nvAdditionalPhotoIds
   newsTags <- mapM tagRep $ toList nvTags

@@ -201,7 +201,7 @@ data VersionRow =
     , nvTitle :: T.Text
     , nvText :: T.Text
     , nvAuthor :: Deletable Author
-    , nvCategoryId :: CategoryId
+    , nvCategoryId :: Maybe CategoryId
     , nvMainPhotoId :: Maybe ImageId
     }
 
@@ -211,7 +211,7 @@ versionRowColumns = do
   nvTitle <- column versionsTable "title"
   nvText <- column versionsTable "body"
   nvAuthor <- deletableAuthorColumns
-  nvCategoryId <- CategoryId <$> column versionsTable "category_id"
+  nvCategoryId <- fmap CategoryId <$> column versionsTable "category_id"
   nvMainPhotoId <- fmap ImageId <$> column versionsTable "main_photo_id"
   pure VersionRow {..}
 
@@ -225,7 +225,8 @@ loadNewsWithRow NewsRow {..} = do
 
 loadVersionWithRow :: VersionRow -> Transaction NewsVersion
 loadVersionWithRow VersionRow {..} = do
-  nvCategory <- getExistingCategoryById nvCategoryId
+  nvCategory <-
+    maybe (pure Nothing) (fmap Just . getExistingCategoryById) nvCategoryId
   nvTags <- getTagsForVersion nvId
   nvAdditionalPhotoIds <- getAdditionalPhotosForVersion nvId
   pure NewsVersion {nvCategory, nvTags, nvAdditionalPhotoIds, ..}

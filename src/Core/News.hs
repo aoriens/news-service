@@ -38,7 +38,10 @@ data NewsVersion =
     , nvTitle :: Text
     , nvText :: Text
     , nvAuthor :: Deletable Author
-    , nvCategory :: Category
+    , nvCategory :: Maybe Category
+    -- ^ The category may be absent, which is considered as the
+    -- super-root "uncategorized" category, logically being the parent
+    -- of all root categories.
     , nvMainPhotoId :: Maybe ImageId
     , nvAdditionalPhotoIds :: HashSet ImageId
     , nvTags :: HashSet Tag

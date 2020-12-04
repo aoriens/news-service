@@ -36,7 +36,7 @@ createNewsVersion ::
 createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
   runExceptT $ do
     author <- getExistingEntityBy selectAuthorById cnvAuthorId
-    nvCategory <- getExistingEntityBy selectCategory cnvCategoryId
+    category <- getExistingEntityBy selectCategory cnvCategoryId
     nvTags <- getExistingTags
     nvMainPhotoId <- mapM createOrGetExistingImage cnvMainPhoto
     nvId <- lift $ insertVersion' nvMainPhotoId
@@ -49,7 +49,7 @@ createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
         , nvTitle = cnvTitle
         , nvText = cnvText
         , nvAuthor = Existing author
-        , nvCategory
+        , nvCategory = Just category
         , nvMainPhotoId
         , nvAdditionalPhotoIds
         , nvTags
