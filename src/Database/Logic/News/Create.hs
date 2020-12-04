@@ -36,14 +36,18 @@ createNewsVersion ::
 createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
   runExceptT $ do
     author <- getExistingEntityBy selectAuthorById cnvAuthorId
-    category <-
-      maybe
-        (pure Nothing)
-        (fmap Just . getExistingEntityBy selectCategory)
-        cnvCategoryId
+    category <- getExistingCategoryIfJust cnvCategoryId
     nvTags <- getExistingTags
     nvMainPhotoId <- mapM createOrGetExistingImage cnvMainPhoto
-    nvId <- lift $ insertVersion' nvMainPhotoId
+    nvId <-
+      lift . insertVersion $
+      InsertVersionCommand
+        { ivcTitle = cnvTitle
+        , ivcText = cnvText
+        , ivcAuthorId = cnvAuthorId
+        , ivcCategoryId = cnvCategoryId
+        , ivcMainPhotoId = nvMainPhotoId
+        }
     nvAdditionalPhotoIds <- createOrGetExistingAdditionalPhotos
     lift $ addPhotosToVersion nvId nvAdditionalPhotoIds
     lift $ addTagsToVersion nvId cnvTagIds
@@ -59,33 +63,44 @@ createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
         , nvTags
         }
   where
-    getExistingEntityBy getOptEntity id' = do
-      optEntity <- lift $ getOptEntity id'
-      case optEntity of
-        Nothing -> failWithEntityNotFound id'
-        Just entity -> pure entity
     getExistingTags =
       Set.fromList <$> mapM (getExistingEntityBy findTagById) (toList cnvTagIds)
-    createOrGetExistingImage img
-      | Right image <- img = lift $ createImage image
-      | Left imageId' <- img = do
-        exists <- lift $ imageExists imageId'
-        if exists
-          then pure imageId'
-          else failWithEntityNotFound imageId'
-    insertVersion' photoId =
-      insertVersion
-        InsertVersionCommand
-          { ivcTitle = cnvTitle
-          , ivcText = cnvText
-          , ivcAuthorId = cnvAuthorId
-          , ivcCategoryId = cnvCategoryId
-          , ivcMainPhotoId = photoId
-          }
     createOrGetExistingAdditionalPhotos =
       Set.fromList <$> mapM createOrGetExistingImage cnvAdditionalPhotos
-    failWithEntityNotFound objId =
-      throwE $ ICreateDraft.GUnknownEntityId [toEntityId objId]
+
+getExistingEntityBy ::
+     IsEntityId id
+  => (id -> Transaction (Maybe entity))
+  -> id
+  -> ExceptT ICreateDraft.GatewayFailure Transaction entity
+getExistingEntityBy getOptEntity id' = do
+  optEntity <- lift $ getOptEntity id'
+  case optEntity of
+    Nothing -> failWithEntityNotFound id'
+    Just entity -> pure entity
+
+getExistingCategoryIfJust ::
+     Maybe CategoryId
+  -> ExceptT ICreateDraft.GatewayFailure Transaction (Maybe Category)
+getExistingCategoryIfJust =
+  maybe (pure Nothing) (fmap Just . getExistingEntityBy selectCategory)
+
+createOrGetExistingImage ::
+     Either ImageId Image
+  -> ExceptT ICreateDraft.GatewayFailure Transaction ImageId
+createOrGetExistingImage =
+  \case
+    Right image -> lift $ createImage image
+    Left imageId' -> do
+      exists <- lift $ imageExists imageId'
+      if exists
+        then pure imageId'
+        else failWithEntityNotFound imageId'
+
+failWithEntityNotFound ::
+     IsEntityId id => id -> ExceptT ICreateDraft.GatewayFailure Transaction a
+failWithEntityNotFound objId =
+  throwE $ ICreateDraft.GUnknownEntityId [toEntityId objId]
 
 insertVersion :: InsertVersionCommand -> Transaction NewsVersionId
 insertVersion =
