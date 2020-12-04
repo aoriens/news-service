@@ -59,10 +59,10 @@ insertCategorySt =
     (first (fmap getCategoryId))
     CategoryId
     [TH.singletonStatement|
-    insert into categories (parent_id, name) values (
-        $1 :: integer?,
-        $2 :: varchar
-    ) returning category_id :: integer
+      insert into categories (parent_id, name) values (
+          $1 :: integer?,
+          $2 :: varchar
+      ) returning category_id :: integer
     |]
 
 selectCategory :: CategoryId -> Transaction (Maybe Category)
@@ -72,19 +72,19 @@ selectCategory =
     getCategoryId
     foldToCategory
     [TH.vectorStatement|
-    with recursive cats as (
-      select *
-      from categories
-      where category_id = $1 :: integer
+      with recursive cats as (
+        select *
+        from categories
+        where category_id = $1 :: integer
 
-      union
+        union
 
-      select categories.*
-      from categories join cats
-           on categories.category_id = cats.parent_id
-    )
-    select category_id :: integer, name :: varchar
-    from cats
+        select categories.*
+        from categories join cats
+             on categories.category_id = cats.parent_id
+      )
+      select category_id :: integer, name :: varchar
+      from cats
     |]
   where
     foldToCategory = foldr f Nothing
