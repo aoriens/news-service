@@ -30,6 +30,7 @@ module Web.Presenter
   , presentTag
   , presentTags
   , presentDeletedTag
+  , presentUpdatedTag
   -- * Comments
   , presentCreatedComment
   , presentComment
@@ -167,6 +168,11 @@ presentTags h = dataResponse . runRepBuilder h . mapM tagRep
 
 presentDeletedTag :: Response
 presentDeletedTag = noContentResponse
+
+presentUpdatedTag :: AppURIConfig -> RepBuilderHandle -> Tag -> Response
+presentUpdatedTag uriConfig h tag =
+  resourceModifiedAndReturnedResponse uriConfig (tagURI tag) . runRepBuilder h $
+  tagRep tag
 
 presentCreatedDraft ::
      AppURIConfig -> RepBuilderHandle -> NewsVersion -> Response

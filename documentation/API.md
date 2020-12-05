@@ -236,14 +236,19 @@ returns either a created or existing [Tag](#Tag) entity. Each tag must have a
 unique, non-empty name. If a tag with such a name exists, no new tag will be
 created and the existing tag is returned.
 
-### `GET /tags/{tag_id}`
-
-Returns the specified [Tag](#Tag).
-
 ### `DELETE /tags/{tag_id}`
 
 Deletes a [Tag](#Tag) identified with `{tag_id}` and returns no content. You
 must be an administrator user.
+
+### `GET /tags/{tag_id}`
+
+Returns the specified [Tag](#Tag).
+
+### `PATCH /tags/{tag_id}`
+
+Accepts [UpdateTag](#UpdateTag) entity, updates the [Tag](#Tag) identified with
+`{tag_id}`, and returns the updated tag. Requires the administrator privilege.
 
 ### `GET /users`
 
@@ -437,3 +442,9 @@ A user. Fields:
 An instruction to update an [Author](#Author). Fields:
 
 - `description` - the author's new description. A string, required.
+
+### UpdateAuthor
+
+An instruction to update a [Tag](#Tag). Fields:
+
+- `name` - a new name of the tag. A string, required.

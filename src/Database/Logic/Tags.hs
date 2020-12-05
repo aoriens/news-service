@@ -7,11 +7,15 @@ module Database.Logic.Tags
   , createTagNamed
   , getTags
   , deleteTag
+  , setTagName
   , tagColumns
   ) where
 
+import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.Pagination
 import Core.Tag
+import Data.Bifunctor
+import Data.Bool
 import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
@@ -44,6 +48,19 @@ createTagNamedSt =
       insert into tags (name) values (
         $1 :: varchar
       ) returning tag_id :: integer
+    |]
+
+setTagName ::
+     TagId -> T.Text -> Transaction (Either IUpdateTag.SetTagNameFailure ())
+setTagName =
+  curry . runStatement $
+  dimap
+    (first getTagId)
+    (bool (Left IUpdateTag.STNUnknownTagId) (Right ()) . (> 0))
+    [H.rowsAffectedStatement|
+      update tags
+      set name = $2 :: varchar
+      where tag_id = $1 :: integer
     |]
 
 findTagById :: TagId -> Transaction (Maybe Tag)

@@ -30,6 +30,7 @@ module Database
   , findTagById
   , getTags
   , deleteTag
+  , setTagName
   , createTagNamed
   -- * Users
   , createUser
@@ -59,6 +60,7 @@ import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
+import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
 import Core.Pagination
 import Core.Tag
@@ -188,6 +190,10 @@ deleteTag h = runTransactionRW h . DTags.deleteTag
 
 createTagNamed :: DB.Handle -> Text -> IO Tag
 createTagNamed h = runTransactionRW h . DTags.createTagNamed
+
+setTagName ::
+     DB.Handle -> TagId -> Text -> IO (Either IUpdateTag.SetTagNameFailure ())
+setTagName h tagId newName = runTransactionRW h $ DTags.setTagName tagId newName
 
 createUser ::
      DB.Handle

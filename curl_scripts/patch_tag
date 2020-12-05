@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+if test X"$2" = X
+then
+    die "Usage: $0 tag_id new_name"
+fi
+
+allow_token
+run_curl "$DOMAIN/tags/$1$Q" \
+         -X PATCH  \
+         -H "Content-Type: application/json" \
+         --data-binary @- <<EOF
+{
+  "name": "$2"
+}
+EOF

@@ -46,6 +46,7 @@ import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
+import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
 import Core.Pagination
 import qualified Core.Pagination.Impl
@@ -96,6 +97,7 @@ import qualified Web.Handler.GetTags as HGetTags
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PatchAuthor as HPatchAuthor
+import qualified Web.Handler.PatchTag as HPatchTag
 import qualified Web.Handler.PublishDraft as HPublishDraft
 import qualified Web.JSONEncoder as JSONEncoder
 import Web.Presenter
@@ -217,7 +219,10 @@ router deps =
     NewsItemURI newsId -> [R.get $ runGetNewsHandler newsId]
     TagsURI -> [R.get runGetTagsHandler, R.post runCreateTagHandler]
     TagURI tagId ->
-      [R.get $ runGetTagHandler tagId, R.delete $ runDeleteTagHandler tagId]
+      [ R.get $ runGetTagHandler tagId
+      , R.delete $ runDeleteTagHandler tagId
+      , R.patch $ runPatchTagHandler tagId
+      ]
     DraftsURI ->
       [R.get $ runGetDraftsHandler Nothing, R.post runCreateDraftHandler]
     AuthorDraftsURI authorId -> [R.get $ runGetDraftsHandler (Just authorId)]
@@ -485,6 +490,23 @@ runDeleteTagHandler tagId Deps {..} SessionDeps {..} =
       , hPresent = presentDeletedTag
       }
     tagId
+
+runPatchTagHandler :: TagId -> Deps -> SessionDeps -> Web.Application
+runPatchTagHandler tagId' Deps {..} SessionDeps {..} =
+  HPatchTag.run
+    HPatchTag.Handle
+      { hUpdateTag =
+          IUpdateTag.run $
+          IUpdateTag.Handle
+            { hFindTagNamed =
+                fmap (fmap tagId) . Database.findTagNamed sdDatabaseHandle
+            , hSetTagName = Database.setTagName sdDatabaseHandle
+            }
+      , hAuthenticate = authenticate sdAuthenticationHandle
+      , hPresent = presentUpdatedTag dAppURIConfig dRepresentationBuilderHandle
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      }
+    tagId'
 
 runGetTagsHandler :: Deps -> SessionDeps -> Web.Application
 runGetTagsHandler Deps {..} SessionDeps {..} =

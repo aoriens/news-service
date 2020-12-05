@@ -63,6 +63,7 @@ library
     , Core.Interactor.GetUsers
     , Core.Interactor.PublishDraft
     , Core.Interactor.UpdateAuthor
+    , Core.Interactor.UpdateTag
     , Core.News
     , Core.Pagination
     , Core.Pagination.Impl
@@ -135,6 +136,7 @@ library
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
     , Web.Handler.PatchAuthor
+    , Web.Handler.PatchTag
     , Web.Handler.PublishDraft
     , Web.JSONEncoder
     , Web.Presenter
@@ -246,6 +248,7 @@ test-suite news-service-test
     , Core.Interactor.GetUsersSpec
     , Core.Interactor.PublishDraftSpec
     , Core.Interactor.UpdateAuthorSpec
+    , Core.Interactor.UpdateTagSpec
     , Core.Pagination.ImplSpec
     , Core.Pagination.Test
     , Core.Stubs
