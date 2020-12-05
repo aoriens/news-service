@@ -14,7 +14,7 @@ import qualified Data.Text as T
 data Handle m =
   Handle
     { hCreateTagNamed :: T.Text -> m Tag
-    , hFindTagByName :: T.Text -> m (Maybe Tag)
+    , hFindTagNamed :: T.Text -> m (Maybe Tag)
     , hAuthorizationHandle :: AuthorizationHandle
     }
 
@@ -28,7 +28,7 @@ run Handle {..} authUser newTagName = do
   requirePermission hAuthorizationHandle AdminPermission authUser "create a tag"
   when (T.null newTagName) $
     throwM (QueryException "The tag name must not be empty")
-  optExistingTag <- hFindTagByName newTagName
+  optExistingTag <- hFindTagNamed newTagName
   case optExistingTag of
     Just tag -> pure $ ExistingTagFound tag
     Nothing -> TagCreated <$> hCreateTagNamed newTagName

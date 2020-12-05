@@ -23,33 +23,33 @@ spec
           h =
             stubHandle
               { hCreateTagNamed = \_ -> onSuccess >> pure stubTag
-              , hFindTagByName = \_ -> onSuccess >> pure Nothing
+              , hFindTagNamed = \_ -> onSuccess >> pure Nothing
               , hAuthorizationHandle = authorizationHandle
               }
       void $ run h authUser name
-    it "should pass the name to hFindTagByName in a normal case" $ do
+    it "should pass the name to hFindTagNamed in a normal case" $ do
       let expectedName = "a"
-      shouldPassValue expectedName "hFindTagByName" $ \onSuccess -> do
+      shouldPassValue expectedName "hFindTagNamed" $ \onSuccess -> do
         let h =
               stubHandle
-                {hFindTagByName = \name -> onSuccess name >> pure Nothing}
+                {hFindTagNamed = \name -> onSuccess name >> pure Nothing}
         void $ run h someAuthUser expectedName
     it
-      "should pass the name to hCreateTagNamed if hFindTagByName returned Nothing" $ do
+      "should pass the name to hCreateTagNamed if hFindTagNamed returned Nothing" $ do
       let expectedName = "a"
-      shouldPassValue expectedName "hFindTagByName" $ \onSuccess -> do
+      shouldPassValue expectedName "hFindTagNamed" $ \onSuccess -> do
         let h =
               stubHandle
-                { hFindTagByName = \_ -> pure Nothing
+                { hFindTagNamed = \_ -> pure Nothing
                 , hCreateTagNamed = \name -> onSuccess name >> pure stubTag
                 }
         void $ run h someAuthUser expectedName
-    it "should not invoke hCreateTagNamed if hFindTagByName returned Just _" $ do
+    it "should not invoke hCreateTagNamed if hFindTagNamed returned Just _" $ do
       createTagIsInvoked <- newIORef False
       let name = "a"
           h =
             stubHandle
-              { hFindTagByName = \_ -> pure $ Just stubTag
+              { hFindTagNamed = \_ -> pure $ Just stubTag
               , hCreateTagNamed =
                   \_ -> writeIORef createTagIsInvoked True >> pure stubTag
               }
@@ -60,7 +60,7 @@ spec
       let name = "a"
           tag = stubTag {tagName = "pascal"}
           expectedResult = ExistingTagFound tag
-          h = stubHandle {hFindTagByName = \_ -> pure $ Just tag}
+          h = stubHandle {hFindTagNamed = \_ -> pure $ Just tag}
       r <- run h someAuthUser name
       r `shouldBe` expectedResult
     it
@@ -70,7 +70,7 @@ spec
           expectedResult = TagCreated tag
           h =
             stubHandle
-              { hFindTagByName = \_ -> pure Nothing
+              { hFindTagNamed = \_ -> pure Nothing
               , hCreateTagNamed = \_ -> pure tag
               }
       r <- run h someAuthUser name
@@ -87,6 +87,6 @@ stubHandle :: Handle IO
 stubHandle =
   Handle
     { hCreateTagNamed = \_ -> pure stubTag
-    , hFindTagByName = \_ -> pure Nothing
+    , hFindTagNamed = \_ -> pure Nothing
     , hAuthorizationHandle = noOpAuthorizationHandle
     }

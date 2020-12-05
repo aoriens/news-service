@@ -26,7 +26,7 @@ module Database
   , deleteNewsVersion
   , deleteDraftsOfAuthor
   -- * Tags
-  , findTagByName
+  , findTagNamed
   , findTagById
   , getTags
   , deleteTag
@@ -174,8 +174,8 @@ deleteDraftsOfAuthor h = DB.runTransactionRW h . DNews.deleteDraftsOfAuthor
 createNews :: DB.Handle -> NewsVersionId -> Day -> IO News
 createNews h vId day = DB.runTransactionRW h $ DNews.createNews vId day
 
-findTagByName :: DB.Handle -> Text -> IO (Maybe Tag)
-findTagByName h = runTransactionRO h . DTags.findTagByName
+findTagNamed :: DB.Handle -> Text -> IO (Maybe Tag)
+findTagNamed h = runTransactionRO h . DTags.findTagNamed
 
 findTagById :: DB.Handle -> TagId -> IO (Maybe Tag)
 findTagById h = runTransactionRO h . DTags.findTagById

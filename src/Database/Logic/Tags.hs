@@ -2,7 +2,7 @@
 {-# LANGUAGE ApplicativeDo #-}
 
 module Database.Logic.Tags
-  ( findTagByName
+  ( findTagNamed
   , findTagById
   , createTagNamed
   , getTags
@@ -23,8 +23,8 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as H
 
-findTagByName :: T.Text -> Transaction (Maybe Tag)
-findTagByName =
+findTagNamed :: T.Text -> Transaction (Maybe Tag)
+findTagNamed =
   runStatement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from tags where name = $1"

@@ -125,7 +125,6 @@ spec
         , StubDraft Nothing
         ]
 
-
 data Storage =
   Storage
     { storageCategories :: CategoryMap
@@ -206,7 +205,7 @@ findCategory categoryId cats =
     Category
       { categoryId
       , categoryName = ""
-      , categoryParent = (`findCategory` cats) =<< optParentId 
+      , categoryParent = (`findCategory` cats) =<< optParentId
       }
 
 findDescendants :: CategoryId -> CategoryMap -> [CategoryId]

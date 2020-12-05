@@ -458,7 +458,7 @@ runCreateTagHandler Deps {..} SessionDeps {..} =
           ICreateTag.Handle
             { hAuthorizationHandle = Core.Authorization.Impl.new
             , hCreateTagNamed = Database.createTagNamed sdDatabaseHandle
-            , hFindTagByName = Database.findTagByName sdDatabaseHandle
+            , hFindTagNamed = Database.findTagNamed sdDatabaseHandle
             }
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent = presentCreatedTag dAppURIConfig dRepresentationBuilderHandle
