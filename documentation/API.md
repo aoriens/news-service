@@ -232,7 +232,9 @@ Returns a list of [Tag](#Tag) entities.
 ### `POST /tags`
 
 Creates a tag. Accepts [CreateTag](#CreateTag) entity in the request body and
-returns either a created or existing [Tag](#Tag) entity.
+returns either a created or existing [Tag](#Tag) entity. Each tag must have a
+unique, non-empty name. If a tag with such a name exists, no new tag will be
+created and the existing tag is returned.
 
 ### `GET /tags/{tag_id}`
 
