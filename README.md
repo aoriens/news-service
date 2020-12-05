@@ -60,3 +60,6 @@ quickly.
 token possible, which helps to run requests which require authentication. The
 token corresponds to the pattern of `<USERID>,`, e.g. `1,`, if you populate the
 database with the test data right after creating it.
+
+See also [code and architecture](documentation/code-and-architecture.md) to get
+to know more about the code.
