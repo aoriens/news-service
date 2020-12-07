@@ -63,7 +63,7 @@ stubDay = ModifiedJulianDay 0
 stubCategory :: Category
 stubCategory =
   Category
-    {categoryId = CategoryId 0, categoryName = "", categoryParent = Nothing}
+    {categoryId = CategoryId 0, categoryName = " ", categoryParent = Nothing}
 
 stubComment :: Comment
 stubComment =

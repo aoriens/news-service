@@ -63,6 +63,7 @@ library
     , Core.Interactor.GetUsers
     , Core.Interactor.PublishDraft
     , Core.Interactor.UpdateAuthor
+    , Core.Interactor.UpdateCategory
     , Core.Interactor.UpdateTag
     , Core.News
     , Core.Pagination
@@ -248,6 +249,7 @@ test-suite news-service-test
     , Core.Interactor.GetUsersSpec
     , Core.Interactor.PublishDraftSpec
     , Core.Interactor.UpdateAuthorSpec
+    , Core.Interactor.UpdateCategorySpec
     , Core.Interactor.UpdateTagSpec
     , Core.Pagination.ImplSpec
     , Core.Pagination.Test
