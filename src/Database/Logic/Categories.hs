@@ -250,7 +250,7 @@ getCategoryIdByParentAndName =
     [TH.maybeStatement|
       select category_id :: integer
       from categories
-      where parent_id = $1 :: integer? and name = $2 :: varchar
+      where parent_id is not distinct from $1 :: integer? and name = $2 :: varchar
       limit 1
     |]
 
