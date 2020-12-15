@@ -23,6 +23,11 @@ spec
       (commands, h) <- handleWithSomeResult
       run h someNonAdminUser Nothing names `shouldThrow` isNoPermissionException
       readIORef commands `shouldReturn` []
+    it "should throw NoPermissionException if the user is not an admin even if a name is empty" $ do
+      let names = "" :| []
+      (commands, h) <- handleWithSomeResult
+      run h someNonAdminUser Nothing names `shouldThrow` isNoPermissionException
+      readIORef commands `shouldReturn` []
     it "should create category if all names are non-empty and the user is admin" $ do
       let names = "1" :| ["2"]
           parentId = Just $ CategoryId 1

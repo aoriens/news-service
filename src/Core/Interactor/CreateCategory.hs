@@ -35,11 +35,10 @@ run ::
   -> Maybe CategoryId
   -> NonEmpty T.Text
   -> m (Either Failure Category)
-run Handle {..} authUser parentCatId catNames
-  | any T.null catNames =
-    pure . Left $ IncorrectParameter "Category name must not be empty"
-  | otherwise = do
-    authorize "create a category" $ authUserShouldBeAdmin authUser
-    first toFailure <$> hCreateCategory parentCatId catNames
+run Handle {..} authUser parentCatId catNames = do
+  authorize "create a category" $ authUserShouldBeAdmin authUser
+  if any T.null catNames
+    then pure . Left $ IncorrectParameter "Category name must not be empty"
+    else first toFailure <$> hCreateCategory parentCatId catNames
   where
     toFailure CCFUnknownParentCategoryId = UnknownParentCategoryId
