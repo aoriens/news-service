@@ -6,16 +6,15 @@ module Core.Interactor.CreateCategory
   ) where
 
 import Control.Monad.Catch
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.Category
 import Data.Bifunctor
 import Data.List.NonEmpty
 import qualified Data.Text as T
 
-data Handle m =
+newtype Handle m =
   Handle
     { hCreateCategory :: Maybe CategoryId -> NonEmpty T.Text -> m (Either CreateCategoryFailure Category)
-    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 data CreateCategoryFailure =
@@ -40,11 +39,7 @@ run Handle {..} authUser parentCatId catNames
   | any T.null catNames =
     pure . Left $ IncorrectParameter "Category name must not be empty"
   | otherwise = do
-    requirePermission
-      hAuthorizationHandle
-      AdminPermission
-      authUser
-      "create category"
+    authorize "create a category" $ authUserShouldBeAdmin authUser
     first toFailure <$> hCreateCategory parentCatId catNames
   where
     toFailure CCFUnknownParentCategoryId = UnknownParentCategoryId

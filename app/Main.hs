@@ -320,9 +320,7 @@ runCreateCategoryHandler Deps {..} SessionDeps {..} =
     HCreateCategory.Handle
       { hCreateCategoryHandle =
           ICreateCategory.Handle
-            { hAuthorizationHandle = Core.Authorization.Impl.new
-            , hCreateCategory = Database.createCategory sdDatabaseHandle
-            }
+            {hCreateCategory = Database.createCategory sdDatabaseHandle}
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedCategory dAppURIConfig dRepresentationBuilderHandle

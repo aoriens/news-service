@@ -2,15 +2,15 @@ module Core.Interactor.CreateCategorySpec
   ( spec
   ) where
 
-import Control.Monad
 import Core.Authentication.Test
-import Core.Authorization
-import Core.Authorization.Test
 import Core.Category
+import Core.Exception
 import Core.Interactor.CreateCategory
 import Core.Stubs
+import Data.IORef
+import Data.IORef.Util
 import Data.List.NonEmpty
-import Test.AsyncExpectation
+import qualified Data.Text as T
 import Test.Hspec
 
 spec :: Spec
@@ -18,68 +18,59 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
-      let parentId = Just $ CategoryId 0
-          names = "a" :| ["b"]
-          h =
-            stubHandle
-              { hCreateCategory = \_ _ -> onSuccess >> pure (Right stubCategory)
-              , hAuthorizationHandle = authorizationHandle
-              }
-      void $ run h authUser parentId names
-    it "should pass names and parentId to the gateway in a normal case" $ do
-      let expectedParentId = Just $ CategoryId 2
-          expectedNames = "a" :| []
-      shouldPassValue (expectedParentId, expectedNames) "hCreateCategory" $ \onSuccess -> do
-        let h =
-              stubHandle
-                { hCreateCategory =
-                    \parentId names -> do
-                      onSuccess (parentId, names)
-                      pure $ Right stubCategory
-                }
-        void $ run h someAuthUser expectedParentId expectedNames
-    it
-      "should return a category returned from the gateway if created successfully" $ do
-      let parentId = Just $ CategoryId 0
-          names = "a" :| ["b"]
-          expectedResult =
-            Right
-              stubCategory {categoryName = "pascal", categoryId = CategoryId 6}
-          h = stubHandle {hCreateCategory = \_ _ -> pure expectedResult}
-      r <- run h someAuthUser parentId names
-      r `shouldBe` expectedResult
+    it "should throw NoPermissionException if the user is not an admin" $ do
+      let names = "name" :| []
+      (commands, h) <- handleWithSomeResult
+      run h someNonAdminUser Nothing names `shouldThrow` isNoPermissionException
+      readIORef commands `shouldReturn` []
+    it "should create category if all names are non-empty and the user is admin" $ do
+      let names = "1" :| ["2"]
+          parentId = Just $ CategoryId 1
+          expectedCat = stubCategory {categoryName = "some name"}
+      (commands, h) <- handleWithResult $ Right expectedCat
+      r <- run h someAdminUser parentId names
+      r `shouldBe` Right expectedCat
+      readIORef commands `shouldReturn` [(parentId, names)]
     it
       "should return UnknownParentCategoryId if the gateway returns CCFUnknownParentCategoryId" $ do
       let parentId = Just $ CategoryId 0
           names = "a" :| ["b"]
-          h =
-            stubHandle
-              {hCreateCategory = \_ _ -> pure $ Left CCFUnknownParentCategoryId}
-      r <- run h someAuthUser parentId names
+      (_, h) <- handleWithResult $ Left CCFUnknownParentCategoryId
+      r <- run h someAdminUser parentId names
       r `shouldBe` Left UnknownParentCategoryId
     it
       "should return IncorrectParameter if the least significant category name is empty" $ do
       let parentId = Nothing
           names = "" :| []
-          h = stubHandle {hCreateCategory = \_ _ -> pure $ Right stubCategory}
-      r <- run h someAuthUser parentId names
+      (commands, h) <- handleWithSomeResult
+      r <- run h someAdminUser parentId names
       r `shouldSatisfy` \case
         Left (IncorrectParameter _) -> True
         _ -> False
+      readIORef commands `shouldReturn` []
     it
       "should return IncorrectParameter if a non-least significant category name is empty" $ do
       let parentId = Nothing
           names = "nonempty" :| [""]
-          h = stubHandle {hCreateCategory = \_ _ -> pure $ Right stubCategory}
-      r <- run h someAuthUser parentId names
+      (commands, h) <- handleWithSomeResult
+      r <- run h someAdminUser parentId names
       r `shouldSatisfy` \case
         Left (IncorrectParameter _) -> True
         _ -> False
+      readIORef commands `shouldReturn` []
 
-stubHandle :: Handle IO
-stubHandle =
-  Handle
-    { hCreateCategory = undefined
-    , hAuthorizationHandle = noOpAuthorizationHandle
-    }
+type StorageCommandLog = [(Maybe CategoryId, NonEmpty T.Text)]
+
+handleWithResult ::
+     Either CreateCategoryFailure Category
+  -> IO (IORef StorageCommandLog, Handle IO)
+handleWithResult result = do
+  logRef <- newIORef []
+  let handle =
+        Handle $ \optParentId names ->
+          updateIORef' logRef $ \commands ->
+            (commands ++ [(optParentId, names)], result)
+  pure (logRef, handle)
+
+handleWithSomeResult :: IO (IORef StorageCommandLog, Handle IO)
+handleWithSomeResult = handleWithResult $ Right stubCategory
