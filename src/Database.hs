@@ -10,8 +10,13 @@ module Database
   , createCategory
   , getCategory
   , getCategories
+  , getCategoryIdBySiblingAndName
+  , getCategoryIdByParentAndName
+  , categoryIsDescendantOf
+  , getCategoryName
   , deleteCategoryAndDescendants
   , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
+  , updateCategory
   -- * Images
   , getImage
   -- * News
@@ -60,6 +65,7 @@ import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
+import qualified Core.Interactor.UpdateCategory as IUpdateCategory
 import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
 import Core.Pagination
@@ -131,6 +137,29 @@ setCategoryIdToNewsVersionsInCategoryAndDescendantCategories h newCatId oldCatId
   DCategories.setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
     newCatId
     oldCatId
+
+updateCategory ::
+     DB.Handle
+  -> IUpdateCategory.Request
+  -> IO (Either IUpdateCategory.UpdateCategoryFailure Category)
+updateCategory h = runTransactionRW h . DCategories.updateCategory
+
+getCategoryIdBySiblingAndName ::
+     DB.Handle -> CategoryId -> T.Text -> IO (Maybe CategoryId)
+getCategoryIdBySiblingAndName h catId name =
+  runTransactionRO h $ DCategories.getCategoryIdBySiblingAndName catId name
+
+getCategoryIdByParentAndName ::
+     DB.Handle -> Maybe CategoryId -> T.Text -> IO (Maybe CategoryId)
+getCategoryIdByParentAndName h catId name =
+  runTransactionRO h $ DCategories.getCategoryIdByParentAndName catId name
+
+categoryIsDescendantOf :: DB.Handle -> CategoryId -> CategoryId -> IO Bool
+categoryIsDescendantOf h desc anc =
+  runTransactionRO h $ DCategories.categoryIsDescendantOf desc anc
+
+getCategoryName :: DB.Handle -> CategoryId -> IO (Maybe T.Text)
+getCategoryName h = runTransactionRO h . DCategories.getCategoryName
 
 getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
 getImage h = DB.runTransactionRO h . DImages.selectImage

@@ -46,6 +46,7 @@ import qualified Core.Interactor.GetUser as IGetUser
 import qualified Core.Interactor.GetUsers as IGetUsers
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
+import qualified Core.Interactor.UpdateCategory as IUpdateCategory
 import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
 import Core.Pagination
@@ -99,6 +100,7 @@ import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PatchAuthor as HPatchAuthor
 import qualified Web.Handler.PatchTag as HPatchTag
 import qualified Web.Handler.PublishDraft as HPublishDraft
+import qualified Web.Handler.UpdateCategory as HUpdateCategory
 import qualified Web.JSONEncoder as JSONEncoder
 import Web.Presenter
 import Web.RepresentationBuilder
@@ -214,6 +216,7 @@ router deps =
     CategoryURI categoryId ->
       [ R.get $ runGetCategoryHandler categoryId
       , R.delete $ runDeleteCategoryHandler categoryId
+      , R.patch $ runUpdateCategoryHandler categoryId
       ]
     NewsListURI -> [R.get runGetNewsListHandler]
     NewsItemURI newsId -> [R.get $ runGetNewsHandler newsId]
@@ -363,6 +366,29 @@ runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
                 Database.deleteCategoryAndDescendants sdDatabaseHandle
             }
       , hPresent = presentDeletedCategory
+      , hAuthenticationHandle = sdAuthenticationHandle
+      }
+    categoryId
+
+runUpdateCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
+runUpdateCategoryHandler categoryId Deps {..} SessionDeps {..} =
+  HUpdateCategory.run
+    HUpdateCategory.Handle
+      { hUpdateCategory =
+          IUpdateCategory.run
+            IUpdateCategory.Handle
+              { hUpdateCategory = Database.updateCategory sdDatabaseHandle
+              , hGetCategoryIdBySiblingAndName =
+                  Database.getCategoryIdBySiblingAndName sdDatabaseHandle
+              , hGetCategoryIdByParentAndName =
+                  Database.getCategoryIdByParentAndName sdDatabaseHandle
+              , hCategoryIsDescendantOf =
+                  Database.categoryIsDescendantOf sdDatabaseHandle
+              , hGetCategoryName = Database.getCategoryName sdDatabaseHandle
+              }
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      , hPresent =
+          presentUpdatedCategory dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
     categoryId

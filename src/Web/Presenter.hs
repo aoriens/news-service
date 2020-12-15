@@ -25,6 +25,7 @@ module Web.Presenter
   , presentCategory
   , presentCategories
   , presentDeletedCategory
+  , presentUpdatedCategory
   -- * Tags
   , presentCreatedTag
   , presentTag
@@ -130,6 +131,13 @@ presentCreatedCategory ::
      AppURIConfig -> RepBuilderHandle -> Category -> Response
 presentCreatedCategory uriConfig h category =
   resourceCreatedAndReturnedResponse uriConfig (categoryURI category) .
+  runRepBuilder h $
+  categoryRep category
+
+presentUpdatedCategory ::
+     AppURIConfig -> RepBuilderHandle -> Category -> Response
+presentUpdatedCategory uriConfig h category =
+  resourceModifiedAndReturnedResponse uriConfig (categoryURI category) .
   runRepBuilder h $
   categoryRep category
 

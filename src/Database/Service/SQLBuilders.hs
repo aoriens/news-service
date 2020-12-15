@@ -3,6 +3,8 @@ module Database.Service.SQLBuilders
   , substringLikePattern
   , any
   , bracket
+  , comma
+  , csv
   , or
   , and
   , between
@@ -50,6 +52,16 @@ or = binaryOperationIfNonEmpty "or"
 -- returned.
 and :: Sql.Builder -> Sql.Builder -> Sql.Builder
 and = binaryOperationIfNonEmpty "and"
+
+-- | Combines two SQL expressions with a comma, if both are non-empty,
+-- otherwise just uses the non-empty one.
+comma :: Sql.Builder -> Sql.Builder -> Sql.Builder
+comma = binaryOperationIfNonEmpty ","
+
+-- | Builds a comma-separated list of SQL expressions, skipping empty
+-- ones.
+csv :: [Sql.Builder] -> Sql.Builder
+csv = foldr comma mempty
 
 binaryOperationIfNonEmpty ::
      Sql.Builder -> Sql.Builder -> Sql.Builder -> Sql.Builder

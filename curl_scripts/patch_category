@@ -1,0 +1,58 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+usage() {
+    echo "Usage: $0 [-name NEW-NAME] [-parent { NEW-PARENT-ID | null }] CATEGORY-ID"
+}
+
+name_field=
+parent_field=
+cat_id=
+
+while test $# -ne 0
+do
+    arg=$1
+    shift
+    case "$arg" in
+        -name)
+            name_field="\"name\": \"$1\""
+            shift ;;
+        -parent)
+            parent_field="\"parent_id\": $1"
+            shift ;;
+        -*)
+            echo "Unknown option: $arg"
+            usage
+            die ;;
+        *)
+            cat_id=$arg
+            if test $# -ne 0
+            then
+                echo "Unneeded parameter: $1"
+                usage
+                die
+            fi
+    esac
+done
+
+if test -z "$cat_id"
+then
+    echo "Category ID is missing"
+    usage
+    die
+fi
+
+fields=$name_field
+test -n "$fields" -a -n "$parent_field" && fields=$fields", "
+fields=$fields$parent_field
+
+allow_token
+run_curl "$DOMAIN/categories/$cat_id$Q" \
+         -X PATCH  \
+         -H "Content-Type: application/json" \
+         --data-binary @- <<EOF
+{
+  $fields
+}
+EOF

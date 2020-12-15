@@ -139,6 +139,7 @@ library
     , Web.Handler.PatchAuthor
     , Web.Handler.PatchTag
     , Web.Handler.PublishDraft
+    , Web.Handler.UpdateCategory
     , Web.JSONEncoder
     , Web.Presenter
     , Web.QueryParameter

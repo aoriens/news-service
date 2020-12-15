@@ -9,6 +9,7 @@ module Database.Service.SQLBuilder
   , ifEmpty
   , mapNonEmpty
   , renderBuilder
+  , runBuilder
   , NativeSQLEncodable
   , nativeSQLEncoder
   ) where
@@ -22,6 +23,8 @@ import Data.String
 import qualified Data.Text as T
 import Data.Time
 import Data.Traversable
+import qualified Database.Service.Primitives as Database
+import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 
 type SQL = B.ByteString
@@ -86,6 +89,12 @@ renderBuilder Builder {..} = (B.intercalate " " segments, sqlEncoder)
     f n (SQLText text') = (n, text')
     f n SQLPlaceholder = (succ $! n, "$" <> B.pack (show n))
 
+runBuilder :: D.Result r -> Bool -> Builder -> Database.Transaction r
+runBuilder decoder prepare builder =
+  Database.Statement sql encoder decoder prepare `Database.runStatement` ()
+  where
+    (sql, encoder) = renderBuilder builder
+
 class NativeSQLEncodable a where
   nativeSQLNullabilityEncoder :: E.NullableOrNot E.Value a
 
@@ -98,10 +107,13 @@ instance NativeSQLEncodable Day where
 instance NativeSQLEncodable Int32 where
   nativeSQLNullabilityEncoder = E.nonNullable E.int4
 
+instance NativeSQLEncodable (Maybe Int32) where
+  nativeSQLNullabilityEncoder = E.nullable E.int4
+
 instance NativeSQLEncodable T.Text where
   nativeSQLNullabilityEncoder = E.nonNullable E.text
 
-instance (Foldable t, NativeSQLEncodable a) => NativeSQLEncodable (t a) where
+instance NativeSQLEncodable a => NativeSQLEncodable [a] where
   nativeSQLNullabilityEncoder =
     E.nonNullable . E.array . E.dimension foldl' $
     E.element nativeSQLNullabilityEncoder

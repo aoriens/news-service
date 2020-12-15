@@ -83,6 +83,12 @@ descendant subcategory will be moved to the parent category. If the category to
 be deleted is a root category, the drafts and the news will be made
 uncategorized.
 
+### `PATCH /categories/{category_id}`
+
+Modifies a category. Accepts an [UpdateCategory](#UpdateCategory) entity in the
+request body and returns the updated [Category](#Category). Requires the
+administrator privilege.
+
 ### `DELETE /comments/{comment_id}`
 
 Deletes the [Comment](#Comment) identified with `{comment_id}` and returns no
@@ -442,6 +448,17 @@ A user. Fields:
 An instruction to update an [Author](#Author). Fields:
 
 - `description` - the author's new description. A string, required.
+
+### UpdateCategory
+
+An instruction to update a [CategoryItem](#CategoryItem). Fields:
+
+- `name` - a new name of the category item. This is an optional string that must
+  not be null. The category name must be non-empty and unique among sibling
+  category items.
+- `parent_id` - an identifier of the new parent [CategoryItem](#CategoryItem).
+  This is an optional number. The null value means making the category a root
+  one. Changing the category parent must not create an ancestry loop.
 
 ### UpdateTag
 
