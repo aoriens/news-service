@@ -51,6 +51,8 @@ exceptionFromFailure =
       "Unknown parent category identifier"
     ICreateCategory.CategoryNameMustNotBeEmpty ->
       "Category name must not be empty"
+    ICreateCategory.CategoryNameMustBeUniqueAmongSiblings ->
+      "Category name must be unique among sibling categories"
 
 data InCategory =
   InCategory

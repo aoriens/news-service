@@ -9,12 +9,13 @@ import Control.Monad.Catch
 import Core.AuthorizationNG
 import Core.Category
 import Data.Bifunctor
-import Data.List.NonEmpty
+import Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as T
 
-newtype Handle m =
+data Handle m =
   Handle
     { hCreateCategory :: Maybe CategoryId -> NonEmpty T.Text -> m (Either CreateCategoryFailure Category)
+    , hCategoryIdWithParentAndNameExists :: Maybe CategoryId -> T.Text -> m Bool
     }
 
 data CreateCategoryFailure =
@@ -24,6 +25,7 @@ data CreateCategoryFailure =
 data Failure
   = UnknownParentCategoryId
   | CategoryNameMustNotBeEmpty
+  | CategoryNameMustBeUniqueAmongSiblings
   deriving (Show, Eq)
 
 run ::
@@ -37,6 +39,8 @@ run Handle {..} authUser parentCatId catNames = do
   authorize "create a category" $ authUserShouldBeAdmin authUser
   if any T.null catNames
     then pure $ Left CategoryNameMustNotBeEmpty
-    else first toFailure <$> hCreateCategory parentCatId catNames
+    else hCategoryIdWithParentAndNameExists parentCatId (NonEmpty.head catNames) >>= \case
+           False -> first toFailure <$> hCreateCategory parentCatId catNames
+           True -> pure $ Left CategoryNameMustBeUniqueAmongSiblings
   where
     toFailure CCFUnknownParentCategoryId = UnknownParentCategoryId

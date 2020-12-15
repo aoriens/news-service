@@ -321,7 +321,10 @@ runCreateCategoryHandler Deps {..} SessionDeps {..} =
       { hCreateCategory =
           ICreateCategory.run
             ICreateCategory.Handle
-              {hCreateCategory = Database.createCategory sdDatabaseHandle}
+              { hCreateCategory = Database.createCategory sdDatabaseHandle
+              , hCategoryIdWithParentAndNameExists =
+                  Database.categoryIdWithParentAndNameExists sdDatabaseHandle
+              }
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedCategory dAppURIConfig dRepresentationBuilderHandle

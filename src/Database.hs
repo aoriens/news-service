@@ -12,6 +12,7 @@ module Database
   , getCategories
   , getCategoryIdBySiblingAndName
   , getCategoryIdByParentAndName
+  , categoryIdWithParentAndNameExists
   , categoryIsDescendantOf
   , getCategoryName
   , deleteCategoryAndDescendants
@@ -73,6 +74,7 @@ import Core.Tag
 import Core.User
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty)
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -153,6 +155,11 @@ getCategoryIdByParentAndName ::
      DB.Handle -> Maybe CategoryId -> T.Text -> IO (Maybe CategoryId)
 getCategoryIdByParentAndName h catId name =
   runTransactionRO h $ DCategories.getCategoryIdByParentAndName catId name
+
+categoryIdWithParentAndNameExists ::
+     DB.Handle -> Maybe CategoryId -> T.Text -> IO Bool
+categoryIdWithParentAndNameExists h parentId name =
+  isJust <$> getCategoryIdByParentAndName h parentId name
 
 categoryIsDescendantOf :: DB.Handle -> CategoryId -> CategoryId -> IO Bool
 categoryIsDescendantOf h desc anc =
