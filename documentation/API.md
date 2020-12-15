@@ -443,7 +443,7 @@ An instruction to update an [Author](#Author). Fields:
 
 - `description` - the author's new description. A string, required.
 
-### UpdateAuthor
+### UpdateTag
 
 An instruction to update a [Tag](#Tag). Fields:
 
