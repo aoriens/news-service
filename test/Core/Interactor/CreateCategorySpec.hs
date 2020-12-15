@@ -23,7 +23,8 @@ spec
       (commands, h) <- handleWithSomeResult
       run h someNonAdminUser Nothing names `shouldThrow` isNoPermissionException
       readIORef commands `shouldReturn` []
-    it "should throw NoPermissionException if the user is not an admin even if a name is empty" $ do
+    it
+      "should throw NoPermissionException if the user is not an admin even if a name is empty" $ do
       let names = "" :| []
       (commands, h) <- handleWithSomeResult
       run h someNonAdminUser Nothing names `shouldThrow` isNoPermissionException
@@ -44,24 +45,20 @@ spec
       r <- run h someAdminUser parentId names
       r `shouldBe` Left UnknownParentCategoryId
     it
-      "should return IncorrectParameter if the least significant category name is empty" $ do
+      "should return CategoryNameMustNotBeEmpty if the least significant category name is empty" $ do
       let parentId = Nothing
           names = "" :| []
       (commands, h) <- handleWithSomeResult
       r <- run h someAdminUser parentId names
-      r `shouldSatisfy` \case
-        Left (IncorrectParameter _) -> True
-        _ -> False
+      r `shouldBe` Left CategoryNameMustNotBeEmpty
       readIORef commands `shouldReturn` []
     it
-      "should return IncorrectParameter if a non-least significant category name is empty" $ do
+      "should return CategoryNameMustNotBeEmpty if a non-least significant category name is empty" $ do
       let parentId = Nothing
           names = "nonempty" :| [""]
       (commands, h) <- handleWithSomeResult
       r <- run h someAdminUser parentId names
-      r `shouldSatisfy` \case
-        Left (IncorrectParameter _) -> True
-        _ -> False
+      r `shouldBe` Left CategoryNameMustNotBeEmpty
       readIORef commands `shouldReturn` []
 
 type StorageCommandLog = [(Maybe CategoryId, NonEmpty T.Text)]

@@ -23,10 +23,8 @@ data CreateCategoryFailure =
 
 data Failure
   = UnknownParentCategoryId
-  | IncorrectParameter Reason
+  | CategoryNameMustNotBeEmpty
   deriving (Show, Eq)
-
-type Reason = T.Text
 
 run ::
      MonadThrow m
@@ -38,7 +36,7 @@ run ::
 run Handle {..} authUser parentCatId catNames = do
   authorize "create a category" $ authUserShouldBeAdmin authUser
   if any T.null catNames
-    then pure . Left $ IncorrectParameter "Category name must not be empty"
+    then pure $ Left CategoryNameMustNotBeEmpty
     else first toFailure <$> hCreateCategory parentCatId catNames
   where
     toFailure CCFUnknownParentCategoryId = UnknownParentCategoryId

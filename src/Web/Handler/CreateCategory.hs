@@ -50,8 +50,8 @@ run Handle {..} request respond = do
     Right category -> respond $ hPresent category
     Left ICreateCategory.UnknownParentCategoryId ->
       throwIO $ IncorrectParameterException "Unknown parent category identifier"
-    Left (ICreateCategory.IncorrectParameter reason) ->
-      throwIO $ IncorrectParameterException reason
+    Left ICreateCategory.CategoryNameMustNotBeEmpty ->
+      throwIO $ IncorrectParameterException "Category name must not be empty"
 
 data InCategory =
   InCategory
