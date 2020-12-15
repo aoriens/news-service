@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 
 -- | Table data decoder, coupled with table column names. This can
@@ -7,6 +6,7 @@ module Database.Service.Columns
   ( Columns
   , TableName
   , column
+  , noTable
   , statementWithColumns
   , runStatementWithColumns
   ) where
@@ -30,19 +30,19 @@ import qualified Hasql.Statement as S
 -- using @ApplicativeDo@.
 data Columns a =
   Columns
-    { columnsNamesDList :: DL.DList QualifiedColumnName
+    { columnsNamesDList :: DL.DList FullColumnName
     , columnsRow :: D.Row a
     }
 
 newtype TableName =
-  TableName
-    { getTableName :: B.ByteString
-    }
-  deriving (IsString)
+  TableName (Maybe B.ByteString)
+
+instance IsString TableName where
+  fromString = TableName . Just . fromString
 
 type ColumnName = B.ByteString
 
-type QualifiedColumnName = (TableName, ColumnName)
+type FullColumnName = (TableName, ColumnName)
 
 type SQL = B.ByteString
 
@@ -57,14 +57,24 @@ instance Applicative Columns where
 column :: NativeSQLDecodable a => TableName -> ColumnName -> Columns a
 column table name = Columns (DL.singleton (table, name)) nativeSQLDecoder
 
-columnsNames :: Columns a -> [QualifiedColumnName]
+-- | A fake table name to mean an absent table. A column for this
+-- table will be rendered unqualified. Similar tasks are usually
+-- solved using 'Maybe', but using 'Just' would make 'column' usage
+-- less convenient and readable.
+noTable :: TableName
+noTable = TableName Nothing
+
+columnsNames :: Columns a -> [FullColumnName]
 columnsNames = DL.toList . columnsNamesDList
 
 renderColumns :: Columns a -> SQL
-renderColumns = B.intercalate ", " . map renderQualifiedName . columnsNames
+renderColumns = B.intercalate ", " . map renderFullColumnName . columnsNames
 
-renderQualifiedName :: QualifiedColumnName -> SQL
-renderQualifiedName (table, name) = getTableName table <> "." <> name
+renderFullColumnName :: FullColumnName -> SQL
+renderFullColumnName =
+  \case
+    (TableName (Just table), name) -> table <> "." <> name
+    (TableName Nothing, name) -> name
 
 -- Creates statement with 'Columns'. SQL strings may contain
 -- @$COLUMNS@ token that will be replaced with the comma-separated
