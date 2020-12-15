@@ -318,9 +318,10 @@ runCreateCategoryHandler :: Deps -> SessionDeps -> Web.Application
 runCreateCategoryHandler Deps {..} SessionDeps {..} =
   HCreateCategory.run
     HCreateCategory.Handle
-      { hCreateCategoryHandle =
-          ICreateCategory.Handle
-            {hCreateCategory = Database.createCategory sdDatabaseHandle}
+      { hCreateCategory =
+          ICreateCategory.run
+            ICreateCategory.Handle
+              {hCreateCategory = Database.createCategory sdDatabaseHandle}
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedCategory dAppURIConfig dRepresentationBuilderHandle

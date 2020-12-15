@@ -23,7 +23,7 @@ import Web.Exception
 
 data Handle =
   Handle
-    { hCreateCategoryHandle :: ICreateCategory.Handle IO
+    { hCreateCategory :: AuthenticatedUser -> Maybe CategoryId -> NonEmpty T.Text -> IO (Either ICreateCategory.Failure Category)
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
     , hPresent :: Category -> Response
@@ -35,23 +35,22 @@ run Handle {..} request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   InCategory {inNames, inParentCategoryItemId} <- hLoadJSONRequestBody request
-  names <-
-    maybe
-      (throwIO $ IncorrectParameterException "'names' array must not be empty")
-      pure $
-    nonEmpty inNames
-  r <-
-    ICreateCategory.run
-      hCreateCategoryHandle
-      authUser
-      (CategoryId <$> inParentCategoryItemId)
-      names
-  case r of
-    Right category -> respond $ hPresent category
-    Left ICreateCategory.UnknownParentCategoryId ->
-      throwIO $ IncorrectParameterException "Unknown parent category identifier"
-    Left ICreateCategory.CategoryNameMustNotBeEmpty ->
-      throwIO $ IncorrectParameterException "Category name must not be empty"
+  names <- getNames inNames
+  hCreateCategory authUser (CategoryId <$> inParentCategoryItemId) names >>=
+    either (throwIO . exceptionFromFailure) (respond . hPresent)
+
+getNames :: [T.Text] -> IO (NonEmpty T.Text)
+getNames = maybe (throwIO exception) pure . nonEmpty
+  where
+    exception = IncorrectParameterException "'names' array must not be empty"
+
+exceptionFromFailure :: ICreateCategory.Failure -> WebException
+exceptionFromFailure =
+  IncorrectParameterException . \case
+    ICreateCategory.UnknownParentCategoryId ->
+      "Unknown parent category identifier"
+    ICreateCategory.CategoryNameMustNotBeEmpty ->
+      "Category name must not be empty"
 
 data InCategory =
   InCategory
