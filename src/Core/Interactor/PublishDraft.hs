@@ -18,7 +18,6 @@ data Handle m =
     , hCreateNews :: NewsVersionId -> Day -> m News
     }
 
--- | Returns Nothing when no draft is found.
 run ::
      MonadThrow m
   => Handle m
@@ -28,9 +27,9 @@ run ::
 run Handle {..} authUser vId = do
   hGetDraftAuthor vId >>= \case
     Nothing -> pure $ Left UnknownDraftId
-    Just Deleted -> pure $ Left UnknownDraftId
-    Just (Existing authorId) -> do
-      authorize "publish a draft" $ authUserShouldBeAuthor authUser authorId
+    Just authorId -> do
+      authorize "publish a draft" $
+        authUser `authUserShouldBeDeletableAuthor` authorId
       day <- hGetCurrentDay
       Right <$> hCreateNews vId day
 

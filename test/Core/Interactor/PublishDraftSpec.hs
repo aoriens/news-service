@@ -32,13 +32,12 @@ spec
       r `shouldBe` Left UnknownDraftId
       readIORef db `shouldReturn` initialData
     it
-      "should return Left UnknownDraftId for an existing draft with the author deleted" $ do
+      "should throw NoPermissionException for an existing draft with the author deleted" $ do
       let draftId = NewsVersionId 1
           initialData = storageWithDrafts [draftWithIdAndDeletedAuthor draftId]
       db <- newIORef initialData
       let h = handleWith stubDay db
-      r <- run h someAdminUser draftId
-      r `shouldBe` Left UnknownDraftId
+      run h someAdminUser draftId `shouldThrow` isNoPermissionException
       readIORef db `shouldReturn` initialData
     it
       "should throw NoPermissionException if the user is not an author of an existing draft" $ do
