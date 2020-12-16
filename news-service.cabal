@@ -38,6 +38,7 @@ library
     , Core.Interactor.CreateCategory
     , Core.Interactor.CreateComment
     , Core.Interactor.CreateDraft
+    , Core.Interactor.CreateDraftFromNews
     , Core.Interactor.CreateTag
     , Core.Interactor.CreateUser
     , Core.Interactor.DeleteAuthor
@@ -231,6 +232,7 @@ test-suite news-service-test
     , Core.Interactor.CreateCategorySpec
     , Core.Interactor.CreateCommentSpec
     , Core.Interactor.CreateDraftSpec
+    , Core.Interactor.CreateDraftFromNewsSpec
     , Core.Interactor.CreateTagSpec
     , Core.Interactor.CreateUserSpec
     , Core.Interactor.DeleteAuthorSpec
