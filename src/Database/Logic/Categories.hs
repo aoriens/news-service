@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ApplicativeDo #-}
 
 module Database.Logic.Categories
   ( createCategory
@@ -23,17 +24,20 @@ import qualified Core.Interactor.CreateCategory as CreateCategory
 import qualified Core.Interactor.UpdateCategory as UpdateCategory
 import Core.Pagination
 import Data.Foldable
-import Data.Int
+import Data.Functor.Contravariant
+import qualified Data.HashMap.Strict as Map
 import Data.List
 import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.Map.Lazy as Map
 import Data.Maybe
 import Data.Profunctor
 import qualified Data.Text as T
+import Database.Logic.Pagination
+import Database.Service.Columns
 import Database.Service.Primitives
 import Database.Service.SQLBuilder as Sql
 import Database.Service.SQLBuilders as Sql
 import qualified Hasql.Decoders as D
+import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
 
 createCategory ::
@@ -76,70 +80,87 @@ insertCategorySt =
 
 selectCategory :: CategoryId -> Transaction (Maybe Category)
 selectCategory =
-  runStatement $
-  dimap
-    getCategoryId
-    foldToCategory
-    [TH.vectorStatement|
-      with recursive cats as (
-        select *
-        from categories
-        where category_id = $1 :: integer
-
-        union
-
-        select categories.*
-        from categories join cats
-             on categories.category_id = cats.parent_id
-      )
-      select category_id :: integer, name :: varchar
-      from cats
-    |]
+  fmap (listToMaybe . categoriesFromRows . toList) . runStatement statement
   where
-    foldToCategory = foldr f Nothing
-    f (catId, categoryName) categoryParent =
-      Just
-        Category {categoryId = CategoryId catId, categoryName, categoryParent}
+    statement =
+      statementWithColumns sql encoder categoryRowColumns D.rowVector True
+    sql =
+      [TH.uncheckedSql|
+        with recursive cats as (
+          select true as is_final, *
+          from categories
+          where category_id = $1
+
+          union
+
+          select false as is_final, categories.*
+          from categories join cats
+               on categories.category_id = cats.parent_id
+        )
+        select $COLUMNS
+        from cats
+      |]
+    encoder = getCategoryId >$< E.param (E.nonNullable E.int4)
 
 selectCategories :: PageSpec -> Transaction [Category]
-selectCategories =
-  runStatement $
-  dimap
-    (\PageSpec {..} -> (getPageLimit pageLimit, getPageOffset pageOffset))
-    (categoriesFromRows . toList)
-    [TH.vectorStatement|
-      with recursive cats as (
-        select *
-        from (
-          select true as isFinal, *
-          from categories
-          limit $1 :: integer offset $2 :: integer
-        ) as final_cats
+selectCategories = fmap (categoriesFromRows . toList) . runStatement statement
+  where
+    statement =
+      statementWithColumns sql encoder categoryRowColumns D.rowVector True
+    sql =
+      [TH.uncheckedSql|
+        with recursive cats as (
+          select *
+          from (
+            select true as is_final, *
+            from categories
+            limit $1 offset $2
+          ) as final_rows
 
-        union
+          union
 
-        select false as isFinal, categories.*
-        from categories join cats
-             on categories.category_id = cats.parent_id
-      )
-      select isFinal :: bool, category_id :: integer, parent_id :: integer?, name :: varchar
-      from cats
-    |]
+          select false as is_final, categories.*
+          from categories join cats
+               on categories.category_id = cats.parent_id
+        )
+        select $COLUMNS
+        from cats
+      |]
+    encoder = pageToLimitOffsetEncoder
 
-categoriesFromRows :: [(Bool, Int32, Maybe Int32, T.Text)] -> [Category]
+data CategoryRow =
+  CategoryRow
+    { rowId :: CategoryId
+    , rowParentId :: Maybe CategoryId
+    , rowName :: T.Text
+    , rowIsFinal :: Bool
+    -- ^ Whether the row corresponds to the final, requested category,
+    -- as opposed to an intermediate ancestor category. This is a fake
+    -- column, constructed in a request.
+    }
+
+categoryRowColumns :: Columns CategoryRow
+categoryRowColumns = do
+  rowId <- CategoryId <$> column noTable "category_id"
+  rowParentId <- fmap CategoryId <$> column noTable "parent_id"
+  rowName <- column noTable "name"
+  rowIsFinal <- column noTable "is_final"
+  pure CategoryRow {rowId, rowParentId, rowName, rowIsFinal}
+
+categoriesFromRows :: [CategoryRow] -> [Category]
 categoriesFromRows rows = map toCategory finalRows
   where
-    (finalRows, ancestorRows) = partition (\(isFinal, _, _, _) -> isFinal) rows
-    toCategory (_, catId, optParentId, categoryName) =
+    (finalRows, ancestorRows) = partition rowIsFinal rows
+    toCategory CategoryRow {..} =
       Category
-        { categoryName
-        , categoryId = CategoryId catId
-        , categoryParent = (`Map.lookup` ancestorsMap) =<< optParentId
+        { categoryName = rowName
+        , categoryId = rowId
+        , categoryParent = (`Map.lookup` ancestorsMap) =<< rowParentId
         }
     ancestorsMap = foldl' insertToMap Map.empty ancestorRows
     insertToMap amap row =
       let category = toCategory row
-       in Map.insert (getCategoryId $ categoryId category) category amap
+       in Map.insert (categoryId category) category amap
 
 setCategoryIdToNewsVersionsInCategoryAndDescendantCategories ::
      Maybe CategoryId -> CategoryId -> Transaction ()
