@@ -2,6 +2,7 @@ module Core.AuthorizationNG
   ( authorize
   , authUserShouldBeAdmin
   , authUserShouldBeAuthor
+  , authUserShouldBeDeletableAuthor
   , authUserShouldBeAdminOrSpecificUser
   , module Core.Authentication
   ) where
@@ -10,6 +11,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Core.Authentication
 import Core.Author
+import Core.Deletable
 import Core.Exception
 import Core.Permission
 import Core.User
@@ -27,13 +29,19 @@ authorize actionDescription (isAuthorized, perm) =
   unless isAuthorized $ throwM (NoPermissionException perm actionDescription)
 
 authUserShouldBeAuthor :: AuthenticatedUser -> AuthorId -> PermissionCheck
-authUserShouldBeAuthor user requiredAuthorId =
+authUserShouldBeAuthor user = authUserShouldBeDeletableAuthor user . Existing
+
+authUserShouldBeDeletableAuthor ::
+     AuthenticatedUser -> Deletable AuthorId -> PermissionCheck
+authUserShouldBeDeletableAuthor user requiredAuthorId =
   (r, AuthorshipPermission requiredAuthorId)
   where
     r =
-      case user of
-        IdentifiedUser _ _ authorIds -> requiredAuthorId `elem` authorIds
-        AnonymousUser -> False
+      case (requiredAuthorId, user) of
+        (Existing authorId, IdentifiedUser _ _ authorIds) ->
+          authorId `elem` authorIds
+        (Deleted, _) -> False
+        (_, AnonymousUser) -> False
 
 authUserShouldBeAdmin :: AuthenticatedUser -> PermissionCheck
 authUserShouldBeAdmin user = (r, AdminPermission)

@@ -5,10 +5,11 @@ module Core.Permission
   ) where
 
 import Core.Author
+import Core.Deletable
 import Core.User
 
 data Permission
   = AdminPermission
-  | AuthorshipPermission AuthorId
+  | AuthorshipPermission (Deletable AuthorId)
   | AdminOrSpecificUserPermission UserId
   deriving (Eq, Show)

@@ -9,6 +9,7 @@ import Core.Authentication.Test
 import Core.Author
 import Core.Authorization
 import Core.Authorization.Test
+import Core.Deletable
 import Core.Exception
 import Core.Interactor.GetDrafts
 import Core.News
@@ -133,7 +134,7 @@ spec =
       r `shouldBe` expectedDrafts
     describe "authorization if a user is passed" $ do
       let passedAuthorId = AuthorId 1
-          expectedPermission = AuthorshipPermission passedAuthorId
+          expectedPermission = AuthorshipPermission $ Existing passedAuthorId
       itShouldAuthorizeBeforeOperation expectedPermission $ \authUser hAuthorizationHandle onSuccess -> do
         let h =
               defaultHandle

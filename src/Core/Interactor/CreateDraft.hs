@@ -12,6 +12,7 @@ import Control.Monad.Catch
 import Core.Author
 import Core.Authorization
 import Core.Category
+import Core.Deletable
 import Core.EntityId
 import Core.Exception
 import Core.Image
@@ -40,7 +41,7 @@ run h@Handle {..} authUser request = do
   authorId' <- inferAuthorIdFromRequestOrUser h authUser request
   requirePermission
     hAuthorizationHandle
-    (AuthorshipPermission authorId')
+    (AuthorshipPermission $ Existing authorId')
     authUser
     actionName
   rejectRequestIfInvalid h request

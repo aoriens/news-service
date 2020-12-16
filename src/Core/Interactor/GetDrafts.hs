@@ -6,6 +6,7 @@ module Core.Interactor.GetDrafts
 import Control.Monad.Catch
 import Core.Author
 import Core.Authorization
+import Core.Deletable
 import Core.Exception
 import Core.News
 import Core.Pagination
@@ -35,7 +36,7 @@ run Handle {..} authUser optAuthorId pageQuery = do
     Just authorId -> do
       requirePermission
         hAuthorizationHandle
-        (AuthorshipPermission authorId)
+        (AuthorshipPermission $ Existing authorId)
         authUser
         "get drafts"
       hGetDraftsOfAuthor authorId pageSpec

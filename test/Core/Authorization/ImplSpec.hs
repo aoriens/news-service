@@ -5,6 +5,7 @@ module Core.Authorization.ImplSpec
 import Core.Author
 import Core.Authorization
 import qualified Core.Authorization.Impl as Impl
+import Core.Deletable
 import Core.User
 import Test.Hspec
 
@@ -30,13 +31,13 @@ spec =
     it "should return False for AuthorshipPermission if the user has no authors" $ do
       let h = Impl.new
           user = IdentifiedUser (UserId 1) False []
-          perm = AuthorshipPermission $ AuthorId 1
+          perm = AuthorshipPermission . Existing $ AuthorId 1
           r = hHasPermission h perm user
       r `shouldBe` False
     it
       "should return False for AuthorshipPermission if the user does not have the required author" $ do
       let h = Impl.new
-          requiredAuthorId = AuthorId 1
+          requiredAuthorId = Existing $ AuthorId 1
           otherAuthorId = AuthorId 2
           user = IdentifiedUser (UserId 1) False [otherAuthorId]
           perm = AuthorshipPermission requiredAuthorId
@@ -45,7 +46,7 @@ spec =
     it "should return False for AuthorshipPermission if the user is anonymous" $ do
       let h = Impl.new
           user = AnonymousUser
-          perm = AuthorshipPermission $ AuthorId 1
+          perm = AuthorshipPermission . Existing $ AuthorId 1
           r = hHasPermission h perm user
       r `shouldBe` False
     it
@@ -55,6 +56,6 @@ spec =
           otherAuthorId = AuthorId 1
           user =
             IdentifiedUser (UserId 1) False [otherAuthorId, requiredAuthorId]
-          perm = AuthorshipPermission requiredAuthorId
+          perm = AuthorshipPermission $ Existing requiredAuthorId
           r = hHasPermission h perm user
       r `shouldBe` True

@@ -53,7 +53,7 @@ spec =
       storage <- newIORef initialStorage
       run (handleWith storage) user draftId `shouldThrow`
         isNoPermissionExceptionWithPermission
-          (AuthorshipPermission draftAuthorId)
+          (AuthorshipPermission $ Existing draftAuthorId)
       readIORef storage `shouldReturn` initialStorage
     it "should delete the draft if it is found and the user is the author of it" $ do
       let draftId = NewsVersionId 1

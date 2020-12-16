@@ -8,6 +8,7 @@ import Core.Author
 import Core.Authorization
 import Core.Authorization.Test
 import Core.Category
+import Core.Deletable
 import Core.EntityId
 import Core.Exception
 import Core.Image
@@ -26,7 +27,7 @@ spec
  =
   describe "run" $ do
     let creatorId = AuthorId 6
-    itShouldAuthorizeBeforeOperation (AuthorshipPermission creatorId) $ \authUser authorizationHandle onSuccess -> do
+    itShouldAuthorizeBeforeOperation (AuthorshipPermission $ Existing creatorId) $ \authUser authorizationHandle onSuccess -> do
       let h =
             stubHandle
               { hCreateNewsVersion =
@@ -38,7 +39,7 @@ spec
       pure ()
     it "should pass author id from request in the AuthorshipPermission" $ do
       let aid = AuthorId 2
-          expectedPermission = AuthorshipPermission aid
+          expectedPermission = AuthorshipPermission $ Existing aid
           h =
             stubHandle
               { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
@@ -195,7 +196,7 @@ spec
                   \_ -> pure $ Just expectedAuthorId
               , hAuthorizationHandle =
                   AuthorizationHandle $ \perm _ ->
-                    perm == AuthorshipPermission expectedAuthorId
+                    perm == AuthorshipPermission (Existing expectedAuthorId)
               }
       _ <- run h authUser request
       pure ()
