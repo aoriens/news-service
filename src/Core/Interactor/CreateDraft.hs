@@ -37,7 +37,7 @@ run ::
   -> CreateDraftRequest
   -> m NewsVersion
 run h@Handle {..} authUser request = do
-  authorId' <- guessAuthorId h authUser request
+  authorId' <- inferAuthorIdFromRequestOrUser h authUser request
   requirePermission
     hAuthorizationHandle
     (AuthorshipPermission authorId')
@@ -47,15 +47,15 @@ run h@Handle {..} authUser request = do
   hCreateNewsVersion (makeCommand request authorId') >>=
     either (throwM . exceptionFromGatewayFailure) pure
 
-guessAuthorId ::
+inferAuthorIdFromRequestOrUser ::
      MonadThrow m
   => Handle m
   -> AuthenticatedUser
   -> CreateDraftRequest
   -> m AuthorId
-guessAuthorId _ _ CreateDraftRequest {cdAuthorId = Just authorId'} =
+inferAuthorIdFromRequestOrUser _ _ CreateDraftRequest {cdAuthorId = Just authorId'} =
   pure authorId'
-guessAuthorId h authUser _ = do
+inferAuthorIdFromRequestOrUser h authUser _ = do
   userId' <-
     maybe (throwM userNotIdentifiedException) pure $
     authenticatedUserId authUser
