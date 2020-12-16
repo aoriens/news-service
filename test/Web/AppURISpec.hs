@@ -131,6 +131,7 @@ appURIsForAllPossibleConstructors =
   , PublishDraftURI $ NewsVersionId 1
   , CommentsForNewsURI $ NewsId 1
   , CommentURI (CommentId 1)
+  , NewsItemDraftsURI (NewsId 1)
   ]
   where
     _addNewElementToTheListAboveIfDoesNotCompile =
@@ -152,3 +153,4 @@ appURIsForAllPossibleConstructors =
         PublishDraftURI {} -> ()
         CommentsForNewsURI {} -> ()
         CommentURI {} -> ()
+        NewsItemDraftsURI {} -> ()

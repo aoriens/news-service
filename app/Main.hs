@@ -21,6 +21,7 @@ import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.CreateDraft as ICreateDraft
+import qualified Core.Interactor.CreateDraftFromNews as ICreateDraftFromNews
 import qualified Core.Interactor.CreateTag as ICreateTag
 import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
@@ -74,6 +75,7 @@ import qualified Web.Handler.CreateAuthor as HCreateAuthor
 import qualified Web.Handler.CreateCategory as HCreateCategory
 import qualified Web.Handler.CreateComment as HCreateComment
 import qualified Web.Handler.CreateDraft as HCreateDraft
+import qualified Web.Handler.CreateDraftFromNews as HCreateDraftFromNews
 import qualified Web.Handler.CreateTag as HCreateTag
 import qualified Web.Handler.CreateUser as HCreateUser
 import qualified Web.Handler.DeleteAuthor as HDeleteAuthor
@@ -242,6 +244,7 @@ router deps =
       [ R.get $ runGetCommentHandler commentId
       , R.delete $ runDeleteCommentHandler commentId
       ]
+    NewsItemDraftsURI newsId -> [R.post $ runCreateDraftFromNewsHandler newsId]
 
 runCreateAuthorHandler :: Deps -> SessionDeps -> Web.Application
 runCreateAuthorHandler Deps {..} SessionDeps {..} =
@@ -567,6 +570,23 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
       , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
       , hAuthenticationHandle = sdAuthenticationHandle
       }
+
+runCreateDraftFromNewsHandler ::
+     NewsId -> Deps -> SessionDeps -> Web.Application
+runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
+  HCreateDraftFromNews.run
+    HCreateDraftFromNews.Handle
+      { hCreateDraftFromNews =
+          ICreateDraftFromNews.run
+            ICreateDraftFromNews.Handle
+              { hGetNewsAuthor = Database.getNewsAuthorId sdDatabaseHandle
+              , hCopyDraftFromNews = Database.copyDraftFromNews sdDatabaseHandle
+              }
+      , hPresent =
+          presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
+      , hAuthenticate = authenticate sdAuthenticationHandle
+      }
+    newsId
 
 runPublishDraftHandler ::
      NewsVersionId -> Deps -> SessionDeps -> Web.Application

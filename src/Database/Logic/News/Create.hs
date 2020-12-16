@@ -3,6 +3,7 @@
 module Database.Logic.News.Create
   ( createNewsVersion
   , createNews
+  , copyDraftFromNews
   ) where
 
 import Control.Arrow
@@ -198,4 +199,61 @@ insertNews =
         $1 :: integer,
         $2 :: date
       ) returning news_id :: integer
+    |]
+
+copyDraftFromNews :: NewsId -> Transaction NewsVersion
+copyDraftFromNews newsId = do
+  draftId <- copyDraftRowFromNews newsId
+  copyAdditionalImagesFromNewsToVersion newsId draftId
+  copyTagsFromNewsToVersion newsId draftId
+  getDraft draftId >>= maybe draftNotFound pure
+  where
+    draftNotFound =
+      throwM $
+      DatabaseInternalInconsistencyException
+        "Cannot find a just inserted draft row"
+
+copyDraftRowFromNews :: NewsId -> Transaction NewsVersionId
+copyDraftRowFromNews =
+  runStatement $
+  dimap
+    getNewsId
+    NewsVersionId
+    [TH.singletonStatement|
+      insert into news_versions
+        (created_from_news_id, title, body, author_id, category_id, main_photo_id)
+      select $1 :: integer, title, body, author_id, category_id, main_photo_id
+      from news_versions
+           join news using (news_version_id)
+      where news_id = $1 :: integer
+      returning news_version_id :: integer
+    |]
+
+copyAdditionalImagesFromNewsToVersion ::
+     NewsId -> NewsVersionId -> Transaction ()
+copyAdditionalImagesFromNewsToVersion =
+  curry . runStatement $
+  lmap
+    (getNewsId *** getNewsVersionId)
+    [TH.resultlessStatement|
+      insert into news_versions_and_additional_photos_relation
+        (news_version_id, image_id)
+      select $2 :: integer, image_id
+      from news_versions_and_additional_photos_relation
+           join news using (news_version_id)
+      where news_id = $1 :: integer
+    |]
+
+copyTagsFromNewsToVersion :: NewsId -> NewsVersionId -> Transaction ()
+copyTagsFromNewsToVersion =
+  curry . runStatement $
+  lmap
+    (getNewsId *** getNewsVersionId)
+    [TH.resultlessStatement|
+      insert into news_versions_and_tags_relation
+        (news_version_id, tag_id)
+      select $2 :: integer, tag_id
+      from news_versions_and_tags_relation
+           join news using (news_version_id)
+      where news_id = $1 :: integer
     |]

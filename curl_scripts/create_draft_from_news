@@ -1,0 +1,6 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+allow_token
+run_curl -X POST "$DOMAIN/news/${1?Pass a news ID as an argument}/drafts$Q"

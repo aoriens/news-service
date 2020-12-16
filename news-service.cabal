@@ -114,6 +114,7 @@ library
     , Web.Handler.CreateCategory
     , Web.Handler.CreateComment
     , Web.Handler.CreateDraft
+    , Web.Handler.CreateDraftFromNews
     , Web.Handler.CreateTag
     , Web.Handler.CreateUser
     , Web.Handler.DeleteAuthor

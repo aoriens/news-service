@@ -231,6 +231,12 @@ comment, and returns a [Comment](#Comment) entity just created. If the user is
 authenticated, they will be saved as the comment author, otherwise the comment
 will be posted anonymously.
 
+### `POST /news/{news_id}/drafts`
+
+Creates a [Draft](#Draft) of news identified with `{news_id}` and returns it.
+The new draft is identical to the news content. It may be edited and published
+to update the news article.
+
 ### `GET /tags`
 
 Returns a list of [Tag](#Tag) entities.

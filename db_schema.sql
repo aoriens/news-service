@@ -128,7 +128,8 @@ create table news_versions (
        author_id integer references authors on delete set null,
        -- A null category means an unspecified or a deleted category.
        category_id integer references categories,
-       main_photo_id integer references images
+       main_photo_id integer references images,
+       created_from_news_id integer references news(news_id)
 );
 
 create table news_versions_and_tags_relation (

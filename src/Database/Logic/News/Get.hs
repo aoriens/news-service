@@ -8,6 +8,7 @@ module Database.Logic.News.Get
   , getDraftsOfUser
   , getDraft
   , getDraftIdsOfAuthor
+  , getNewsAuthorId
   ) where
 
 import Control.Monad
@@ -269,4 +270,17 @@ getAdditionalPhotosForVersion =
       select image_id :: integer
       from news_versions_and_additional_photos_relation
       where news_version_id = $1 :: integer
+    |]
+
+getNewsAuthorId :: NewsId -> Transaction (Maybe (Deletable AuthorId))
+getNewsAuthorId =
+  runStatement $
+  dimap
+    getNewsId
+    (fmap (deletableFromMaybe . fmap AuthorId))
+    [TH.maybeStatement|
+      select author_id :: integer?
+      from news
+           join news_versions using (news_version_id)
+      where news_id = $1 :: integer
     |]

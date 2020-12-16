@@ -27,8 +27,10 @@ module Database
   , getDraftsOfAuthor
   , getDraftsOfUser
   , getDraft
+  , getNewsAuthorId
   , createNews
   , createNewsVersion
+  , copyDraftFromNews
   , deleteNewsVersion
   , deleteDraftsOfAuthor
   -- * Tags
@@ -189,6 +191,9 @@ createNewsVersion ::
   -> IO (Either ICreateDraft.GatewayFailure NewsVersion)
 createNewsVersion h = DB.runTransactionRW h . DNews.createNewsVersion
 
+copyDraftFromNews :: DB.Handle -> NewsId -> IO NewsVersion
+copyDraftFromNews h = DB.runTransactionRW h . DNews.copyDraftFromNews
+
 getDraftAuthor :: DB.Handle -> NewsVersionId -> IO (Maybe (Deletable AuthorId))
 getDraftAuthor h = DB.runTransactionRO h . DNews.getDraftAuthor
 
@@ -202,6 +207,9 @@ getDraftsOfUser h userId pageSpec =
 
 getDraft :: DB.Handle -> NewsVersionId -> IO (Maybe NewsVersion)
 getDraft h = DB.runTransactionRO h . DNews.getDraft
+
+getNewsAuthorId :: DB.Handle -> NewsId -> IO (Maybe (Deletable AuthorId))
+getNewsAuthorId h = DB.runTransactionRO h . DNews.getNewsAuthorId
 
 deleteNewsVersion :: DB.Handle -> NewsVersionId -> IO ()
 deleteNewsVersion h = DB.runTransactionRW h . DNews.deleteNewsVersion
