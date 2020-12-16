@@ -102,7 +102,7 @@ spec
               {hCreateNewsVersion = \_ -> pure . Left $ GUnknownEntityId ids}
       result <- try $ run h someAuthUser request
       result `shouldBe` Left (DependentEntitiesNotFoundException ids)
-    it "should pass main photo to hRejectDisallowedImage if it's Right Image" $ do
+    it "should pass main photo to hRejectImageIfDisallowed if it's Right Image" $ do
       passedPhotosRef <- newIORef []
       let photo = stubImage {imageData = "q"}
           request =
@@ -110,13 +110,13 @@ spec
               {cdMainPhoto = Just $ Right photo, cdAdditionalPhotos = []}
           h =
             stubHandle
-              { hRejectDisallowedImage =
+              { hRejectImageIfDisallowed =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
       _ <- run h someAuthUser request
       readIORef passedPhotosRef `shouldReturn` [photo]
     it
-      "should pass all additional photos that are Right Image to hRejectDisallowedImage" $ do
+      "should pass all additional photos that are Right Image to hRejectImageIfDisallowed" $ do
       passedPhotosRef <- newIORef []
       let rightImages =
             [stubImage {imageData = "1"}, stubImage {imageData = "2"}]
@@ -125,14 +125,14 @@ spec
             stubRequest {cdMainPhoto = Nothing, cdAdditionalPhotos = photos}
           h =
             stubHandle
-              { hRejectDisallowedImage =
+              { hRejectImageIfDisallowed =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
       _ <- run h someAuthUser request
       passedPhotos <- readIORef passedPhotosRef
       passedPhotos `shouldMatchList` rightImages
     it
-      "should not invoke hRejectDisallowedImage if neither main nor additional photos are Right Image" $ do
+      "should not invoke hRejectImageIfDisallowed if neither main nor additional photos are Right Image" $ do
       let request =
             stubRequest
               { cdMainPhoto = Just . Left $ ImageId 1
@@ -140,30 +140,30 @@ spec
               }
           h =
             stubHandle
-              { hRejectDisallowedImage =
+              { hRejectImageIfDisallowed =
                   \img -> error $ "Must not invoke with parameter " ++ show img
               }
       _ <- run h someAuthUser request
       pure ()
     it
-      "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on main photo" $ do
+      "should not invoke hCreateNewsVersion if hRejectImageIfDisallowed threw an exception on main photo" $ do
       let expectedError = "expected"
           request = stubRequest {cdMainPhoto = Just $ Right stubImage}
           h =
             stubHandle
-              { hRejectDisallowedImage = \_ -> error expectedError
+              { hRejectImageIfDisallowed = \_ -> error expectedError
               , hCreateNewsVersion = \_ -> error "Must not invoke"
               }
       run h someAuthUser request `shouldThrow` errorCall expectedError
     it
-      "should not invoke hCreateNewsVersion if hRejectDisallowedImage threw an exception on an additional photo" $ do
+      "should not invoke hCreateNewsVersion if hRejectImageIfDisallowed threw an exception on an additional photo" $ do
       let expectedError = "expected"
           request =
             stubRequest
               {cdMainPhoto = Nothing, cdAdditionalPhotos = [Right stubImage]}
           h =
             stubHandle
-              { hRejectDisallowedImage = \_ -> error expectedError
+              { hRejectImageIfDisallowed = \_ -> error expectedError
               , hCreateNewsVersion = \_ -> error "Must not invoke"
               }
       run h someAuthUser request `shouldThrow` errorCall expectedError
@@ -260,7 +260,7 @@ stubHandle =
     { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
     , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
     , hAuthorizationHandle = noOpAuthorizationHandle
-    , hRejectDisallowedImage = \_ -> pure ()
+    , hRejectImageIfDisallowed = \_ -> pure ()
     }
 
 stubImage :: Image

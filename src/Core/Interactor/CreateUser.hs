@@ -21,15 +21,15 @@ data Handle m =
     { hCreateUser :: CreateUserCommand -> m CreateUserResult
     , hGenerateToken :: m (Auth.SecretToken, Auth.SecretTokenHash)
     , hGetCurrentTime :: m UTCTime
-    , hRejectDisallowedImage :: MonadThrow m =>
-                                  Image -> m ()
+    , hRejectImageIfDisallowed :: MonadThrow m =>
+                                    Image -> m ()
     }
 
 -- | Run the interactor. It can throw 'QueryException'
 run :: MonadThrow m => Handle m -> Query -> m (User, Auth.Credentials)
 run Handle {..} Query {..} = do
   let isAdmin = False
-  mapM_ hRejectDisallowedImage qAvatar
+  mapM_ hRejectImageIfDisallowed qAvatar
   (token, tokenHash) <- hGenerateToken
   createdAt <- hGetCurrentTime
   result <-

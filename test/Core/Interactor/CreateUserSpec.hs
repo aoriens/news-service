@@ -108,30 +108,31 @@ spec = do
       (user, _) <- I.run h stubQuery
       userIsAdmin user `shouldBe` False
       readIORef ref `shouldReturn` False
-    it "should pass avatar, if qAvatar == Just _, to hRejectDisallowedImage" $ do
+    it "should pass avatar, if qAvatar == Just _, to hRejectImageIfDisallowed" $ do
       let image = stubImage {imageContentType = "t"}
-      shouldPassValue image "hRejectDisallowedImage" $ \pass -> do
+      shouldPassValue image "hRejectImageIfDisallowed" $ \pass -> do
         let query = stubQuery {I.qAvatar = Just image}
-            h = stubHandle {I.hRejectDisallowedImage = pass}
+            h = stubHandle {I.hRejectImageIfDisallowed = pass}
         void $ I.run h query
-    it "should not call hRejectDisallowedImage if no avatar passed" $ do
+    it "should not call hRejectImageIfDisallowed if no avatar passed" $ do
       let query = stubQuery {I.qAvatar = Nothing}
           h =
             stubHandle
-              {I.hRejectDisallowedImage = \_ -> error "Must not invoke"}
+              {I.hRejectImageIfDisallowed = \_ -> error "Must not invoke"}
       void $ I.run h query
-    it "should throw exception from hRejectDisallowedImage" $ do
+    it "should throw exception from hRejectImageIfDisallowed" $ do
       let query = stubQuery {I.qAvatar = Just stubImage}
           expectedError = "q"
-          h = stubHandle {I.hRejectDisallowedImage = \_ -> error expectedError}
+          h =
+            stubHandle {I.hRejectImageIfDisallowed = \_ -> error expectedError}
       I.run h query `shouldThrow` errorCall expectedError
     it
-      "should not invoke hCreateUser if hRejectDisallowedImage threw an exception" $ do
+      "should not invoke hCreateUser if hRejectImageIfDisallowed threw an exception" $ do
       let query = stubQuery {I.qAvatar = Just stubImage}
           expectedError = "q"
           h =
             stubHandle
-              { I.hRejectDisallowedImage = \_ -> error expectedError
+              { I.hRejectImageIfDisallowed = \_ -> error expectedError
               , I.hCreateUser = \_ -> error "Must not invoke hCreateUser"
               }
       I.run h query `shouldThrow` errorCall expectedError
@@ -142,7 +143,7 @@ stubHandle =
     { hCreateUser = const $ pure stubCreateUserResult
     , hGenerateToken = pure (stubToken, stubTokenHash)
     , hGetCurrentTime = stubGetCurrentTime
-    , hRejectDisallowedImage = \_ -> pure ()
+    , hRejectImageIfDisallowed = \_ -> pure ()
     }
 
 stubToken :: Auth.SecretToken

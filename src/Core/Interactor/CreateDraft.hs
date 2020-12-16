@@ -26,8 +26,8 @@ data Handle m =
     { hAuthorizationHandle :: AuthorizationHandle
     , hGetAuthorIdByUserIdIfExactlyOne :: UserId -> m (Maybe AuthorId)
     , hCreateNewsVersion :: CreateNewsVersionCommand -> m (Either GatewayFailure NewsVersion)
-    , hRejectDisallowedImage :: MonadThrow m =>
-                                  Image -> m ()
+    , hRejectImageIfDisallowed :: MonadThrow m =>
+                                    Image -> m ()
     }
 
 run ::
@@ -71,9 +71,9 @@ actionName :: T.Text
 actionName = "create a draft"
 
 rejectRequestIfInvalid :: MonadThrow m => Handle m -> CreateDraftRequest -> m ()
-rejectRequestIfInvalid Handle {hRejectDisallowedImage} CreateDraftRequest {..} = do
-  mapM_ (mapM_ hRejectDisallowedImage) cdMainPhoto
-  mapM_ (mapM_ hRejectDisallowedImage) cdAdditionalPhotos
+rejectRequestIfInvalid Handle {hRejectImageIfDisallowed} CreateDraftRequest {..} = do
+  mapM_ (mapM_ hRejectImageIfDisallowed) cdMainPhoto
+  mapM_ (mapM_ hRejectImageIfDisallowed) cdAdditionalPhotos
 
 makeCommand :: CreateDraftRequest -> AuthorId -> CreateNewsVersionCommand
 makeCommand CreateDraftRequest {..} aid =

@@ -435,7 +435,7 @@ runCreateUserHandler Deps {..} SessionDeps {..} =
         , hGenerateToken =
             GSecretToken.generateIO secretTokenConfig dSecretTokenIOState
         , hGetCurrentTime = GCurrentTime.getIntegralSecondsTime
-        , hRejectDisallowedImage =
+        , hRejectImageIfDisallowed =
             rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
         }
     secretTokenConfig =
@@ -558,7 +558,7 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
             , hGetAuthorIdByUserIdIfExactlyOne =
                 Database.getAuthorIdByUserIdIfExactlyOne sdDatabaseHandle
             , hCreateNewsVersion = Database.createNewsVersion sdDatabaseHandle
-            , hRejectDisallowedImage =
+            , hRejectImageIfDisallowed =
                 rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
             }
       , hLoadJSONRequestBody = dLoadJSONRequestBody
