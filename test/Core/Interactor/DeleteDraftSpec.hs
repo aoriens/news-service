@@ -30,13 +30,13 @@ spec =
       r `shouldBe` Left UnknownDraftId
       readIORef storage `shouldReturn` initialStorage
     it
-      "should return Left UnknownDraftId for an existing draft with the author deleted" $ do
+      "should throw NoPermissionException for an existing draft with the author deleted" $ do
       let draftId = NewsVersionId 1
           initialStorage =
             newStorage [stubNewsVersion {nvId = draftId, nvAuthor = Deleted}]
       storage <- newIORef initialStorage
-      r <- run (handleWith storage) someAuthUser draftId
-      r `shouldBe` Left UnknownDraftId
+      run (handleWith storage) someAuthUser draftId `shouldThrow`
+        isNoPermissionException
       readIORef storage `shouldReturn` initialStorage
     it
       "should throw NoPermissionException if the user is not the author of the draft" $ do

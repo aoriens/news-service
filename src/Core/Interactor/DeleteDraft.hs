@@ -25,11 +25,9 @@ run ::
 run Handle {..} authUser draftId = do
   hGetDraftAuthor draftId >>= \case
     Nothing -> pure $ Left UnknownDraftId
-     -- There must not be authorless drafts, they should be deleted as
-     -- soon as their author is. So, reporting it as an unknown draft.
-    Just Deleted -> pure $ Left UnknownDraftId
-    Just (Existing authorId) -> do
-      authorize "deleting a draft" $ authUserShouldBeAuthor authUser authorId
+    Just authorId -> do
+      authorize "deleting a draft" $
+        authUser `authUserShouldBeDeletableAuthor` authorId
       hDeleteNewsVersion draftId
       pure $ Right ()
 
