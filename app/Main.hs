@@ -594,9 +594,13 @@ runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
     HPublishDraft.Handle
       { hPublishDraftHandle =
           IPublishDraft.Handle
-            { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
+            { hGetDraftAuthorAndNewsIdItWasCreatedFrom =
+                Database.getDraftAuthorAndNewsIdItWasCreatedFrom
+                  sdDatabaseHandle
             , hGetCurrentDay = getCurrentDay
             , hMakeDraftIntoNews = Database.makeDraftIntoNews sdDatabaseHandle
+            , hOverwriteNewsWithDraft =
+                Database.overwriteNewsWithDraft sdDatabaseHandle
             }
       , hPresent =
           presentCreatedNewsItem dAppURIConfig dRepresentationBuilderHandle

@@ -3,6 +3,7 @@
 module Database.Logic.News.Create
   ( createDraft
   , makeDraftIntoNews
+  , overwriteNewsWithDraft
   , copyDraftFromNews
   ) where
 
@@ -57,6 +58,7 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
     pure
       Draft
         { draftId
+        , draftNewsIdItWasCreatedFrom = Nothing
         , draftContent =
             NewsVersion
               { nvTitle = cdcTitle
@@ -203,6 +205,26 @@ makeDraftIntoNews draftId day =
           "Cannot find news just created: news_id=" <> T.pack (show newsId)
         Just news -> pure $ Right news
 
+overwriteNewsWithDraft ::
+     NewsId
+  -> DraftId
+  -> Day
+  -> Transaction (Either IPublishDraft.OverwriteNewsWithDraftFailure News)
+overwriteNewsWithDraft newsId draftId day =
+  deleteDraftButLeaveItsContent draftId >>= \case
+    Nothing -> pure $ Left IPublishDraft.ONDUnknownDraftId
+    Just contentId -> do
+      oldContentId <-
+        databaseUnsafeFromJust ("Cannot find news_id=" <> T.pack (show newsId)) =<<
+        getNewsContentId newsId
+      setNewsContent contentId day newsId
+      deleteNewsVersion oldContentId
+      getNews newsId >>= \case
+        Nothing ->
+          databaseInternalInconsistency $
+          "Cannot find news: news_id=" <> T.pack (show newsId)
+        Just news -> pure $ Right news
+
 insertNews :: NewsVersionId -> Day -> Transaction NewsId
 insertNews =
   curry . runStatement $
@@ -218,6 +240,35 @@ insertNews =
         $2 :: date
       ) returning news_id :: integer
     |]
+
+getNewsContentId :: NewsId -> Transaction (Maybe NewsVersionId)
+getNewsContentId =
+  runStatement $
+  dimap
+    getNewsId
+    (fmap NewsVersionId)
+    [TH.maybeStatement|
+      select news_version_id :: integer
+      from news
+      where news_id = $1 :: integer
+    |]
+
+-- | Updates the news with a new content and returns the old one's
+-- identifier.
+setNewsContent :: NewsVersionId -> Day -> NewsId -> Transaction ()
+setNewsContent contentId day newsId =
+  runStatement statement (contentId, day, newsId)
+  where
+    statement =
+      lmap
+        (\(contentId', day', newsId') ->
+           (getNewsVersionId contentId', day', getNewsId newsId'))
+        [TH.resultlessStatement|
+          update news
+          set news_version_id = $1 :: integer,
+              "date" = $2 :: date
+          where news_id = $3 :: integer
+        |]
 
 copyDraftFromNews :: NewsId -> Transaction Draft
 copyDraftFromNews newsId = do

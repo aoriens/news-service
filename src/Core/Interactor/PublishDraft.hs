@@ -3,6 +3,7 @@ module Core.Interactor.PublishDraft
   , Handle(..)
   , Failure(..)
   , MakeDraftIntoNewsFailure(..)
+  , OverwriteNewsWithDraftFailure(..)
   ) where
 
 import Control.Monad.Catch
@@ -15,13 +16,19 @@ import Data.Time
 
 data Handle m =
   Handle
-    { hGetDraftAuthor :: DraftId -> m (Maybe (Deletable AuthorId))
+    { hGetDraftAuthorAndNewsIdItWasCreatedFrom :: DraftId -> m (Maybe ( Deletable AuthorId
+                                                                      , Maybe NewsId))
     , hGetCurrentDay :: m Day
     , hMakeDraftIntoNews :: DraftId -> Day -> m (Either MakeDraftIntoNewsFailure News)
+    , hOverwriteNewsWithDraft :: NewsId -> DraftId -> Day -> m (Either OverwriteNewsWithDraftFailure News)
     }
 
 data MakeDraftIntoNewsFailure =
   MDNUnknownDraftId
+  deriving (Eq, Show)
+
+data OverwriteNewsWithDraftFailure =
+  ONDUnknownDraftId
   deriving (Eq, Show)
 
 run ::
@@ -30,14 +37,19 @@ run ::
   -> AuthenticatedUser
   -> DraftId
   -> m (Either Failure News)
-run Handle {..} authUser vId = do
-  hGetDraftAuthor vId >>= \case
+run Handle {..} authUser draftId = do
+  hGetDraftAuthorAndNewsIdItWasCreatedFrom draftId >>= \case
     Nothing -> pure $ Left UnknownDraftId
-    Just authorId -> do
+    Just (authorId, originNewsId) -> do
       authorize "publish a draft" $
         authUser `authUserShouldBeDeletableAuthor` authorId
       day <- hGetCurrentDay
-      first fromMakeDraftIntoNewsFailure <$> hMakeDraftIntoNews vId day
+      case originNewsId of
+        Nothing ->
+          first fromMakeDraftIntoNewsFailure <$> hMakeDraftIntoNews draftId day
+        Just newsId ->
+          first fromOverwriteNewsWithDraftFailure <$>
+          hOverwriteNewsWithDraft newsId draftId day
 
 data Failure =
   UnknownDraftId
@@ -45,3 +57,6 @@ data Failure =
 
 fromMakeDraftIntoNewsFailure :: MakeDraftIntoNewsFailure -> Failure
 fromMakeDraftIntoNewsFailure MDNUnknownDraftId = UnknownDraftId
+
+fromOverwriteNewsWithDraftFailure :: OverwriteNewsWithDraftFailure -> Failure
+fromOverwriteNewsWithDraftFailure ONDUnknownDraftId = UnknownDraftId

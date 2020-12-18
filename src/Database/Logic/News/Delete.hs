@@ -3,6 +3,7 @@
 module Database.Logic.News.Delete
   ( deleteDraftAndItsContent
   , deleteDraftButLeaveItsContent
+  , deleteNewsVersion
   , deleteDraftsOfAuthor
   ) where
 

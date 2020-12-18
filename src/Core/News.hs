@@ -37,6 +37,7 @@ data Draft =
   Draft
     { draftId :: DraftId
     , draftContent :: NewsVersion
+    , draftNewsIdItWasCreatedFrom :: Maybe NewsId
     }
   deriving (Eq, Show)
 

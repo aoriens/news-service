@@ -11,8 +11,10 @@ module Database.Logic.News.Get
   , getDraftIdsOfAuthor
   , getNewsAuthorId
   , getDraftAuthor
+  , getDraftAuthorAndNewsIdItWasCreatedFrom
   ) where
 
+import Control.Arrow
 import Control.Monad
 import Core.Author
 import Core.Category
@@ -207,11 +209,14 @@ data DraftRow =
   DraftRow
     { draftId :: DraftId
     , draftContentRow :: VersionRow
+    , draftNewsIdItWasCreatedFrom :: Maybe NewsId
     }
 
 draftRowColumns :: Columns DraftRow
 draftRowColumns = do
   draftId <- DraftId <$> column draftTable "draft_id"
+  draftNewsIdItWasCreatedFrom <-
+    fmap NewsId <$> column draftTable "created_from_news_id"
   draftContentRow <- versionRowColumns
   pure DraftRow {..}
 
@@ -319,6 +324,20 @@ getDraftAuthor =
     (fmap (deletableFromMaybe . fmap AuthorId))
     [TH.maybeStatement|
       select author_id :: integer?
+      from drafts
+           join news_versions using (news_version_id)
+      where draft_id = $1 :: integer
+    |]
+
+getDraftAuthorAndNewsIdItWasCreatedFrom ::
+     DraftId -> Transaction (Maybe (Deletable AuthorId, Maybe NewsId))
+getDraftAuthorAndNewsIdItWasCreatedFrom =
+  runStatement $
+  dimap
+    getDraftId
+    (fmap (deletableFromMaybe . fmap AuthorId *** fmap NewsId))
+    [TH.maybeStatement|
+      select author_id :: integer?, created_from_news_id :: integer?
       from drafts
            join news_versions using (news_version_id)
       where draft_id = $1 :: integer

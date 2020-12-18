@@ -2,6 +2,7 @@ module Core.Interactor.PublishDraftSpec
   ( spec
   ) where
 
+import Control.Arrow
 import Core.Authentication
 import Core.Authentication.Test
 import Core.Author
@@ -14,6 +15,7 @@ import Core.User
 import Data.IORef
 import Data.IORef.Util
 import Data.List
+import Data.Maybe
 import Data.Time
 import Test.Hspec
 
@@ -67,6 +69,33 @@ spec
       r <- run h user draftId
       r `shouldBe` Right expectedNews
       readIORef db `shouldReturn` Storage [] [expectedNews]
+    it
+      "should update existing news from a draft having been created from the news if the user is an author of the draft" $ do
+      let draftId = DraftId 1
+          authorId = AuthorId 2
+          newsId = NewsId 3
+          day = ModifiedJulianDay 4
+          oldContent =
+            stubNewsVersion
+              {nvTitle = "old", nvAuthor = Existing stubAuthor {authorId}}
+          newContent =
+            stubNewsVersion
+              {nvTitle = "new", nvAuthor = Existing stubAuthor {authorId}}
+          oldNews = stubNews {newsId, newsContent = oldContent}
+          draft =
+            stubDraft
+              { draftId
+              , draftContent = newContent
+              , draftNewsIdItWasCreatedFrom = Just newsId
+              }
+          user = IdentifiedUser (UserId 0) False [authorId]
+          initialData = storageWithDraftsAndNews [draft] [oldNews]
+          expectedNews = oldNews {newsContent = newContent, newsDate = day}
+      db <- newIORef initialData
+      let h = handleWith day db
+      r <- run h user draftId
+      r `shouldBe` Right expectedNews
+      readIORef db `shouldReturn` Storage [] [expectedNews]
 
 data Storage =
   Storage
@@ -78,33 +107,68 @@ data Storage =
 storageWithDrafts :: [Draft] -> Storage
 storageWithDrafts drafts = Storage {storageDrafts = drafts, storageNews = []}
 
+storageWithDraftsAndNews :: [Draft] -> [News] -> Storage
+storageWithDraftsAndNews drafts news =
+  Storage {storageDrafts = drafts, storageNews = news}
+
 handleWith :: Day -> IORef Storage -> Handle IO
 handleWith day ref =
   Handle
-    { hGetDraftAuthor =
+    { hGetDraftAuthorAndNewsIdItWasCreatedFrom =
         \searchedId ->
-          fmap (fmap authorId . nvAuthor . draftContent) .
+          fmap
+            (fmap authorId . nvAuthor . draftContent &&&
+             draftNewsIdItWasCreatedFrom) .
           find ((searchedId ==) . draftId) . storageDrafts <$>
           readIORef ref
     , hGetCurrentDay = pure day
     , hMakeDraftIntoNews =
         \searchedDraftId newsDate ->
-          updateIORef' ref $ \oldStorage@Storage {..} ->
-            case find ((searchedDraftId ==) . draftId) storageDrafts of
-              Nothing -> (oldStorage, Left MDNUnknownDraftId)
-              Just draft ->
-                let news =
-                      News
-                        { newsId = createdNewsId
-                        , newsContent = draftContent draft
-                        , newsDate
-                        }
-                 in ( Storage
-                        { storageDrafts = delete draft storageDrafts
-                        , storageNews = news : storageNews
-                        }
-                    , Right news)
+          updateIORef' ref $ makeDraftIntoNews searchedDraftId newsDate
+    , hOverwriteNewsWithDraft =
+        \searchedNewsId searchedDraftId newsDate ->
+          updateIORef' ref $
+          overwriteNewsWithDraft searchedNewsId searchedDraftId newsDate
     }
+
+makeDraftIntoNews ::
+     DraftId
+  -> Day
+  -> Storage
+  -> (Storage, Either MakeDraftIntoNewsFailure News)
+makeDraftIntoNews searchedDraftId newsDate oldStorage@Storage {..} =
+  case find ((searchedDraftId ==) . draftId) storageDrafts of
+    Nothing -> (oldStorage, Left MDNUnknownDraftId)
+    Just draft ->
+      let news =
+            News
+              { newsId = createdNewsId
+              , newsContent = draftContent draft
+              , newsDate
+              }
+       in ( Storage
+              { storageDrafts = delete draft storageDrafts
+              , storageNews = news : storageNews
+              }
+          , Right news)
+
+overwriteNewsWithDraft ::
+     NewsId
+  -> DraftId
+  -> Day
+  -> Storage
+  -> (Storage, Either OverwriteNewsWithDraftFailure News)
+overwriteNewsWithDraft searchedNewsId searchedDraftId newsDate oldStorage@Storage {..} =
+  case find ((searchedDraftId ==) . draftId) storageDrafts of
+    Nothing -> (oldStorage, Left ONDUnknownDraftId)
+    Just draft ->
+      let oldNews = fromJust $ find ((searchedNewsId ==) . newsId) storageNews
+          newNews = oldNews {newsContent = draftContent draft, newsDate}
+       in ( Storage
+              { storageDrafts = delete draft storageDrafts
+              , storageNews = newNews : delete oldNews storageNews
+              }
+          , Right newNews)
 
 draftWithId :: DraftId -> Draft
 draftWithId draftId = stubDraft {draftId}

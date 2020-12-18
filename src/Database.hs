@@ -25,11 +25,13 @@ module Database
   , getNewsList
   , getNews
   , getDraftAuthor
+  , getDraftAuthorAndNewsIdItWasCreatedFrom
   , getDraftsOfAuthor
   , getDraftsOfUser
   , getDraft
   , getNewsAuthorId
   , makeDraftIntoNews
+  , overwriteNewsWithDraft
   , createDraft
   , copyDraftFromNews
   , deleteDraftAndItsContent
@@ -198,6 +200,11 @@ copyDraftFromNews h = DB.runTransactionRW h . DNews.copyDraftFromNews
 getDraftAuthor :: DB.Handle -> DraftId -> IO (Maybe (Deletable AuthorId))
 getDraftAuthor h = DB.runTransactionRO h . DNews.getDraftAuthor
 
+getDraftAuthorAndNewsIdItWasCreatedFrom ::
+     DB.Handle -> DraftId -> IO (Maybe (Deletable AuthorId, Maybe NewsId))
+getDraftAuthorAndNewsIdItWasCreatedFrom h =
+  DB.runTransactionRO h . DNews.getDraftAuthorAndNewsIdItWasCreatedFrom
+
 getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [Draft]
 getDraftsOfAuthor h authorId pageSpec =
   DB.runTransactionRO h $ DNews.getDraftsOfAuthor authorId pageSpec
@@ -226,6 +233,15 @@ makeDraftIntoNews ::
   -> IO (Either IPublishDraft.MakeDraftIntoNewsFailure News)
 makeDraftIntoNews h vId day =
   DB.runTransactionRW h $ DNews.makeDraftIntoNews vId day
+
+overwriteNewsWithDraft ::
+     DB.Handle
+  -> NewsId
+  -> DraftId
+  -> Day
+  -> IO (Either IPublishDraft.OverwriteNewsWithDraftFailure News)
+overwriteNewsWithDraft h newsId draftId day =
+  DB.runTransactionRW h $ DNews.overwriteNewsWithDraft newsId draftId day
 
 findTagNamed :: DB.Handle -> Text -> IO (Maybe Tag)
 findTagNamed h = runTransactionRO h . DTags.findTagNamed

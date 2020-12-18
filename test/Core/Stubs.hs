@@ -24,7 +24,12 @@ stubNews =
   News {newsId = NewsId 0, newsDate = stubDay, newsContent = stubNewsVersion}
 
 stubDraft :: Draft
-stubDraft = Draft {draftId = DraftId 0, draftContent = stubNewsVersion}
+stubDraft =
+  Draft
+    { draftId = DraftId 0
+    , draftContent = stubNewsVersion
+    , draftNewsIdItWasCreatedFrom = Nothing
+    }
 
 stubNewsVersion :: NewsVersion
 stubNewsVersion =
