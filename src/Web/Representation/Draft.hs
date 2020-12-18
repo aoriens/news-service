@@ -2,6 +2,7 @@
 
 module Web.Representation.Draft
   ( draftRep
+  , draftRepDeprecated
   , DraftRep(..)
   ) where
 
@@ -22,8 +23,11 @@ import Web.Representation.OneOf
 import Web.Representation.Tag
 import Web.RepresentationBuilder
 
-draftRep :: NewsVersion -> RepBuilder DraftRep
-draftRep NewsVersion {..} = do
+draftRep :: Draft -> RepBuilder DraftRep
+draftRep = draftRepDeprecated . draftContent
+
+draftRepDeprecated :: NewsVersion -> RepBuilder DraftRep
+draftRepDeprecated NewsVersion {..} = do
   draftAuthor <-
     case nvAuthor of
       Deleted -> pure $ LeftRep "DELETED"

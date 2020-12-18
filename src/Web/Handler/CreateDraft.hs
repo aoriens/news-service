@@ -33,7 +33,7 @@ data Handle =
     { hCreateDraftHandle :: I.Handle IO
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Request -> IO a
-    , hPresent :: NewsVersion -> Response
+    , hPresent :: Draft -> Response
     , hParseAppURI :: T.Text -> Maybe AppURI
     , hAuthenticationHandle :: AuthenticationHandle IO
     }

@@ -26,7 +26,7 @@ data Handle m =
   Handle
     { hAuthorizationHandle :: AuthorizationHandle
     , hGetAuthorIdByUserIdIfExactlyOne :: UserId -> m (Maybe AuthorId)
-    , hCreateDraft :: CreateDraftCommand -> m (Either CreateDraftFailure NewsVersion)
+    , hCreateDraft :: CreateDraftCommand -> m (Either CreateDraftFailure Draft)
     , hRejectImageIfDisallowed :: MonadThrow m =>
                                     Image -> m ()
     }
@@ -36,7 +36,7 @@ run ::
   => Handle m
   -> AuthenticatedUser
   -> CreateDraftRequest
-  -> m NewsVersion
+  -> m Draft
 run h@Handle {..} authUser request = do
   authorId' <- inferAuthorIdFromRequestOrUser h authUser request
   requirePermission

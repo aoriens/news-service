@@ -584,7 +584,9 @@ runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
               , hCopyDraftFromNews = Database.copyDraftFromNews sdDatabaseHandle
               }
       , hPresent =
-          presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
+          presentCreatedDraftDeprecated
+            dAppURIConfig
+            dRepresentationBuilderHandle
       , hAuthenticate = authenticate sdAuthenticationHandle
       }
     newsId

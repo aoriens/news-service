@@ -17,6 +17,7 @@ module Web.Presenter
   , presentNewsItem
   , presentCreatedNewsItem
   , presentCreatedDraft
+  , presentCreatedDraftDeprecated
   , presentDrafts
   , presentDraft
   , presentDeletedDraft
@@ -120,10 +121,10 @@ presentNewsItem :: RepBuilderHandle -> News -> Response
 presentNewsItem h = dataResponse . runRepBuilder h . newsRep
 
 presentDrafts :: RepBuilderHandle -> [NewsVersion] -> Response
-presentDrafts h = dataResponse . runRepBuilder h . mapM draftRep
+presentDrafts h = dataResponse . runRepBuilder h . mapM draftRepDeprecated
 
 presentDraft :: RepBuilderHandle -> NewsVersion -> Response
-presentDraft h = dataResponse . runRepBuilder h . draftRep
+presentDraft h = dataResponse . runRepBuilder h . draftRepDeprecated
 
 presentDeletedDraft :: Response
 presentDeletedDraft = noContentResponse
@@ -183,15 +184,21 @@ presentUpdatedTag uriConfig h tag =
   resourceModifiedAndReturnedResponse uriConfig (tagURI tag) . runRepBuilder h $
   tagRep tag
 
-presentCreatedDraft ::
+presentCreatedDraftDeprecated ::
      AppURIConfig -> RepBuilderHandle -> NewsVersion -> Response
-presentCreatedDraft uriConfig h newsVersion =
-  resourceCreatedAndReturnedResponse uriConfig (draftURI newsVersion) .
+presentCreatedDraftDeprecated uriConfig h draft =
+  resourceCreatedAndReturnedResponse uriConfig (DraftURI . coerce $ nvId draft) .
   runRepBuilder h $
-  draftRep newsVersion
+  draftRepDeprecated draft
 
-draftURI :: NewsVersion -> AppURI
-draftURI = DraftURI . coerce . nvId
+presentCreatedDraft :: AppURIConfig -> RepBuilderHandle -> Draft -> Response
+presentCreatedDraft uriConfig h draft =
+  resourceCreatedAndReturnedResponse uriConfig (draftURI draft) .
+  runRepBuilder h $
+  draftRep draft
+
+draftURI :: Draft -> AppURI
+draftURI = DraftURI . draftId
 
 presentCreatedNewsItem :: AppURIConfig -> RepBuilderHandle -> News -> Response
 presentCreatedNewsItem uriConfig h news =

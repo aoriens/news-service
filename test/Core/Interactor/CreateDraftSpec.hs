@@ -30,7 +30,7 @@ spec
     itShouldAuthorizeBeforeOperation (AuthorshipPermission $ Existing creatorId) $ \authUser authorizationHandle onSuccess -> do
       let h =
             stubHandle
-              { hCreateDraft = \_ -> onSuccess >> pure (Right stubNewsVersion)
+              { hCreateDraft = \_ -> onSuccess >> pure (Right stubDraft)
               , hAuthorizationHandle = authorizationHandle
               }
           request = stubRequest {cdAuthorId = Just creatorId}
@@ -41,7 +41,7 @@ spec
           expectedPermission = AuthorshipPermission $ Existing aid
           h =
             stubHandle
-              { hCreateDraft = \_ -> pure $ Right stubNewsVersion
+              { hCreateDraft = \_ -> pure $ Right stubDraft
               , hAuthorizationHandle =
                   AuthorizationHandle
                     {hHasPermission = \perm _ -> perm == expectedPermission}
@@ -74,7 +74,7 @@ spec
               { hCreateDraft =
                   \cmd -> do
                     writeIORef acceptedCommandRef (Just cmd)
-                    pure $ Right stubNewsVersion
+                    pure $ Right stubDraft
               }
       _ <- run h someAuthUser request
       acceptedCommand <- readIORef acceptedCommandRef
@@ -88,10 +88,10 @@ spec
       cdcTagIds <$> acceptedCommand `shouldBe` Just (cdTagIds request)
     it "should pass NewsVersion got from hCreateDraft" $ do
       let request = stubRequest
-          expectedVersion = stubNewsVersion {nvId = NewsVersionId 2}
-          h = stubHandle {hCreateDraft = \_ -> pure $ Right expectedVersion}
+          expectedDraft = stubDraft {draftId = DraftId 2}
+          h = stubHandle {hCreateDraft = \_ -> pure $ Right expectedDraft}
       version <- run h someAuthUser request
-      version `shouldBe` expectedVersion
+      version `shouldBe` expectedDraft
     it
       "should throw DependentEntitiesNotFoundException if hCreateDraft returned CDUnknownEntityId" $ do
       let request = stubRequest
@@ -179,7 +179,7 @@ spec
               , hCreateDraft =
                   \cmd -> do
                     modifyIORef' passedAuthorsId (cdcAuthorId cmd :)
-                    pure (Right stubNewsVersion)
+                    pure (Right stubDraft)
               }
       _ <- run h authUser request
       readIORef passedAuthorsId `shouldReturn` [expectedAuthorId]
@@ -256,7 +256,7 @@ stubRequest =
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    { hCreateDraft = \_ -> pure $ Right stubNewsVersion
+    { hCreateDraft = \_ -> pure $ Right stubDraft
     , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
     , hAuthorizationHandle = noOpAuthorizationHandle
     , hRejectImageIfDisallowed = \_ -> pure ()

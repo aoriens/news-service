@@ -18,6 +18,7 @@ import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import Core.News
 import Core.Tag
+import Data.Coerce
 import Data.Foldable
 import qualified Data.HashSet as Set
 import Data.Profunctor
@@ -33,7 +34,7 @@ import qualified Hasql.TH as TH
 
 createDraft ::
      ICreateDraft.CreateDraftCommand
-  -> Transaction (Either ICreateDraft.CreateDraftFailure NewsVersion)
+  -> Transaction (Either ICreateDraft.CreateDraftFailure Draft)
 createDraft ICreateDraft.CreateDraftCommand {..} =
   runExceptT $ do
     author <- getExistingEntityBy selectAuthorById cdcAuthorId
@@ -53,15 +54,19 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
     lift $ addPhotosToVersion nvId nvAdditionalPhotoIds
     lift $ addTagsToVersion nvId cdcTagIds
     pure
-      NewsVersion
-        { nvId
-        , nvTitle = cdcTitle
-        , nvText = cdcText
-        , nvAuthor = Existing author
-        , nvCategory = category
-        , nvMainPhotoId
-        , nvAdditionalPhotoIds
-        , nvTags
+      Draft
+        { draftId = coerce nvId
+        , draftContent =
+            NewsVersion
+              { nvId
+              , nvTitle = cdcTitle
+              , nvText = cdcText
+              , nvAuthor = Existing author
+              , nvCategory = category
+              , nvMainPhotoId
+              , nvAdditionalPhotoIds
+              , nvTags
+              }
         }
   where
     getExistingTags =

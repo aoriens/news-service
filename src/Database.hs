@@ -191,7 +191,7 @@ getNews h = DB.runTransactionRO h . DNews.getNews
 createDraft ::
      DB.Handle
   -> ICreateDraft.CreateDraftCommand
-  -> IO (Either ICreateDraft.CreateDraftFailure NewsVersion)
+  -> IO (Either ICreateDraft.CreateDraftFailure Draft)
 createDraft h = DB.runTransactionRW h . DNews.createDraft
 
 copyDraftFromNews :: DB.Handle -> NewsId -> IO NewsVersion
