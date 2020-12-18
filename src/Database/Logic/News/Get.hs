@@ -216,7 +216,7 @@ draftRowColumns = do
   pure DraftRow {..}
 
 draftTable :: TableName
-draftTable = "draft"
+draftTable = "drafts"
 
 -- Part of news version we can extract from the database with the first query.
 data VersionRow =
