@@ -205,11 +205,11 @@ getDraftAuthorDeprecated ::
      DB.Handle -> NewsVersionId -> IO (Maybe (Deletable AuthorId))
 getDraftAuthorDeprecated = coerce getDraftAuthor
 
-getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [NewsVersion]
+getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [Draft]
 getDraftsOfAuthor h authorId pageSpec =
   DB.runTransactionRO h $ DNews.getDraftsOfAuthor authorId pageSpec
 
-getDraftsOfUser :: DB.Handle -> UserId -> PageSpec -> IO [NewsVersion]
+getDraftsOfUser :: DB.Handle -> UserId -> PageSpec -> IO [Draft]
 getDraftsOfUser h userId pageSpec =
   DB.runTransactionRO h $ DNews.getDraftsOfUser userId pageSpec
 

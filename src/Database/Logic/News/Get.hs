@@ -112,19 +112,16 @@ selectNewsRow =
         where news_id = $1
       |]
 
-getDraftsOfAuthor :: AuthorId -> PageSpec -> Transaction [NewsVersion]
+getDraftsOfAuthor :: AuthorId -> PageSpec -> Transaction [Draft]
 getDraftsOfAuthor authorId pageSpec =
-  mapM loadVersionWithRow =<< getDraftRowsOfAuthor authorId pageSpec
+  mapM loadDraftWithRow =<< getDraftRowsOfAuthor authorId pageSpec
 
-getDraftsOfUser :: UserId -> PageSpec -> Transaction [NewsVersion]
+getDraftsOfUser :: UserId -> PageSpec -> Transaction [Draft]
 getDraftsOfUser userId pageSpec =
-  mapM loadVersionWithRow =<< getDraftRowsOfUser userId pageSpec
+  mapM loadDraftWithRow =<< getDraftRowsOfUser userId pageSpec
 
 getDraft :: DraftId -> Transaction (Maybe Draft)
-getDraft = mapM (fmap makeDraft . loadVersionWithRow) <=< getDraftRow
-  where
-    makeDraft version@NewsVersion {nvId} =
-      Draft {draftId = coerce nvId, draftContent = version}
+getDraft = mapM loadDraftWithRow <=< getDraftRow
 
 getDraftRowsOfAuthor :: AuthorId -> PageSpec -> Transaction [VersionRow]
 getDraftRowsOfAuthor authorId pageSpec =
@@ -229,6 +226,12 @@ loadNewsWithRow :: NewsRow -> Transaction News
 loadNewsWithRow NewsRow {..} = do
   newsContent <- loadVersionWithRow newsContentRow
   pure News {newsContent, ..}
+
+loadDraftWithRow :: VersionRow -> Transaction Draft
+loadDraftWithRow = fmap makeDraft . loadVersionWithRow
+  where
+    makeDraft version@NewsVersion {nvId} =
+      Draft {draftId = coerce nvId, draftContent = version}
 
 loadVersionWithRow :: VersionRow -> Transaction NewsVersion
 loadVersionWithRow VersionRow {..} = do

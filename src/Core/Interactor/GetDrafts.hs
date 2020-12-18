@@ -14,8 +14,8 @@ import Core.User
 
 data Handle m =
   Handle
-    { hGetDraftsOfAuthor :: AuthorId -> PageSpec -> m [NewsVersion]
-    , hGetDraftsOfUser :: UserId -> PageSpec -> m [NewsVersion]
+    { hGetDraftsOfAuthor :: AuthorId -> PageSpec -> m [Draft]
+    , hGetDraftsOfUser :: UserId -> PageSpec -> m [Draft]
     , hAuthorizationHandle :: AuthorizationHandle
     , hPageSpecParserHandle :: PageSpecParserHandle
     }
@@ -26,7 +26,7 @@ run ::
   -> AuthenticatedUser
   -> Maybe AuthorId -- ^ When Nothing, all authors related to the user will be implied
   -> PageSpecQuery
-  -> m [NewsVersion]
+  -> m [Draft]
 run Handle {..} authUser optAuthorId pageQuery = do
   userId <-
     maybe (throwM AuthenticationRequired) pure (authenticatedUserId authUser)

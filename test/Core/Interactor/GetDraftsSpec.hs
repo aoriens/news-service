@@ -85,7 +85,7 @@ spec =
       _ <- run h someIdentifiedAuthUser author noPageQuery
       readIORef ref `shouldReturn` Just expectedPageSpec
     it "should return result of hGetDraftsOfUser if no author is passed" $ do
-      let expectedDrafts = [stubNewsVersion {nvId = NewsVersionId 1}]
+      let expectedDrafts = [stubDraft {draftId = DraftId 1}]
           author = Nothing
           h = defaultHandle {hGetDraftsOfUser = \_ _ -> pure expectedDrafts}
       r <- run h someIdentifiedAuthUser author noPageQuery
@@ -127,7 +127,7 @@ spec =
       _ <- run h someIdentifiedAuthUser author noPageQuery
       readIORef ref `shouldReturn` Just expectedPageSpec
     it "should return result of hGetDraftsOfAuthor if an author is passed" $ do
-      let expectedDrafts = [stubNewsVersion {nvId = NewsVersionId 1}]
+      let expectedDrafts = [stubDraft {draftId = DraftId 1}]
           author = Just $ AuthorId 1
           h = defaultHandle {hGetDraftsOfAuthor = \_ _ -> pure expectedDrafts}
       r <- run h someIdentifiedAuthUser author noPageQuery

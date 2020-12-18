@@ -16,7 +16,7 @@ data Handle =
   Handle
     { hGetDraftsHandle :: I.Handle IO
     , hAuthenticationHandle :: AuthenticationHandle IO
-    , hPresent :: [NewsVersion] -> Response
+    , hPresent :: [Draft] -> Response
     }
 
 -- | When 'Nothing' passed as 'Maybe AuthorId', all authors of the
