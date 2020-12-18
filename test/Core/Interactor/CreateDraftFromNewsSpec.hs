@@ -35,7 +35,7 @@ spec
           news =
             stubNews
               { newsId
-              , newsVersion =
+              , newsContent =
                   stubNewsVersion
                     {nvAuthor = Existing stubAuthor {authorId = newsAuthorId}}
               }
@@ -48,7 +48,7 @@ spec
       let newsId = NewsId 1
           news =
             stubNews
-              {newsId, newsVersion = stubNewsVersion {nvAuthor = Deleted}}
+              {newsId, newsContent = stubNewsVersion {nvAuthor = Deleted}}
           authUser = IdentifiedUser (UserId 0) True [AuthorId 1]
       (commandLog, h) <- getHandleWith env {envKnownNews = [news]}
       run h authUser newsId `shouldThrow` isNoPermissionException
@@ -59,14 +59,14 @@ spec
           news =
             stubNews
               { newsId
-              , newsVersion =
+              , newsContent =
                   stubNewsVersion
                     { nvAuthor = Existing stubAuthor {authorId = newsAuthorId}
                     , nvId = NewsVersionId 1
                     }
               }
           authUser = IdentifiedUser (UserId 0) False [newsAuthorId]
-          expectedDraft = (newsVersion news) {nvId = NewsVersionId 2}
+          expectedDraft = (newsContent news) {nvId = NewsVersionId 2}
       (commandLog, h) <-
         getHandleWith
           env {envKnownNews = [news], envCopyDraftResult = expectedDraft}
@@ -94,7 +94,7 @@ getHandleWith Env {..} = do
         { hGetNewsAuthor =
             \targetId ->
               pure $
-              fmap authorId . nvAuthor . newsVersion <$>
+              fmap authorId . nvAuthor . newsContent <$>
               find ((targetId ==) . newsId) envKnownNews
         , hCopyDraftFromNews =
             \newsId ->

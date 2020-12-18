@@ -22,7 +22,7 @@ data News =
   News
     { newsId :: NewsId
     , newsDate :: Day
-    , newsVersion :: NewsVersion
+    , newsContent :: NewsVersion
     }
   deriving (Eq, Show)
 

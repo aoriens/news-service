@@ -182,14 +182,14 @@ data NewsRow =
   NewsRow
     { newsId :: NewsId
     , newsDate :: Day
-    , newsVersionRow :: VersionRow
+    , newsContentRow :: VersionRow
     }
 
 newsRowColumns :: Columns NewsRow
 newsRowColumns = do
   newsId <- NewsId <$> column newsTable "news_id"
   newsDate <- column newsTable "date"
-  newsVersionRow <- versionRowColumns
+  newsContentRow <- versionRowColumns
   pure NewsRow {..}
 
 newsTable :: TableName
@@ -221,8 +221,8 @@ versionsTable = "news_versions"
 
 loadNewsWithRow :: NewsRow -> Transaction News
 loadNewsWithRow NewsRow {..} = do
-  newsVersion <- loadVersionWithRow newsVersionRow
-  pure News {newsVersion, ..}
+  newsContent <- loadVersionWithRow newsContentRow
+  pure News {newsContent, ..}
 
 loadVersionWithRow :: VersionRow -> Transaction NewsVersion
 loadVersionWithRow VersionRow {..} = do

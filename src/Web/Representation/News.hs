@@ -23,7 +23,7 @@ import Web.Representation.Tag
 import Web.RepresentationBuilder
 
 newsRep :: News -> RepBuilder NewsRep
-newsRep News {newsId, newsDate, newsVersion = NewsVersion {..}} = do
+newsRep News {newsId, newsDate, newsContent = NewsVersion {..}} = do
   newsAuthor <-
     case nvAuthor of
       Deleted -> pure $ LeftRep "DELETED"

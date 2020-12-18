@@ -24,13 +24,13 @@ spec =
       let expectedNews =
             [ stubNews
                 { newsId = NewsId 1
-                , newsVersion =
+                , newsContent =
                     stubNewsVersion
                       {nvId = NewsVersionId 1, nvTitle = "A", nvText = "Text"}
                 }
             , stubNews
                 { newsId = NewsId 2
-                , newsVersion =
+                , newsContent =
                     stubNewsVersion
                       {nvId = NewsVersionId 2, nvTitle = "B", nvText = "Text2"}
                 }

@@ -58,7 +58,7 @@ spec
           initialData = storageWithDrafts [draft]
           day = ModifiedJulianDay 5
           expectedNews =
-            News {newsId = createdNewsId, newsVersion = draft, newsDate = day}
+            News {newsId = createdNewsId, newsContent = draft, newsDate = day}
       db <- newIORef initialData
       let h = handleWith day db
       r <- run h user draftId
@@ -87,11 +87,11 @@ handleWith day ref =
     , hCreateNews =
         \draftId newsDate ->
           updateIORef' ref $ \Storage {..} ->
-            let newsVersion =
+            let newsContent =
                   fromJust $ find ((draftId ==) . nvId) storageDrafts
-                news = News {newsId = createdNewsId, newsVersion, newsDate}
+                news = News {newsId = createdNewsId, newsContent, newsDate}
              in ( Storage
-                    { storageDrafts = delete newsVersion storageDrafts
+                    { storageDrafts = delete newsContent storageDrafts
                     , storageNews = news : storageNews
                     }
                 , news)

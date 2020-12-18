@@ -20,7 +20,7 @@ import Data.Time
 
 stubNews :: News
 stubNews =
-  News {newsId = NewsId 0, newsDate = stubDay, newsVersion = stubNewsVersion}
+  News {newsId = NewsId 0, newsDate = stubDay, newsContent = stubNewsVersion}
 
 stubNewsVersion :: NewsVersion
 stubNewsVersion =
