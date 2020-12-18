@@ -29,7 +29,7 @@ module Database
   , getDraftsOfUser
   , getDraft
   , getNewsAuthorId
-  , createNews
+  , makeDraftIntoNews
   , createDraft
   , copyDraftFromNews
   , deleteDraftAndItsContent
@@ -218,8 +218,9 @@ deleteDraftAndItsContent h =
 deleteDraftsOfAuthor :: DB.Handle -> AuthorId -> IO ()
 deleteDraftsOfAuthor h = DB.runTransactionRW h . DNews.deleteDraftsOfAuthor
 
-createNews :: DB.Handle -> DraftId -> Day -> IO News
-createNews h vId day = DB.runTransactionRW h $ DNews.createNews vId day
+makeDraftIntoNews :: DB.Handle -> DraftId -> Day -> IO News
+makeDraftIntoNews h vId day =
+  DB.runTransactionRW h $ DNews.makeDraftIntoNews vId day
 
 findTagNamed :: DB.Handle -> Text -> IO (Maybe Tag)
 findTagNamed h = runTransactionRO h . DTags.findTagNamed

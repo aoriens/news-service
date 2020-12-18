@@ -2,7 +2,7 @@
 
 module Database.Logic.News.Create
   ( createDraft
-  , createNews
+  , makeDraftIntoNews
   , copyDraftFromNews
   ) where
 
@@ -26,6 +26,7 @@ import Data.Time
 import Database.Logic.Authors
 import Database.Logic.Categories
 import Database.Logic.Images
+import Database.Logic.News.Delete
 import Database.Logic.News.Get
 import Database.Logic.Tags
 import Database.Service.Primitives
@@ -187,27 +188,28 @@ insertVersionAndTagAssociation =
       ) on conflict do nothing
     |]
 
-createNews :: DraftId -> Day -> Transaction News
-createNews draftId day = do
-  newsId' <- insertNews draftId day
+makeDraftIntoNews :: DraftId -> Day -> Transaction News
+makeDraftIntoNews draftId day = do
+  contentId <-
+    databaseUnsafeFromJust ("Cannot find draft_id=" <> T.pack (show draftId)) =<<
+    deleteDraftButLeaveItsContent draftId
+  newsId' <- insertNews contentId day
   getNews newsId' >>=
-    maybe
-      (throwM . DatabaseInternalInconsistencyException $
-       "Cannot find news just created: news_id=" <> T.pack (show newsId'))
-      pure
+    databaseUnsafeFromJust
+      ("Cannot find news just created: news_id=" <> T.pack (show newsId'))
 
-insertNews :: DraftId -> Day -> Transaction NewsId
+insertNews :: NewsVersionId -> Day -> Transaction NewsId
 insertNews =
   curry . runStatement $
   dimap
-    (first getDraftId)
+    (first getNewsVersionId)
     NewsId
     [TH.singletonStatement|
       insert into news (
         news_version_id,
         "date"
       ) values (
-        (select news_version_id from drafts where draft_id = $1 :: integer),
+        $1 :: integer,
         $2 :: date
       ) returning news_id :: integer
     |]

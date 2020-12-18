@@ -20,6 +20,7 @@ module Database.Service.Primitives
   , onForeignKeyViolation
   , ignoringForeignKeyViolation
   , databaseInternalInconsistency
+  , databaseUnsafeFromJust
   ) where
 
 import qualified Control.Exception as IOE
@@ -27,6 +28,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.Reader
 import qualified Data.ByteString as B
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Database.Service.ConnectionManager as CM
@@ -181,3 +183,14 @@ ignoringForeignKeyViolation action = action `onForeignKeyViolation` pure ()
 
 databaseInternalInconsistency :: T.Text -> Transaction a
 databaseInternalInconsistency = throwM . DatabaseInternalInconsistencyException
+
+-- | This is similar to 'fromJust', but throws
+-- DatabaseInternalInconsistencyException if the argument is Nothing.
+-- Additionally, it requires a textual description for the error case
+-- in order to log it. This is useful sometimes when there are some
+-- invariants in the database that the business logic can rely on,
+-- e.g. creating a news from a news draft must always succeed if the
+-- draft is determined to exist before.
+databaseUnsafeFromJust :: T.Text -> Maybe a -> Transaction a
+databaseUnsafeFromJust errorDescription =
+  maybe (databaseInternalInconsistency errorDescription) pure

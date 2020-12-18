@@ -15,7 +15,7 @@ data Handle m =
   Handle
     { hGetDraftAuthor :: DraftId -> m (Maybe (Deletable AuthorId))
     , hGetCurrentDay :: m Day
-    , hCreateNews :: DraftId -> Day -> m News
+    , hMakeDraftIntoNews :: DraftId -> Day -> m News
     }
 
 run ::
@@ -31,7 +31,7 @@ run Handle {..} authUser vId = do
       authorize "publish a draft" $
         authUser `authUserShouldBeDeletableAuthor` authorId
       day <- hGetCurrentDay
-      Right <$> hCreateNews vId day
+      Right <$> hMakeDraftIntoNews vId day
 
 data Failure =
   UnknownDraftId

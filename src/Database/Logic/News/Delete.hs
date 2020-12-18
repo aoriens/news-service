@@ -2,6 +2,7 @@
 
 module Database.Logic.News.Delete
   ( deleteDraftAndItsContent
+  , deleteDraftButLeaveItsContent
   , deleteDraftsOfAuthor
   ) where
 
@@ -23,10 +24,10 @@ deleteDraftsOfAuthor authorId =
 
 deleteDraftAndItsContent :: DraftId -> Transaction ()
 deleteDraftAndItsContent draftId =
-  deleteDraftRow draftId >>= mapM_ deleteNewsVersion
+  deleteDraftButLeaveItsContent draftId >>= mapM_ deleteNewsVersion
 
-deleteDraftRow :: DraftId -> Transaction (Maybe NewsVersionId)
-deleteDraftRow =
+deleteDraftButLeaveItsContent :: DraftId -> Transaction (Maybe NewsVersionId)
+deleteDraftButLeaveItsContent =
   runStatement $
   dimap
     getDraftId

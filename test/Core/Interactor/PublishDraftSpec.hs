@@ -88,7 +88,7 @@ handleWith day ref =
           find ((searchedId ==) . draftId) . storageDrafts <$>
           readIORef ref
     , hGetCurrentDay = pure day
-    , hCreateNews =
+    , hMakeDraftIntoNews =
         \searchedDraftId newsDate ->
           updateIORef' ref $ \Storage {..} ->
             let draft =
