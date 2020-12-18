@@ -36,7 +36,7 @@ deleteDraftButLeaveItsContent =
     [TH.maybeStatement|
       delete from drafts
       where draft_id = $1 :: integer
-      returning news_versions_id :: integer
+      returning news_version_id :: integer
     |]
 
 deleteNewsVersion :: NewsVersionId -> Transaction ()
