@@ -10,6 +10,7 @@ module Database.Logic.News.Get
   , getDraft
   , getDraftIdsOfAuthor
   , getNewsAuthorId
+  , getDraftAuthor
   ) where
 
 import Control.Monad
@@ -292,4 +293,16 @@ getNewsAuthorId =
       from news
            join news_versions using (news_version_id)
       where news_id = $1 :: integer
+    |]
+
+getDraftAuthor :: DraftId -> Transaction (Maybe (Deletable AuthorId))
+getDraftAuthor =
+  runStatement $
+  dimap
+    getDraftId
+    (fmap (deletableFromMaybe . fmap AuthorId))
+    [TH.maybeStatement|
+      select author_id :: integer?
+      from drafts
+      where news_version_id = $1 :: integer
     |]

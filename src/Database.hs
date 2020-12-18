@@ -88,7 +88,6 @@ import qualified Database.Logic.Images as DImages
 import qualified Database.Logic.News.Create as DNews
 import qualified Database.Logic.News.Delete as DNews
 import qualified Database.Logic.News.Get as DNews
-import qualified Database.Logic.News.GetDraftAuthor as DNews
 import qualified Database.Logic.Tags as DTags
 import qualified Database.Logic.Users as DUsers
 import Database.Service.Primitives as DB

@@ -86,7 +86,6 @@ library
     , Database.Logic.News.Exists
     , Database.Logic.News.Filter
     , Database.Logic.News.Get
-    , Database.Logic.News.GetDraftAuthor
     , Database.Logic.Pagination
     , Database.Logic.Tags
     , Database.Logic.Users
