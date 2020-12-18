@@ -15,6 +15,7 @@ import Data.Maybe
 import Data.Profunctor
 import Database.Logic.Images
 import Database.Logic.News.Get
+import Database.Logic.News.NewsVersionId
 import Database.Service.Primitives
 import qualified Hasql.TH as TH
 

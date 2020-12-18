@@ -27,6 +27,7 @@ import Database.Logic.Categories
 import Database.Logic.Images
 import Database.Logic.News.Delete
 import Database.Logic.News.Get
+import Database.Logic.News.NewsVersionId
 import Database.Logic.Tags
 import Database.Service.Primitives
 import qualified Hasql.TH as TH

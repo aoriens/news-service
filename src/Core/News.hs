@@ -6,7 +6,6 @@ module Core.News
   , Draft(..)
   , DraftId(..)
   , NewsVersion(..)
-  , NewsVersionId(..)
   ) where
 
 import Core.Author
@@ -61,9 +60,3 @@ data NewsVersion =
     , nvTags :: HashSet Tag
     }
   deriving (Eq, Show)
-
-newtype NewsVersionId =
-  NewsVersionId
-    { getNewsVersionId :: Int32
-    }
-  deriving (Eq, Show, Hashable)

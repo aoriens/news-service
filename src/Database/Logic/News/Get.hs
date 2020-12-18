@@ -33,6 +33,7 @@ import Data.Time
 import Database.Logic.Authors
 import Database.Logic.Categories
 import Database.Logic.News.Filter
+import Database.Logic.News.NewsVersionId
 import Database.Logic.Pagination
 import Database.Logic.Tags
 import Database.Service.Columns
