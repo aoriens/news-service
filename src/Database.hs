@@ -69,6 +69,7 @@ import qualified Core.Interactor.CreateUser as ICreateUser
 import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
+import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateCategory as IUpdateCategory
 import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
@@ -218,7 +219,11 @@ deleteDraftAndItsContent h =
 deleteDraftsOfAuthor :: DB.Handle -> AuthorId -> IO ()
 deleteDraftsOfAuthor h = DB.runTransactionRW h . DNews.deleteDraftsOfAuthor
 
-makeDraftIntoNews :: DB.Handle -> DraftId -> Day -> IO News
+makeDraftIntoNews ::
+     DB.Handle
+  -> DraftId
+  -> Day
+  -> IO (Either IPublishDraft.MakeDraftIntoNewsFailure News)
 makeDraftIntoNews h vId day =
   DB.runTransactionRW h $ DNews.makeDraftIntoNews vId day
 

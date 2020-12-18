@@ -15,6 +15,7 @@ import Core.Deletable
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
+import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Tag
 import Data.Foldable
@@ -187,15 +188,20 @@ insertVersionAndTagAssociation =
       ) on conflict do nothing
     |]
 
-makeDraftIntoNews :: DraftId -> Day -> Transaction News
-makeDraftIntoNews draftId day = do
-  contentId <-
-    databaseUnsafeFromJust ("Cannot find draft_id=" <> T.pack (show draftId)) =<<
-    deleteDraftButLeaveItsContent draftId
-  newsId' <- insertNews contentId day
-  getNews newsId' >>=
-    databaseUnsafeFromJust
-      ("Cannot find news just created: news_id=" <> T.pack (show newsId'))
+makeDraftIntoNews ::
+     DraftId
+  -> Day
+  -> Transaction (Either IPublishDraft.MakeDraftIntoNewsFailure News)
+makeDraftIntoNews draftId day =
+  deleteDraftButLeaveItsContent draftId >>= \case
+    Nothing -> pure $ Left IPublishDraft.MDNUnknownDraftId
+    Just contentId -> do
+      newsId <- insertNews contentId day
+      getNews newsId >>= \case
+        Nothing ->
+          databaseInternalInconsistency $
+          "Cannot find news just created: news_id=" <> T.pack (show newsId)
+        Just news -> pure $ Right news
 
 insertNews :: NewsVersionId -> Day -> Transaction NewsId
 insertNews =

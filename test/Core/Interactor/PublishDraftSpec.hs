@@ -14,7 +14,6 @@ import Core.User
 import Data.IORef
 import Data.IORef.Util
 import Data.List
-import Data.Maybe
 import Data.Time
 import Test.Hspec
 
@@ -90,20 +89,21 @@ handleWith day ref =
     , hGetCurrentDay = pure day
     , hMakeDraftIntoNews =
         \searchedDraftId newsDate ->
-          updateIORef' ref $ \Storage {..} ->
-            let draft =
-                  fromJust $ find ((searchedDraftId ==) . draftId) storageDrafts
-                news =
-                  News
-                    { newsId = createdNewsId
-                    , newsContent = draftContent draft
-                    , newsDate
-                    }
-             in ( Storage
-                    { storageDrafts = delete draft storageDrafts
-                    , storageNews = news : storageNews
-                    }
-                , news)
+          updateIORef' ref $ \oldStorage@Storage {..} ->
+            case find ((searchedDraftId ==) . draftId) storageDrafts of
+              Nothing -> (oldStorage, Left MDNUnknownDraftId)
+              Just draft ->
+                let news =
+                      News
+                        { newsId = createdNewsId
+                        , newsContent = draftContent draft
+                        , newsDate
+                        }
+                 in ( Storage
+                        { storageDrafts = delete draft storageDrafts
+                        , storageNews = news : storageNews
+                        }
+                    , Right news)
     }
 
 draftWithId :: DraftId -> Draft
