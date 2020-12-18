@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Database.Logic.News.Get
   ( getNewsList
@@ -21,6 +22,7 @@ import Core.News
 import Core.Pagination
 import Core.Tag
 import Core.User
+import Data.Coerce
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
@@ -118,8 +120,11 @@ getDraftsOfUser :: UserId -> PageSpec -> Transaction [NewsVersion]
 getDraftsOfUser userId pageSpec =
   mapM loadVersionWithRow =<< getDraftRowsOfUser userId pageSpec
 
-getDraft :: NewsVersionId -> Transaction (Maybe NewsVersion)
-getDraft = mapM loadVersionWithRow <=< getDraftRow
+getDraft :: DraftId -> Transaction (Maybe Draft)
+getDraft = mapM (fmap makeDraft . loadVersionWithRow) <=< getDraftRow
+  where
+    makeDraft version@NewsVersion {nvId} =
+      Draft {draftId = coerce nvId, draftContent = version}
 
 getDraftRowsOfAuthor :: AuthorId -> PageSpec -> Transaction [VersionRow]
 getDraftRowsOfAuthor authorId pageSpec =
@@ -163,8 +168,9 @@ getDraftIdsOfAuthor =
       where author_id = $1 :: integer
     |]
 
-getDraftRow :: NewsVersionId -> Transaction (Maybe VersionRow)
-getDraftRow nvId = runStatementWithColumns sql versionRowColumns D.rowMaybe True
+getDraftRow :: DraftId -> Transaction (Maybe VersionRow)
+getDraftRow draftId =
+  runStatementWithColumns sql versionRowColumns D.rowMaybe True
   where
     sql =
       Sql.text
@@ -175,7 +181,7 @@ getDraftRow nvId = runStatementWithColumns sql versionRowColumns D.rowMaybe True
                left join users using (user_id)
           where news_version_id =
         |] <>
-      Sql.param (getNewsVersionId nvId)
+      Sql.param (getDraftId draftId)
 
 -- Part of news we can extract from the database with the first query.
 data NewsRow =

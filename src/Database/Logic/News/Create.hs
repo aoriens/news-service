@@ -208,11 +208,11 @@ insertNews =
       ) returning news_id :: integer
     |]
 
-copyDraftFromNews :: NewsId -> Transaction NewsVersion
+copyDraftFromNews :: NewsId -> Transaction Draft
 copyDraftFromNews newsId = do
   draftId <- copyDraftRowFromNews newsId
-  copyAdditionalImagesFromNewsToVersion newsId draftId
-  copyTagsFromNewsToVersion newsId draftId
+  copyAdditionalImagesFromNewsToDraft newsId draftId
+  copyTagsFromNewsToDraft newsId draftId
   getDraft draftId >>= maybe draftNotFound pure
   where
     draftNotFound =
@@ -220,12 +220,12 @@ copyDraftFromNews newsId = do
       DatabaseInternalInconsistencyException
         "Cannot find a just inserted draft row"
 
-copyDraftRowFromNews :: NewsId -> Transaction NewsVersionId
+copyDraftRowFromNews :: NewsId -> Transaction DraftId
 copyDraftRowFromNews =
   runStatement $
   dimap
     getNewsId
-    NewsVersionId
+    DraftId
     [TH.singletonStatement|
       insert into news_versions
         (created_from_news_id, title, body, author_id, category_id, main_photo_id)
@@ -236,12 +236,11 @@ copyDraftRowFromNews =
       returning news_version_id :: integer
     |]
 
-copyAdditionalImagesFromNewsToVersion ::
-     NewsId -> NewsVersionId -> Transaction ()
-copyAdditionalImagesFromNewsToVersion =
+copyAdditionalImagesFromNewsToDraft :: NewsId -> DraftId -> Transaction ()
+copyAdditionalImagesFromNewsToDraft =
   curry . runStatement $
   lmap
-    (getNewsId *** getNewsVersionId)
+    (getNewsId *** getDraftId)
     [TH.resultlessStatement|
       insert into news_versions_and_additional_photos_relation
         (news_version_id, image_id)
@@ -251,11 +250,11 @@ copyAdditionalImagesFromNewsToVersion =
       where news_id = $1 :: integer
     |]
 
-copyTagsFromNewsToVersion :: NewsId -> NewsVersionId -> Transaction ()
-copyTagsFromNewsToVersion =
+copyTagsFromNewsToDraft :: NewsId -> DraftId -> Transaction ()
+copyTagsFromNewsToDraft =
   curry . runStatement $
   lmap
-    (getNewsId *** getNewsVersionId)
+    (getNewsId *** getDraftId)
     [TH.resultlessStatement|
       insert into news_versions_and_tags_relation
         (news_version_id, tag_id)

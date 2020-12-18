@@ -584,9 +584,7 @@ runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
               , hCopyDraftFromNews = Database.copyDraftFromNews sdDatabaseHandle
               }
       , hPresent =
-          presentCreatedDraftDeprecated
-            dAppURIConfig
-            dRepresentationBuilderHandle
+          presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticate = authenticate sdAuthenticationHandle
       }
     newsId
@@ -629,7 +627,8 @@ runGetDraftHandler :: NewsVersionId -> Deps -> SessionDeps -> Web.Application
 runGetDraftHandler nvId Deps {..} SessionDeps {..} =
   HGetDraft.run
     HGetDraft.Handle
-      { hGetDraftHandle = IGetDraft.Handle $ Database.getDraft sdDatabaseHandle
+      { hGetDraftHandle =
+          IGetDraft.Handle $ Database.getDraftDeprecated sdDatabaseHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       , hPresent = presentDraft dRepresentationBuilderHandle
       }

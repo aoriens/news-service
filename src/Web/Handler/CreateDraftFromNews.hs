@@ -13,8 +13,8 @@ import Web.Exception
 
 data Handle =
   Handle
-    { hCreateDraftFromNews :: AuthenticatedUser -> NewsId -> IO (Either I.Failure NewsVersion)
-    , hPresent :: NewsVersion -> Response
+    { hCreateDraftFromNews :: AuthenticatedUser -> NewsId -> IO (Either I.Failure Draft)
+    , hPresent :: Draft -> Response
     , hAuthenticate :: Maybe Credentials -> IO AuthenticatedUser
     }
 

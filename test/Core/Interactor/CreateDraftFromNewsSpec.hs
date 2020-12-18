@@ -66,7 +66,8 @@ spec
                     }
               }
           authUser = IdentifiedUser (UserId 0) False [newsAuthorId]
-          expectedDraft = (newsContent news) {nvId = NewsVersionId 2}
+          expectedDraft =
+            stubDraft {draftId = DraftId 2, draftContent = newsContent news}
       (commandLog, h) <-
         getHandleWith
           env {envKnownNews = [news], envCopyDraftResult = expectedDraft}
@@ -79,11 +80,11 @@ type CopyDraftCommandLog = [NewsId]
 data Env =
   Env
     { envKnownNews :: [News]
-    , envCopyDraftResult :: NewsVersion
+    , envCopyDraftResult :: Draft
     }
 
 env :: Env
-env = Env {envKnownNews = [], envCopyDraftResult = stubNewsVersion}
+env = Env {envKnownNews = [], envCopyDraftResult = stubDraft}
 
 getHandleWith :: Env -> IO (IORef CopyDraftCommandLog, Handle IO)
 getHandleWith Env {..} = do

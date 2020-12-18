@@ -29,6 +29,7 @@ module Database
   , getDraftsOfAuthor
   , getDraftsOfUser
   , getDraft
+  , getDraftDeprecated
   , getNewsAuthorId
   , createNews
   , createDraft
@@ -194,7 +195,7 @@ createDraft ::
   -> IO (Either ICreateDraft.CreateDraftFailure Draft)
 createDraft h = DB.runTransactionRW h . DNews.createDraft
 
-copyDraftFromNews :: DB.Handle -> NewsId -> IO NewsVersion
+copyDraftFromNews :: DB.Handle -> NewsId -> IO Draft
 copyDraftFromNews h = DB.runTransactionRW h . DNews.copyDraftFromNews
 
 getDraftAuthor :: DB.Handle -> DraftId -> IO (Maybe (Deletable AuthorId))
@@ -212,8 +213,12 @@ getDraftsOfUser :: DB.Handle -> UserId -> PageSpec -> IO [NewsVersion]
 getDraftsOfUser h userId pageSpec =
   DB.runTransactionRO h $ DNews.getDraftsOfUser userId pageSpec
 
-getDraft :: DB.Handle -> NewsVersionId -> IO (Maybe NewsVersion)
+getDraft :: DB.Handle -> DraftId -> IO (Maybe Draft)
 getDraft h = DB.runTransactionRO h . DNews.getDraft
+
+getDraftDeprecated :: DB.Handle -> NewsVersionId -> IO (Maybe NewsVersion)
+getDraftDeprecated h =
+  fmap (fmap draftContent) . DB.runTransactionRO h . DNews.getDraft . coerce
 
 getNewsAuthorId :: DB.Handle -> NewsId -> IO (Maybe (Deletable AuthorId))
 getNewsAuthorId h = DB.runTransactionRO h . DNews.getNewsAuthorId

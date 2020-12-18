@@ -15,7 +15,7 @@ import Core.News
 data Handle m =
   Handle
     { hGetNewsAuthor :: NewsId -> m (Maybe (Deletable AuthorId))
-    , hCopyDraftFromNews :: NewsId -> m NewsVersion
+    , hCopyDraftFromNews :: NewsId -> m Draft
     }
 
 run ::
@@ -23,7 +23,7 @@ run ::
   => Handle m
   -> AuthenticatedUser
   -> NewsId
-  -> m (Either Failure NewsVersion)
+  -> m (Either Failure Draft)
 run Handle {..} authUser newsId =
   hGetNewsAuthor newsId >>= \case
     Nothing -> pure $ Left UnknownNewsId
