@@ -16,9 +16,6 @@ module Database.Service.Primitives
   , runTransactionRW
   , DatabaseException(..)
   , S.QueryError
-  , isDatabaseResultErrorWithCode
-  , onForeignKeyViolation
-  , ignoringForeignKeyViolation
   , databaseInternalInconsistency
   , databaseUnsafeFromJust
   ) where
@@ -37,7 +34,6 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Session as S
 import qualified Hasql.Statement as St
 import qualified Logger
-import qualified PostgreSQL.ErrorCodes as PE
 import Prelude hiding (log)
 
 data Handle =
@@ -161,25 +157,6 @@ data DatabaseException
   deriving (Show)
 
 instance Exception DatabaseException
-
-isDatabaseResultErrorWithCode :: PE.ErrorCode -> DatabaseException -> Bool
-isDatabaseResultErrorWithCode code exception
-  | HasqlException queryError <- exception
-  , S.QueryError _ _ resultError <- queryError
-  , S.ResultError (S.ServerError code' _ _ _) <- resultError = code == code'
-  | otherwise = False
-
--- | Runs a fallback session if another session finished with the
--- foreign key violation failure.
-onForeignKeyViolation :: Session a -> Session a -> Session a
-onForeignKeyViolation action fallback =
-  catchIf
-    (isDatabaseResultErrorWithCode PE.foreign_key_violation)
-    action
-    (const fallback)
-
-ignoringForeignKeyViolation :: Session () -> Session ()
-ignoringForeignKeyViolation action = action `onForeignKeyViolation` pure ()
 
 databaseInternalInconsistency :: T.Text -> Transaction a
 databaseInternalInconsistency = throwM . DatabaseInternalInconsistencyException
