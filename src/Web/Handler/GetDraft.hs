@@ -14,11 +14,11 @@ import Web.Exception
 data Handle =
   Handle
     { hGetDraftHandle :: I.Handle IO
-    , hPresent :: NewsVersion -> Response
+    , hPresent :: Draft -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
-run :: Handle -> NewsVersionId -> Application
+run :: Handle -> DraftId -> Application
 run Handle {..} draftId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request

@@ -623,16 +623,15 @@ runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
       }
     optAuthorId
 
-runGetDraftHandler :: NewsVersionId -> Deps -> SessionDeps -> Web.Application
-runGetDraftHandler nvId Deps {..} SessionDeps {..} =
+runGetDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runGetDraftHandler draftId Deps {..} SessionDeps {..} =
   HGetDraft.run
     HGetDraft.Handle
-      { hGetDraftHandle =
-          IGetDraft.Handle $ Database.getDraftDeprecated sdDatabaseHandle
+      { hGetDraftHandle = IGetDraft.Handle $ Database.getDraft sdDatabaseHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       , hPresent = presentDraft dRepresentationBuilderHandle
       }
-    nvId
+    draftId
 
 runDeleteDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
 runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =

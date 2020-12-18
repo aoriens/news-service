@@ -123,8 +123,8 @@ presentNewsItem h = dataResponse . runRepBuilder h . newsRep
 presentDrafts :: RepBuilderHandle -> [NewsVersion] -> Response
 presentDrafts h = dataResponse . runRepBuilder h . mapM draftRepDeprecated
 
-presentDraft :: RepBuilderHandle -> NewsVersion -> Response
-presentDraft h = dataResponse . runRepBuilder h . draftRepDeprecated
+presentDraft :: RepBuilderHandle -> Draft -> Response
+presentDraft h = dataResponse . runRepBuilder h . draftRep
 
 presentDeletedDraft :: Response
 presentDeletedDraft = noContentResponse

@@ -12,18 +12,14 @@ import Core.News
 
 newtype Handle m =
   Handle
-    { hGetDraft :: NewsVersionId -> m (Maybe NewsVersion)
+    { hGetDraft :: DraftId -> m (Maybe Draft)
     }
 
 run ::
-     MonadThrow m
-  => Handle m
-  -> AuthenticatedUser
-  -> NewsVersionId
-  -> m (Maybe NewsVersion)
+     MonadThrow m => Handle m -> AuthenticatedUser -> DraftId -> m (Maybe Draft)
 run Handle {..} authUser draftId =
   runMaybeT $ do
     draft <- MaybeT $ hGetDraft draftId
-    author <- MaybeT . pure . maybeFromDeletable $ nvAuthor draft
+    author <- MaybeT . pure . maybeFromDeletable . nvAuthor $ draftContent draft
     authorize "get a draft" $ authUserShouldBeAuthor authUser (authorId author)
     pure draft
