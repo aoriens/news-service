@@ -126,8 +126,8 @@ authentication. You must be a user related to the author of the draft.
 ### `POST /drafts/{draft_id}/publish`
 
 Publishes a [Draft](#Draft) with the given identifier as a news article. Returns
-[News](#News) just created. Requires authentication. You need to be the owner of
-the draft.
+a created or updated [News](#News) entity. The published draft is deleted then.
+It requires authentication. You need to be the owner of the draft.
 
 ### `GET /images/{image_id}`
 
