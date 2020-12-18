@@ -29,8 +29,7 @@ stubDraft = Draft {draftId = DraftId 0, draftContent = stubNewsVersion}
 stubNewsVersion :: NewsVersion
 stubNewsVersion =
   NewsVersion
-    { nvId = NewsVersionId 0
-    , nvTitle = ""
+    { nvTitle = ""
     , nvText = ""
     , nvAuthor = Existing stubAuthor
     , nvCategory = Just stubCategory

@@ -49,8 +49,7 @@ newtype DraftId =
 
 data NewsVersion =
   NewsVersion
-    { nvId :: NewsVersionId
-    , nvTitle :: Text
+    { nvTitle :: Text
     , nvText :: Text
     , nvAuthor :: Deletable Author
     , nvCategory :: Maybe Category

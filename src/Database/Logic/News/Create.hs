@@ -57,8 +57,7 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
         { draftId
         , draftContent =
             NewsVersion
-              { nvId
-              , nvTitle = cdcTitle
+              { nvTitle = cdcTitle
               , nvText = cdcText
               , nvAuthor = Existing author
               , nvCategory = category

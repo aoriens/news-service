@@ -61,9 +61,7 @@ spec
               { newsId
               , newsContent =
                   stubNewsVersion
-                    { nvAuthor = Existing stubAuthor {authorId = newsAuthorId}
-                    , nvId = NewsVersionId 1
-                    }
+                    {nvAuthor = Existing stubAuthor {authorId = newsAuthorId}}
               }
           authUser = IdentifiedUser (UserId 0) False [newsAuthorId]
           expectedDraft =

@@ -24,15 +24,12 @@ spec =
       let expectedNews =
             [ stubNews
                 { newsId = NewsId 1
-                , newsContent =
-                    stubNewsVersion
-                      {nvId = NewsVersionId 1, nvTitle = "A", nvText = "Text"}
+                , newsContent = stubNewsVersion {nvTitle = "A", nvText = "Text"}
                 }
             , stubNews
                 { newsId = NewsId 2
                 , newsContent =
-                    stubNewsVersion
-                      {nvId = NewsVersionId 2, nvTitle = "B", nvText = "Text2"}
+                    stubNewsVersion {nvTitle = "B", nvText = "Text2"}
                 }
             ]
           h = stubHandle {hGetNews = \_ _ _ -> pure expectedNews}
