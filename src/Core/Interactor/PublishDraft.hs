@@ -2,6 +2,8 @@ module Core.Interactor.PublishDraft
   ( run
   , Handle(..)
   , Failure(..)
+  , Success(..)
+  , Status(..)
   , MakeDraftIntoNewsFailure(..)
   , OverwriteNewsWithDraftFailure(..)
   ) where
@@ -11,7 +13,7 @@ import Core.Author
 import Core.AuthorizationNG
 import Core.Deletable
 import Core.News
-import Data.Bifunctor
+import Data.Functor
 import Data.Time
 
 data Handle m =
@@ -36,8 +38,8 @@ run ::
   => Handle m
   -> AuthenticatedUser
   -> DraftId
-  -> m (Either Failure News)
-run Handle {..} authUser draftId = do
+  -> m (Either Failure Success)
+run h@Handle {..} authUser draftId = do
   hGetDraftAuthorAndNewsIdItWasCreatedFrom draftId >>= \case
     Nothing -> pure $ Left UnknownDraftId
     Just (authorId, originNewsId) -> do
@@ -45,18 +47,40 @@ run Handle {..} authUser draftId = do
         authUser `authUserShouldBeDeletableAuthor` authorId
       day <- hGetCurrentDay
       case originNewsId of
-        Nothing ->
-          first fromMakeDraftIntoNewsFailure <$> hMakeDraftIntoNews draftId day
-        Just newsId ->
-          first fromOverwriteNewsWithDraftFailure <$>
-          hOverwriteNewsWithDraft newsId draftId day
+        Nothing -> createNews h draftId day
+        Just newsId -> updateNews h newsId draftId day
+
+data Success =
+  Success
+    { sNews :: News
+    , sStatus :: Status
+    }
+  deriving (Eq, Show)
+
+data Status
+  = NewsIsCreated
+  | NewsIsUpdated
+  deriving (Eq, Show)
 
 data Failure =
   UnknownDraftId
   deriving (Eq, Show)
 
-fromMakeDraftIntoNewsFailure :: MakeDraftIntoNewsFailure -> Failure
-fromMakeDraftIntoNewsFailure MDNUnknownDraftId = UnknownDraftId
+createNews ::
+     Functor m => Handle m -> DraftId -> Day -> m (Either Failure Success)
+createNews Handle {..} draftId day =
+  hMakeDraftIntoNews draftId day <&> \case
+    Left MDNUnknownDraftId -> Left UnknownDraftId
+    Right news -> Right Success {sNews = news, sStatus = NewsIsCreated}
 
-fromOverwriteNewsWithDraftFailure :: OverwriteNewsWithDraftFailure -> Failure
-fromOverwriteNewsWithDraftFailure ONDUnknownDraftId = UnknownDraftId
+updateNews ::
+     Functor m
+  => Handle m
+  -> NewsId
+  -> DraftId
+  -> Day
+  -> m (Either Failure Success)
+updateNews Handle {..} newsId draftId day =
+  hOverwriteNewsWithDraft newsId draftId day <&> \case
+    Left ONDUnknownDraftId -> Left UnknownDraftId
+    Right news -> Right Success {sNews = news, sStatus = NewsIsUpdated}

@@ -603,7 +603,9 @@ runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
                 Database.overwriteNewsWithDraft sdDatabaseHandle
             }
       , hPresent =
-          presentCreatedNewsItem dAppURIConfig dRepresentationBuilderHandle
+          presentCreatedOrUpdatedNewsItem
+            dAppURIConfig
+            dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
     draftId

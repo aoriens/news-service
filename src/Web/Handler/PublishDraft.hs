@@ -14,7 +14,7 @@ import Web.Exception
 data Handle =
   Handle
     { hPublishDraftHandle :: I.Handle IO
-    , hPresent :: News -> Response
+    , hPresent :: I.Success -> Response
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
@@ -24,4 +24,4 @@ run Handle {..} vId request respond = do
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   I.run hPublishDraftHandle authUser vId >>= \case
     Left I.UnknownDraftId -> throwIO NotFoundException
-    Right news -> respond $ hPresent news
+    Right success -> respond $ hPresent success

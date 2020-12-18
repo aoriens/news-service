@@ -67,7 +67,7 @@ spec
       db <- newIORef initialData
       let h = handleWith day db
       r <- run h user draftId
-      r `shouldBe` Right expectedNews
+      r `shouldBe` Right Success {sNews = expectedNews, sStatus = NewsIsCreated}
       readIORef db `shouldReturn` Storage [] [expectedNews]
     it
       "should update existing news from a draft having been created from the news if the user is an author of the draft" $ do
@@ -94,7 +94,7 @@ spec
       db <- newIORef initialData
       let h = handleWith day db
       r <- run h user draftId
-      r `shouldBe` Right expectedNews
+      r `shouldBe` Right Success {sNews = expectedNews, sStatus = NewsIsUpdated}
       readIORef db `shouldReturn` Storage [] [expectedNews]
 
 data Storage =

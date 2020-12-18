@@ -15,7 +15,7 @@ module Web.Presenter
   -- * News and drafts
   , presentNewsList
   , presentNewsItem
-  , presentCreatedNewsItem
+  , presentCreatedOrUpdatedNewsItem
   , presentCreatedDraft
   , presentDrafts
   , presentDraft
@@ -45,6 +45,7 @@ import Core.Category
 import Core.Comment
 import Core.Image
 import Core.Interactor.CreateTag as ICreateTag
+import Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Tag
 import Core.User
@@ -191,11 +192,15 @@ presentCreatedDraft uriConfig h draft =
 draftURI :: Draft -> AppURI
 draftURI = DraftURI . draftId
 
-presentCreatedNewsItem :: AppURIConfig -> RepBuilderHandle -> News -> Response
-presentCreatedNewsItem uriConfig h news =
-  resourceCreatedAndReturnedResponse uriConfig (newsItemURI news) .
-  runRepBuilder h $
-  newsRep news
+presentCreatedOrUpdatedNewsItem ::
+     AppURIConfig -> RepBuilderHandle -> IPublishDraft.Success -> Response
+presentCreatedOrUpdatedNewsItem uriConfig h IPublishDraft.Success {..} =
+  present uriConfig (newsItemURI sNews) (runRepBuilder h $ newsRep sNews)
+  where
+    present =
+      case sStatus of
+        IPublishDraft.NewsIsCreated -> resourceCreatedAndReturnedResponse
+        IPublishDraft.NewsIsUpdated -> resourceModifiedAndReturnedResponse
 
 newsItemURI :: News -> AppURI
 newsItemURI = NewsItemURI . newsId
