@@ -3,6 +3,8 @@
 module Core.News
   ( News(..)
   , NewsId(..)
+  , Draft(..)
+  , DraftId(..)
   , NewsVersion(..)
   , NewsVersionId(..)
   ) where
@@ -31,6 +33,19 @@ newtype NewsId =
     { getNewsId :: Int32
     }
   deriving (Eq, Show)
+
+data Draft =
+  Draft
+    { draftId :: DraftId
+    , draftContent :: NewsVersion
+    }
+  deriving (Eq, Show)
+
+newtype DraftId =
+  DraftId
+    { getDraftId :: Int32
+    }
+  deriving (Eq, Show, Hashable)
 
 data NewsVersion =
   NewsVersion

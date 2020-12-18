@@ -49,6 +49,7 @@ import Core.News
 import Core.Tag
 import Core.User
 import qualified Data.ByteString.Builder as BB
+import Data.Coerce
 import qualified Data.Text.Encoding as T
 import Web.AppURI
 import Web.Application
@@ -190,7 +191,7 @@ presentCreatedDraft uriConfig h newsVersion =
   draftRep newsVersion
 
 draftURI :: NewsVersion -> AppURI
-draftURI = DraftURI . nvId
+draftURI = DraftURI . coerce . nvId
 
 presentCreatedNewsItem :: AppURIConfig -> RepBuilderHandle -> News -> Response
 presentCreatedNewsItem uriConfig h news =

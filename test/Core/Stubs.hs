@@ -1,5 +1,6 @@
 module Core.Stubs
   ( stubNews
+  , stubDraft
   , stubNewsVersion
   , stubAuthor
   , stubUser
@@ -21,6 +22,9 @@ import Data.Time
 stubNews :: News
 stubNews =
   News {newsId = NewsId 0, newsDate = stubDay, newsContent = stubNewsVersion}
+
+stubDraft :: Draft
+stubDraft = Draft {draftId = DraftId 0, draftContent = stubNewsVersion}
 
 stubNewsVersion :: NewsVersion
 stubNewsVersion =

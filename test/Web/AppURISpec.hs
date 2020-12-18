@@ -127,7 +127,7 @@ appURIsForAllPossibleConstructors =
   , TagsURI
   , TagURI $ TagId 1
   , DraftsURI
-  , DraftURI $ NewsVersionId 1
+  , DraftURI $ DraftId 1
   , PublishDraftURI $ NewsVersionId 1
   , CommentsForNewsURI $ NewsId 1
   , CommentURI (CommentId 1)

@@ -57,7 +57,7 @@ data AppURI
   | TagURI TagId
   | DraftsURI
   | AuthorDraftsURI AuthorId
-  | DraftURI NewsVersionId
+  | DraftURI DraftId
   | PublishDraftURI NewsVersionId
   | CommentsForNewsURI NewsId
   | CommentURI CommentId
@@ -95,7 +95,7 @@ toRelativeURI uri =
     TagsURI -> ["tags"]
     TagURI (TagId tid) -> ["tags", T.pack $ show tid]
     DraftsURI -> ["drafts"]
-    DraftURI (NewsVersionId vid) -> ["drafts", T.pack $ show vid]
+    DraftURI (DraftId draftId) -> ["drafts", T.pack $ show draftId]
     PublishDraftURI (NewsVersionId vid) ->
       ["drafts", T.pack $ show vid, "publish"]
     CommentsForNewsURI (NewsId newsId') ->
@@ -141,8 +141,7 @@ fromRelativeURI (RelativeURI path) =
     ["tags"] -> Just TagsURI
     ["tags", id'] -> TagURI . TagId <$> readExactIntegral (T.unpack id')
     ["drafts"] -> Just DraftsURI
-    ["drafts", id'] ->
-      DraftURI . NewsVersionId <$> readExactIntegral (T.unpack id')
+    ["drafts", id'] -> DraftURI . DraftId <$> readExactIntegral (T.unpack id')
     ["drafts", id', "publish"] ->
       PublishDraftURI . NewsVersionId <$> readExactIntegral (T.unpack id')
     _ -> Nothing

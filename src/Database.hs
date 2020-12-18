@@ -1,3 +1,4 @@
+-- | High-level data source interface for using in the business logic.
 module Database
   -- * Authors
   ( createAuthor
@@ -24,6 +25,7 @@ module Database
   , getNewsList
   , getNews
   , getDraftAuthor
+  , getDraftAuthorDeprecated
   , getDraftsOfAuthor
   , getDraftsOfUser
   , getDraft
@@ -31,7 +33,7 @@ module Database
   , createNews
   , createNewsVersion
   , copyDraftFromNews
-  , deleteNewsVersion
+  , deleteDraftAndItsNewsVersion
   , deleteDraftsOfAuthor
   -- * Tags
   , findTagNamed
@@ -74,6 +76,7 @@ import Core.News
 import Core.Pagination
 import Core.Tag
 import Core.User
+import Data.Coerce
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe
@@ -194,8 +197,12 @@ createNewsVersion h = DB.runTransactionRW h . DNews.createNewsVersion
 copyDraftFromNews :: DB.Handle -> NewsId -> IO NewsVersion
 copyDraftFromNews h = DB.runTransactionRW h . DNews.copyDraftFromNews
 
-getDraftAuthor :: DB.Handle -> NewsVersionId -> IO (Maybe (Deletable AuthorId))
+getDraftAuthor :: DB.Handle -> DraftId -> IO (Maybe (Deletable AuthorId))
 getDraftAuthor h = DB.runTransactionRO h . DNews.getDraftAuthor
+
+getDraftAuthorDeprecated ::
+     DB.Handle -> NewsVersionId -> IO (Maybe (Deletable AuthorId))
+getDraftAuthorDeprecated = coerce getDraftAuthor
 
 getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [NewsVersion]
 getDraftsOfAuthor h authorId pageSpec =
@@ -211,8 +218,9 @@ getDraft h = DB.runTransactionRO h . DNews.getDraft
 getNewsAuthorId :: DB.Handle -> NewsId -> IO (Maybe (Deletable AuthorId))
 getNewsAuthorId h = DB.runTransactionRO h . DNews.getNewsAuthorId
 
-deleteNewsVersion :: DB.Handle -> NewsVersionId -> IO ()
-deleteNewsVersion h = DB.runTransactionRW h . DNews.deleteNewsVersion
+deleteDraftAndItsNewsVersion :: DB.Handle -> DraftId -> IO ()
+deleteDraftAndItsNewsVersion h =
+  DB.runTransactionRW h . DNews.deleteDraftAndItsNewsVersion
 
 deleteDraftsOfAuthor :: DB.Handle -> AuthorId -> IO ()
 deleteDraftsOfAuthor h = DB.runTransactionRW h . DNews.deleteDraftsOfAuthor

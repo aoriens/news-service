@@ -13,12 +13,12 @@ import Web.Exception
 
 data Handle =
   Handle
-    { hDeleteDraft :: AuthenticatedUser -> NewsVersionId -> IO (Either IDeleteDraft.Failure ())
+    { hDeleteDraft :: AuthenticatedUser -> DraftId -> IO (Either IDeleteDraft.Failure ())
     , hAuthenticate :: Maybe Credentials -> IO AuthenticatedUser
     , hPresent :: Response
     }
 
-run :: Handle -> NewsVersionId -> Application
+run :: Handle -> DraftId -> Application
 run Handle {..} draftId request respond = do
   authUser <-
     hAuthenticate =<< Web.Credentials.getCredentialsFromRequest request

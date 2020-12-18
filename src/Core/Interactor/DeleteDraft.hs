@@ -12,15 +12,15 @@ import Core.News
 
 data Handle m =
   Handle
-    { hGetDraftAuthor :: NewsVersionId -> m (Maybe (Deletable AuthorId))
-    , hDeleteNewsVersion :: NewsVersionId -> m ()
+    { hGetDraftAuthor :: DraftId -> m (Maybe (Deletable AuthorId))
+    , hDeleteDraftAndItsNewsVersion :: DraftId -> m ()
     }
 
 run ::
      MonadThrow m
   => Handle m
   -> AuthenticatedUser
-  -> NewsVersionId
+  -> DraftId
   -> m (Either Failure ())
 run Handle {..} authUser draftId = do
   hGetDraftAuthor draftId >>= \case
@@ -28,7 +28,7 @@ run Handle {..} authUser draftId = do
     Just authorId -> do
       authorize "deleting a draft" $
         authUser `authUserShouldBeDeletableAuthor` authorId
-      hDeleteNewsVersion draftId
+      hDeleteDraftAndItsNewsVersion draftId
       pure $ Right ()
 
 data Failure =

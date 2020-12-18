@@ -11,11 +11,11 @@ import Data.Profunctor
 import Database.Service.Primitives
 import qualified Hasql.TH as TH
 
-getDraftAuthor :: NewsVersionId -> Transaction (Maybe (Deletable AuthorId))
+getDraftAuthor :: DraftId -> Transaction (Maybe (Deletable AuthorId))
 getDraftAuthor =
   runStatement $
   dimap
-    getNewsVersionId
+    getDraftId
     (fmap (deletableFromMaybe . fmap AuthorId))
     [TH.maybeStatement|
       select author_id :: integer?

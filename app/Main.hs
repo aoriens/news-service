@@ -56,6 +56,7 @@ import Core.Tag
 import Core.User
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
+import Data.Coerce
 import qualified Data.Text as T
 import qualified Database
 import qualified Database.Service.ConnectionManager as DBConnManager
@@ -232,7 +233,7 @@ router deps =
       [R.get $ runGetDraftsHandler Nothing, R.post runCreateDraftHandler]
     AuthorDraftsURI authorId -> [R.get $ runGetDraftsHandler (Just authorId)]
     DraftURI draftId ->
-      [ R.get $ runGetDraftHandler draftId
+      [ R.get $ runGetDraftHandler $ coerce draftId
       , R.delete $ runDeleteDraftHandler draftId
       ]
     PublishDraftURI draftId -> [R.post $ runPublishDraftHandler draftId]
@@ -595,7 +596,8 @@ runPublishDraftHandler nvId Deps {..} SessionDeps {..} =
     HPublishDraft.Handle
       { hPublishDraftHandle =
           IPublishDraft.Handle
-            { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
+            { hGetDraftAuthor =
+                Database.getDraftAuthorDeprecated sdDatabaseHandle
             , hGetCurrentDay = getCurrentDay
             , hCreateNews = Database.createNews sdDatabaseHandle
             }
@@ -631,20 +633,21 @@ runGetDraftHandler nvId Deps {..} SessionDeps {..} =
       }
     nvId
 
-runDeleteDraftHandler :: NewsVersionId -> Deps -> SessionDeps -> Web.Application
-runDeleteDraftHandler nvId Deps {..} SessionDeps {..} =
+runDeleteDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =
   HDeleteDraft.run
     HDeleteDraft.Handle
       { hDeleteDraft =
           IDeleteDraft.run
             IDeleteDraft.Handle
               { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
-              , hDeleteNewsVersion = Database.deleteNewsVersion sdDatabaseHandle
+              , hDeleteDraftAndItsNewsVersion =
+                  Database.deleteDraftAndItsNewsVersion sdDatabaseHandle
               }
       , hAuthenticate = authenticate sdAuthenticationHandle
       , hPresent = presentDeletedDraft
       }
-    nvId
+    draftId
 
 runCreateCommentHandler :: NewsId -> Deps -> SessionDeps -> Web.Application
 runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
