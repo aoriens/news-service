@@ -7,7 +7,6 @@ module Database.Logic.News.Create
   ) where
 
 import Control.Arrow
-import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.Author
@@ -219,12 +218,8 @@ copyDraftFromNews newsId = do
   (draftId, contentId) <- copyDraftRowFromNews newsId
   copyAdditionalImagesFromNewsToVersion newsId contentId
   copyTagsFromNewsToVersion newsId contentId
-  getDraft draftId >>= maybe draftNotFound pure
-  where
-    draftNotFound =
-      throwM $
-      DatabaseInternalInconsistencyException
-        "Cannot find a just inserted draft row"
+  getDraft draftId >>=
+    databaseUnsafeFromJust "Cannot find a just inserted draft row"
 
 copyDraftRowFromNews :: NewsId -> Transaction (DraftId, NewsVersionId)
 copyDraftRowFromNews =
