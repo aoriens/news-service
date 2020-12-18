@@ -17,7 +17,6 @@ data EntityId
   | CategoryEntityId CategoryId
   | TagEntityId TagId
   | ImageEntityId ImageId
-  | NewsVersionEntityId NewsVersionId
   | NewsEntityId NewsId
   deriving (Show, Eq)
 
@@ -41,9 +40,6 @@ instance IsEntityId TagId where
 
 instance IsEntityId ImageId where
   toEntityId = ImageEntityId
-
-instance IsEntityId NewsVersionId where
-  toEntityId = NewsVersionEntityId
 
 instance IsEntityId NewsId where
   toEntityId = NewsEntityId
