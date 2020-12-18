@@ -261,12 +261,10 @@ loadVersionWithRow VersionRow {..} = do
   pure NewsVersion {nvCategory, nvTags, nvAdditionalPhotoIds, ..}
 
 getExistingCategoryById :: CategoryId -> Transaction Category
-getExistingCategoryById =
-  maybe
-    (databaseInternalInconsistency
-       "NewsVersion must always refer to an existing category")
-    pure <=<
-  selectCategory
+getExistingCategoryById catId =
+  databaseUnsafeFromJust
+    ("Suddenly not found: category_id=" <> T.pack (show catId)) =<<
+  selectCategory catId
 
 getTagsForVersion :: NewsVersionId -> Transaction (Set.HashSet Tag)
 getTagsForVersion =
