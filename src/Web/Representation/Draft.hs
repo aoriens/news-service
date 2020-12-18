@@ -2,7 +2,6 @@
 
 module Web.Representation.Draft
   ( draftRep
-  , draftRepDeprecated
   , DraftRep(..)
   ) where
 
@@ -24,10 +23,7 @@ import Web.Representation.Tag
 import Web.RepresentationBuilder
 
 draftRep :: Draft -> RepBuilder DraftRep
-draftRep = draftRepDeprecated . draftContent
-
-draftRepDeprecated :: NewsVersion -> RepBuilder DraftRep
-draftRepDeprecated NewsVersion {..} = do
+draftRep Draft {draftId, draftContent = NewsVersion {..}} = do
   draftAuthor <-
     case nvAuthor of
       Deleted -> pure $ LeftRep "DELETED"
@@ -38,7 +34,7 @@ draftRepDeprecated NewsVersion {..} = do
   draftTags <- mapM tagRep $ toList nvTags
   pure
     DraftRep
-      { draftDraftId = getNewsVersionId nvId
+      { draftDraftId = getDraftId draftId
       , draftTitle = nvTitle
       , draftText = nvText
       , draftAuthor

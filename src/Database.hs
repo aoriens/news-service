@@ -25,11 +25,9 @@ module Database
   , getNewsList
   , getNews
   , getDraftAuthor
-  , getDraftAuthorDeprecated
   , getDraftsOfAuthor
   , getDraftsOfUser
   , getDraft
-  , getDraftDeprecated
   , getNewsAuthorId
   , createNews
   , createDraft
@@ -77,7 +75,6 @@ import Core.News
 import Core.Pagination
 import Core.Tag
 import Core.User
-import Data.Coerce
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe
@@ -201,10 +198,6 @@ copyDraftFromNews h = DB.runTransactionRW h . DNews.copyDraftFromNews
 getDraftAuthor :: DB.Handle -> DraftId -> IO (Maybe (Deletable AuthorId))
 getDraftAuthor h = DB.runTransactionRO h . DNews.getDraftAuthor
 
-getDraftAuthorDeprecated ::
-     DB.Handle -> NewsVersionId -> IO (Maybe (Deletable AuthorId))
-getDraftAuthorDeprecated = coerce getDraftAuthor
-
 getDraftsOfAuthor :: DB.Handle -> AuthorId -> PageSpec -> IO [Draft]
 getDraftsOfAuthor h authorId pageSpec =
   DB.runTransactionRO h $ DNews.getDraftsOfAuthor authorId pageSpec
@@ -215,10 +208,6 @@ getDraftsOfUser h userId pageSpec =
 
 getDraft :: DB.Handle -> DraftId -> IO (Maybe Draft)
 getDraft h = DB.runTransactionRO h . DNews.getDraft
-
-getDraftDeprecated :: DB.Handle -> NewsVersionId -> IO (Maybe NewsVersion)
-getDraftDeprecated h =
-  fmap (fmap draftContent) . DB.runTransactionRO h . DNews.getDraft . coerce
 
 getNewsAuthorId :: DB.Handle -> NewsId -> IO (Maybe (Deletable AuthorId))
 getNewsAuthorId h = DB.runTransactionRO h . DNews.getNewsAuthorId

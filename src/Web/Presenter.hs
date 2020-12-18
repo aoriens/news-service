@@ -17,7 +17,6 @@ module Web.Presenter
   , presentNewsItem
   , presentCreatedNewsItem
   , presentCreatedDraft
-  , presentCreatedDraftDeprecated
   , presentDrafts
   , presentDraft
   , presentDeletedDraft
@@ -50,7 +49,6 @@ import Core.News
 import Core.Tag
 import Core.User
 import qualified Data.ByteString.Builder as BB
-import Data.Coerce
 import qualified Data.Text.Encoding as T
 import Web.AppURI
 import Web.Application
@@ -183,13 +181,6 @@ presentUpdatedTag :: AppURIConfig -> RepBuilderHandle -> Tag -> Response
 presentUpdatedTag uriConfig h tag =
   resourceModifiedAndReturnedResponse uriConfig (tagURI tag) . runRepBuilder h $
   tagRep tag
-
-presentCreatedDraftDeprecated ::
-     AppURIConfig -> RepBuilderHandle -> NewsVersion -> Response
-presentCreatedDraftDeprecated uriConfig h draft =
-  resourceCreatedAndReturnedResponse uriConfig (DraftURI . coerce $ nvId draft) .
-  runRepBuilder h $
-  draftRepDeprecated draft
 
 presentCreatedDraft :: AppURIConfig -> RepBuilderHandle -> Draft -> Response
 presentCreatedDraft uriConfig h draft =
