@@ -561,7 +561,7 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
             { hAuthorizationHandle = Core.Authorization.Impl.new
             , hGetAuthorIdByUserIdIfExactlyOne =
                 Database.getAuthorIdByUserIdIfExactlyOne sdDatabaseHandle
-            , hCreateNewsVersion = Database.createNewsVersion sdDatabaseHandle
+            , hCreateDraft = Database.createDraft sdDatabaseHandle
             , hRejectImageIfDisallowed =
                 rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
             }

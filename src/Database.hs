@@ -31,7 +31,7 @@ module Database
   , getDraft
   , getNewsAuthorId
   , createNews
-  , createNewsVersion
+  , createDraft
   , copyDraftFromNews
   , deleteDraftAndItsNewsVersion
   , deleteDraftsOfAuthor
@@ -188,11 +188,11 @@ getNewsList h nf sortOptions =
 getNews :: DB.Handle -> NewsId -> IO (Maybe News)
 getNews h = DB.runTransactionRO h . DNews.getNews
 
-createNewsVersion ::
+createDraft ::
      DB.Handle
-  -> ICreateDraft.CreateNewsVersionCommand
-  -> IO (Either ICreateDraft.GatewayFailure NewsVersion)
-createNewsVersion h = DB.runTransactionRW h . DNews.createNewsVersion
+  -> ICreateDraft.CreateDraftCommand
+  -> IO (Either ICreateDraft.CreateDraftFailure NewsVersion)
+createDraft h = DB.runTransactionRW h . DNews.createDraft
 
 copyDraftFromNews :: DB.Handle -> NewsId -> IO NewsVersion
 copyDraftFromNews h = DB.runTransactionRW h . DNews.copyDraftFromNews

@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Database.Logic.News.Create
-  ( createNewsVersion
+  ( createDraft
   , createNews
   , copyDraftFromNews
   ) where
@@ -31,32 +31,32 @@ import Database.Logic.Tags
 import Database.Service.Primitives
 import qualified Hasql.TH as TH
 
-createNewsVersion ::
-     ICreateDraft.CreateNewsVersionCommand
-  -> Transaction (Either ICreateDraft.GatewayFailure NewsVersion)
-createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
+createDraft ::
+     ICreateDraft.CreateDraftCommand
+  -> Transaction (Either ICreateDraft.CreateDraftFailure NewsVersion)
+createDraft ICreateDraft.CreateDraftCommand {..} =
   runExceptT $ do
-    author <- getExistingEntityBy selectAuthorById cnvAuthorId
-    category <- getExistingCategoryIfJust cnvCategoryId
+    author <- getExistingEntityBy selectAuthorById cdcAuthorId
+    category <- getExistingCategoryIfJust cdcCategoryId
     nvTags <- getExistingTags
-    nvMainPhotoId <- mapM createOrGetExistingImage cnvMainPhoto
+    nvMainPhotoId <- mapM createOrGetExistingImage cdcMainPhoto
     nvId <-
       lift . insertVersion $
       InsertVersionCommand
-        { ivcTitle = cnvTitle
-        , ivcText = cnvText
-        , ivcAuthorId = cnvAuthorId
-        , ivcCategoryId = cnvCategoryId
+        { ivcTitle = cdcTitle
+        , ivcText = cdcText
+        , ivcAuthorId = cdcAuthorId
+        , ivcCategoryId = cdcCategoryId
         , ivcMainPhotoId = nvMainPhotoId
         }
     nvAdditionalPhotoIds <- createOrGetExistingAdditionalPhotos
     lift $ addPhotosToVersion nvId nvAdditionalPhotoIds
-    lift $ addTagsToVersion nvId cnvTagIds
+    lift $ addTagsToVersion nvId cdcTagIds
     pure
       NewsVersion
         { nvId
-        , nvTitle = cnvTitle
-        , nvText = cnvText
+        , nvTitle = cdcTitle
+        , nvText = cdcText
         , nvAuthor = Existing author
         , nvCategory = category
         , nvMainPhotoId
@@ -65,15 +65,15 @@ createNewsVersion ICreateDraft.CreateNewsVersionCommand {..} =
         }
   where
     getExistingTags =
-      Set.fromList <$> mapM (getExistingEntityBy findTagById) (toList cnvTagIds)
+      Set.fromList <$> mapM (getExistingEntityBy findTagById) (toList cdcTagIds)
     createOrGetExistingAdditionalPhotos =
-      Set.fromList <$> mapM createOrGetExistingImage cnvAdditionalPhotos
+      Set.fromList <$> mapM createOrGetExistingImage cdcAdditionalPhotos
 
 getExistingEntityBy ::
      IsEntityId id
   => (id -> Transaction (Maybe entity))
   -> id
-  -> ExceptT ICreateDraft.GatewayFailure Transaction entity
+  -> ExceptT ICreateDraft.CreateDraftFailure Transaction entity
 getExistingEntityBy getOptEntity id' = do
   optEntity <- lift $ getOptEntity id'
   case optEntity of
@@ -82,13 +82,13 @@ getExistingEntityBy getOptEntity id' = do
 
 getExistingCategoryIfJust ::
      Maybe CategoryId
-  -> ExceptT ICreateDraft.GatewayFailure Transaction (Maybe Category)
+  -> ExceptT ICreateDraft.CreateDraftFailure Transaction (Maybe Category)
 getExistingCategoryIfJust =
   maybe (pure Nothing) (fmap Just . getExistingEntityBy selectCategory)
 
 createOrGetExistingImage ::
      Either ImageId Image
-  -> ExceptT ICreateDraft.GatewayFailure Transaction ImageId
+  -> ExceptT ICreateDraft.CreateDraftFailure Transaction ImageId
 createOrGetExistingImage =
   \case
     Right image -> lift $ createImage image
@@ -99,9 +99,11 @@ createOrGetExistingImage =
         else failWithEntityNotFound imageId'
 
 failWithEntityNotFound ::
-     IsEntityId id => id -> ExceptT ICreateDraft.GatewayFailure Transaction a
+     IsEntityId id
+  => id
+  -> ExceptT ICreateDraft.CreateDraftFailure Transaction a
 failWithEntityNotFound objId =
-  throwE $ ICreateDraft.GUnknownEntityId [toEntityId objId]
+  throwE $ ICreateDraft.CDUnknownEntityId [toEntityId objId]
 
 insertVersion :: InsertVersionCommand -> Transaction NewsVersionId
 insertVersion =

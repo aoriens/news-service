@@ -30,8 +30,7 @@ spec
     itShouldAuthorizeBeforeOperation (AuthorshipPermission $ Existing creatorId) $ \authUser authorizationHandle onSuccess -> do
       let h =
             stubHandle
-              { hCreateNewsVersion =
-                  \_ -> onSuccess >> pure (Right stubNewsVersion)
+              { hCreateDraft = \_ -> onSuccess >> pure (Right stubNewsVersion)
               , hAuthorizationHandle = authorizationHandle
               }
           request = stubRequest {cdAuthorId = Just creatorId}
@@ -42,7 +41,7 @@ spec
           expectedPermission = AuthorshipPermission $ Existing aid
           h =
             stubHandle
-              { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
+              { hCreateDraft = \_ -> pure $ Right stubNewsVersion
               , hAuthorizationHandle =
                   AuthorizationHandle
                     {hHasPermission = \perm _ -> perm == expectedPermission}
@@ -72,35 +71,34 @@ spec
               }
           h =
             stubHandle
-              { hCreateNewsVersion =
+              { hCreateDraft =
                   \cmd -> do
                     writeIORef acceptedCommandRef (Just cmd)
                     pure $ Right stubNewsVersion
               }
       _ <- run h someAuthUser request
       acceptedCommand <- readIORef acceptedCommandRef
-      cnvTitle <$> acceptedCommand `shouldBe` Just (cdTitle request)
-      cnvText <$> acceptedCommand `shouldBe` Just (cdText request)
-      cnvAuthorId <$> acceptedCommand `shouldBe` cdAuthorId request
-      cnvCategoryId <$> acceptedCommand `shouldBe` Just (cdCategoryId request)
-      cnvMainPhoto <$> acceptedCommand `shouldBe` Just (cdMainPhoto request)
-      cnvAdditionalPhotos <$>
+      cdcTitle <$> acceptedCommand `shouldBe` Just (cdTitle request)
+      cdcText <$> acceptedCommand `shouldBe` Just (cdText request)
+      cdcAuthorId <$> acceptedCommand `shouldBe` cdAuthorId request
+      cdcCategoryId <$> acceptedCommand `shouldBe` Just (cdCategoryId request)
+      cdcMainPhoto <$> acceptedCommand `shouldBe` Just (cdMainPhoto request)
+      cdcAdditionalPhotos <$>
         acceptedCommand `shouldBe` Just (cdAdditionalPhotos request)
-      cnvTagIds <$> acceptedCommand `shouldBe` Just (cdTagIds request)
-    it "should pass NewsVersion got from hCreateNewsVersion" $ do
+      cdcTagIds <$> acceptedCommand `shouldBe` Just (cdTagIds request)
+    it "should pass NewsVersion got from hCreateDraft" $ do
       let request = stubRequest
           expectedVersion = stubNewsVersion {nvId = NewsVersionId 2}
-          h =
-            stubHandle {hCreateNewsVersion = \_ -> pure $ Right expectedVersion}
+          h = stubHandle {hCreateDraft = \_ -> pure $ Right expectedVersion}
       version <- run h someAuthUser request
       version `shouldBe` expectedVersion
     it
-      "should throw DependentEntitiesNotFoundException if hCreateNewsVersion returned GUnknownEntityId" $ do
+      "should throw DependentEntitiesNotFoundException if hCreateDraft returned CDUnknownEntityId" $ do
       let request = stubRequest
           ids = [toEntityId $ UserId 1]
           h =
             stubHandle
-              {hCreateNewsVersion = \_ -> pure . Left $ GUnknownEntityId ids}
+              {hCreateDraft = \_ -> pure . Left $ CDUnknownEntityId ids}
       result <- try $ run h someAuthUser request
       result `shouldBe` Left (DependentEntitiesNotFoundException ids)
     it "should pass main photo to hRejectImageIfDisallowed if it's Right Image" $ do
@@ -147,17 +145,17 @@ spec
       _ <- run h someAuthUser request
       pure ()
     it
-      "should not invoke hCreateNewsVersion if hRejectImageIfDisallowed threw an exception on main photo" $ do
+      "should not invoke hCreateDraft if hRejectImageIfDisallowed threw an exception on main photo" $ do
       let expectedError = "expected"
           request = stubRequest {cdMainPhoto = Just $ Right stubImage}
           h =
             stubHandle
               { hRejectImageIfDisallowed = \_ -> error expectedError
-              , hCreateNewsVersion = \_ -> error "Must not invoke"
+              , hCreateDraft = \_ -> error "Must not invoke"
               }
       run h someAuthUser request `shouldThrow` errorCall expectedError
     it
-      "should not invoke hCreateNewsVersion if hRejectImageIfDisallowed threw an exception on an additional photo" $ do
+      "should not invoke hCreateDraft if hRejectImageIfDisallowed threw an exception on an additional photo" $ do
       let expectedError = "expected"
           request =
             stubRequest
@@ -165,11 +163,11 @@ spec
           h =
             stubHandle
               { hRejectImageIfDisallowed = \_ -> error expectedError
-              , hCreateNewsVersion = \_ -> error "Must not invoke"
+              , hCreateDraft = \_ -> error "Must not invoke"
               }
       run h someAuthUser request `shouldThrow` errorCall expectedError
     it
-      "should pass authorId to hCreateNewsVersion from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
+      "should pass authorId to hCreateDraft from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
       passedAuthorsId <- newIORef []
       let request = stubRequest {cdAuthorId = Nothing}
           expectedAuthorId = AuthorId 1
@@ -178,9 +176,9 @@ spec
             stubHandle
               { hGetAuthorIdByUserIdIfExactlyOne =
                   \_ -> pure $ Just expectedAuthorId
-              , hCreateNewsVersion =
+              , hCreateDraft =
                   \cmd -> do
-                    modifyIORef' passedAuthorsId (cnvAuthorId cmd :)
+                    modifyIORef' passedAuthorsId (cdcAuthorId cmd :)
                     pure (Right stubNewsVersion)
               }
       _ <- run h authUser request
@@ -258,7 +256,7 @@ stubRequest =
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    { hCreateNewsVersion = \_ -> pure $ Right stubNewsVersion
+    { hCreateDraft = \_ -> pure $ Right stubNewsVersion
     , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
     , hAuthorizationHandle = noOpAuthorizationHandle
     , hRejectImageIfDisallowed = \_ -> pure ()

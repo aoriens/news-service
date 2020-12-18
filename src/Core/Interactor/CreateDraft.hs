@@ -4,8 +4,8 @@ module Core.Interactor.CreateDraft
   ( run
   , Handle(..)
   , CreateDraftRequest(..)
-  , CreateNewsVersionCommand(..)
-  , GatewayFailure(..)
+  , CreateDraftCommand(..)
+  , CreateDraftFailure(..)
   ) where
 
 import Control.Monad.Catch
@@ -26,7 +26,7 @@ data Handle m =
   Handle
     { hAuthorizationHandle :: AuthorizationHandle
     , hGetAuthorIdByUserIdIfExactlyOne :: UserId -> m (Maybe AuthorId)
-    , hCreateNewsVersion :: CreateNewsVersionCommand -> m (Either GatewayFailure NewsVersion)
+    , hCreateDraft :: CreateDraftCommand -> m (Either CreateDraftFailure NewsVersion)
     , hRejectImageIfDisallowed :: MonadThrow m =>
                                     Image -> m ()
     }
@@ -45,7 +45,7 @@ run h@Handle {..} authUser request = do
     authUser
     actionName
   rejectRequestIfInvalid h request
-  hCreateNewsVersion (makeCommand request authorId') >>=
+  hCreateDraft (makeCommand request authorId') >>=
     either (throwM . exceptionFromGatewayFailure) pure
 
 inferAuthorIdFromRequestOrUser ::
@@ -76,20 +76,20 @@ rejectRequestIfInvalid Handle {hRejectImageIfDisallowed} CreateDraftRequest {..}
   mapM_ (mapM_ hRejectImageIfDisallowed) cdMainPhoto
   mapM_ (mapM_ hRejectImageIfDisallowed) cdAdditionalPhotos
 
-makeCommand :: CreateDraftRequest -> AuthorId -> CreateNewsVersionCommand
+makeCommand :: CreateDraftRequest -> AuthorId -> CreateDraftCommand
 makeCommand CreateDraftRequest {..} aid =
-  CreateNewsVersionCommand
-    { cnvTitle = cdTitle
-    , cnvText = cdText
-    , cnvAuthorId = aid
-    , cnvCategoryId = cdCategoryId
-    , cnvMainPhoto = cdMainPhoto
-    , cnvAdditionalPhotos = cdAdditionalPhotos
-    , cnvTagIds = cdTagIds
+  CreateDraftCommand
+    { cdcTitle = cdTitle
+    , cdcText = cdText
+    , cdcAuthorId = aid
+    , cdcCategoryId = cdCategoryId
+    , cdcMainPhoto = cdMainPhoto
+    , cdcAdditionalPhotos = cdAdditionalPhotos
+    , cdcTagIds = cdTagIds
     }
 
-exceptionFromGatewayFailure :: GatewayFailure -> CoreException
-exceptionFromGatewayFailure (GUnknownEntityId ids) =
+exceptionFromGatewayFailure :: CreateDraftFailure -> CoreException
+exceptionFromGatewayFailure (CDUnknownEntityId ids) =
   DependentEntitiesNotFoundException ids
 
 data CreateDraftRequest =
@@ -103,17 +103,17 @@ data CreateDraftRequest =
     , cdTagIds :: Set.HashSet TagId
     }
 
-data CreateNewsVersionCommand =
-  CreateNewsVersionCommand
-    { cnvTitle :: T.Text
-    , cnvText :: T.Text
-    , cnvAuthorId :: AuthorId
-    , cnvCategoryId :: Maybe CategoryId
-    , cnvMainPhoto :: Maybe (Either ImageId Image)
-    , cnvAdditionalPhotos :: [Either ImageId Image]
-    , cnvTagIds :: Set.HashSet TagId
+data CreateDraftCommand =
+  CreateDraftCommand
+    { cdcTitle :: T.Text
+    , cdcText :: T.Text
+    , cdcAuthorId :: AuthorId
+    , cdcCategoryId :: Maybe CategoryId
+    , cdcMainPhoto :: Maybe (Either ImageId Image)
+    , cdcAdditionalPhotos :: [Either ImageId Image]
+    , cdcTagIds :: Set.HashSet TagId
     }
 
-newtype GatewayFailure =
-  GUnknownEntityId [EntityId]
+newtype CreateDraftFailure =
+  CDUnknownEntityId [EntityId]
   deriving (Eq, Show)
