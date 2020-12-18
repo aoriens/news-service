@@ -13,7 +13,7 @@ import Core.News
 data Handle m =
   Handle
     { hGetDraftAuthor :: DraftId -> m (Maybe (Deletable AuthorId))
-    , hDeleteDraftAndItsNewsVersion :: DraftId -> m ()
+    , hDeleteDraftAndItsContent :: DraftId -> m ()
     }
 
 run ::
@@ -28,7 +28,7 @@ run Handle {..} authUser draftId = do
     Just authorId -> do
       authorize "deleting a draft" $
         authUser `authUserShouldBeDeletableAuthor` authorId
-      hDeleteDraftAndItsNewsVersion draftId
+      hDeleteDraftAndItsContent draftId
       pure $ Right ()
 
 data Failure =

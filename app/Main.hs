@@ -638,8 +638,8 @@ runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =
           IDeleteDraft.run
             IDeleteDraft.Handle
               { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
-              , hDeleteDraftAndItsNewsVersion =
-                  Database.deleteDraftAndItsNewsVersion sdDatabaseHandle
+              , hDeleteDraftAndItsContent =
+                  Database.deleteDraftAndItsContent sdDatabaseHandle
               }
       , hAuthenticate = authenticate sdAuthenticationHandle
       , hPresent = presentDeletedDraft

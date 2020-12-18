@@ -103,7 +103,7 @@ handleWith ref =
           fmap (fmap authorId . nvAuthor . draftContent) .
           Map.lookup draftId . storageDrafts <$>
           readIORef ref
-    , hDeleteDraftAndItsNewsVersion =
+    , hDeleteDraftAndItsContent =
         \draftId ->
           modifyIORef' ref $ \Storage {..} ->
             Storage

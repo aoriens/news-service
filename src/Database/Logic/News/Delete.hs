@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Database.Logic.News.Delete
-  ( deleteDraftAndItsNewsVersion
+  ( deleteDraftAndItsContent
   , deleteDraftsOfAuthor
   ) where
 
@@ -19,10 +19,10 @@ import qualified Hasql.TH as TH
 
 deleteDraftsOfAuthor :: AuthorId -> Transaction ()
 deleteDraftsOfAuthor authorId =
-  mapM_ deleteDraftAndItsNewsVersion =<< getDraftIdsOfAuthor authorId
+  mapM_ deleteDraftAndItsContent =<< getDraftIdsOfAuthor authorId
 
-deleteDraftAndItsNewsVersion :: DraftId -> Transaction ()
-deleteDraftAndItsNewsVersion draftId =
+deleteDraftAndItsContent :: DraftId -> Transaction ()
+deleteDraftAndItsContent draftId =
   deleteDraftRow draftId >>= mapM_ deleteNewsVersion
 
 deleteDraftRow :: DraftId -> Transaction (Maybe NewsVersionId)
