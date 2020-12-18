@@ -9,7 +9,6 @@ import Control.Monad
 import Core.Author
 import Core.Image
 import Core.News
-import Data.Coerce
 import Data.Foldable
 import Data.Maybe
 import Data.Profunctor
@@ -20,10 +19,23 @@ import qualified Hasql.TH as TH
 
 deleteDraftsOfAuthor :: AuthorId -> Transaction ()
 deleteDraftsOfAuthor authorId =
-  mapM_ deleteNewsVersion =<< getDraftIdsOfAuthor authorId
+  mapM_ deleteDraftAndItsNewsVersion =<< getDraftIdsOfAuthor authorId
 
 deleteDraftAndItsNewsVersion :: DraftId -> Transaction ()
-deleteDraftAndItsNewsVersion = deleteNewsVersion . coerce
+deleteDraftAndItsNewsVersion draftId =
+  deleteDraftRow draftId >>= mapM_ deleteNewsVersion
+
+deleteDraftRow :: DraftId -> Transaction (Maybe NewsVersionId)
+deleteDraftRow =
+  runStatement $
+  dimap
+    getDraftId
+    (fmap NewsVersionId)
+    [TH.maybeStatement|
+      delete from drafts
+      where draft_id = $1 :: integer
+      returning news_versions_id :: integer
+    |]
 
 deleteNewsVersion :: NewsVersionId -> Transaction ()
 deleteNewsVersion vId = do

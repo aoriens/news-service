@@ -23,7 +23,6 @@ import Core.News
 import Core.Pagination
 import Core.Tag
 import Core.User
-import Data.Coerce
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
@@ -124,57 +123,61 @@ getDraftsOfUser userId pageSpec =
 getDraft :: DraftId -> Transaction (Maybe Draft)
 getDraft = mapM loadDraftWithRow <=< getDraftRow
 
-getDraftRowsOfAuthor :: AuthorId -> PageSpec -> Transaction [VersionRow]
+getDraftRowsOfAuthor :: AuthorId -> PageSpec -> Transaction [DraftRow]
 getDraftRowsOfAuthor authorId pageSpec =
-  runStatementWithColumns sql versionRowColumns D.rowList True
+  runStatementWithColumns sql draftRowColumns D.rowList True
   where
     sql =
       Sql.text
         [TH.uncheckedSql|
           select $COLUMNS
-          from drafts as news_versions
+          from drafts
+               join news_versions using (news_version_id)
                left join authors using (author_id)
                left join users using (user_id)
           where news_versions.author_id =
         |] <>
       Sql.param (getAuthorId authorId) <> limitOffsetClauseWithPageSpec pageSpec
 
-getDraftRowsOfUser :: UserId -> PageSpec -> Transaction [VersionRow]
+getDraftRowsOfUser :: UserId -> PageSpec -> Transaction [DraftRow]
 getDraftRowsOfUser userId pageSpec =
-  runStatementWithColumns sql versionRowColumns D.rowList True
+  runStatementWithColumns sql draftRowColumns D.rowList True
   where
     sql =
       Sql.text
         [TH.uncheckedSql|
           select $COLUMNS
-          from drafts as news_versions
+          from drafts
+               join news_versions using (news_version_id)
                left join authors using (author_id)
                left join users using (user_id)
           where authors.user_id =
         |] <>
       Sql.param (getUserId userId) <> limitOffsetClauseWithPageSpec pageSpec
 
-getDraftIdsOfAuthor :: AuthorId -> Transaction [NewsVersionId]
+getDraftIdsOfAuthor :: AuthorId -> Transaction [DraftId]
 getDraftIdsOfAuthor =
   runStatement $
   dimap
     getAuthorId
-    (toList . fmap NewsVersionId)
+    (toList . fmap DraftId)
     [TH.vectorStatement|
-      select news_version_id :: integer
+      select draft_id :: integer
       from drafts
+           join news_versions using (news_version_id)
       where author_id = $1 :: integer
     |]
 
-getDraftRow :: DraftId -> Transaction (Maybe VersionRow)
+getDraftRow :: DraftId -> Transaction (Maybe DraftRow)
 getDraftRow draftId =
-  runStatementWithColumns sql versionRowColumns D.rowMaybe True
+  runStatementWithColumns sql draftRowColumns D.rowMaybe True
   where
     sql =
       Sql.text
         [TH.uncheckedSql|
           select $COLUMNS
-          from drafts as news_versions
+          from drafts
+               join news_versions using (news_version_id)
                left join authors using (author_id)
                left join users using (user_id)
           where news_version_id =
@@ -198,6 +201,21 @@ newsRowColumns = do
 
 newsTable :: TableName
 newsTable = "news"
+
+data DraftRow =
+  DraftRow
+    { draftId :: DraftId
+    , draftContentRow :: VersionRow
+    }
+
+draftRowColumns :: Columns DraftRow
+draftRowColumns = do
+  draftId <- DraftId <$> column draftTable "draft_id"
+  draftContentRow <- versionRowColumns
+  pure DraftRow {..}
+
+draftTable :: TableName
+draftTable = "draft"
 
 -- Part of news version we can extract from the database with the first query.
 data VersionRow =
@@ -228,11 +246,10 @@ loadNewsWithRow NewsRow {..} = do
   newsContent <- loadVersionWithRow newsContentRow
   pure News {newsContent, ..}
 
-loadDraftWithRow :: VersionRow -> Transaction Draft
-loadDraftWithRow = fmap makeDraft . loadVersionWithRow
-  where
-    makeDraft version@NewsVersion {nvId} =
-      Draft {draftId = coerce nvId, draftContent = version}
+loadDraftWithRow :: DraftRow -> Transaction Draft
+loadDraftWithRow DraftRow {..} = do
+  draftContent <- loadVersionWithRow draftContentRow
+  pure Draft {draftContent, ..}
 
 loadVersionWithRow :: VersionRow -> Transaction NewsVersion
 loadVersionWithRow VersionRow {..} = do
@@ -304,5 +321,6 @@ getDraftAuthor =
     [TH.maybeStatement|
       select author_id :: integer?
       from drafts
-      where news_version_id = $1 :: integer
+           join news_versions using (news_version_id)
+      where draft_id = $1 :: integer
     |]

@@ -18,7 +18,6 @@ import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import Core.News
 import Core.Tag
-import Data.Coerce
 import Data.Foldable
 import qualified Data.HashSet as Set
 import Data.Profunctor
@@ -41,21 +40,21 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
     category <- getExistingCategoryIfJust cdcCategoryId
     nvTags <- getExistingTags
     nvMainPhotoId <- mapM createOrGetExistingImage cdcMainPhoto
-    nvId <-
-      lift . insertVersion $
-      InsertVersionCommand
-        { ivcTitle = cdcTitle
-        , ivcText = cdcText
-        , ivcAuthorId = cdcAuthorId
-        , ivcCategoryId = cdcCategoryId
-        , ivcMainPhotoId = nvMainPhotoId
+    (draftId, nvId) <-
+      lift . createDraftRow $
+      InsertDraftRowCommand
+        { idcTitle = cdcTitle
+        , idcText = cdcText
+        , idcAuthorId = cdcAuthorId
+        , idcCategoryId = cdcCategoryId
+        , idcMainPhotoId = nvMainPhotoId
         }
     nvAdditionalPhotoIds <- createOrGetExistingAdditionalPhotos
     lift $ addPhotosToVersion nvId nvAdditionalPhotoIds
     lift $ addTagsToVersion nvId cdcTagIds
     pure
       Draft
-        { draftId = coerce nvId
+        { draftId
         , draftContent =
             NewsVersion
               { nvId
@@ -110,40 +109,45 @@ failWithEntityNotFound ::
 failWithEntityNotFound objId =
   throwE $ ICreateDraft.CDUnknownEntityId [toEntityId objId]
 
-insertVersion :: InsertVersionCommand -> Transaction NewsVersionId
-insertVersion =
+createDraftRow :: InsertDraftRowCommand -> Transaction (DraftId, NewsVersionId)
+createDraftRow =
   runStatement $
   dimap
-    (\InsertVersionCommand {..} ->
-       ( ivcTitle
-       , ivcText
-       , getAuthorId ivcAuthorId
-       , getCategoryId <$> ivcCategoryId
-       , getImageId <$> ivcMainPhotoId))
-    NewsVersionId
+    (\InsertDraftRowCommand {..} ->
+       ( idcTitle
+       , idcText
+       , getAuthorId idcAuthorId
+       , getCategoryId <$> idcCategoryId
+       , getImageId <$> idcMainPhotoId))
+    (DraftId *** NewsVersionId)
     [TH.singletonStatement|
-      insert into news_versions (
-        title,
-        body,
-        author_id,
-        category_id,
-        main_photo_id
-      ) values (
-        $1 :: varchar,
-        $2 :: varchar,
-        $3 :: integer,
-        $4 :: integer?,
-        $5 :: integer?
-      ) returning news_version_id :: integer
+      with draft_content as (
+        insert into news_versions (
+          title,
+          body,
+          author_id,
+          category_id,
+          main_photo_id
+        ) values (
+          $1 :: varchar,
+          $2 :: varchar,
+          $3 :: integer,
+          $4 :: integer?,
+          $5 :: integer?
+        ) returning news_version_id
+      )
+      insert into drafts (news_version_id)
+      select * from draft_content
+      returning draft_id :: integer, news_version_id :: integer
     |]
 
-data InsertVersionCommand =
-  InsertVersionCommand
-    { ivcTitle :: T.Text
-    , ivcText :: T.Text
-    , ivcAuthorId :: AuthorId
-    , ivcCategoryId :: Maybe CategoryId
-    , ivcMainPhotoId :: Maybe ImageId
+data InsertDraftRowCommand =
+  InsertDraftRowCommand
+    { idcTitle :: T.Text
+    , idcText :: T.Text
+    , idcAuthorId :: AuthorId
+    , idcCategoryId :: Maybe CategoryId
+    , idcMainPhotoId :: Maybe ImageId
     }
 
 addPhotosToVersion :: NewsVersionId -> Set.HashSet ImageId -> Transaction ()
@@ -203,16 +207,16 @@ insertNews =
         news_version_id,
         "date"
       ) values (
-        $1 :: integer,
+        (select news_version_id from drafts where draft_id = $1 :: integer),
         $2 :: date
       ) returning news_id :: integer
     |]
 
 copyDraftFromNews :: NewsId -> Transaction Draft
 copyDraftFromNews newsId = do
-  draftId <- copyDraftRowFromNews newsId
-  copyAdditionalImagesFromNewsToDraft newsId draftId
-  copyTagsFromNewsToDraft newsId draftId
+  (draftId, contentId) <- copyDraftRowFromNews newsId
+  copyAdditionalImagesFromNewsToVersion newsId contentId
+  copyTagsFromNewsToVersion newsId contentId
   getDraft draftId >>= maybe draftNotFound pure
   where
     draftNotFound =
@@ -220,27 +224,34 @@ copyDraftFromNews newsId = do
       DatabaseInternalInconsistencyException
         "Cannot find a just inserted draft row"
 
-copyDraftRowFromNews :: NewsId -> Transaction DraftId
+copyDraftRowFromNews :: NewsId -> Transaction (DraftId, NewsVersionId)
 copyDraftRowFromNews =
   runStatement $
   dimap
     getNewsId
-    DraftId
+    (DraftId *** NewsVersionId)
     [TH.singletonStatement|
-      insert into news_versions
-        (created_from_news_id, title, body, author_id, category_id, main_photo_id)
-      select $1 :: integer, title, body, author_id, category_id, main_photo_id
-      from news_versions
-           join news using (news_version_id)
-      where news_id = $1 :: integer
-      returning news_version_id :: integer
+      with draft_content as (
+        insert into news_versions
+              (title, body, author_id, category_id, main_photo_id)
+        select title, body, author_id, category_id, main_photo_id
+        from news_versions
+             join news using (news_version_id)
+        where news_id = $1 :: integer
+        returning news_version_id
+      )
+      insert into drafts (news_version_id, created_from_news_id)
+      select news_version_id, $1 :: integer
+      from draft_content
+      returning draft_id :: integer, news_version_id :: integer
     |]
 
-copyAdditionalImagesFromNewsToDraft :: NewsId -> DraftId -> Transaction ()
-copyAdditionalImagesFromNewsToDraft =
+copyAdditionalImagesFromNewsToVersion ::
+     NewsId -> NewsVersionId -> Transaction ()
+copyAdditionalImagesFromNewsToVersion =
   curry . runStatement $
   lmap
-    (getNewsId *** getDraftId)
+    (getNewsId *** getNewsVersionId)
     [TH.resultlessStatement|
       insert into news_versions_and_additional_photos_relation
         (news_version_id, image_id)
@@ -250,11 +261,11 @@ copyAdditionalImagesFromNewsToDraft =
       where news_id = $1 :: integer
     |]
 
-copyTagsFromNewsToDraft :: NewsId -> DraftId -> Transaction ()
-copyTagsFromNewsToDraft =
+copyTagsFromNewsToVersion :: NewsId -> NewsVersionId -> Transaction ()
+copyTagsFromNewsToVersion =
   curry . runStatement $
   lmap
-    (getNewsId *** getDraftId)
+    (getNewsId *** getNewsVersionId)
     [TH.resultlessStatement|
       insert into news_versions_and_tags_relation
         (news_version_id, tag_id)

@@ -128,8 +128,7 @@ create table news_versions (
        author_id integer references authors on delete set null,
        -- A null category means an unspecified or a deleted category.
        category_id integer references categories,
-       main_photo_id integer references images,
-       created_from_news_id integer references news(news_id)
+       main_photo_id integer references images
 );
 
 create table news_versions_and_tags_relation (
@@ -188,10 +187,11 @@ create table news (
        "date" date not null
 );
 
-create view drafts as
-       select news_versions.*
-       from news_versions left join news using (news_version_id)
-       where news_id is null;
+create table drafts (
+       draft_id serial not null primary key,
+       news_version_id integer not null unique references news_versions,
+       created_from_news_id integer references news(news_id)
+);
 
 create table comments (
        comment_id serial not null primary key,
