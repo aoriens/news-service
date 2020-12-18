@@ -24,8 +24,8 @@ spec
  =
   describe "run" $ do
     it "should return Left UnknownDraftId if no such draft is found" $ do
-      let missingDraftId = NewsVersionId 1
-          initialData = storageWithDrafts [draftWithId $ NewsVersionId 2]
+      let missingDraftId = DraftId 1
+          initialData = storageWithDrafts [draftWithId $ DraftId 2]
       db <- newIORef initialData
       let h = handleWith stubDay db
       r <- run h someAdminUser missingDraftId
@@ -33,7 +33,7 @@ spec
       readIORef db `shouldReturn` initialData
     it
       "should throw NoPermissionException for an existing draft with the author deleted" $ do
-      let draftId = NewsVersionId 1
+      let draftId = DraftId 1
           initialData = storageWithDrafts [draftWithIdAndDeletedAuthor draftId]
       db <- newIORef initialData
       let h = handleWith stubDay db
@@ -41,7 +41,7 @@ spec
       readIORef db `shouldReturn` initialData
     it
       "should throw NoPermissionException if the user is not an author of an existing draft" $ do
-      let draftId = NewsVersionId 1
+      let draftId = DraftId 1
           user = IdentifiedUser (UserId 0) False [AuthorId 2]
           initialData =
             storageWithDrafts [draftWithIdAndAuthorId draftId $ AuthorId 3]
@@ -51,14 +51,18 @@ spec
       readIORef db `shouldReturn` initialData
     it
       "should create news from an existing draft if the user is an author of it" $ do
-      let draftId = NewsVersionId 1
+      let draftId = DraftId 1
           authorId = AuthorId 2
           draft = draftWithIdAndAuthorId draftId authorId
           user = IdentifiedUser (UserId 0) False [authorId]
           initialData = storageWithDrafts [draft]
           day = ModifiedJulianDay 5
           expectedNews =
-            News {newsId = createdNewsId, newsContent = draft, newsDate = day}
+            News
+              { newsId = createdNewsId
+              , newsContent = draftContent draft
+              , newsDate = day
+              }
       db <- newIORef initialData
       let h = handleWith day db
       r <- run h user draftId
@@ -67,12 +71,12 @@ spec
 
 data Storage =
   Storage
-    { storageDrafts :: [NewsVersion]
+    { storageDrafts :: [Draft]
     , storageNews :: [News]
     }
   deriving (Eq, Show)
 
-storageWithDrafts :: [NewsVersion] -> Storage
+storageWithDrafts :: [Draft] -> Storage
 storageWithDrafts drafts = Storage {storageDrafts = drafts, storageNews = []}
 
 handleWith :: Day -> IORef Storage -> Handle IO
@@ -80,32 +84,41 @@ handleWith day ref =
   Handle
     { hGetDraftAuthor =
         \searchedId ->
-          fmap (fmap authorId . nvAuthor) .
-          find ((searchedId ==) . nvId) . storageDrafts <$>
+          fmap (fmap authorId . nvAuthor . draftContent) .
+          find ((searchedId ==) . draftId) . storageDrafts <$>
           readIORef ref
     , hGetCurrentDay = pure day
     , hCreateNews =
-        \draftId newsDate ->
+        \searchedDraftId newsDate ->
           updateIORef' ref $ \Storage {..} ->
-            let newsContent =
-                  fromJust $ find ((draftId ==) . nvId) storageDrafts
-                news = News {newsId = createdNewsId, newsContent, newsDate}
+            let draft =
+                  fromJust $ find ((searchedDraftId ==) . draftId) storageDrafts
+                news =
+                  News
+                    { newsId = createdNewsId
+                    , newsContent = draftContent draft
+                    , newsDate
+                    }
              in ( Storage
-                    { storageDrafts = delete newsContent storageDrafts
+                    { storageDrafts = delete draft storageDrafts
                     , storageNews = news : storageNews
                     }
                 , news)
     }
 
-draftWithId :: NewsVersionId -> NewsVersion
-draftWithId nvId = stubNewsVersion {nvId}
+draftWithId :: DraftId -> Draft
+draftWithId draftId = stubDraft {draftId}
 
-draftWithIdAndAuthorId :: NewsVersionId -> AuthorId -> NewsVersion
-draftWithIdAndAuthorId nvId authorId =
-  stubNewsVersion {nvId, nvAuthor = Existing stubAuthor {authorId}}
+draftWithIdAndAuthorId :: DraftId -> AuthorId -> Draft
+draftWithIdAndAuthorId draftId authorId =
+  stubDraft
+    { draftId
+    , draftContent = stubNewsVersion {nvAuthor = Existing stubAuthor {authorId}}
+    }
 
-draftWithIdAndDeletedAuthor :: NewsVersionId -> NewsVersion
-draftWithIdAndDeletedAuthor nvId = stubNewsVersion {nvId, nvAuthor = Deleted}
+draftWithIdAndDeletedAuthor :: DraftId -> Draft
+draftWithIdAndDeletedAuthor draftId =
+  stubDraft {draftId, draftContent = stubNewsVersion {nvAuthor = Deleted}}
 
 createdNewsId :: NewsId
 createdNewsId = NewsId 0

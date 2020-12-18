@@ -183,20 +183,20 @@ insertVersionAndTagAssociation =
       ) on conflict do nothing
     |]
 
-createNews :: NewsVersionId -> Day -> Transaction News
-createNews vId day = do
-  newsId' <- insertNews vId day
+createNews :: DraftId -> Day -> Transaction News
+createNews draftId day = do
+  newsId' <- insertNews draftId day
   getNews newsId' >>=
     maybe
       (throwM . DatabaseInternalInconsistencyException $
        "Cannot find news just created: news_id=" <> T.pack (show newsId'))
       pure
 
-insertNews :: NewsVersionId -> Day -> Transaction NewsId
+insertNews :: DraftId -> Day -> Transaction NewsId
 insertNews =
   curry . runStatement $
   dimap
-    (first getNewsVersionId)
+    (first getDraftId)
     NewsId
     [TH.singletonStatement|
       insert into news (

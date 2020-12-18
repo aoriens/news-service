@@ -589,15 +589,13 @@ runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
       }
     newsId
 
-runPublishDraftHandler ::
-     NewsVersionId -> Deps -> SessionDeps -> Web.Application
-runPublishDraftHandler nvId Deps {..} SessionDeps {..} =
+runPublishDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
   HPublishDraft.run
     HPublishDraft.Handle
       { hPublishDraftHandle =
           IPublishDraft.Handle
-            { hGetDraftAuthor =
-                Database.getDraftAuthorDeprecated sdDatabaseHandle
+            { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
             , hGetCurrentDay = getCurrentDay
             , hCreateNews = Database.createNews sdDatabaseHandle
             }
@@ -605,7 +603,7 @@ runPublishDraftHandler nvId Deps {..} SessionDeps {..} =
           presentCreatedNewsItem dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticationHandle = sdAuthenticationHandle
       }
-    nvId
+    draftId
 
 runGetDraftsHandler :: Maybe AuthorId -> Deps -> SessionDeps -> Web.Application
 runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =

@@ -18,7 +18,7 @@ data Handle =
     , hAuthenticationHandle :: AuthenticationHandle IO
     }
 
-run :: Handle -> NewsVersionId -> Application
+run :: Handle -> DraftId -> Application
 run Handle {..} vId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request

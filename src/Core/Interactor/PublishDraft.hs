@@ -13,16 +13,16 @@ import Data.Time
 
 data Handle m =
   Handle
-    { hGetDraftAuthor :: NewsVersionId -> m (Maybe (Deletable AuthorId))
+    { hGetDraftAuthor :: DraftId -> m (Maybe (Deletable AuthorId))
     , hGetCurrentDay :: m Day
-    , hCreateNews :: NewsVersionId -> Day -> m News
+    , hCreateNews :: DraftId -> Day -> m News
     }
 
 run ::
      MonadThrow m
   => Handle m
   -> AuthenticatedUser
-  -> NewsVersionId
+  -> DraftId
   -> m (Either Failure News)
 run Handle {..} authUser vId = do
   hGetDraftAuthor vId >>= \case
