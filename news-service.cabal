@@ -55,6 +55,7 @@ library
     , Core.Interactor.GetCommentsForNews
     , Core.Interactor.GetDraft
     , Core.Interactor.GetDrafts
+    , Core.Interactor.GetDraftsOfNewsArticle
     , Core.Interactor.GetImage
     , Core.Interactor.GetNews
     , Core.Interactor.GetNewsList
@@ -248,6 +249,7 @@ test-suite news-service-test
     , Core.Interactor.GetCommentsForNewsSpec
     , Core.Interactor.GetDraftSpec
     , Core.Interactor.GetDraftsSpec
+    , Core.Interactor.GetDraftsOfNewsArticleSpec
     , Core.Interactor.GetNewsListSpec
     , Core.Interactor.GetTagsSpec
     , Core.Interactor.GetUsersSpec
