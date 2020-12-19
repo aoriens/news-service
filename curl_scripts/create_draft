@@ -4,7 +4,8 @@
 
 usage() {
     echo "Note: additional parameters are supported"
-    echo "$0 [-category CATEGORY_ID] [-author AUTHOR_ID]"
+    echo "$0 [-title TITLE] [-text TEXT] [-category CATEGORY_ID] [-author AUTHOR_ID]"
+    echo "                [-tags TAG_ID[,TAG_ID]... ]"
 }
 
 if test $# -eq 0
@@ -12,20 +13,32 @@ then
     usage
 fi
 
+title_field=
+text_field=
 author_field=
 category_field=
+tags_field=
 
 while test $# -gt 0
 do
     arg=$1
     shift
     case "$arg" in
+        -title)
+            title_field="\"title\": \"$1\""
+            shift ;;
+        -text)
+            text_field="\"text\": \"$1\""
+            shift ;;
         -category)
-            category_field="\"category_id\": $1,"
+            category_field="\"category_id\": $1"
             shift ;;
         -author)
-            author_field="\"author_id\": $1,"
+            author_field="\"author_id\": $1"
             shift ;;
+        -tags)
+           tags_field="\tag_ids\": [$1]"
+           ;;
         *)
             echo "Unknown parameter $arg"
             usage
@@ -33,23 +46,22 @@ do
     esac
 done
 
-allow_token
-run_curl "$DOMAIN/drafts$Q" \
-         -X POST  \
-         -H "Content-Type: application/json" \
-         --data-binary @- <<EOF
-{
-  "title": "GHC 19.0 has been released",
-  "text": "See https://ghc.haskell.org",
-  $author_field
-  $category_field
+other_fields='
   "photo": "http://localhost:3000/images/1",
   "photos": [
     {
         "base64_data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/TQBcNTh/AAAACklEQVR4nGNiAAAABgADNjd8qAAAAABJRU5ErkJggg==",
         "content_type": "image/png"
     }
-  ],
-  "tag_ids": [1]
-}
-EOF
+  ]
+'
+
+all_fields=$(join_non_empty_with_commas \
+                 "$title_field" "$text_field" "$category_field" "$author_field" \
+                 "$tags_field" "$other_fields")
+
+allow_token
+run_curl "$DOMAIN/drafts$Q" \
+         -X POST  \
+         -H "Content-Type: application/json" \
+         --data-binary "{ $all_fields }"

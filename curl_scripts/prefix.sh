@@ -35,3 +35,18 @@ disallow_Q() {
         die "The Q variable is not supported for passing URI query"
     fi
 }
+
+# Concatenates all non-empty parameters with commas into a single string.
+join_non_empty_with_commas() {
+    result=
+    while test $# -ne 0
+    do
+        if test -n "$result" -a -n "$1"
+        then
+            result=$result,
+        fi
+        result=$result$1
+        shift
+    done
+    echo "$result"
+}
