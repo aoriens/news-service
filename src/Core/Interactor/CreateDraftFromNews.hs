@@ -14,7 +14,7 @@ import Core.News
 
 data Handle m =
   Handle
-    { hGetNewsAuthor :: NewsId -> m (Maybe (Deletable AuthorId))
+    { hGetNewsAuthorId :: NewsId -> m (Maybe (Deletable AuthorId))
     , hCopyDraftFromNews :: NewsId -> m Draft
     }
 
@@ -25,7 +25,7 @@ run ::
   -> NewsId
   -> m (Either Failure Draft)
 run Handle {..} authUser newsId =
-  hGetNewsAuthor newsId >>= \case
+  hGetNewsAuthorId newsId >>= \case
     Nothing -> pure $ Left UnknownNewsId
     Just authorId -> do
       authorize "create a draft from news" $

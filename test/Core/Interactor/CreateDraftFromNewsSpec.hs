@@ -90,7 +90,7 @@ getHandleWith Env {..} = do
   pure
     ( commandLog
     , Handle
-        { hGetNewsAuthor =
+        { hGetNewsAuthorId =
             \targetId ->
               pure $
               fmap authorId . nvAuthor . newsContent <$>

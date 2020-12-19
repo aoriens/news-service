@@ -579,7 +579,7 @@ runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
       { hCreateDraftFromNews =
           ICreateDraftFromNews.run
             ICreateDraftFromNews.Handle
-              { hGetNewsAuthor = Database.getNewsAuthorId sdDatabaseHandle
+              { hGetNewsAuthorId = Database.getNewsAuthorId sdDatabaseHandle
               , hCopyDraftFromNews = Database.copyDraftFromNews sdDatabaseHandle
               }
       , hPresent =
