@@ -62,18 +62,19 @@ author. Requires authentication.
 
 ### `GET /categories`
 
-Returns a list of [Category](#Category) entities.
+Returns a list of [CategoryAncestry](#CategoryAncestry) entities for each
+existing [Category](#Category).
 
 ### `POST /categories`
 
 Creates a (possibly nested) category. Accepts [CreateCategory](#CreateCategory)
-entity in the request body and returns [Category](#Category) entity. Requires
-the administrator privilege.
+entity in the request body and returns a [CategoryAncestry](#CategoryAncestry)
+entity up to the deepest created category. Requires the administrator privilege.
 
-### `GET /categories/{category_item_id}`
+### `GET /categories/{category_id}`
 
-Returns a [Category](#Category) comprising hierarchy of [category
-items](#CategoryItem) up to the item with the specified identifier.
+Returns a [CategoryAncestry](#CategoryAncestry) comprising hierarchy of
+[categories](#Category) up to the category with identifier `{category_id}`.
 
 ### `DELETE /categories/{category_id}`
 
@@ -86,8 +87,8 @@ uncategorized.
 ### `PATCH /categories/{category_id}`
 
 Modifies a category. Accepts an [UpdateCategory](#UpdateCategory) entity in the
-request body and returns the updated [Category](#Category). Requires the
-administrator privilege.
+request body and returns the [CategoryAncestry](#CategoryAncestry) for the
+updated [Category](#Category). Requires the administrator privilege.
 
 ### `DELETE /comments/{comment_id}`
 
@@ -298,19 +299,19 @@ An author of news. Fields:
   `DELETED`, if the user is deleted. This is a required field.
 - `description` - the author description. A string, required.
 
+### CategoryAncestry
+
+A news category ancestry. This is an array of [Category](#Category) entities,
+logically nested, starting from a root one down to the specific category. The
+array may be empty to designate an unspecified (over-root) category.
+
 ### Category
 
-A news category. This is an array of [CategoryItem](#CategoryItem) objects,
-logically nested, starting from the most significant one. The array may be empty
-to designate an unspecified category.
+A news category. Each category has either a parent one or no one, which is
+represented by the parent-to-child order of elements in the corresponding
+[CategoryAncestry](#CategoryAncestry). Fields:
 
-### CategoryItem
-
-A part of a hierarchical news category. Each category item has either a parent
-item or no one, which is represented by the parent-to-child order of elements in
-[Category](#Category). Fields:
-
-- `category_item_id` - the identifier of a category item. An integer, required.
+- `category_id` - the identifier of the category. An integer, required.
 - `name` - the name. A string, required.
 
 ### Day
@@ -347,9 +348,9 @@ A request to create categories. Fields:
   must contain at least one element. Example: `["fp", "haskell", "ghc"]` will
   result in creating `fp` category containing just created `haskell` category
   containing just created `ghc` category.
-- `parent_category_item_id` - the identifier of an existing
-  [CategoryItem](#CategoryItem) where a new category will be created. When no
-  one specified, a new root category will be created. An integer, optional.
+- `parent_id` - the identifier of an existing [Category](#Category) which will
+  be the parent of a new created category. When no one specified, a new root
+  category will be created. An integer, optional.
 
 ### CreateComment
 
@@ -409,7 +410,8 @@ A draft of a news article. Fields:
   A string, required.
 - `author` - the draft author. An [Author](#Author) entity or string `DELETED`,
   if the author entity is deleted. The field is required.
-- `category` - the news category. A [Category](#Category), required.
+- `category` - the news category. A [CategoryAncestry](#CategoryAncestry),
+  required.
 - `photo` - the main illustration photo URI for the news. A string, required.
 - `photos` - additional illustration URIs. An array of strings, required.
 - `tags` - tags for the news. An array of [Tag](#Tag) objects, required.
@@ -425,7 +427,8 @@ A news article. Fields:
   A string, required.
 - `author` - the news author. An [Author](#Author) entity or string `DELETED`,
   if the news author is deleted. The field is required.
-- `category` - the news category. A [Category](#Category), required.
+- `category` - the news category. A [CategoryAncestry](#CategoryAncestry),
+  required.
 - `photo` - the main illustration photo URI for the news. A string, required.
 - `photos` - additional illustration URIs. An array of strings, required.
 - `tags` - tags for the news. An array of [Tag](#Tag) objects, required.
@@ -464,14 +467,14 @@ An instruction to update an [Author](#Author). Fields:
 
 ### UpdateCategory
 
-An instruction to update a [CategoryItem](#CategoryItem). Fields:
+An instruction to update a [Category](#Category). Fields:
 
-- `name` - a new name of the category item. This is an optional string that must
-  not be null. The category name must be non-empty and unique among sibling
-  category items.
-- `parent_id` - an identifier of the new parent [CategoryItem](#CategoryItem).
-  This is an optional number. The null value means making the category a root
-  one. Changing the category parent must not create an ancestry loop.
+- `name` - a new name of the category. This is an optional string that must not
+  be null. The category name must be non-empty and unique among sibling
+  categories.
+- `parent_id` - an identifier of the new parent [Category](#Category). This is
+  an optional number. The null value means making the category a root one.
+  Changing the category parent must not create an ancestry loop.
 
 ### UpdateTag
 

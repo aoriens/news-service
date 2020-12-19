@@ -21,7 +21,7 @@ type CategoryRep = [CategoryItemRep]
 
 data CategoryItemRep =
   CategoryItemRep
-    { itemCategoryItemId :: Int32
+    { itemCategoryId :: Int32
     , itemName :: T.Text
     }
 
@@ -34,7 +34,7 @@ categoryRep = pure . reverse . unfoldr f . Just
     f = fmap (makeItem &&& categoryParent)
     makeItem Category {..} =
       CategoryItemRep
-        {itemCategoryItemId = getCategoryId categoryId, itemName = categoryName}
+        {itemCategoryId = getCategoryId categoryId, itemName = categoryName}
 
 $(A.deriveToJSON
     A.defaultOptions

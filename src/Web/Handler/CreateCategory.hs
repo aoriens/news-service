@@ -34,9 +34,9 @@ run :: Handle -> Application
 run Handle {..} request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
-  InCategory {inNames, inParentCategoryItemId} <- hLoadJSONRequestBody request
+  InCategory {inNames, inParentId} <- hLoadJSONRequestBody request
   names <- getNames inNames
-  hCreateCategory authUser (CategoryId <$> inParentCategoryItemId) names >>=
+  hCreateCategory authUser (CategoryId <$> inParentId) names >>=
     either (throwIO . exceptionFromFailure) (respond . hPresent)
 
 getNames :: [T.Text] -> IO (NonEmpty T.Text)
@@ -57,7 +57,7 @@ exceptionFromFailure =
 data InCategory =
   InCategory
     { inNames :: [T.Text]
-    , inParentCategoryItemId :: Maybe Int32
+    , inParentId :: Maybe Int32
     }
 
 $(A.deriveFromJSON
