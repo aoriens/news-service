@@ -4,6 +4,7 @@ module Web.Application
   , Session(..)
   , SessionId
   , Application
+  , GenericApplication
   , Request(..)
   , defaultRequest
   , Response(..)
@@ -25,6 +26,9 @@ import Web.Application.Internal.SessionId
 
 type Application
    = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
+
+type GenericApplication m
+   = Request -> (Response -> m ResponseReceived) -> m ResponseReceived
 
 data Request =
   Request

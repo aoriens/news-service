@@ -231,6 +231,13 @@ comment, and returns a [Comment](#Comment) entity just created. If the user is
 authenticated, they will be saved as the comment author, otherwise the comment
 will be posted anonymously.
 
+### `GET /news/{news_id}/drafts`
+
+Returns [Draft](#Draft) entities created from the news identified with
+`{news_id}`. Such drafts may be created using the same URI with `GET` method. It
+requires authentication. Only the author of the news article may perform the
+operation.
+
 ### `POST /news/{news_id}/drafts`
 
 Creates a [Draft](#Draft) of news identified with `{news_id}` and returns it.

@@ -28,6 +28,7 @@ module Database
   , getDraftAuthorAndNewsIdItWasCreatedFrom
   , getDraftsOfAuthor
   , getDraftsOfUser
+  , getDraftsCreatedFromNewsId
   , getDraft
   , getNewsAuthorId
   , makeDraftIntoNews
@@ -212,6 +213,10 @@ getDraftsOfAuthor h authorId pageSpec =
 getDraftsOfUser :: DB.Handle -> UserId -> PageSpec -> IO [Draft]
 getDraftsOfUser h userId pageSpec =
   DB.runTransactionRO h $ DNews.getDraftsOfUser userId pageSpec
+
+getDraftsCreatedFromNewsId :: DB.Handle -> NewsId -> PageSpec -> IO [Draft]
+getDraftsCreatedFromNewsId h newsId pageSpec =
+  DB.runTransactionRO h $ DNews.getDraftsCreatedFromNewsId newsId pageSpec
 
 getDraft :: DB.Handle -> DraftId -> IO (Maybe Draft)
 getDraft h = DB.runTransactionRO h . DNews.getDraft

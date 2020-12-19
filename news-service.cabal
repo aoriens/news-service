@@ -132,6 +132,7 @@ library
     , Web.Handler.GetCommentsForNews
     , Web.Handler.GetDraft
     , Web.Handler.GetDrafts
+    , Web.Handler.GetDraftsOfNewsArticle
     , Web.Handler.GetImage
     , Web.Handler.GetNews
     , Web.Handler.GetNewsList

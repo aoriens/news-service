@@ -7,6 +7,7 @@ module Database.Logic.News.Get
   , getNews
   , getDraftsOfAuthor
   , getDraftsOfUser
+  , getDraftsCreatedFromNewsId
   , getDraft
   , getDraftIdsOfAuthor
   , getNewsAuthorId
@@ -123,6 +124,10 @@ getDraftsOfUser :: UserId -> PageSpec -> Transaction [Draft]
 getDraftsOfUser userId pageSpec =
   mapM loadDraftWithRow =<< getDraftRowsOfUser userId pageSpec
 
+getDraftsCreatedFromNewsId :: NewsId -> PageSpec -> Transaction [Draft]
+getDraftsCreatedFromNewsId newsId pageSpec =
+  mapM loadDraftWithRow =<< getRowsOfDraftsCreatedFromNews newsId pageSpec
+
 getDraft :: DraftId -> Transaction (Maybe Draft)
 getDraft = mapM loadDraftWithRow <=< getDraftRow
 
@@ -157,6 +162,22 @@ getDraftRowsOfUser userId pageSpec =
           where authors.user_id =
         |] <>
       Sql.param (getUserId userId) <> limitOffsetClauseWithPageSpec pageSpec
+
+getRowsOfDraftsCreatedFromNews :: NewsId -> PageSpec -> Transaction [DraftRow]
+getRowsOfDraftsCreatedFromNews newsId pageSpec =
+  runStatementWithColumns sql draftRowColumns D.rowList True
+  where
+    sql =
+      Sql.text
+        [TH.uncheckedSql|
+          select $COLUMNS
+          from drafts
+               join news_versions using (news_version_id)
+               left join authors using (author_id)
+               left join users using (user_id)
+          where drafts.created_from_news_id =
+        |] <>
+      Sql.param (getNewsId newsId) <> limitOffsetClauseWithPageSpec pageSpec
 
 getDraftIdsOfAuthor :: AuthorId -> Transaction [DraftId]
 getDraftIdsOfAuthor =

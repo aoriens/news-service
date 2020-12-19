@@ -38,6 +38,7 @@ import qualified Core.Interactor.GetComment as IGetComment
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetDraft as IGetDraft
 import qualified Core.Interactor.GetDrafts as IGetDrafts
+import qualified Core.Interactor.GetDraftsOfNewsArticle as IGetDraftsOfNewsArticle
 import qualified Core.Interactor.GetImage as IGetImage
 import qualified Core.Interactor.GetNews as IGetNews
 import qualified Core.Interactor.GetNewsList as IListNews
@@ -92,6 +93,7 @@ import qualified Web.Handler.GetComment as HGetComment
 import qualified Web.Handler.GetCommentsForNews as HGetCommentsForNews
 import qualified Web.Handler.GetDraft as HGetDraft
 import qualified Web.Handler.GetDrafts as HGetDrafts
+import qualified Web.Handler.GetDraftsOfNewsArticle as HGetDraftsOfNewsArticle
 import qualified Web.Handler.GetImage as HGetImage
 import qualified Web.Handler.GetNews as HGetNews
 import qualified Web.Handler.GetNewsList as HListNews
@@ -244,7 +246,10 @@ router deps =
       [ R.get $ runGetCommentHandler commentId
       , R.delete $ runDeleteCommentHandler commentId
       ]
-    NewsItemDraftsURI newsId -> [R.post $ runCreateDraftFromNewsHandler newsId]
+    NewsItemDraftsURI newsId ->
+      [ R.get $ runGetDraftsOfNewsArticleHandler newsId
+      , R.post $ runCreateDraftFromNewsHandler newsId
+      ]
 
 runCreateAuthorHandler :: Deps -> SessionDeps -> Web.Application
 runCreateAuthorHandler Deps {..} SessionDeps {..} =
@@ -585,6 +590,24 @@ runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
       , hPresent =
           presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticate = authenticate sdAuthenticationHandle
+      }
+    newsId
+
+runGetDraftsOfNewsArticleHandler ::
+     NewsId -> Deps -> SessionDeps -> Web.Application
+runGetDraftsOfNewsArticleHandler newsId Deps {..} SessionDeps {..} =
+  HGetDraftsOfNewsArticle.run
+    HGetDraftsOfNewsArticle.Handle
+      { hGetDraftsOfNewsArticle =
+          IGetDraftsOfNewsArticle.run
+            IGetDraftsOfNewsArticle.Handle
+              { hGetNewsAuthorId = Database.getNewsAuthorId sdDatabaseHandle
+              , hGetDraftsCreatedFromNewsId =
+                  Database.getDraftsCreatedFromNewsId sdDatabaseHandle
+              }
+      , hPresent = presentDrafts dRepresentationBuilderHandle
+      , hAuthenticate = authenticate sdAuthenticationHandle
+      , hParsePageSpec = parsePageSpecM dPageSpecParserHandle
       }
     newsId
 
