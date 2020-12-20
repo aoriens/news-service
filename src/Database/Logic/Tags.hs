@@ -4,6 +4,7 @@
 module Database.Logic.Tags
   ( findTagNamed
   , findTagById
+  , tagExists
   , createTagNamed
   , getTags
   , deleteTag
@@ -69,6 +70,17 @@ findTagById =
   where
     sql = "select $COLUMNS from tags where tag_id = $1"
     encoder = getTagId >$< E.param (E.nonNullable E.int4)
+
+tagExists :: TagId -> Transaction Bool
+tagExists =
+  runStatement $
+  lmap
+    getTagId
+    [H.singletonStatement|
+      select exists (
+        select 1 from tags where tag_id = $1 :: integer
+      ) :: bool
+    |]
 
 deleteTag :: TagId -> Transaction Bool
 deleteTag =

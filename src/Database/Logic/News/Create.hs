@@ -8,18 +8,17 @@ module Database.Logic.News.Create
   ) where
 
 import Control.Arrow
+import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.Author
 import Core.Category
-import Core.Deletable
 import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import Core.News
 import Core.Tag
-import Data.Foldable
 import qualified Data.HashSet as Set
 import Data.Profunctor
 import qualified Data.Text as T
@@ -39,9 +38,9 @@ createDraft ::
   -> Transaction (Either ICreateDraft.CreateDraftFailure Draft)
 createDraft ICreateDraft.CreateDraftCommand {..} =
   runExceptT . withExceptT ICreateDraft.CDUnknownEntityId $ do
-    author <- getExistingEntityBy selectAuthorById cdcAuthorId
-    category <- getExistingCategoryIfJust cdcCategoryId
-    nvTags <- getExistingTags
+    entityMustExistBy authorExists cdcAuthorId
+    mapM_ (entityMustExistBy categoryExists) cdcCategoryId
+    mapM_ (entityMustExistBy tagExists) cdcTagIds
     nvMainPhotoId <- mapM createOrGetExistingImage cdcMainPhoto
     (draftId, nvId) <-
       lift . createDraftRow $
@@ -55,44 +54,23 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
     nvAdditionalPhotoIds <- createOrGetExistingAdditionalPhotos
     lift $ addPhotosToVersion nvId nvAdditionalPhotoIds
     lift $ addTagsToVersion nvId cdcTagIds
-    pure
-      Draft
-        { draftId
-        , draftNewsIdItWasCreatedFrom = Nothing
-        , draftContent =
-            NewsVersion
-              { nvTitle = cdcTitle
-              , nvText = cdcText
-              , nvAuthor = Existing author
-              , nvCategory = category
-              , nvMainPhotoId
-              , nvAdditionalPhotoIds
-              , nvTags
-              }
-        }
+    lift $
+      getDraft draftId >>=
+      databaseUnsafeFromJust
+        ("Cannot find a just created draft_id = " <> T.pack (show draftId))
   where
-    getExistingTags =
-      Set.fromList <$> mapM (getExistingEntityBy findTagById) (toList cdcTagIds)
     createOrGetExistingAdditionalPhotos =
       Set.fromList <$> mapM createOrGetExistingImage cdcAdditionalPhotos
 
 type UnknownEntityIds = [EntityId]
 
-getExistingEntityBy ::
+entityMustExistBy ::
      IsEntityId id
-  => (id -> Transaction (Maybe entity))
+  => (id -> Transaction Bool)
   -> id
-  -> ExceptT UnknownEntityIds Transaction entity
-getExistingEntityBy getOptEntity id' = do
-  optEntity <- lift $ getOptEntity id'
-  case optEntity of
-    Nothing -> unknownEntityFailure id'
-    Just entity -> pure entity
-
-getExistingCategoryIfJust ::
-     Maybe CategoryId -> ExceptT UnknownEntityIds Transaction (Maybe Category)
-getExistingCategoryIfJust =
-  maybe (pure Nothing) (fmap Just . getExistingEntityBy selectCategory)
+  -> ExceptT UnknownEntityIds Transaction ()
+entityMustExistBy checkIfExists id' =
+  lift (checkIfExists id') >>= (`unless` unknownEntityFailure id')
 
 createOrGetExistingImage ::
      Either ImageId Image -> ExceptT UnknownEntityIds Transaction ImageId

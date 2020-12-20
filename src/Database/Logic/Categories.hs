@@ -5,6 +5,7 @@
 module Database.Logic.Categories
   ( createCategory
   , selectCategory
+  , categoryExists
   , selectCategories
   , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
   , deleteCategoryAndDescendants

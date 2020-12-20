@@ -5,6 +5,7 @@ module Database.Logic.Authors
   ( createAuthor
   , selectAuthors
   , selectAuthorById
+  , authorExists
   , updateAuthor
   , selectAuthorsByUserId
   , selectAuthorIdByUserIdIfExactlyOne
@@ -82,6 +83,17 @@ selectAuthorById =
     authorColumns
     D.rowMaybe
     True
+
+authorExists :: AuthorId -> Transaction Bool
+authorExists =
+  runStatement $
+  lmap
+    getAuthorId
+    [TH.singletonStatement|
+       select exists (
+         select 1 from authors where author_id = $1 :: integer
+       ) :: bool
+    |]
 
 updateAuthor :: AuthorId -> T.Text -> Transaction ()
 updateAuthor =
