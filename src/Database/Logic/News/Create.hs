@@ -38,7 +38,7 @@ createDraft ::
      ICreateDraft.CreateDraftCommand
   -> Transaction (Either ICreateDraft.CreateDraftFailure Draft)
 createDraft ICreateDraft.CreateDraftCommand {..} =
-  runExceptT $ do
+  runExceptT . withExceptT ICreateDraft.CDUnknownEntityId $ do
     author <- getExistingEntityBy selectAuthorById cdcAuthorId
     category <- getExistingCategoryIfJust cdcCategoryId
     nvTags <- getExistingTags
@@ -76,26 +76,26 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
     createOrGetExistingAdditionalPhotos =
       Set.fromList <$> mapM createOrGetExistingImage cdcAdditionalPhotos
 
+type UnknownEntityIds = [EntityId]
+
 getExistingEntityBy ::
      IsEntityId id
   => (id -> Transaction (Maybe entity))
   -> id
-  -> ExceptT ICreateDraft.CreateDraftFailure Transaction entity
+  -> ExceptT UnknownEntityIds Transaction entity
 getExistingEntityBy getOptEntity id' = do
   optEntity <- lift $ getOptEntity id'
   case optEntity of
-    Nothing -> failWithEntityNotFound id'
+    Nothing -> unknownEntityFailure id'
     Just entity -> pure entity
 
 getExistingCategoryIfJust ::
-     Maybe CategoryId
-  -> ExceptT ICreateDraft.CreateDraftFailure Transaction (Maybe Category)
+     Maybe CategoryId -> ExceptT UnknownEntityIds Transaction (Maybe Category)
 getExistingCategoryIfJust =
   maybe (pure Nothing) (fmap Just . getExistingEntityBy selectCategory)
 
 createOrGetExistingImage ::
-     Either ImageId Image
-  -> ExceptT ICreateDraft.CreateDraftFailure Transaction ImageId
+     Either ImageId Image -> ExceptT UnknownEntityIds Transaction ImageId
 createOrGetExistingImage =
   \case
     Right image -> lift $ createImage image
@@ -103,14 +103,11 @@ createOrGetExistingImage =
       exists <- lift $ imageExists imageId'
       if exists
         then pure imageId'
-        else failWithEntityNotFound imageId'
+        else unknownEntityFailure imageId'
 
-failWithEntityNotFound ::
-     IsEntityId id
-  => id
-  -> ExceptT ICreateDraft.CreateDraftFailure Transaction a
-failWithEntityNotFound objId =
-  throwE $ ICreateDraft.CDUnknownEntityId [toEntityId objId]
+unknownEntityFailure ::
+     IsEntityId id => id -> ExceptT UnknownEntityIds Transaction a
+unknownEntityFailure objId = throwE [toEntityId objId]
 
 createDraftRow :: InsertDraftRowCommand -> Transaction (DraftId, NewsVersionId)
 createDraftRow =
