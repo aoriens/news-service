@@ -27,6 +27,7 @@ import Data.Integral.Exact
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import Data.Text.Show
 import qualified Network.HTTP.Types as Http
 import qualified Network.URI as URI
 
@@ -79,27 +80,26 @@ toRelativeURI :: AppURI -> RelativeURI
 toRelativeURI uri =
   RelativeURI $
   case uri of
-    ImageURI (ImageId imageId) -> ["images", T.pack $ show imageId]
+    ImageURI (ImageId imageId) -> ["images", showAsText imageId]
     UsersURI -> ["users"]
-    UserURI (UserId userId) -> ["users", T.pack $ show userId]
+    UserURI (UserId userId) -> ["users", showAsText userId]
     AuthorsURI -> ["authors"]
     AuthorDraftsURI (AuthorId authorId) ->
-      ["authors", T.pack $ show authorId, "drafts"]
-    AuthorURI (AuthorId authorId) -> ["authors", T.pack $ show authorId]
+      ["authors", showAsText authorId, "drafts"]
+    AuthorURI (AuthorId authorId) -> ["authors", showAsText authorId]
     CategoriesURI -> ["categories"]
-    CategoryURI (CategoryId catId) -> ["categories", T.pack $ show catId]
+    CategoryURI (CategoryId catId) -> ["categories", showAsText catId]
     NewsListURI -> ["news"]
-    NewsItemURI (NewsId newsId) -> ["news", T.pack $ show newsId]
-    NewsItemDraftsURI (NewsId newsId) ->
-      ["news", T.pack $ show newsId, "drafts"]
+    NewsItemURI (NewsId newsId) -> ["news", showAsText newsId]
+    NewsItemDraftsURI (NewsId newsId) -> ["news", showAsText newsId, "drafts"]
     TagsURI -> ["tags"]
-    TagURI (TagId tid) -> ["tags", T.pack $ show tid]
+    TagURI (TagId tid) -> ["tags", showAsText tid]
     DraftsURI -> ["drafts"]
-    DraftURI (DraftId draftId) -> ["drafts", T.pack $ show draftId]
-    PublishDraftURI (DraftId did) -> ["drafts", T.pack $ show did, "publish"]
+    DraftURI (DraftId draftId) -> ["drafts", showAsText draftId]
+    PublishDraftURI (DraftId did) -> ["drafts", showAsText did, "publish"]
     CommentsForNewsURI (NewsId newsId') ->
-      ["news", T.pack $ show newsId', "comments"]
-    CommentURI (CommentId commentId') -> ["comments", T.pack $ show commentId']
+      ["news", showAsText newsId', "comments"]
+    CommentURI (CommentId commentId') -> ["comments", showAsText commentId']
 
 parseAppURI :: AppURIConfig -> T.Text -> Maybe AppURI
 parseAppURI config uriText = do

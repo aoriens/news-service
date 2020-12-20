@@ -22,6 +22,7 @@ import Core.Tag
 import qualified Data.HashSet as Set
 import Data.Profunctor
 import qualified Data.Text as T
+import Data.Text.Show
 import Data.Time
 import Database.Logic.Authors
 import Database.Logic.Categories
@@ -57,7 +58,7 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
     lift $
       getDraft draftId >>=
       databaseUnsafeFromJust
-        ("Cannot find a just created draft_id = " <> T.pack (show draftId))
+        ("Cannot find a just created draft_id = " <> showAsText draftId)
   where
     createOrGetExistingAdditionalPhotos =
       Set.fromList <$> mapM createOrGetExistingImage cdcAdditionalPhotos
@@ -177,7 +178,7 @@ makeDraftIntoNews draftId day =
       getNews newsId >>= \case
         Nothing ->
           databaseInternalInconsistency $
-          "Cannot find news just created: news_id=" <> T.pack (show newsId)
+          "Cannot find news just created: news_id=" <> showAsText newsId
         Just news -> pure $ Right news
 
 overwriteNewsWithDraft ::
@@ -190,14 +191,14 @@ overwriteNewsWithDraft newsId draftId day =
     Nothing -> pure $ Left IPublishDraft.ONDUnknownDraftId
     Just contentId -> do
       oldContentId <-
-        databaseUnsafeFromJust ("Cannot find news_id=" <> T.pack (show newsId)) =<<
+        databaseUnsafeFromJust ("Cannot find news_id=" <> showAsText newsId) =<<
         getNewsContentId newsId
       setNewsContent contentId day newsId
       deleteNewsVersion oldContentId
       getNews newsId >>= \case
         Nothing ->
           databaseInternalInconsistency $
-          "Cannot find news: news_id=" <> T.pack (show newsId)
+          "Cannot find news: news_id=" <> showAsText newsId
         Just news -> pure $ Right news
 
 insertNews :: NewsVersionId -> Day -> Transaction NewsId

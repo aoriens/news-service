@@ -11,6 +11,7 @@ import Control.Monad.STM
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Data.Text.Show
 import Data.Time
 import qualified Logger
 import Prelude hiding (log)
@@ -68,8 +69,8 @@ formatMessage Message {..} =
     [timeString, " | ", levelString, " | ", callSiteString, " | ", messageText]
   where
     timeString = T.pack $ formatTime defaultTimeLocale "%F %T.%3q" messageTime
-    levelString = T.justifyLeft 7 ' ' $ T.pack (show messageLevel)
+    levelString = T.justifyLeft 7 ' ' $ showAsText messageLevel
     callSiteString =
       T.justifyLeft 30 ' ' $ maybe "" formatCallSite messageCallSite
     formatCallSite cs =
-      Logger.csModule cs <> ":" <> T.pack (show $ Logger.csStartLine cs)
+      Logger.csModule cs <> ":" <> showAsText (Logger.csStartLine cs)

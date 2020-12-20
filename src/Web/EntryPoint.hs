@@ -18,6 +18,7 @@ import qualified Data.ByteString.Builder as BB
 import Data.IORef
 import qualified Data.Text as T
 import Data.Text.Encoding as T
+import Data.Text.Show
 import qualified Logger
 import qualified Network.HTTP.Types as Http
 import Network.HTTP.Types.Status as Http
@@ -79,7 +80,7 @@ logEnterAndExit h eapp session@Session {..} req respond = do
       T.intercalate
         " "
         [ "Respond"
-        , T.pack (show (Http.statusCode status))
+        , showAsText (Http.statusCode status)
         , T.decodeLatin1 (Http.statusMessage status)
         ]
 
@@ -103,7 +104,7 @@ exceptionToResponse h e
   | hShowInternalExceptionInfoInResponses h =
     Just $
     stubErrorResponseWithReason Http.internalServerError500 [] $
-    "<pre>" <> T.pack (show e) <> "</pre>"
+    "<pre>" <> showAsText e <> "</pre>"
   | otherwise = Nothing
 
 webExceptionToResponse :: WebException -> Response
@@ -118,7 +119,7 @@ webExceptionToResponse e =
     PayloadTooLargeException maxPayloadSize ->
       stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
       "The request body length must not exceed " <>
-      T.pack (show maxPayloadSize) <> " bytes"
+      showAsText maxPayloadSize <> " bytes"
     MalformedAuthDataException _ -> notFoundResponse
 
 coreExceptionToResponse :: CoreException -> Response
@@ -142,14 +143,14 @@ coreExceptionToResponse e =
         "Authentication is required"
     DependentEntitiesPreventDeletionException entityId' depIds ->
       badRequestResponse $
-      T.pack (show entityId') <>
+      showAsText entityId' <>
       " cannot be deleted because the following entities depend on it: " <>
-      (T.intercalate ", " . map (T.pack . show)) depIds
+      (T.intercalate ", " . map showAsText) depIds
     RequestedEntityNotFoundException _ -> notFoundResponse
     DependentEntitiesNotFoundException ids ->
       stubErrorResponseWithReason Http.badRequest400 [] $
       "The following entity IDs cannot be found: " <>
-      (T.intercalate ", " . map (T.pack . show)) ids
+      (T.intercalate ", " . map showAsText) ids
     DisallowedImageContentTypeException badContentType allowedContentTypes ->
       stubErrorResponseWithReason
         Http.unsupportedMediaType415

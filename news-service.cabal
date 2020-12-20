@@ -77,6 +77,7 @@ library
     , Data.Either.Util
     , Data.Integral.Exact
     , Data.IORef.Util
+    , Data.Text.Show
     , Database
     , Database.Logic.Authors
     , Database.Logic.Categories

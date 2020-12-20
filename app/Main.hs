@@ -58,6 +58,7 @@ import Core.User
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text as T
+import Data.Text.Show
 import qualified Database
 import qualified Database.Service.ConnectionManager as DBConnManager
 import qualified Database.Service.Primitives as Database
@@ -760,7 +761,7 @@ sessionDeps Deps {..} session =
 
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =
-  Logger.mapMessage $ \text -> "SID-" <> T.pack (show sessionId) <> " " <> text
+  Logger.mapMessage $ \text -> "SID-" <> showAsText sessionId <> " " <> text
 
 sessionDatabaseHandle ::
      DBConnManager.Config -> Logger.Handle IO -> Web.Session -> Database.Handle

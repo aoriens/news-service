@@ -32,6 +32,7 @@ import qualified Data.HashSet as Set
 import Data.List
 import Data.Profunctor
 import qualified Data.Text as T
+import Data.Text.Show
 import Data.Time
 import Database.Logic.Authors
 import Database.Logic.Categories
@@ -289,7 +290,7 @@ loadVersionWithRow VersionRow {..} = do
 getExistingCategoryById :: CategoryId -> Transaction Category
 getExistingCategoryById catId =
   databaseUnsafeFromJust
-    ("Suddenly not found: category_id=" <> T.pack (show catId)) =<<
+    ("Suddenly not found: category_id=" <> showAsText catId) =<<
   selectCategory catId
 
 getTagsForVersion :: NewsVersionId -> Transaction (Set.HashSet Tag)

@@ -9,7 +9,7 @@ import Core.Authentication hiding (authenticate)
 import Core.Author
 import Core.Exception
 import Core.User
-import qualified Data.Text as T
+import Data.Text.Show
 import qualified Logger
 
 data Handle m =
@@ -37,11 +37,11 @@ authenticate h (Just (TokenCredentials userId' token)) = do
   case optData of
     Nothing ->
       throwM . BadCredentialsException $
-      "User does not exist: " <> T.pack (show userId')
+      "User does not exist: " <> showAsText userId'
     Just UserAuthData {..}
       | hTokenMatchesHash h token authDataSecretTokenHash -> do
         let authUser = IdentifiedUser userId' authDataIsAdmin authDataAuthors
         Logger.info (hLoggerHandle h) $
-          "Authentication success: " <> T.pack (show authUser)
+          "Authentication success: " <> showAsText authUser
         pure authUser
       | otherwise -> throwM $ BadCredentialsException "secret token mismatch"

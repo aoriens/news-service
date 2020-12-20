@@ -14,7 +14,6 @@ module Logger
   , warn
   , error
   , log
-  , (.<)
   , mapMessage
   ) where
 
@@ -69,13 +68,6 @@ captureTopCallSite = fmap makeCallSite . listToMaybe . getCallStack
         { csModule = T.pack $ srcLocModule loc
         , csStartLine = srcLocStartLine loc
         }
-
--- | Concatenate a text and an instance of Show. This is a convenience
--- function to shorten invocations of logger functions.
-(.<) :: (Show a) => T.Text -> a -> T.Text
-text .< a = text <> T.pack (show a)
-
-infixr 7 .<
 
 -- | Creates a logger handle which transforms the message and passes
 -- it to another handle.
