@@ -42,7 +42,7 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
     entityMustExistBy authorExists cdcAuthorId
     mapM_ (entityMustExistBy categoryExists) cdcCategoryId
     mapM_ (entityMustExistBy tagExists) cdcTagIds
-    nvMainPhotoId <- mapM createOrGetExistingImage cdcMainPhoto
+    mainPhotoId <- mapM createOrGetExistingImage cdcMainPhoto
     (draftId, nvId) <-
       lift . createDraftRow $
       InsertDraftRowCommand
@@ -50,10 +50,10 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
         , idcText = cdcText
         , idcAuthorId = cdcAuthorId
         , idcCategoryId = cdcCategoryId
-        , idcMainPhotoId = nvMainPhotoId
+        , idcMainPhotoId = mainPhotoId
         }
-    nvAdditionalPhotoIds <- createOrGetExistingAdditionalPhotos
-    lift $ addPhotosToVersion nvId nvAdditionalPhotoIds
+    additionalPhotoIds <- createOrGetExistingAdditionalPhotos
+    lift $ addPhotosToVersion nvId additionalPhotoIds
     lift $ addTagsToVersion nvId cdcTagIds
     lift $
       getDraft draftId >>=
