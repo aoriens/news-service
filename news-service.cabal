@@ -144,10 +144,10 @@ library
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
     , Web.Handler.PatchAuthor
+    , Web.Handler.PatchCategory
     , Web.Handler.PatchDraft
     , Web.Handler.PatchTag
     , Web.Handler.PublishDraft
-    , Web.Handler.UpdateCategory
     , Web.JSONEncoder
     , Web.Presenter
     , Web.QueryParameter

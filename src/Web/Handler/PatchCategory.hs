@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Web.Handler.UpdateCategory
+module Web.Handler.PatchCategory
   ( run
   , Handle(..)
   ) where
