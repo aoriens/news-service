@@ -205,7 +205,7 @@ getDraftRow draftId =
                join news_versions using (news_version_id)
                left join authors using (author_id)
                left join users using (user_id)
-          where news_version_id =
+          where draft_id =
         |] <>
       Sql.param (getDraftId draftId)
 
