@@ -37,6 +37,7 @@ data UpdateDraftRequest =
     , udrCategory :: Maybe (Maybe CategoryId)
     , udrTags :: Maybe (Set.HashSet TagId)
     }
+  deriving (Eq, Show)
 
 newtype UpdateDraftFailure =
   UDUnknownEntityIds [EntityId]

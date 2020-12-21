@@ -261,6 +261,7 @@ test-suite news-service-test
     , Core.Interactor.PublishDraftSpec
     , Core.Interactor.UpdateAuthorSpec
     , Core.Interactor.UpdateCategorySpec
+    , Core.Interactor.UpdateDraftSpec
     , Core.Interactor.UpdateTagSpec
     , Core.Pagination.ImplSpec
     , Core.Pagination.Test
