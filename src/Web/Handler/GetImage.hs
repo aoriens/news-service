@@ -6,6 +6,7 @@ module Web.Handler.GetImage
 import Control.Exception
 import Core.Image
 import qualified Core.Interactor.GetImage as I
+import Data.Maybe.Util
 import Web.Application
 import qualified Web.Exception as E
 
@@ -18,5 +19,5 @@ data Handle =
 run :: Handle -> ImageId -> Application
 run Handle {..} imageId _ respond = do
   optImage <- I.run hGetImageHandle imageId
-  image <- maybe (throwIO E.NotFoundException) pure optImage
+  image <- fromMaybeM (throwIO E.NotFoundException) optImage
   respond $ hPresent image

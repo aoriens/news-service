@@ -16,6 +16,7 @@ import Data.Int
 import Data.List
 import Data.List.NonEmpty
 import Data.Maybe
+import Data.Maybe.Util
 import qualified Data.Text as T
 import Web.Application
 import Web.Credentials
@@ -40,7 +41,7 @@ run Handle {..} request respond = do
     either (throwIO . exceptionFromFailure) (respond . hPresent)
 
 getNames :: [T.Text] -> IO (NonEmpty T.Text)
-getNames = maybe (throwIO exception) pure . nonEmpty
+getNames = fromMaybeM (throwIO exception) . nonEmpty
   where
     exception = IncorrectParameterException "'names' array must not be empty"
 

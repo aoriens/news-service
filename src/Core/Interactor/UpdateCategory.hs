@@ -12,6 +12,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Core.AuthorizationNG
 import Core.Category
+import Data.Maybe.Util
 import qualified Data.Text as T
 
 data Handle m =
@@ -87,7 +88,7 @@ nameMustBeUniqueAmongNewSiblings h Request {..} =
 
 getCategoryName :: Monad m => Handle m -> CategoryId -> ExceptT Failure m T.Text
 getCategoryName h catId =
-  lift (hGetCategoryName h catId) >>= maybe (throwE UnknownCategoryId) pure
+  lift (hGetCategoryName h catId) >>= fromMaybeM (throwE UnknownCategoryId)
 
 changingParentMustNotMakeLoops ::
      Monad m => Handle m -> Request -> Maybe CategoryId -> ExceptT Failure m ()

@@ -21,6 +21,7 @@ import Core.News
 import Core.Pagination
 import Core.User
 import Data.Functor
+import Data.Maybe.Util
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Time
@@ -62,7 +63,7 @@ createComment text optUserId newsId' createdAt =
         throwE $ ICreateComment.GUnknownEntityId $ toEntityId newsId'
     loadUserIdOrFail userId' =
       lift (getExistingUser userId') >>=
-      maybe (throwE $ ICreateComment.GUnknownEntityId $ toEntityId userId') pure
+      fromMaybeM (throwE $ ICreateComment.GUnknownEntityId $ toEntityId userId')
 
 insertComment ::
      T.Text -> Maybe UserId -> NewsId -> UTCTime -> Transaction CommentId

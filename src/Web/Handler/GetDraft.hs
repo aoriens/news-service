@@ -7,6 +7,7 @@ import Control.Exception
 import Core.Authentication
 import qualified Core.Interactor.GetDraft as I
 import Core.News
+import Data.Maybe.Util
 import Web.Application
 import Web.Credentials
 import Web.Exception
@@ -23,6 +24,6 @@ run Handle {..} draftId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   draft <-
-    maybe (throwIO NotFoundException) pure =<<
+    fromMaybeM (throwIO NotFoundException) =<<
     I.run hGetDraftHandle authUser draftId
   respond $ hPresent draft

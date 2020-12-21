@@ -6,6 +6,7 @@ module Web.Handler.GetCategory
 import Control.Exception
 import Core.Category
 import qualified Core.Interactor.GetCategory as IGetCategory
+import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
@@ -18,6 +19,6 @@ data Handle =
 run :: Handle -> CategoryId -> Application
 run Handle {..} catId _ respond = do
   category <-
-    maybe (throwIO NotFoundException) pure =<<
+    fromMaybeM (throwIO NotFoundException) =<<
     IGetCategory.run hGetCategoryHandle catId
   respond $ hPresent category

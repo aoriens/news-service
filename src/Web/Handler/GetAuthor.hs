@@ -7,6 +7,7 @@ import Control.Exception
 import Core.Authentication
 import Core.Author
 import qualified Core.Interactor.GetAuthor as I
+import Data.Maybe.Util
 import Web.Application
 import Web.Credentials
 import Web.Exception
@@ -23,6 +24,6 @@ run Handle {..} authorId' request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   author <-
-    maybe (throwIO NotFoundException) pure =<<
+    fromMaybeM (throwIO NotFoundException) =<<
     I.run hGetAuthorHandle authUser authorId'
   respond $ hPresent author

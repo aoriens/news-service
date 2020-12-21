@@ -26,6 +26,7 @@ import Control.Monad.Catch
 import Control.Monad.Reader
 import qualified Data.ByteString as B
 import Data.Maybe
+import Data.Maybe.Util
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Database.Service.ConnectionManager as CM
@@ -170,4 +171,4 @@ databaseInternalInconsistency = throwM . DatabaseInternalInconsistencyException
 -- draft is determined to exist before.
 databaseUnsafeFromJust :: T.Text -> Maybe a -> Transaction a
 databaseUnsafeFromJust errorDescription =
-  maybe (databaseInternalInconsistency errorDescription) pure
+  fromMaybeM $ databaseInternalInconsistency errorDescription

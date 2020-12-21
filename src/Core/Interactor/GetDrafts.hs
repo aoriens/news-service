@@ -11,6 +11,7 @@ import Core.Exception
 import Core.News
 import Core.Pagination
 import Core.User
+import Data.Maybe.Util
 
 data Handle m =
   Handle
@@ -29,7 +30,7 @@ run ::
   -> m [Draft]
 run Handle {..} authUser optAuthorId pageQuery = do
   userId <-
-    maybe (throwM AuthenticationRequired) pure (authenticatedUserId authUser)
+    fromMaybeM (throwM AuthenticationRequired) $ authenticatedUserId authUser
   pageSpec <- parsePageSpecM hPageSpecParserHandle pageQuery
   case optAuthorId of
     Nothing -> hGetDraftsOfUser userId pageSpec

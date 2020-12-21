@@ -9,6 +9,7 @@ import Control.Monad
 import qualified Data.Aeson as A
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
+import Data.Maybe.Util
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Word
@@ -47,4 +48,4 @@ expectedContentType = Http.jsonContentType
 loadRequestBodyNoLonger :: Word64 -> Request -> IO LB.ByteString
 loadRequestBodyNoLonger maxLen request =
   requestLoadBodyNoLonger request maxLen >>=
-  maybe (throwIO $ E.PayloadTooLargeException maxLen) pure
+  fromMaybeM (throwIO $ E.PayloadTooLargeException maxLen)

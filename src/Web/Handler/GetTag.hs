@@ -6,6 +6,7 @@ module Web.Handler.GetTag
 import Control.Exception
 import qualified Core.Interactor.GetTag as IGetTag
 import Core.Tag
+import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
@@ -18,5 +19,5 @@ data Handle =
 run :: Handle -> TagId -> Application
 run Handle {..} tagId' _ respond = do
   tag <-
-    maybe (throwIO NotFoundException) pure =<< IGetTag.run hGetTagHandle tagId'
+    fromMaybeM (throwIO NotFoundException) =<< IGetTag.run hGetTagHandle tagId'
   respond $ hPresent tag

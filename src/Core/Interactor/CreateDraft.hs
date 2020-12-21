@@ -20,6 +20,7 @@ import Core.News
 import Core.Tag
 import Core.User
 import qualified Data.HashSet as Set
+import Data.Maybe.Util
 import qualified Data.Text as T
 
 data Handle m =
@@ -58,10 +59,10 @@ inferAuthorIdFromRequestOrUser _ _ CreateDraftRequest {cdAuthorId = Just authorI
   pure authorId'
 inferAuthorIdFromRequestOrUser h authUser _ = do
   userId' <-
-    maybe (throwM userNotIdentifiedException) pure $
+    fromMaybeM (throwM userNotIdentifiedException) $
     authenticatedUserId authUser
   hGetAuthorIdByUserIdIfExactlyOne h userId' >>=
-    maybe (throwM authorAmbiguityException) pure
+    fromMaybeM (throwM authorAmbiguityException)
   where
     authorAmbiguityException =
       QueryException

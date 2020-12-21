@@ -6,6 +6,7 @@ module Web.Handler.GetUser
 import Control.Exception
 import qualified Core.Interactor.GetUser as I
 import Core.User
+import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
@@ -16,7 +17,6 @@ data Handle =
     }
 
 run :: Handle -> UserId -> Application
-run Handle {..} userId' _ respond = do
-  user <-
-    maybe (throwIO NotFoundException) pure =<< I.run hGetUserHandle userId'
+run Handle {..} userId _ respond = do
+  user <- fromMaybeM (throwIO NotFoundException) =<< I.run hGetUserHandle userId
   respond $ hPresent user
