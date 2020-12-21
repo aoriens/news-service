@@ -24,8 +24,6 @@ import qualified Data.Text as T
 import Web.AppURI
 import Web.Application
 import Web.Credentials
-import Web.Exception
-import Web.Representation.AppURI
 import Web.Representation.Image
 
 data Handle =
@@ -76,15 +74,7 @@ makeCreateDraftRequest h InDraft {..} = do
 
 parseImage ::
      MonadThrow m => Handle -> ExistingOrNewImageRep -> m (Either ImageId Image)
-parseImage h rep =
-  case rep of
-    NewImage imageRep -> pure . Right $ imageFromRep imageRep
-    ExistingImage (AppURIRep uriText) ->
-      case hParseAppURI h uriText of
-        Just (ImageURI imageId') -> pure $ Left imageId'
-        _ ->
-          throwM . IncorrectParameterException $
-          "URI does not match an image resource: " <> uriText
+parseImage h = parseExistingOrNewImage (hParseAppURI h)
 
 $(A.deriveFromJSON
     A.defaultOptions
