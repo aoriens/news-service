@@ -4,6 +4,7 @@ module Web.Exception
   ) where
 
 import Control.Exception
+import Core.EntityId
 import Data.Text (Text)
 import Data.Word
 
@@ -16,6 +17,7 @@ type MaxPayloadSize = Word64
 data WebException
   = BadRequestException Reason
   | IncorrectParameterException Reason
+  | RelatedEntitiesNotFoundException [EntityId]
   | UnsupportedMediaTypeException SupportedMediaTypes
   | PayloadTooLargeException MaxPayloadSize
   | NotFoundException

@@ -17,6 +17,7 @@ module Web.Presenter
   , presentNewsItem
   , presentCreatedOrUpdatedNewsItem
   , presentCreatedDraft
+  , presentUpdatedDraft
   , presentDrafts
   , presentDraft
   , presentDeletedDraft
@@ -191,6 +192,12 @@ presentCreatedDraft uriConfig h draft =
 
 draftURI :: Draft -> AppURI
 draftURI = DraftURI . draftId
+
+presentUpdatedDraft :: AppURIConfig -> RepBuilderHandle -> Draft -> Response
+presentUpdatedDraft uriConfig h draft =
+  resourceModifiedAndReturnedResponse uriConfig (draftURI draft) .
+  runRepBuilder h $
+  draftRep draft
 
 presentCreatedOrUpdatedNewsItem ::
      AppURIConfig -> RepBuilderHandle -> IPublishDraft.Success -> Response

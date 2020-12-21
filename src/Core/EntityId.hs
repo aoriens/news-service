@@ -18,6 +18,7 @@ data EntityId
   | TagEntityId TagId
   | ImageEntityId ImageId
   | NewsEntityId NewsId
+  | DraftEntityId DraftId
   deriving (Show, Eq)
 
 class IsEntityId a where
@@ -43,3 +44,6 @@ instance IsEntityId ImageId where
 
 instance IsEntityId NewsId where
   toEntityId = NewsEntityId
+
+instance IsEntityId DraftId where
+  toEntityId = DraftEntityId

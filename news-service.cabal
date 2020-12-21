@@ -66,6 +66,7 @@ library
     , Core.Interactor.PublishDraft
     , Core.Interactor.UpdateAuthor
     , Core.Interactor.UpdateCategory
+    , Core.Interactor.UpdateDraft
     , Core.Interactor.UpdateTag
     , Core.News
     , Core.Pagination
@@ -143,6 +144,7 @@ library
     , Web.Handler.GetUser
     , Web.Handler.GetUsers
     , Web.Handler.PatchAuthor
+    , Web.Handler.PatchDraft
     , Web.Handler.PatchTag
     , Web.Handler.PublishDraft
     , Web.Handler.UpdateCategory

@@ -3,6 +3,8 @@
 module Database.Logic.News.Delete
   ( deleteDraftAndItsContent
   , deleteDraftButLeaveItsContent
+  , unlinkAdditionalPhotosFromVersion
+  , unlinkTagsFromVersion
   , deleteNewsVersion
   , deleteDraftsOfAuthor
   ) where
@@ -42,7 +44,7 @@ deleteDraftButLeaveItsContent =
 
 deleteNewsVersion :: NewsVersionId -> Transaction ()
 deleteNewsVersion vId = do
-  additionalPhotoIds <- deleteAdditionalPhotosRelations vId
+  additionalPhotoIds <- unlinkAdditionalPhotosFromVersion vId
   mainPhotoId <- getMainPhotoId vId
   deleteImagesIfNotReferenced $ maybeToList mainPhotoId ++ additionalPhotoIds
   deleteNewsVersionRow vId
@@ -57,8 +59,8 @@ deleteNewsVersionRow =
       where news_version_id = $1 :: integer
     |]
 
-deleteAdditionalPhotosRelations :: NewsVersionId -> Transaction [ImageId]
-deleteAdditionalPhotosRelations =
+unlinkAdditionalPhotosFromVersion :: NewsVersionId -> Transaction [ImageId]
+unlinkAdditionalPhotosFromVersion =
   runStatement $
   dimap
     getNewsVersionId
@@ -67,6 +69,16 @@ deleteAdditionalPhotosRelations =
       delete from news_versions_and_additional_photos_relation
       where news_version_id = $1 :: integer
       returning image_id :: integer
+    |]
+
+unlinkTagsFromVersion :: NewsVersionId -> Transaction ()
+unlinkTagsFromVersion =
+  runStatement $
+  lmap
+    getNewsVersionId
+    [TH.resultlessStatement|
+      delete from news_versions_and_tags_relation
+      where news_version_id = $1 :: integer
     |]
 
 getMainPhotoId :: NewsVersionId -> Transaction (Maybe ImageId)

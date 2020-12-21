@@ -33,6 +33,7 @@ module Database
   , getNewsAuthorId
   , makeDraftIntoNews
   , overwriteNewsWithDraft
+  , updateDraft
   , createDraft
   , copyDraftFromNews
   , deleteDraftAndItsContent
@@ -74,6 +75,7 @@ import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateCategory as IUpdateCategory
+import qualified Core.Interactor.UpdateDraft as IUpdateDraft
 import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
 import Core.Pagination
@@ -194,6 +196,14 @@ createDraft ::
   -> ICreateDraft.CreateDraftCommand
   -> IO (Either ICreateDraft.CreateDraftFailure Draft)
 createDraft h = DB.runTransactionRW h . DNews.createDraft
+
+updateDraft ::
+     DB.Handle
+  -> DraftId
+  -> IUpdateDraft.UpdateDraftRequest
+  -> IO (Either IUpdateDraft.UpdateDraftFailure Draft)
+updateDraft h draftId request =
+  DB.runTransactionRW h $ DNews.updateDraft draftId request
 
 copyDraftFromNews :: DB.Handle -> NewsId -> IO Draft
 copyDraftFromNews h = DB.runTransactionRW h . DNews.copyDraftFromNews

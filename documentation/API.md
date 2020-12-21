@@ -124,6 +124,13 @@ the draft, and the draft must exist.
 Returns a [Draft](#Draft) entity identified with `{draft_id}`. It requires
 authentication. You must be a user related to the author of the draft.
 
+### `PATCH /drafts/{draft_id}`
+
+Modifies the [Draft](#Draft) entity identified with `{draft_id}` and returns the
+updated [Draft](#Draft) entity. Accepts [UpdateDraft](#UpdateDraft) entity in
+the request body which describes modifications to do. It requires
+authentication. You must be a user related to the author of the draft.
+
 ### `POST /drafts/{draft_id}/publish`
 
 Publishes a [Draft](#Draft) with the given identifier as a news article. Returns
@@ -475,6 +482,28 @@ An instruction to update a [Category](#Category). Fields:
 - `parent_id` - an identifier of the new parent [Category](#Category). This is
   an optional number. The null value means making the category a root one.
   Changing the category parent must not create an ancestry loop.
+
+### UpdateDraft
+
+A request to modify a news draft. Its fields describe modifications to do.
+Omission of a field means keeping the old value of the field unchanged:
+
+- `title` - a new document title. This is an optional string that must not be
+  null.
+- `text` - a new document body as plain text. This is an optional string that
+  must not be null.
+- `category_id` - a new identifier of a [Category](#Category) of the news or
+  `null` to designate setting no category. This is optional.
+- `photo` - a new primary illustration for the news. This is a URI of an image
+  returned by the service, a [CreateImage](#CreateImage) entity, or `null` to
+  designate deleting the illustration. This is optional.
+- `photos` - a new list of additional illustrations for the news. This is an
+  optional array consisting of URIs of images returned by the service and
+  [CreateImage](#CreateImage) entities. This is optional, but must not be
+  `null`. Duplicate image URLs will be skipped.
+- `tag_ids` - a new list of tags of the news. This is an optional array of
+  integer identifiers of [Tag](#Tag) entities which must not be null. Duplicate
+  items are allowed and skipped.
 
 ### UpdateTag
 

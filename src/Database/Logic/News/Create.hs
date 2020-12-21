@@ -2,6 +2,7 @@
 
 module Database.Logic.News.Create
   ( createDraft
+  , updateDraft
   , makeDraftIntoNews
   , overwriteNewsWithDraft
   , copyDraftFromNews
@@ -17,9 +18,13 @@ import Core.EntityId
 import Core.Image
 import qualified Core.Interactor.CreateDraft as ICreateDraft
 import qualified Core.Interactor.PublishDraft as IPublishDraft
+import qualified Core.Interactor.UpdateDraft as IUpdateDraft
 import Core.News
 import Core.Tag
+import Data.Foldable
 import qualified Data.HashSet as Set
+import Data.Maybe
+import Data.Maybe.Util
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Text.Show
@@ -32,6 +37,9 @@ import Database.Logic.News.Get
 import Database.Logic.News.NewsVersionId
 import Database.Logic.Tags
 import Database.Service.Primitives
+import qualified Database.Service.SQLBuilder as Sql
+import qualified Database.Service.SQLBuilders as Sql
+import qualified Hasql.Decoders as D
 import qualified Hasql.TH as TH
 
 createDraft ::
@@ -62,6 +70,33 @@ createDraft ICreateDraft.CreateDraftCommand {..} =
   where
     createOrGetExistingAdditionalPhotos =
       Set.fromList <$> mapM createOrGetExistingImage cdcAdditionalPhotos
+
+updateDraft ::
+     DraftId
+  -> IUpdateDraft.UpdateDraftRequest
+  -> Transaction (Either IUpdateDraft.UpdateDraftFailure Draft)
+updateDraft draftId IUpdateDraft.UpdateDraftRequest {..} =
+  runExceptT . withExceptT IUpdateDraft.UDUnknownEntityIds $ do
+    versionId <-
+      fromMaybeM (unknownEntityFailure draftId) =<<
+      lift (getDraftContentId draftId)
+    mapM_ (entityMustExistBy categoryExists) $ join udrCategory
+    mapM_ (mapM_ (entityMustExistBy tagExists)) udrTags
+    mainPhotoId <- mapM (mapM createOrGetExistingImage) udrMainPhoto
+    lift . updateVersionRow versionId $
+      UpdateVersionRowCommand
+        { uvrTitle = udrTitle
+        , uvrText = udrText
+        , uvrCategory = udrCategory
+        , uvrMainPhoto = mainPhotoId
+        }
+    mapM_ (updateAdditionalPhotos versionId) udrAdditionalPhotos
+    mapM_ (lift . setTagsToVersion versionId) udrTags
+    lift (getDraft draftId) >>= fromMaybeM (unknownEntityFailure draftId)
+  where
+    updateAdditionalPhotos versionId images =
+      lift . setPhotosToVersion versionId . Set.fromList =<<
+      mapM createOrGetExistingImage images
 
 type UnknownEntityIds = [EntityId]
 
@@ -129,6 +164,30 @@ data InsertDraftRowCommand =
     , idcMainPhotoId :: Maybe ImageId
     }
 
+updateVersionRow :: NewsVersionId -> UpdateVersionRowCommand -> Transaction ()
+updateVersionRow versionId UpdateVersionRowCommand {..} =
+  unless (null fieldAssignments) $ Sql.runBuilder D.noResult True sql
+  where
+    sql =
+      "update news_versions set" <>
+      Sql.csv fieldAssignments <>
+      "where news_version_id =" <> Sql.param (getNewsVersionId versionId)
+    fieldAssignments =
+      catMaybes
+        [ ("title =" <>) . Sql.param <$> uvrTitle
+        , ("body =" <>) . Sql.param <$> uvrText
+        , ("category_id =" <>) . Sql.param . fmap getCategoryId <$> uvrCategory
+        , ("main_photo_id =" <>) . Sql.param . fmap getImageId <$> uvrMainPhoto
+        ]
+
+data UpdateVersionRowCommand =
+  UpdateVersionRowCommand
+    { uvrTitle :: Maybe T.Text
+    , uvrText :: Maybe T.Text
+    , uvrMainPhoto :: Maybe (Maybe ImageId)
+    , uvrCategory :: Maybe (Maybe CategoryId)
+    }
+
 addPhotosToVersion :: NewsVersionId -> Set.HashSet ImageId -> Transaction ()
 addPhotosToVersion = mapM_ . insertVersionAndAdditionalPhotoAssociation
 
@@ -148,6 +207,14 @@ insertVersionAndAdditionalPhotoAssociation =
       ) on conflict do nothing
     |]
 
+setPhotosToVersion :: NewsVersionId -> Set.HashSet ImageId -> Transaction ()
+setPhotosToVersion versionId photoIds
+  -- stupid, but simple
+ = do
+  oldPhotoIds <- Set.fromList <$> unlinkAdditionalPhotosFromVersion versionId
+  addPhotosToVersion versionId photoIds
+  deleteImagesIfNotReferenced . toList $ photoIds `Set.difference` oldPhotoIds
+
 addTagsToVersion :: NewsVersionId -> Set.HashSet TagId -> Transaction ()
 addTagsToVersion = mapM_ . insertVersionAndTagAssociation
 
@@ -165,6 +232,13 @@ insertVersionAndTagAssociation =
         $2 :: integer
       ) on conflict do nothing
     |]
+
+setTagsToVersion :: NewsVersionId -> Set.HashSet TagId -> Transaction ()
+setTagsToVersion versionId tagIds
+  -- stupid, but simple
+ = do
+  unlinkTagsFromVersion versionId
+  addTagsToVersion versionId tagIds
 
 makeDraftIntoNews ::
      DraftId
@@ -227,6 +301,18 @@ getNewsContentId =
       select news_version_id :: integer
       from news
       where news_id = $1 :: integer
+    |]
+
+getDraftContentId :: DraftId -> Transaction (Maybe NewsVersionId)
+getDraftContentId =
+  runStatement $
+  dimap
+    getDraftId
+    (fmap NewsVersionId)
+    [TH.maybeStatement|
+      select news_version_id :: integer
+      from drafts
+      where draft_id = $1 :: integer
     |]
 
 -- | Updates the news with a new content and returns the old one's

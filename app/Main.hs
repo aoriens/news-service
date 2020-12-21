@@ -49,6 +49,7 @@ import qualified Core.Interactor.GetUsers as IGetUsers
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateAuthor as IUpdateAuthor
 import qualified Core.Interactor.UpdateCategory as IUpdateCategory
+import qualified Core.Interactor.UpdateDraft as IUpdateDraft
 import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
 import Core.Pagination
@@ -103,6 +104,7 @@ import qualified Web.Handler.GetTags as HGetTags
 import qualified Web.Handler.GetUser as HGetUser
 import qualified Web.Handler.GetUsers as HGetUsers
 import qualified Web.Handler.PatchAuthor as HPatchAuthor
+import qualified Web.Handler.PatchDraft as HPatchDraft
 import qualified Web.Handler.PatchTag as HPatchTag
 import qualified Web.Handler.PublishDraft as HPublishDraft
 import qualified Web.Handler.UpdateCategory as HUpdateCategory
@@ -237,6 +239,7 @@ router deps =
     DraftURI draftId ->
       [ R.get $ runGetDraftHandler draftId
       , R.delete $ runDeleteDraftHandler draftId
+      , R.patch $ runPatchDraftHandler draftId
       ]
     PublishDraftURI draftId -> [R.post $ runPublishDraftHandler draftId]
     CommentsForNewsURI newsId ->
@@ -673,6 +676,24 @@ runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =
               }
       , hAuthenticate = authenticate sdAuthenticationHandle
       , hPresent = presentDeletedDraft
+      }
+    draftId
+
+runPatchDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runPatchDraftHandler draftId Deps {..} SessionDeps {..} =
+  HPatchDraft.run
+    HPatchDraft.Handle
+      { hUpdateDraft =
+          IUpdateDraft.run
+            IUpdateDraft.Handle
+              { hGetDraftAuthor = Database.getDraftAuthor sdDatabaseHandle
+              , hUpdateDraft = Database.updateDraft sdDatabaseHandle
+              }
+      , hAuthenticate = authenticate sdAuthenticationHandle
+      , hPresent =
+          presentUpdatedDraft dAppURIConfig dRepresentationBuilderHandle
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
       }
     draftId
 

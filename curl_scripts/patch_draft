@@ -1,0 +1,100 @@
+#!/bin/sh
+
+. "$(dirname "$0")"/prefix.sh
+
+usage() {
+    echo "Usage:"
+    echo "     $0 [OPTIONS] DRAFT_ID"
+    echo "The following options are accepted:"
+    echo "    -title TITLE"
+    echo "    -text TEXT"
+    echo "    -category { null | CATEGORY_ID }"
+    echo "    -photo { null | EXISTING_IMAGE_URI }"
+    echo "    -tags { "" | TAG_ID[,TAG_ID]... }"
+    echo "    -photos { "" | EXISTING_IMAGE_URI[,EXISTING_IMAGE_URI]... }"
+}
+
+if test $# -lt 1
+then
+    usage
+    die
+fi
+
+title_field=
+text_field=
+category_field=
+tags_field=
+photo_field=
+photos_field=
+
+while test $# -gt 0
+do
+    arg=$1
+    shift
+    case "$arg" in
+        -title)
+            title_field="\"title\": \"$1\""
+            shift ;;
+        -text)
+            text_field="\"text\": \"$1\""
+            shift ;;
+        -category)
+            category_field="\"category_id\": $1"
+            shift ;;
+        -tags)
+            if test -z "$1"
+            then
+                tags_field="\"tag_ids\": []"
+            else
+                tags_field="\"tag_ids\": [$1]"
+            fi
+            shift
+            ;;
+        -photo)
+            case "$1" in
+                null)
+                    photo_field="\"photo\": $1" ;;
+                *)
+                    photo_field="\"photo\": \"$1\"" ;;
+            esac
+            shift
+           ;;
+        -photos)
+            if test -z "$1"
+            then
+                photos_field="\"photos\": []"
+            else
+                urls="\"$(echo "$1" | sed 's/,/","/g')\""
+                photos_field="\"photos\": [$urls]"
+            fi
+            shift
+            ;;
+        *)
+            if test -n "${1+X}"
+            then
+                echo "Parameter looks like a DRAFT_ID, but it is not last in the list: $arg"
+                usage
+                die
+            fi
+            draft_id=$arg
+            break
+            ;;
+    esac
+done
+
+if test -z "$draft_id"
+then
+    echo "DRAFT_ID is missing"
+    usage
+    die
+fi
+
+all_fields=$(join_non_empty_with_commas "$title_field" "$text_field" \
+                 "$category_field" "$photo_field" "$tags_field" \
+                 "$photos_field")
+
+allow_token
+run_curl "$DOMAIN/drafts/$draft_id$Q" \
+         -X PATCH  \
+         -H "Content-Type: application/json" \
+         --data-binary "{ $all_fields }"

@@ -112,6 +112,10 @@ webExceptionToResponse e =
   case e of
     BadRequestException reason -> badRequestResponse reason
     IncorrectParameterException reason -> badRequestResponse reason
+    RelatedEntitiesNotFoundException ids ->
+      stubErrorResponseWithReason Http.badRequest400 [] $
+      "The following entity IDs cannot be found: " <>
+      (T.intercalate ", " . map showAsText) ids
     NotFoundException -> notFoundResponse
     UnsupportedMediaTypeException supportedTypes ->
       stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
