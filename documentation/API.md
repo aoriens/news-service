@@ -113,7 +113,7 @@ the request body and returns [Draft](#Draft) entity. The method requires
 authentication. Your cannot perform the operation on behalf of an
 [Author](#Author) that you do not own.
 
-### `GET /drafts/{draft_id}`
+### `DELETE /drafts/{draft_id}`
 
 Deletes the [Draft](#Draft) entity identified with `{draft_id}` and returns no
 content. It requires authentication. You must be a user related to the author of
