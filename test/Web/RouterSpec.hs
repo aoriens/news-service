@@ -87,12 +87,15 @@ spec
       methods `shouldBe`
         sort [Http.methodPost, Http.methodPut, Http.methodDelete]
 
-stubHandlerWithHeader :: Http.Header -> EApplication
+stubHandlerWithHeader :: Http.Header -> ApplicationWithSession
 stubHandlerWithHeader header _ _ =
   ($ responseBuilder Http.ok200 [header] mempty)
 
 shouldEmitSameHeadersAs ::
-     HasCallStack => EApplication -> EApplication -> Expectation
+     HasCallStack
+  => ApplicationWithSession
+  -> ApplicationWithSession
+  -> Expectation
 shouldEmitSameHeadersAs a1 a2 = do
   headers1 <- getHeaders (a1 stubSession) defaultRequest
   headers2 <- getHeaders (a2 stubSession) defaultRequest
@@ -108,7 +111,7 @@ getHeaders app request = do
       pure ResponseReceived
   readIORef result
 
-noOpHandler :: EApplication
+noOpHandler :: ApplicationWithSession
 noOpHandler _ _ = ($ responseBuilder Http.ok200 [] mempty)
 
 stubSession :: Session

@@ -1,6 +1,6 @@
 module Web.Application
-  ( EApplication
-  , EMiddleware
+  ( ApplicationWithSession
+  , MiddlewareWithSession
   , Session(..)
   , SessionId
   , Application
@@ -50,9 +50,9 @@ type RequestPathComponent = T.Text
 data Response =
   Response Http.Status [Http.Header] BB.Builder
 
-type EApplication = Session -> Application
+type ApplicationWithSession = Session -> Application
 
-type EMiddleware = EApplication -> EApplication
+type MiddlewareWithSession = ApplicationWithSession -> ApplicationWithSession
 
 -- | Shared data within single HTTP request processing.
 newtype Session =

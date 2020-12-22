@@ -29,7 +29,7 @@ import qualified Web.Router as R
 data Handle =
   Handle
     { hLogger :: Session -> Logger.Handle IO
-    , hRouter :: R.Router EApplication
+    , hRouter :: R.Router ApplicationWithSession
     , hState :: State
     , hShowInternalExceptionInfoInResponses :: Bool
     , hPresentCoreException :: CoreException -> Response
@@ -56,12 +56,12 @@ application h =
   convertExceptionsToErrorResponse h . logUncaughtExceptions h $
   routerApplication h
 
-createSessionMiddleware :: Handle -> EApplication -> Application
+createSessionMiddleware :: Handle -> ApplicationWithSession -> Application
 createSessionMiddleware h eapp request respond = do
   session <- Session <$> generateSessionId h
   eapp session request respond
 
-logEnterAndExit :: Handle -> EMiddleware
+logEnterAndExit :: Handle -> MiddlewareWithSession
 logEnterAndExit h eapp session@Session {..} req respond = do
   Logger.info loggerH enterMessage
   (r, status) <- runApplicationAndGetStatus (eapp session) req respond
@@ -91,7 +91,7 @@ generateSessionId Handle {..} =
     let new = SessionId (succ n)
      in (new, new)
 
-convertExceptionsToErrorResponse :: Handle -> EMiddleware
+convertExceptionsToErrorResponse :: Handle -> MiddlewareWithSession
 convertExceptionsToErrorResponse h eapp session request respond =
   catchJustS (exceptionToResponse h) (eapp session request respond) respond
 
@@ -108,7 +108,7 @@ exceptionToResponse h e
     "<pre>" <> showAsText e <> "</pre>"
   | otherwise = Nothing
 
-logUncaughtExceptions :: Handle -> EMiddleware
+logUncaughtExceptions :: Handle -> MiddlewareWithSession
 logUncaughtExceptions h eapp session request respond =
   catchJustS testException (eapp session request respond) logAndRethrow
   where
@@ -124,7 +124,7 @@ isAsyncException e
   | Just (_ :: SomeAsyncException) <- fromException e = True
   | otherwise = False
 
-routerApplication :: Handle -> EApplication
+routerApplication :: Handle -> ApplicationWithSession
 routerApplication Handle {..} session request respond =
   case R.route hRouter request of
     R.HandlerResult handler -> handler session request respond
