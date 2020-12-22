@@ -37,7 +37,7 @@ data ResourceRepresentation =
 
 -- | A generic response containing data - 200 OK.
 dataResponse :: ResourceRepresentation -> Response
-dataResponse = makeResponse Http.ok200 []
+dataResponse = representationResponse Http.ok200 []
 
 -- | A response indicating no data in the body.
 noContentResponse :: Response
@@ -48,7 +48,7 @@ noContentResponse = responseWithBuilder Http.noContent204 [] mempty
 resourceCreatedAndReturnedResponse ::
      AppURIConfig -> AppURI -> ResourceRepresentation -> Response
 resourceCreatedAndReturnedResponse uriConfig appURI =
-  makeResponse
+  representationResponse
     Http.created201
     [ locationHeaderWith uriConfig appURI
     , contentLocationHeaderWith uriConfig appURI
@@ -59,7 +59,7 @@ resourceCreatedAndReturnedResponse uriConfig appURI =
 anotherResourceReturnedResponse ::
      AppURIConfig -> AppURI -> ResourceRepresentation -> Response
 anotherResourceReturnedResponse uriConfig appURI =
-  makeResponse Http.ok200 [contentLocationHeaderWith uriConfig appURI]
+  representationResponse Http.ok200 [contentLocationHeaderWith uriConfig appURI]
 
 -- | Create a response indicating that a resource has just been
 -- updated and returned in the response body (PUT, PATCH, or sometimes
@@ -67,11 +67,11 @@ anotherResourceReturnedResponse uriConfig appURI =
 resourceModifiedAndReturnedResponse ::
      AppURIConfig -> AppURI -> ResourceRepresentation -> Response
 resourceModifiedAndReturnedResponse uriConfig appURI =
-  makeResponse Http.ok200 [contentLocationHeaderWith uriConfig appURI]
+  representationResponse Http.ok200 [contentLocationHeaderWith uriConfig appURI]
 
-makeResponse ::
+representationResponse ::
      Http.Status -> [Http.Header] -> ResourceRepresentation -> Response
-makeResponse status headers ResourceRepresentation {..} =
+representationResponse status headers ResourceRepresentation {..} =
   responseWithBuilder
     status
     (contentTypeHeaderWith resourceRepresentationContentType : headers)
