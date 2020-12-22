@@ -1,10 +1,15 @@
 module Web.Presenter.Error
   ( presentWebException
   , presentCoreException
+  , uncaughtExceptionResponseForDebug
+  , methodNotAllowedResponse
+  , notFoundResponse
   ) where
 
+import Control.Exception
 import Core.Exception
 import Core.Permission
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -78,12 +83,23 @@ unauthorizedResponse =
     Http.unauthorized401
     [("WWW-Authenticate", "Basic realm=\"\"")]
 
+badRequestResponse :: T.Text -> Response
+badRequestResponse = stubErrorResponseWithReason Http.badRequest400 []
+
+uncaughtExceptionResponseForDebug :: SomeException -> Response
+uncaughtExceptionResponseForDebug e =
+  stubErrorResponseWithReason Http.internalServerError500 [] $
+  "<pre>" <> showAsText e <> "</pre>"
+
+methodNotAllowedResponse :: [B.ByteString] -> Response
+methodNotAllowedResponse knownMethods =
+  stubErrorResponse Http.methodNotAllowed405 [makeAllowHeader knownMethods]
+  where
+    makeAllowHeader methods = ("Allow", B.intercalate ", " methods)
+
 stubErrorResponse :: Http.Status -> [Http.Header] -> Response
 stubErrorResponse status additionalHeaders =
   stubErrorResponseWithReason status additionalHeaders ""
-
-badRequestResponse :: T.Text -> Response
-badRequestResponse = stubErrorResponseWithReason Http.badRequest400 []
 
 stubErrorResponseWithReason ::
      Http.Status -> [Http.Header] -> T.Text -> Response

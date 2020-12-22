@@ -1,3 +1,6 @@
+-- | Basic response constructors according to RFC2616. The file should
+-- not contain application-specific logic for making requests, e.g.
+-- specific content in bodies or non-standard headers.
 module Web.Response
   ( ContentType
   , contentType

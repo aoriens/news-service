@@ -13,13 +13,11 @@ import Control.Exception
 import Control.Exception.Sync
 import Core.Exception
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Builder as BB
 import Data.IORef
 import qualified Data.Text as T
 import Data.Text.Encoding as T
 import Data.Text.Show
 import qualified Logger
-import qualified Network.HTTP.Types as Http
 import Network.HTTP.Types.Status as Http
 import Web.Application
 import Web.Application.Internal.SessionId
@@ -34,6 +32,10 @@ data Handle =
     , hShowInternalExceptionInfoInResponses :: Bool
     , hPresentCoreException :: CoreException -> Response
     , hPresentWebException :: WebException -> Response
+    , hNotFoundResponse :: Response
+    , hMethodNotAllowedResponse :: [B.ByteString] -> Response
+    -- ^ Accepts the supported methods, unordered.
+    , hUncaughtExceptionResponseForDebug :: SomeException -> Response
     }
 
 -- | A mutable state of the module. Use 'makeState' to create it and
@@ -103,9 +105,7 @@ exceptionToResponse h e
   | Just coreException <- fromException e =
     Just $ hPresentCoreException h coreException
   | hShowInternalExceptionInfoInResponses h =
-    Just $
-    stubErrorResponseWithReason Http.internalServerError500 [] $
-    "<pre>" <> showAsText e <> "</pre>"
+    Just $ hUncaughtExceptionResponseForDebug h e
   | otherwise = Nothing
 
 logUncaughtExceptions :: Handle -> MiddlewareWithSession
@@ -132,33 +132,6 @@ routerApplication Handle {..} session request respond =
       Logger.error
         (hLogger session)
         "Router failed to find a handler for the requested URL"
-      respond $ stubErrorResponse Http.notFound404 []
+      respond hNotFoundResponse
     R.MethodNotSupportedResult knownMethods ->
-      respond $ methodNotAllowedResponse knownMethods
-  where
-    methodNotAllowedResponse knownMethods =
-      stubErrorResponse Http.methodNotAllowed405 [makeAllowHeader knownMethods]
-    makeAllowHeader methods = ("Allow", B.intercalate ", " methods)
-
-stubErrorResponse :: Http.Status -> [Http.Header] -> Response
-stubErrorResponse status additionalHeaders =
-  stubErrorResponseWithReason status additionalHeaders ""
-
-stubErrorResponseWithReason ::
-     Http.Status -> [Http.Header] -> T.Text -> Response
-stubErrorResponseWithReason status additionalHeaders reason =
-  responseBuilder
-    status
-    ((Http.hContentType, "text/html") : additionalHeaders)
-    body
-  where
-    body =
-      mconcat
-        [ "<!DOCTYPE html><html><body><h1>"
-        , BB.stringUtf8 (show (Http.statusCode status))
-        , " "
-        , BB.byteString (Http.statusMessage status)
-        , "</h1><p>"
-        , BB.byteString $ T.encodeUtf8 reason
-        , "</p></body></html>\n"
-        ]
+      respond $ hMethodNotAllowedResponse knownMethods

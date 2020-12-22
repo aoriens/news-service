@@ -205,6 +205,9 @@ getWebAppHandle deps@Deps {..} = do
           Cf.cfShowInternalErrorInfoInResponse dConfig
       , hPresentCoreException = presentCoreException
       , hPresentWebException = presentWebException
+      , hNotFoundResponse = notFoundResponse
+      , hMethodNotAllowedResponse = methodNotAllowedResponse
+      , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
 
 router :: Deps -> R.Router (Web.Session -> Web.Application)
