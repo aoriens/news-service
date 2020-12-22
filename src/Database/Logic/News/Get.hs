@@ -73,17 +73,31 @@ selectNewsRows filter' sortOptions pageSpec =
     topClause =
       Sql.text
         [TH.uncheckedSql|
-          with num_photos_for_news_versions as (
+          with recursive num_photos_for_news_versions as (
             select news_version_id,
-                   count (image_id)
-                     + case when main_photo_id is null
-                            then 0 else 1 end
+                   count (image_id) + case when main_photo_id is null
+                                           then 0 else 1 end
                      as num_photos
             from news_versions
                  left join news_versions_and_additional_photos_relation using (news_version_id)
             group by news_version_id
+          ), category_full_names_intermediate as (
+            select category_id, parent_id, array[name] as full_name
+            from categories
+
+            union
+
+            select children.category_id, parents.parent_id, parents.name || children.full_name
+            from category_full_names_intermediate as children
+                 join categories as parents on children.parent_id = parents.category_id
+          ), category_full_names as (
+            select category_id, full_name
+            from category_full_names_intermediate
+            where parent_id is null
           )
-          select distinct $COLUMNS, num_photos
+          select distinct $COLUMNS,
+                 -- ordering columns only
+                 num_photos, category_full_names.full_name
           from news
                join news_versions using (news_version_id)
                left join authors using (author_id)
@@ -91,6 +105,7 @@ selectNewsRows filter' sortOptions pageSpec =
                left join news_versions_and_tags_relation using (news_version_id)
                left join tags using (tag_id)
                join num_photos_for_news_versions using (news_version_id)
+               left join category_full_names using (category_id)
         |]
     limitOffsetClause = limitOffsetClauseWithPageSpec pageSpec
 
@@ -106,6 +121,7 @@ orderByClauseForListingNews IListNews.SortOptions {..} =
         IListNews.SortKeyDate -> ["date"]
         IListNews.SortKeyAuthorName -> ["users.last_name", "users.first_name"]
         IListNews.SortKeyNumPhotos -> ["num_photos"]
+        IListNews.SortKeyCategoryName -> ["category_full_names.full_name"]
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =

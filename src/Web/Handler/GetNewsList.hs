@@ -123,4 +123,5 @@ instance QueryParameter.Parses SortKey where
   parse (Just "date") = Just $ SortKey I.SortKeyDate
   parse (Just "author") = Just $ SortKey I.SortKeyAuthorName
   parse (Just "num_photos") = Just $ SortKey I.SortKeyNumPhotos
+  parse (Just "category") = Just $ SortKey I.SortKeyCategoryName
   parse _ = Nothing

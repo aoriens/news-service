@@ -157,6 +157,7 @@ The following URI query parameters may be passed to affect sort order:
   - `date` - sort by news article date.
   - `author` - sort by the author name, the last name first.
   - `num_photos` - sort by the number of photos in the news.
+  - `category` - sort by the full category name.
 - `reverse_sort` - a flag to reverse the sort order. The parameter value is
   ignored. Multiple occurrences are treated as if the parameter is used once.
 
