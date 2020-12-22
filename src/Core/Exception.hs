@@ -30,7 +30,6 @@ data CoreException
    -- otherwise 'NoPermissionException' is more appropriate.
   | NoPermissionException Permission ActionName
   | UserNotIdentifiedException ActionName
-  | DependentEntitiesPreventDeletionException EntityId [EntityId]
   | RequestedEntityNotFoundException EntityId
   | DependentEntitiesNotFoundException [EntityId]
   | DisallowedImageContentTypeException ContentType [ContentType]

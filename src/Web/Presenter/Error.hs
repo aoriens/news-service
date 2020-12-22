@@ -56,11 +56,6 @@ presentCoreException e =
         Http.forbidden403
         []
         "Authentication is required"
-    DependentEntitiesPreventDeletionException entityId' depIds ->
-      badRequestResponse $
-      showAsText entityId' <>
-      " cannot be deleted because the following entities depend on it: " <>
-      (T.intercalate ", " . map showAsText) depIds
     RequestedEntityNotFoundException _ -> notFoundResponse
     DependentEntitiesNotFoundException ids ->
       stubErrorResponseWithReason Http.badRequest400 [] $
