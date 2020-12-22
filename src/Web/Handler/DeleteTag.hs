@@ -23,5 +23,5 @@ run Handle {..} tagId request respond = do
   authUser <-
     hAuthenticate =<< Web.Credentials.getCredentialsFromRequest request
   isOk <- hDeleteTag authUser tagId
-  unless isOk $ throwIO NotFoundException
+  unless isOk $ throwIO ResourceNotFoundException
   respond hPresent

@@ -24,6 +24,6 @@ run Handle {..} authorId' request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   author <-
-    fromMaybeM (throwIO NotFoundException) =<<
+    fromMaybeM (throwIO ResourceNotFoundException) =<<
     I.run hGetAuthorHandle authUser authorId'
   respond $ hPresent author

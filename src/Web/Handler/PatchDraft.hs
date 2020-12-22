@@ -41,7 +41,8 @@ run h@Handle {..} draftId request respond = do
   updateDraftRequest <- makeUpdateDraftRequest h body
   hUpdateDraft authUser draftId updateDraftRequest >>= \case
     Right draft -> respond $ hPresent draft
-    Left (I.UnknownEntityId [DraftEntityId _]) -> throwIO NotFoundException
+    Left (I.UnknownEntityId [DraftEntityId _]) ->
+      throwIO ResourceNotFoundException
     Left (I.UnknownEntityId ids) ->
       throwIO $ RelatedEntitiesNotFoundException ids
 

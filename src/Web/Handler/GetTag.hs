@@ -19,5 +19,6 @@ data Handle =
 run :: Handle -> TagId -> Application
 run Handle {..} tagId' _ respond = do
   tag <-
-    fromMaybeM (throwIO NotFoundException) =<< IGetTag.run hGetTagHandle tagId'
+    fromMaybeM (throwIO ResourceNotFoundException) =<<
+    IGetTag.run hGetTagHandle tagId'
   respond $ hPresent tag

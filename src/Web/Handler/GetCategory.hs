@@ -19,6 +19,6 @@ data Handle =
 run :: Handle -> CategoryId -> Application
 run Handle {..} catId _ respond = do
   category <-
-    fromMaybeM (throwIO NotFoundException) =<<
+    fromMaybeM (throwIO ResourceNotFoundException) =<<
     IGetCategory.run hGetCategoryHandle catId
   respond $ hPresent category

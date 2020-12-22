@@ -23,5 +23,5 @@ run Handle {..} commentId request respond = do
   authUser <-
     hAuthenticate =<< Web.Credentials.getCredentialsFromRequest request
   isOk <- hDeleteComment authUser commentId
-  unless isOk $ throwIO NotFoundException
+  unless isOk $ throwIO ResourceNotFoundException
   respond hPresent

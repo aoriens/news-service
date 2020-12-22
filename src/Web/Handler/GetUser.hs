@@ -18,5 +18,7 @@ data Handle =
 
 run :: Handle -> UserId -> Application
 run Handle {..} userId _ respond = do
-  user <- fromMaybeM (throwIO NotFoundException) =<< I.run hGetUserHandle userId
+  user <-
+    fromMaybeM (throwIO ResourceNotFoundException) =<<
+    I.run hGetUserHandle userId
   respond $ hPresent user

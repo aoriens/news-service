@@ -19,5 +19,5 @@ data Handle =
 run :: Handle -> ImageId -> Application
 run Handle {..} imageId _ respond = do
   optImage <- I.run hGetImageHandle imageId
-  image <- fromMaybeM (throwIO E.NotFoundException) optImage
+  image <- fromMaybeM (throwIO E.ResourceNotFoundException) optImage
   respond $ hPresent image

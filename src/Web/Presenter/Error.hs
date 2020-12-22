@@ -27,7 +27,7 @@ presentWebException e =
       stubErrorResponseWithReason Http.badRequest400 [] $
       "The following entity IDs cannot be found: " <>
       (T.intercalate ", " . map showAsText) ids
-    NotFoundException -> notFoundResponse
+    ResourceNotFoundException -> notFoundResponse
     UnsupportedMediaTypeException supportedTypes ->
       stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
       "Supported media types are: " <> T.intercalate ", " supportedTypes

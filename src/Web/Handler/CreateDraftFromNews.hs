@@ -23,4 +23,4 @@ run Handle {..} newsId request respond = do
   authUser <- hAuthenticate =<< getCredentialsFromRequest request
   hCreateDraftFromNews authUser newsId >>= \case
     Right version -> respond $ hPresent version
-    Left I.UnknownNewsId -> throwIO NotFoundException
+    Left I.UnknownNewsId -> throwIO ResourceNotFoundException

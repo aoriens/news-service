@@ -24,6 +24,6 @@ run Handle {..} draftId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   draft <-
-    fromMaybeM (throwIO NotFoundException) =<<
+    fromMaybeM (throwIO ResourceNotFoundException) =<<
     I.run hGetDraftHandle authUser draftId
   respond $ hPresent draft

@@ -30,5 +30,5 @@ run Handle {..} newsId request respond = do
     hParsePageSpec =<<
     Web.QueryParameter.parseQueryM (requestQueryString request) parsePageQuery
   hGetDraftsOfNewsArticle authUser newsId pageSpec >>= \case
-    Nothing -> throwM NotFoundException
+    Nothing -> throwM ResourceNotFoundException
     Just drafts -> respond $ hPresent drafts

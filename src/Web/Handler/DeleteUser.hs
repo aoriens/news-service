@@ -23,5 +23,5 @@ run Handle {..} uid request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   r <- hDeleteUser authUser uid
-  unless r $ throwIO NotFoundException
+  unless r $ throwIO ResourceNotFoundException
   respond hPresent

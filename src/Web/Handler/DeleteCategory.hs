@@ -23,5 +23,5 @@ run Handle {..} catId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   I.run hDeleteCategoryHandle authUser catId >>= \case
-    Left I.UnknownCategoryId -> throwIO NotFoundException
+    Left I.UnknownCategoryId -> throwIO ResourceNotFoundException
     Right () -> respond hPresent

@@ -23,5 +23,5 @@ run Handle {..} vId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   I.run hPublishDraftHandle authUser vId >>= \case
-    Left I.UnknownDraftId -> throwIO NotFoundException
+    Left I.UnknownDraftId -> throwIO ResourceNotFoundException
     Right success -> respond $ hPresent success

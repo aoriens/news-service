@@ -18,5 +18,7 @@ data Handle =
 
 run :: Handle -> NewsId -> Application
 run Handle {..} newsId _ respond = do
-  news <- fromMaybeM (throwIO NotFoundException) =<< I.run hGetNewsHandle newsId
+  news <-
+    fromMaybeM (throwIO ResourceNotFoundException) =<<
+    I.run hGetNewsHandle newsId
   respond $ hPresent news

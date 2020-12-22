@@ -23,5 +23,5 @@ run Handle {..} authorId request respond = do
   authUser <-
     authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
   I.run hDeleteAuthorHandle authUser authorId >>= \case
-    Left I.UnknownAuthorId -> throwIO NotFoundException
+    Left I.UnknownAuthorId -> throwIO ResourceNotFoundException
     Right () -> respond hPresent

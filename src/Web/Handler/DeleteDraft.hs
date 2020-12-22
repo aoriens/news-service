@@ -23,5 +23,5 @@ run Handle {..} draftId request respond = do
   authUser <-
     hAuthenticate =<< Web.Credentials.getCredentialsFromRequest request
   hDeleteDraft authUser draftId >>= \case
-    Left IDeleteDraft.UnknownDraftId -> throwIO NotFoundException
+    Left IDeleteDraft.UnknownDraftId -> throwIO ResourceNotFoundException
     Right () -> respond hPresent

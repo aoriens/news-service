@@ -20,7 +20,7 @@ data WebException
   | RelatedEntitiesNotFoundException [EntityId]
   | UnsupportedMediaTypeException SupportedMediaTypes
   | PayloadTooLargeException MaxPayloadSize
-  | NotFoundException
+  | ResourceNotFoundException
   | MalformedAuthDataException Reason
   deriving (Show)
 

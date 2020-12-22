@@ -42,7 +42,7 @@ updateCategoryRequestFromBody catId RequestBody {..} =
 exceptionFromFailure :: IUpdateCategory.Failure -> WebException
 exceptionFromFailure =
   \case
-    IUpdateCategory.UnknownCategoryId -> NotFoundException
+    IUpdateCategory.UnknownCategoryId -> ResourceNotFoundException
     IUpdateCategory.UnknownNewParentId ->
       IncorrectParameterException "Unknown new parent category ID"
     IUpdateCategory.NameMustNotBeEmpty ->

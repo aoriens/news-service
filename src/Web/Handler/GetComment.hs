@@ -19,6 +19,6 @@ data Handle =
 run :: Handle -> CommentId -> Application
 run Handle {..} commentId _ respond = do
   comment <-
-    fromMaybeM (throwIO NotFoundException) =<<
+    fromMaybeM (throwIO ResourceNotFoundException) =<<
     IGetComment.run hGetCommentHandle commentId
   respond $ hPresent comment

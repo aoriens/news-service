@@ -35,7 +35,7 @@ run Handle {..} tagId request respond = do
   InTag {inName} <- hLoadJSONRequestBody request
   hUpdateTag authUser tagId inName >>= \case
     Right tag -> respond $ hPresent tag
-    Left IUpdateTag.UnknownTagId -> throwIO NotFoundException
+    Left IUpdateTag.UnknownTagId -> throwIO ResourceNotFoundException
     Left IUpdateTag.TagNameMustNotBeEmpty ->
       throwIO $ IncorrectParameterException "The tag name must not be empty"
     Left IUpdateTag.TagNameMustBeUnique ->
