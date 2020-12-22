@@ -120,6 +120,7 @@ data SortOptions =
 data SortKey
   = SortKeyDate
   | SortKeyAuthorName
+  | SortKeyNumPhotos
   deriving (Eq, Show)
 
 defaultSortOptions :: SortOptions

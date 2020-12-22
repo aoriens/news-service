@@ -29,7 +29,6 @@ import Core.User
 import Data.Foldable
 import Data.Functor.Contravariant
 import qualified Data.HashSet as Set
-import Data.List
 import Data.Profunctor
 import qualified Data.Text as T
 import Data.Text.Show
@@ -43,6 +42,7 @@ import Database.Logic.Tags
 import Database.Service.Columns
 import Database.Service.Primitives
 import qualified Database.Service.SQLBuilder as Sql
+import qualified Database.Service.SQLBuilders as Sql
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.TH as TH
@@ -73,21 +73,30 @@ selectNewsRows filter' sortOptions pageSpec =
     topClause =
       Sql.text
         [TH.uncheckedSql|
-          select distinct $COLUMNS
+          with num_photos_for_news_versions as (
+            select news_version_id,
+                   count (image_id)
+                     + case when main_photo_id is null
+                            then 0 else 1 end
+                     as num_photos
+            from news_versions
+                 left join news_versions_and_additional_photos_relation using (news_version_id)
+            group by news_version_id
+          )
+          select distinct $COLUMNS, num_photos
           from news
                join news_versions using (news_version_id)
                left join authors using (author_id)
                left join extended_users as users using (user_id)
                left join news_versions_and_tags_relation using (news_version_id)
                left join tags using (tag_id)
+               join num_photos_for_news_versions using (news_version_id)
         |]
     limitOffsetClause = limitOffsetClauseWithPageSpec pageSpec
 
 orderByClauseForListingNews :: IListNews.SortOptions -> Sql.Builder
 orderByClauseForListingNews IListNews.SortOptions {..} =
-  ("order by" <>) .
-  mconcat . intersperse "," . map (<> direction) . (++ ["news_id"]) $
-  fields
+  ("order by" <>) . Sql.csv . map (<> direction) $ fields ++ ["news_id"]
   where
     direction
       | sortReverse = "desc"
@@ -96,6 +105,7 @@ orderByClauseForListingNews IListNews.SortOptions {..} =
       case sortKey of
         IListNews.SortKeyDate -> ["date"]
         IListNews.SortKeyAuthorName -> ["users.last_name", "users.first_name"]
+        IListNews.SortKeyNumPhotos -> ["num_photos"]
 
 selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
 selectNewsRow =
