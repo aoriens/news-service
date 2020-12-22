@@ -150,6 +150,7 @@ library
     , Web.Handler.PublishDraft
     , Web.JSONEncoder
     , Web.Presenter
+    , Web.Presenter.Error
     , Web.QueryParameter
     , Web.QueryParameter.PageQuery
     , Web.Representation.AppURI

@@ -12,7 +12,6 @@ module Web.EntryPoint
 import Control.Exception
 import Control.Exception.Sync
 import Core.Exception
-import Core.Permission
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import Data.IORef
@@ -33,6 +32,8 @@ data Handle =
     , hRouter :: R.Router EApplication
     , hState :: State
     , hShowInternalExceptionInfoInResponses :: Bool
+    , hPresentCoreException :: CoreException -> Response
+    , hPresentWebException :: WebException -> Response
     }
 
 -- | A mutable state of the module. Use 'makeState' to create it and
@@ -98,70 +99,14 @@ exceptionToResponse :: Handle -> SomeException -> Maybe Response
 exceptionToResponse h e
   | isAsyncException e = Nothing
   | Just webException <- fromException e =
-    Just $ webExceptionToResponse webException
+    Just $ hPresentWebException h webException
   | Just coreException <- fromException e =
-    Just $ coreExceptionToResponse coreException
+    Just $ hPresentCoreException h coreException
   | hShowInternalExceptionInfoInResponses h =
     Just $
     stubErrorResponseWithReason Http.internalServerError500 [] $
     "<pre>" <> showAsText e <> "</pre>"
   | otherwise = Nothing
-
-webExceptionToResponse :: WebException -> Response
-webExceptionToResponse e =
-  case e of
-    BadRequestException reason -> badRequestResponse reason
-    IncorrectParameterException reason -> badRequestResponse reason
-    RelatedEntitiesNotFoundException ids ->
-      stubErrorResponseWithReason Http.badRequest400 [] $
-      "The following entity IDs cannot be found: " <>
-      (T.intercalate ", " . map showAsText) ids
-    NotFoundException -> notFoundResponse
-    UnsupportedMediaTypeException supportedTypes ->
-      stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
-      "Supported media types are: " <> T.intercalate ", " supportedTypes
-    PayloadTooLargeException maxPayloadSize ->
-      stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
-      "The request body length must not exceed " <>
-      showAsText maxPayloadSize <> " bytes"
-    MalformedAuthDataException _ -> notFoundResponse
-
-coreExceptionToResponse :: CoreException -> Response
-coreExceptionToResponse e =
-  case e of
-    QueryException reason -> badRequestResponse reason
-    BadCredentialsException _ -> notFoundResponse
-    AuthenticationRequired -> unauthorizedResponse
-    NoPermissionException perm _
-      | AdminPermission <- perm -> notFoundResponse
-      | AuthorshipPermission _ <- perm ->
-        stubErrorResponseWithReason
-          Http.forbidden403
-          []
-          "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
-      | AdminOrSpecificUserPermission _ <- perm -> unauthorizedResponse
-    UserNotIdentifiedException _ ->
-      stubErrorResponseWithReason
-        Http.forbidden403
-        []
-        "Authentication is required"
-    DependentEntitiesPreventDeletionException entityId' depIds ->
-      badRequestResponse $
-      showAsText entityId' <>
-      " cannot be deleted because the following entities depend on it: " <>
-      (T.intercalate ", " . map showAsText) depIds
-    RequestedEntityNotFoundException _ -> notFoundResponse
-    DependentEntitiesNotFoundException ids ->
-      stubErrorResponseWithReason Http.badRequest400 [] $
-      "The following entity IDs cannot be found: " <>
-      (T.intercalate ", " . map showAsText) ids
-    DisallowedImageContentTypeException badContentType allowedContentTypes ->
-      stubErrorResponseWithReason
-        Http.unsupportedMediaType415
-        []
-        ("Unsupported image content type: " <>
-         badContentType <>
-         ". Supported content types: " <> T.intercalate ", " allowedContentTypes)
 
 logUncaughtExceptions :: Handle -> EMiddleware
 logUncaughtExceptions h eapp session request respond =
@@ -195,21 +140,9 @@ routerApplication Handle {..} session request respond =
       stubErrorResponse Http.methodNotAllowed405 [makeAllowHeader knownMethods]
     makeAllowHeader methods = ("Allow", B.intercalate ", " methods)
 
-notFoundResponse :: Response
-notFoundResponse = stubErrorResponse Http.notFound404 []
-
-unauthorizedResponse :: Response
-unauthorizedResponse =
-  stubErrorResponse
-    Http.unauthorized401
-    [("WWW-Authenticate", "Basic realm=\"\"")]
-
 stubErrorResponse :: Http.Status -> [Http.Header] -> Response
 stubErrorResponse status additionalHeaders =
   stubErrorResponseWithReason status additionalHeaders ""
-
-badRequestResponse :: T.Text -> Response
-badRequestResponse = stubErrorResponseWithReason Http.badRequest400 []
 
 stubErrorResponseWithReason ::
      Http.Status -> [Http.Header] -> T.Text -> Response

@@ -110,6 +110,7 @@ import qualified Web.Handler.PatchTag as HPatchTag
 import qualified Web.Handler.PublishDraft as HPublishDraft
 import qualified Web.JSONEncoder as JSONEncoder
 import Web.Presenter
+import Web.Presenter.Error
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 import qualified Web.Router as R
@@ -202,6 +203,8 @@ getWebAppHandle deps@Deps {..} = do
       , hRouter = router deps
       , hShowInternalExceptionInfoInResponses =
           Cf.cfShowInternalErrorInfoInResponse dConfig
+      , hPresentCoreException = presentCoreException
+      , hPresentWebException = presentWebException
       }
 
 router :: Deps -> R.Router (Web.Session -> Web.Application)
