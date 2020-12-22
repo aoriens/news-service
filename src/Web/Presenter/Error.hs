@@ -99,7 +99,7 @@ stubErrorResponse status additionalHeaders =
 stubErrorResponseWithReason ::
      Http.Status -> [Http.Header] -> T.Text -> Response
 stubErrorResponseWithReason status additionalHeaders reason =
-  responseBuilder
+  responseWithBuilder
     status
     ((Http.hContentType, "text/html") : additionalHeaders)
     body

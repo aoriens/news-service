@@ -89,7 +89,7 @@ spec
 
 stubHandlerWithHeader :: Http.Header -> ApplicationWithSession
 stubHandlerWithHeader header _ _ =
-  ($ responseBuilder Http.ok200 [header] mempty)
+  ($ responseWithBuilder Http.ok200 [header] mempty)
 
 shouldEmitSameHeadersAs ::
      HasCallStack
@@ -112,7 +112,7 @@ getHeaders app request = do
   readIORef result
 
 noOpHandler :: ApplicationWithSession
-noOpHandler _ _ = ($ responseBuilder Http.ok200 [] mempty)
+noOpHandler _ _ = ($ responseWithBuilder Http.ok200 [] mempty)
 
 stubSession :: Session
 stubSession = Session {sessionId = SessionId 0}

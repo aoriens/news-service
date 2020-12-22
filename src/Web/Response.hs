@@ -41,7 +41,7 @@ dataResponse = makeResponse Http.ok200 []
 
 -- | A response indicating no data in the body.
 noContentResponse :: Response
-noContentResponse = responseBuilder Http.noContent204 [] mempty
+noContentResponse = responseWithBuilder Http.noContent204 [] mempty
 
 -- | Create a response indicating that a resource has just been
 -- created and returned in the response body (e.g. POST).
@@ -72,7 +72,7 @@ resourceModifiedAndReturnedResponse uriConfig appURI =
 makeResponse ::
      Http.Status -> [Http.Header] -> ResourceRepresentation -> Response
 makeResponse status headers ResourceRepresentation {..} =
-  responseBuilder
+  responseWithBuilder
     status
     (contentTypeHeaderWith resourceRepresentationContentType : headers)
     resourceRepresentationBody

@@ -9,7 +9,7 @@ module Web.Application
   , defaultRequest
   , Response(..)
   , ResponseReceived
-  , responseBuilder
+  , responseWithBuilder
   , responseStatusAndHeaders
   , runApplicationAndGetStatus
   ) where
@@ -72,8 +72,8 @@ defaultRequest =
     , requestLoadBodyNoLonger = \_ -> pure $ Just mempty
     }
 
-responseBuilder :: Http.Status -> [Http.Header] -> BB.Builder -> Response
-responseBuilder = Response
+responseWithBuilder :: Http.Status -> [Http.Header] -> BB.Builder -> Response
+responseWithBuilder = Response
 
 responseStatusAndHeaders :: Response -> (Http.Status, [Http.Header])
 responseStatusAndHeaders (Response status headers _) = (status, headers)
