@@ -521,7 +521,7 @@ runGetTagHandler :: TagId -> Deps -> SessionDeps -> Web.Application
 runGetTagHandler tagId Deps {..} SessionDeps {..} =
   HGetTag.run
     HGetTag.Handle
-      { hGetTagHandle = IGetTag.Handle $ Database.findTagById sdDatabaseHandle
+      { hGetTagHandle = IGetTag.Handle $ Database.getTag sdDatabaseHandle
       , hPresent = presentTag dRepresentationBuilderHandle
       }
     tagId

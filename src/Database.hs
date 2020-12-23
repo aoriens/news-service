@@ -40,7 +40,7 @@ module Database
   , deleteDraftsOfAuthor
   -- * Tags
   , findTagNamed
-  , findTagById
+  , getTag
   , getTags
   , deleteTag
   , setTagName
@@ -261,8 +261,8 @@ overwriteNewsWithDraft h newsId draftId day =
 findTagNamed :: DB.Handle -> Text -> IO (Maybe Tag)
 findTagNamed h = runTransactionRO h . DTags.findTagNamed
 
-findTagById :: DB.Handle -> TagId -> IO (Maybe Tag)
-findTagById h = runTransactionRO h . DTags.findTagById
+getTag :: DB.Handle -> TagId -> IO (Maybe Tag)
+getTag h = runTransactionRO h . DTags.getTag
 
 getTags :: DB.Handle -> PageSpec -> IO [Tag]
 getTags h = runTransactionRO h . DTags.getTags

@@ -3,7 +3,7 @@
 
 module Database.Logic.Tags
   ( findTagNamed
-  , findTagById
+  , getTag
   , tagExists
   , createTagNamed
   , getTags
@@ -64,8 +64,8 @@ setTagName =
       where tag_id = $1 :: integer
     |]
 
-findTagById :: TagId -> Transaction (Maybe Tag)
-findTagById =
+getTag :: TagId -> Transaction (Maybe Tag)
+getTag =
   runStatement $ statementWithColumns sql encoder tagColumns D.rowMaybe True
   where
     sql = "select $COLUMNS from tags where tag_id = $1"
