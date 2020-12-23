@@ -53,17 +53,14 @@ presentCoreException h e =
   case e of
     QueryException reason -> badRequestBuilder reason
     BadCredentialsException _ -> notFoundBuilder
-    AuthenticationRequired -> unauthorizedBuilder
+    AuthenticationRequired -> authenticationRequired
     NoPermissionException perm _
       | AdminPermission <- perm -> notFoundBuilder
       | AuthorshipPermission _ <- perm ->
-        errorEntityBuilder
-          Http.forbidden403
-          []
+        unauthorizedBuilder
           "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
-      | AdminOrSpecificUserPermission _ <- perm -> unauthorizedBuilder
-    UserNotIdentifiedException _ ->
-      errorEntityBuilder Http.forbidden403 [] "Authentication is required"
+      | AdminOrSpecificUserPermission _ <- perm -> authenticationRequired
+    UserNotIdentifiedException _ -> authenticationRequired
     RequestedEntityNotFoundException _ -> notFoundBuilder
     DependentEntitiesNotFoundException ids ->
       badRequestBuilder $
@@ -86,12 +83,14 @@ notFoundBuilder = const notFoundResponse
 notFoundResponse :: Response
 notFoundResponse = htmlErrorResponse Http.notFound404 [] ""
 
-unauthorizedBuilder :: ResponseBuilder
+authenticationRequired :: ResponseBuilder
+authenticationRequired = unauthorizedBuilder "Authentication required"
+
+unauthorizedBuilder :: T.Text -> ResponseBuilder
 unauthorizedBuilder =
-  htmlErrorBuilder
+  errorEntityBuilder
     Http.unauthorized401
     [("WWW-Authenticate", "Basic realm=\"\"")]
-    ""
 
 uncaughtExceptionResponseForDebug :: SomeException -> Response
 uncaughtExceptionResponseForDebug e =
@@ -110,10 +109,6 @@ type ResponseBuilder = RepBuilderHandle -> Response
 
 runResponseBuilder :: RepBuilderHandle -> ResponseBuilder -> Response
 runResponseBuilder = flip ($)
-
-htmlErrorBuilder :: Http.Status -> [Http.Header] -> T.Text -> ResponseBuilder
-htmlErrorBuilder status headers text =
-  const $ htmlErrorResponse status headers text
 
 htmlErrorResponse :: Http.Status -> [Http.Header] -> T.Text -> Response
 htmlErrorResponse status additionalHeaders reason =
