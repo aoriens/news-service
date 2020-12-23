@@ -1,19 +1,28 @@
 # API
 
-## Authentication
-
-Some parts of API require authentication, which is documented appropriately, but
-majority of methods does not. Currently we support HTTP basic authentication.
-You should use the user's secret token as a login and an empty password. The
-secret token is only returned on user creation.
-
-In case of authentication failure or lack of privileges `404 NotFound` may be
-returned in order to hide API which requires additional privileges.
-
-## Entity encoding
+The API is REST-like, HTTP-based.
 
 Non-empty request and response bodies containing API entities are encoded in
 JSON, when the opposite is not specified.
+
+If a request is handled successfully, one of the following statuses is returned:
+`200 OK`, `201 Created`, `204 No Content`. Additional headers may be used to
+specify URI of returned entities: `Location` and `Content-Location`.
+
+The primary way to determine an error is to check if the response status is
+either `4xx` or `5xx`. Some errors do not contain more information, except for
+an optional HTML text, which is not indended for parsing. Other errors may
+contain an [Error](#Error) entity.
+
+## Authentication
+
+Some parts of API require authentication, which is documented appropriately, but
+majority of methods does not require it. We support the basic HTTP
+authentication. You should use the user's secret token as a login and an empty
+password. The secret token is only returned on user creation, see [User](#User).
+
+In case of authentication failure or lack of privileges `404 NotFound` may be
+returned in order to hide API which requires additional privileges.
 
 ## Pagination
 
@@ -424,6 +433,12 @@ A draft of a news article. Fields:
 - `photo` - the main illustration photo URI for the news. A string, required.
 - `photos` - additional illustration URIs. An array of strings, required.
 - `tags` - tags for the news. An array of [Tag](#Tag) objects, required.
+
+### Error
+
+A response error. Fields:
+
+- `reason` - a human-readable error description. A string, required.
 
 ### News
 
