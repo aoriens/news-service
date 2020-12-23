@@ -253,7 +253,7 @@ will be posted anonymously.
 ### `GET /news/{news_id}/drafts`
 
 Returns [Draft](#Draft) entities created from the news identified with
-`{news_id}`. Such drafts may be created using the same URI with `GET` method. It
+`{news_id}`. Such drafts may be created using the same URI with `POST` method. It
 requires authentication. Only the author of the news article may perform the
 operation.
 
@@ -272,7 +272,7 @@ Returns a list of [Tag](#Tag) entities.
 Creates a tag. Accepts [CreateTag](#CreateTag) entity in the request body and
 returns either a created or existing [Tag](#Tag) entity. Each tag must have a
 unique, non-empty name. If a tag with such a name exists, no new tag will be
-created and the existing tag is returned.
+created and the existing tag will be returned.
 
 ### `DELETE /tags/{tag_id}`
 
@@ -430,7 +430,7 @@ A draft of a news article. Fields:
   if the author entity is deleted. The field is required.
 - `category` - the news category. A [CategoryAncestry](#CategoryAncestry),
   required.
-- `photo` - the main illustration photo URI for the news. A string, required.
+- `photo` - the main illustration photo URI for the news. A string, optional.
 - `photos` - additional illustration URIs. An array of strings, required.
 - `tags` - tags for the news. An array of [Tag](#Tag) objects, required.
 
@@ -453,7 +453,7 @@ A news article. Fields:
   if the news author is deleted. The field is required.
 - `category` - the news category. A [CategoryAncestry](#CategoryAncestry),
   required.
-- `photo` - the main illustration photo URI for the news. A string, required.
+- `photo` - the main illustration photo URI for the news. A string, optional.
 - `photos` - additional illustration URIs. An array of strings, required.
 - `tags` - tags for the news. An array of [Tag](#Tag) objects, required.
 
