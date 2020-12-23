@@ -23,10 +23,11 @@ import Test.Hspec
 spec :: Spec
 spec =
   describe "run" $ do
-    it "should throw AuthenticationRequired if the user is not authenticated" $ do
+    it
+      "should throw AuthenticationRequiredException if the user is not authenticated" $ do
       let h = defaultHandle
       r <- try $ run h AnonymousUser Nothing noPageQuery
-      r `shouldBe` Left AuthenticationRequired
+      r `shouldBe` Left AuthenticationRequiredException
     describe "when no authorId is passed" $ do
       itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
         let h =

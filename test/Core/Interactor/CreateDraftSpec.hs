@@ -231,7 +231,7 @@ spec
           h = stubHandle {hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing}
       run h authUser request `shouldThrow` isQueryException
     it
-      "should throw AuthenticationRequired if CreateDraftRequest has no author and authenticate returns AnonymousUser" $ do
+      "should throw AuthenticationRequiredException if CreateDraftRequest has no author and authenticate returns AnonymousUser" $ do
       let request = stubRequest {cdAuthorId = Nothing}
           authUser = AnonymousUser
           h =
@@ -239,7 +239,7 @@ spec
               { hGetAuthorIdByUserIdIfExactlyOne =
                   \_ -> pure $ Just $ AuthorId 1
               }
-      run h authUser request `shouldThrow` (== AuthenticationRequired)
+      run h authUser request `shouldThrow` (== AuthenticationRequiredException)
 
 stubRequest :: CreateDraftRequest
 stubRequest =

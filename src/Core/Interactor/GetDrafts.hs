@@ -30,7 +30,8 @@ run ::
   -> m [Draft]
 run Handle {..} authUser optAuthorId pageQuery = do
   userId <-
-    fromMaybeM (throwM AuthenticationRequired) $ authenticatedUserId authUser
+    fromMaybeM (throwM AuthenticationRequiredException) $
+    authenticatedUserId authUser
   pageSpec <- parsePageSpecM hPageSpecParserHandle pageQuery
   case optAuthorId of
     Nothing -> hGetDraftsOfUser userId pageSpec

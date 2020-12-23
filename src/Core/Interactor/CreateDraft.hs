@@ -59,7 +59,7 @@ inferAuthorIdFromRequestOrUser _ _ CreateDraftRequest {cdAuthorId = Just authorI
   pure authorId'
 inferAuthorIdFromRequestOrUser h authUser _ = do
   userId' <-
-    fromMaybeM (throwM userNotIdentifiedException) $
+    fromMaybeM (throwM AuthenticationRequiredException) $
     authenticatedUserId authUser
   hGetAuthorIdByUserIdIfExactlyOne h userId' >>=
     fromMaybeM (throwM authorAmbiguityException)
@@ -67,7 +67,6 @@ inferAuthorIdFromRequestOrUser h authUser _ = do
     authorAmbiguityException =
       QueryException
         "author ID is required: can't determine a unique author ID for the current user"
-    userNotIdentifiedException = AuthenticationRequired
 
 actionName :: T.Text
 actionName = "create a draft"
