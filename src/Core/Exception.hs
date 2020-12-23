@@ -1,7 +1,7 @@
 -- | Core exception types.
 module Core.Exception
   ( CoreException(..)
-  , isQueryException
+  , isIncorrectParameterException
   , isBadCredentialsException
   , isNoPermissionException
   , isNoPermissionExceptionWithPermission
@@ -22,7 +22,7 @@ type ContentType = Text
 
 -- | An exception to designate incorrect input data to an interactor.
 data CoreException
-  = QueryException Reason
+  = IncorrectParameterException Reason
   | BadCredentialsException Reason
   | AuthenticationRequiredException
    -- ^ should be used when no permission check is performed;
@@ -35,9 +35,9 @@ data CoreException
 
 instance Exception CoreException
 
-isQueryException :: CoreException -> Bool
-isQueryException QueryException {} = True
-isQueryException _ = False
+isIncorrectParameterException :: CoreException -> Bool
+isIncorrectParameterException IncorrectParameterException {} = True
+isIncorrectParameterException _ = False
 
 isBadCredentialsException :: CoreException -> Bool
 isBadCredentialsException BadCredentialsException {} = True

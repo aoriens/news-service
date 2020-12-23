@@ -55,4 +55,7 @@ newtype PageSpecParserHandle =
 parsePageSpecM ::
      MonadThrow m => PageSpecParserHandle -> PageSpecQuery -> m PageSpec
 parsePageSpecM config pageQuery =
-  either (throwM . QueryException) pure (parsePageSpec config pageQuery)
+  either
+    (throwM . IncorrectParameterException)
+    pure
+    (parsePageSpec config pageQuery)

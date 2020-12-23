@@ -39,13 +39,14 @@ itShouldWorkWithPageSpecParserCorrectly test = do
                      "Incorrect PageSpecQuery is passed to the PageSpecParserHandle"
     shouldPassValue successSpec "The tested code" $ \pass -> do
       test parserH query pass
-  it "should throw QueryException if the parser handle returns Left _" $ do
+  it
+    "should throw IncorrectParameterException if the parser handle returns Left _" $ do
     let parserH = PageSpecParserHandle $ \_ -> Left "an error"
         onSuccess spec =
           error $
           "The success continuation must not be invoked. The parameter: " ++
           show spec
-    test parserH stubQuery onSuccess `shouldThrow` isQueryException
+    test parserH stubQuery onSuccess `shouldThrow` isIncorrectParameterException
 
 stubQuery :: PageSpecQuery
 stubQuery = PageSpecQuery {pageQueryOffset = Nothing, pageQueryLimit = Nothing}

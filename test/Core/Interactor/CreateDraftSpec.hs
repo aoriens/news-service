@@ -225,11 +225,11 @@ spec
       _ <- run h someAuthUser request
       readIORef invoked `shouldReturn` False
     it
-      "should throw QueryException if CreateDraftRequest has no author and hGetAuthorIdByUserIdIfExactlyOne returns Nothing" $ do
+      "should throw IncorrectParameterException if CreateDraftRequest has no author and hGetAuthorIdByUserIdIfExactlyOne returns Nothing" $ do
       let request = stubRequest {cdAuthorId = Nothing}
           authUser = IdentifiedUser (UserId 1) False []
           h = stubHandle {hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing}
-      run h authUser request `shouldThrow` isQueryException
+      run h authUser request `shouldThrow` isIncorrectParameterException
     it
       "should throw AuthenticationRequiredException if CreateDraftRequest has no author and authenticate returns AnonymousUser" $ do
       let request = stubRequest {cdAuthorId = Nothing}

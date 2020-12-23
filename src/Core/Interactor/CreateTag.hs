@@ -27,7 +27,7 @@ run :: MonadThrow m => Handle m -> AuthenticatedUser -> T.Text -> m Result
 run Handle {..} authUser newTagName = do
   requirePermission hAuthorizationHandle AdminPermission authUser "create a tag"
   when (T.null newTagName) $
-    throwM (QueryException "The tag name must not be empty")
+    throwM (IncorrectParameterException "The tag name must not be empty")
   optExistingTag <- hFindTagNamed newTagName
   case optExistingTag of
     Just tag -> pure $ ExistingTagFound tag

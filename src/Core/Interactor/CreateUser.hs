@@ -25,7 +25,7 @@ data Handle m =
                                     Image -> m ()
     }
 
--- | Run the interactor. It can throw 'QueryException'
+-- | Run the interactor. It can throw 'IncorrectParameterException'
 run :: MonadThrow m => Handle m -> Query -> m (User, Auth.Credentials)
 run Handle {..} Query {..} = do
   let isAdmin = False

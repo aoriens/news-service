@@ -9,7 +9,7 @@ module Web.Presenter.Error
   ) where
 
 import Control.Exception
-import Core.Exception
+import Core.Exception as Core
 import Core.Permission
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -22,7 +22,7 @@ import qualified Data.Text.Encoding as T
 import Data.Text.Show
 import Network.HTTP.Types as Http
 import Web.Application
-import Web.Exception
+import Web.Exception as Web
 import Web.RepresentationBuilder
 import Web.Response
 
@@ -31,7 +31,7 @@ presentWebException h e =
   runResponseBuilder h $
   case e of
     BadRequestException reason -> badRequest reason
-    IncorrectParameterException reason -> badRequest reason
+    Web.IncorrectParameterException reason -> badRequest reason
     RelatedEntitiesNotFoundException ids ->
       badRequest $
       "The following entity IDs cannot be found: " <>
@@ -51,7 +51,7 @@ presentCoreException :: RepBuilderHandle -> CoreException -> Response
 presentCoreException h e =
   runResponseBuilder h $
   case e of
-    QueryException reason -> badRequest reason
+    Core.IncorrectParameterException reason -> badRequest reason
     BadCredentialsException _ -> unauthorized "Incorrect credentials"
     AuthenticationRequiredException -> authenticationRequired
     NoPermissionException perm _ ->

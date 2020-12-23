@@ -65,7 +65,7 @@ inferAuthorIdFromRequestOrUser h authUser _ = do
     fromMaybeM (throwM authorAmbiguityException)
   where
     authorAmbiguityException =
-      QueryException
+      IncorrectParameterException
         "author ID is required: can't determine a unique author ID for the current user"
 
 actionName :: T.Text

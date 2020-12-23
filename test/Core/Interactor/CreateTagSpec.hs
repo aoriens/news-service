@@ -78,7 +78,7 @@ spec
     it "should throw CoreException if the tag name is empty" $ do
       let name = ""
           h = stubHandle
-      run h someAuthUser name `shouldThrow` isQueryException
+      run h someAuthUser name `shouldThrow` isIncorrectParameterException
 
 stubTag :: Tag
 stubTag = Tag {tagName = "q", tagId = TagId 1}
