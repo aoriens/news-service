@@ -67,7 +67,7 @@ inferAuthorIdFromRequestOrUser h authUser _ = do
     authorAmbiguityException =
       QueryException
         "author ID is required: can't determine a unique author ID for the current user"
-    userNotIdentifiedException = UserNotIdentifiedException actionName
+    userNotIdentifiedException = AuthenticationRequired
 
 actionName :: T.Text
 actionName = "create a draft"

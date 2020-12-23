@@ -60,7 +60,6 @@ presentCoreException h e =
         unauthorizedBuilder
           "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
       | AdminOrSpecificUserPermission _ <- perm -> authenticationRequired
-    UserNotIdentifiedException _ -> authenticationRequired
     RequestedEntityNotFoundException _ -> notFoundBuilder
     DependentEntitiesNotFoundException ids ->
       badRequestBuilder $

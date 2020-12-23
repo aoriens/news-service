@@ -5,7 +5,6 @@ module Core.Exception
   , isBadCredentialsException
   , isNoPermissionException
   , isNoPermissionExceptionWithPermission
-  , isUserNotIdentifiedException
   , isRequestedEntityNotFoundException
   , isDisallowedImageContentTypeException
   ) where
@@ -29,7 +28,6 @@ data CoreException
    -- ^ should be used when no permission check is performed;
    -- otherwise 'NoPermissionException' is more appropriate.
   | NoPermissionException Permission ActionName
-  | UserNotIdentifiedException ActionName
   | RequestedEntityNotFoundException EntityId
   | DependentEntitiesNotFoundException [EntityId]
   | DisallowedImageContentTypeException ContentType [ContentType]
@@ -53,10 +51,6 @@ isNoPermissionExceptionWithPermission :: Permission -> CoreException -> Bool
 isNoPermissionExceptionWithPermission perm e
   | NoPermissionException p _ <- e = p == perm
   | otherwise = False
-
-isUserNotIdentifiedException :: CoreException -> Bool
-isUserNotIdentifiedException UserNotIdentifiedException {} = True
-isUserNotIdentifiedException _ = False
 
 isRequestedEntityNotFoundException :: CoreException -> Bool
 isRequestedEntityNotFoundException RequestedEntityNotFoundException {} = True
