@@ -3,21 +3,20 @@ module Web.Handler.GetImage
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Image
-import qualified Core.Interactor.GetImage as I
 import Data.Maybe.Util
 import Web.Application
 import qualified Web.Exception as E
 
-data Handle =
+data Handle m =
   Handle
-    { hGetImageHandle :: I.Handle IO
+    { hGetImage :: ImageId -> m (Maybe Image)
     , hPresent :: Image -> Response
     }
 
-run :: Handle -> ImageId -> Application
+run :: MonadThrow m => Handle m -> ImageId -> GenericApplication m
 run Handle {..} imageId _ respond = do
-  optImage <- I.run hGetImageHandle imageId
-  image <- fromMaybeM (throwIO E.ResourceNotFoundException) optImage
+  optImage <- hGetImage imageId
+  image <- fromMaybeM (throwM E.ResourceNotFoundException) optImage
   respond $ hPresent image

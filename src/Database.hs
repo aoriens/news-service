@@ -20,7 +20,7 @@ module Database
   , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
   , updateCategory
   -- * Images
-  , getImage
+  , DImages.getImage
   -- * News
   , getNewsList
   , getNews
@@ -64,7 +64,6 @@ import Core.Author
 import Core.Category
 import Core.Comment
 import Core.Deletable
-import Core.Image
 import qualified Core.Interactor.CreateAuthor as ICreateAuthor
 import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateComment as ICreateComment
@@ -175,9 +174,6 @@ categoryIsDescendantOf h desc anc =
 
 getCategoryName :: DB.Handle -> CategoryId -> IO (Maybe T.Text)
 getCategoryName h = runTransactionRO h . DCategories.getCategoryName
-
-getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
-getImage h = DB.runTransactionRO h . DImages.getImage
 
 getNewsList ::
      DB.Handle

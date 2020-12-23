@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Web.Application
   ( ApplicationWithSession
   , MiddlewareWithSession
@@ -5,6 +7,7 @@ module Web.Application
   , SessionId
   , Application
   , GenericApplication
+  , mapGenericApplication
   , Request(..)
   , defaultRequest
   , Response(..)
@@ -24,11 +27,20 @@ import qualified Network.HTTP.Types as Http
 import Web.Application.Internal.ResponseReceived
 import Web.Application.Internal.SessionId
 
-type Application
-   = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
+type Application = GenericApplication IO
 
 type GenericApplication m
    = Request -> (Response -> m ResponseReceived) -> m ResponseReceived
+
+-- | Converts a 'GenericApplication' within a monad into one in a
+-- different monad.
+mapGenericApplication ::
+     (forall a. m1 a -> m2 a)
+  -> (forall a. m2 a -> m1 a)
+  -> GenericApplication m1
+  -> GenericApplication m2
+mapGenericApplication mapForward mapBackward app1 request respond2 =
+  mapForward $ app1 request (mapBackward . respond2)
 
 data Request =
   Request

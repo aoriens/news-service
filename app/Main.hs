@@ -9,6 +9,7 @@ import qualified Config.IO as CIO
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
+import Control.Monad.IO.Class
 import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
 import Core.Author
@@ -462,9 +463,10 @@ runCreateUserHandler Deps {..} SessionDeps {..} =
 
 runGetImageHandler :: ImageId -> Deps -> SessionDeps -> Web.Application
 runGetImageHandler imageId Deps {..} SessionDeps {..} =
+  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetImage.run
     HGetImage.Handle
-      { hGetImageHandle = IGetImage.Handle $ Database.getImage sdDatabaseHandle
+      { hGetImage = IGetImage.run $ IGetImage.Handle Database.getImage
       , hPresent = presentImage
       }
     imageId
@@ -771,6 +773,13 @@ getLoggerHandle Cf.Config {..} = do
       openFile path AppendMode `catchS` \e ->
         die $ "While opening log file: " ++ displayException (e :: IOException)
     getFileHandle Cf.LogFileStdErr = pure stderr
+
+transactionApplicationToIOApplication ::
+     Database.Handle
+  -> Web.GenericApplication Database.Transaction
+  -> Web.GenericApplication IO
+transactionApplicationToIOApplication h =
+  Web.mapGenericApplication (Database.runTransactionRW h) liftIO
 
 -- Commonly used dependencies dependent on Web.Session
 data SessionDeps =
