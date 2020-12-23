@@ -54,7 +54,7 @@ See [API documentation](documentation/API.md).
 # Development
 
 `curl_scripts` directory contains curl scripts to test supported requests
-quickly.
+quickly. See [how to use the scripts](curl_scripts/README.md).
 
 `test_data.sql` contains an administrator user with the least authentication
 token possible, which helps to run requests which require authentication. The
