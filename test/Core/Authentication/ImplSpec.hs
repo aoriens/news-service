@@ -63,21 +63,22 @@ spec =
         A.IdentifiedUser _ isAdmin _ <- A.authenticate h $ Just stubCreds
         isAdmin `shouldBe` expectedIsAdmin
     it "should pass UserId to hGetUserAuthData" $ do
-      ref <- newIORef undefined
+      ref <- newIORef Nothing
       let expectedUserId = UserId 8
           h =
             Impl.new
               stubHandle
                 { Impl.hGetUserAuthData =
-                    \uid -> writeIORef ref uid >> pure (Just stubAuthData)
+                    \uid ->
+                      writeIORef ref (Just uid) >> pure (Just stubAuthData)
                 , Impl.hTokenMatchesHash = \_ _ -> True
                 }
       _ <-
         A.authenticate h $
         Just $ A.TokenCredentials expectedUserId stubSecretToken
-      readIORef ref `shouldReturn` expectedUserId
+      readIORef ref `shouldReturn` Just expectedUserId
     it "should pass secret token to hTokenMatchesHash" $ do
-      ref <- newIORef undefined
+      ref <- newIORef Nothing
       let expectedToken = A.SecretToken "1"
           h =
             Impl.new
@@ -85,12 +86,12 @@ spec =
                 { Impl.hGetUserAuthData = \_ -> pure stubOKAuthData
                 , Impl.hTokenMatchesHash =
                     \token _ ->
-                      unsafePerformIO $ writeIORef ref token >> pure True
+                      unsafePerformIO $ writeIORef ref (Just token) >> pure True
                 }
       _ <- A.authenticate h $ Just $ A.TokenCredentials (UserId 1) expectedToken
-      readIORef ref `shouldReturn` expectedToken
+      readIORef ref `shouldReturn` Just expectedToken
     it "should pass token hash from hGetUserAuthData to hTokenMatchesHash" $ do
-      ref <- newIORef undefined
+      ref <- newIORef Nothing
       let expectedHash = A.SecretTokenHash "1"
           h =
             Impl.new
@@ -103,16 +104,16 @@ spec =
                           {Impl.authDataSecretTokenHash = expectedHash}
                 , Impl.hTokenMatchesHash =
                     \_ hash ->
-                      unsafePerformIO $ writeIORef ref hash >> pure True
+                      unsafePerformIO $ writeIORef ref (Just hash) >> pure True
                 }
       _ <- A.authenticate h $ Just stubCreds
-      readIORef ref `shouldReturn` expectedHash
+      readIORef ref `shouldReturn` Just expectedHash
 
 stubHandle :: Impl.Handle IO
 stubHandle =
   Impl.Handle
-    { hGetUserAuthData = undefined
-    , hTokenMatchesHash = \_ _ -> undefined
+    { hGetUserAuthData = \_ -> pure Nothing
+    , hTokenMatchesHash = \_ _ -> False
     , hLoggerHandle = Logger.Handle {hLowLevelLog = \_ _ _ -> pure ()}
     }
 

@@ -23,13 +23,15 @@ spec =
       author <- run h someAdminUser stubAuthorId
       author `shouldBe` expectedAuthor
     it "should pass author id to the gateway" $ do
-      passedAuthorId <- newIORef undefined
+      passedAuthorId <- newIORef Nothing
       let expectedAuthorId = AuthorId 8
           h =
             defaultHandle
-              {hGetAuthor = \i -> writeIORef passedAuthorId i >> pure Nothing}
+              { hGetAuthor =
+                  \i -> writeIORef passedAuthorId (Just i) >> pure Nothing
+              }
       _ <- run h someAdminUser expectedAuthorId
-      readIORef passedAuthorId `shouldReturn` expectedAuthorId
+      readIORef passedAuthorId `shouldReturn` Just expectedAuthorId
 
 defaultHandle :: Handle IO
 defaultHandle = Handle {hGetAuthor = const $ pure Nothing}

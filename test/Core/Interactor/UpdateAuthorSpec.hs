@@ -32,19 +32,19 @@ spec
       void $ run h authUser aid description
     it
       "should pass authorId and description data to the gateway in a normal case" $ do
-      authorIdAndDescription <- newIORef undefined
+      authorIdAndDescription <- newIORef Nothing
       let expectedAuthorId = AuthorId 6
           expectedDescription = "q"
           h =
             stubHandle
               { hUpdateAuthor =
                   \aid desc -> do
-                    writeIORef authorIdAndDescription (aid, desc)
+                    writeIORef authorIdAndDescription $ Just (aid, desc)
                     pure $ Just stubAuthor
               }
       _ <- run h someAuthUser expectedAuthorId expectedDescription
       readIORef authorIdAndDescription `shouldReturn`
-        (expectedAuthorId, expectedDescription)
+        Just (expectedAuthorId, expectedDescription)
     it "should return author returned from the gateway if updated successfully" $ do
       let aid = AuthorId 1
           description = "q"

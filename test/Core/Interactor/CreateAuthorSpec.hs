@@ -27,19 +27,19 @@ spec
               }
       void $ run h authUser uid description
     it "should pass userId and description data to the gateway in a normal case" $ do
-      userIdAndDescription <- newIORef undefined
+      userIdAndDescription <- newIORef Nothing
       let expectedUid = UserId 1
           expectedDescription = "q"
           h =
             stubHandle
               { hCreateAuthor =
                   \uid desc -> do
-                    writeIORef userIdAndDescription (uid, desc)
+                    writeIORef userIdAndDescription $ Just (uid, desc)
                     pure $ Right stubAuthor
               }
       _ <- run h someAuthUser expectedUid expectedDescription
       readIORef userIdAndDescription `shouldReturn`
-        (expectedUid, expectedDescription)
+        Just (expectedUid, expectedDescription)
     it "should return author returned from the gateway if created successfully" $ do
       let uid = UserId 1
           description = "q"
@@ -58,4 +58,6 @@ spec
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    {hCreateAuthor = undefined, hAuthorizationHandle = noOpAuthorizationHandle}
+    { hCreateAuthor = \_ _ -> pure (Right stubAuthor)
+    , hAuthorizationHandle = noOpAuthorizationHandle
+    }
