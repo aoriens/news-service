@@ -5,6 +5,7 @@ module Web.Response
   ( ContentType
   , contentType
   , ResourceRepresentation(..)
+  , representationResponse
   , dataResponse
   , noContentResponse
   , resourceCreatedAndReturnedResponse

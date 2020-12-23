@@ -203,8 +203,9 @@ getWebAppHandle deps@Deps {..} = do
       , hRouter = router deps
       , hShowInternalExceptionInfoInResponses =
           Cf.cfShowInternalErrorInfoInResponse dConfig
-      , hPresentCoreException = presentCoreException
-      , hPresentWebException = presentWebException
+      , hPresentCoreException =
+          presentCoreException dRepresentationBuilderHandle
+      , hPresentWebException = presentWebException dRepresentationBuilderHandle
       , hNotFoundResponse = notFoundResponse
       , hMethodNotAllowedResponse = methodNotAllowedResponse
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug

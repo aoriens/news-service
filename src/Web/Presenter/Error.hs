@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Web.Presenter.Error
   ( presentWebException
   , presentCoreException
@@ -9,96 +11,112 @@ module Web.Presenter.Error
 import Control.Exception
 import Core.Exception
 import Core.Permission
+import qualified Data.Aeson as A
+import qualified Data.Aeson.TH as A
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
+import Data.List
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Text.Show
 import Network.HTTP.Types as Http
 import Web.Application
 import Web.Exception
+import Web.RepresentationBuilder
+import Web.Response
 
-presentWebException :: WebException -> Response
-presentWebException e =
+presentWebException :: RepBuilderHandle -> WebException -> Response
+presentWebException h e =
+  runResponseBuilder h $
   case e of
-    BadRequestException reason -> badRequestResponse reason
-    IncorrectParameterException reason -> badRequestResponse reason
+    BadRequestException reason -> badRequestBuilder reason
+    IncorrectParameterException reason -> badRequestBuilder reason
     RelatedEntitiesNotFoundException ids ->
-      stubErrorResponseWithReason Http.badRequest400 [] $
+      badRequestBuilder $
       "The following entity IDs cannot be found: " <>
       (T.intercalate ", " . map showAsText) ids
-    ResourceNotFoundException -> notFoundResponse
+    ResourceNotFoundException -> notFoundBuilder
     UnsupportedMediaTypeException supportedTypes ->
-      stubErrorResponseWithReason Http.unsupportedMediaType415 [] $
-      "Supported media types are: " <> T.intercalate ", " supportedTypes
+      errorEntityBuilder Http.unsupportedMediaType415 [] $
+      "Encountered an unsupported media type. Supported media types are: " <>
+      T.intercalate ", " supportedTypes
     PayloadTooLargeException maxPayloadSize ->
-      stubErrorResponseWithReason Http.requestEntityTooLarge413 [] $
+      errorEntityBuilder Http.requestEntityTooLarge413 [] $
       "The request body length must not exceed " <>
       showAsText maxPayloadSize <> " bytes"
-    MalformedAuthDataException _ -> notFoundResponse
+    MalformedAuthDataException _ -> notFoundBuilder
 
-presentCoreException :: CoreException -> Response
-presentCoreException e =
+presentCoreException :: RepBuilderHandle -> CoreException -> Response
+presentCoreException h e =
+  runResponseBuilder h $
   case e of
-    QueryException reason -> badRequestResponse reason
-    BadCredentialsException _ -> notFoundResponse
-    AuthenticationRequired -> unauthorizedResponse
+    QueryException reason -> badRequestBuilder reason
+    BadCredentialsException _ -> notFoundBuilder
+    AuthenticationRequired -> unauthorizedBuilder
     NoPermissionException perm _
-      | AdminPermission <- perm -> notFoundResponse
+      | AdminPermission <- perm -> notFoundBuilder
       | AuthorshipPermission _ <- perm ->
-        stubErrorResponseWithReason
+        errorEntityBuilder
           Http.forbidden403
           []
           "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
-      | AdminOrSpecificUserPermission _ <- perm -> unauthorizedResponse
+      | AdminOrSpecificUserPermission _ <- perm -> unauthorizedBuilder
     UserNotIdentifiedException _ ->
-      stubErrorResponseWithReason
-        Http.forbidden403
-        []
-        "Authentication is required"
-    RequestedEntityNotFoundException _ -> notFoundResponse
+      errorEntityBuilder Http.forbidden403 [] "Authentication is required"
+    RequestedEntityNotFoundException _ -> notFoundBuilder
     DependentEntitiesNotFoundException ids ->
-      stubErrorResponseWithReason Http.badRequest400 [] $
+      badRequestBuilder $
       "The following entity IDs cannot be found: " <>
       (T.intercalate ", " . map showAsText) ids
     DisallowedImageContentTypeException badContentType allowedContentTypes ->
-      stubErrorResponseWithReason
+      errorEntityBuilder
         Http.unsupportedMediaType415
         []
         ("Unsupported image content type: " <>
          badContentType <>
          ". Supported content types: " <> T.intercalate ", " allowedContentTypes)
 
-notFoundResponse :: Response
-notFoundResponse = stubErrorResponse Http.notFound404 []
+badRequestBuilder :: T.Text -> ResponseBuilder
+badRequestBuilder = errorEntityBuilder Http.badRequest400 []
 
-unauthorizedResponse :: Response
-unauthorizedResponse =
-  stubErrorResponse
+notFoundBuilder :: ResponseBuilder
+notFoundBuilder = const notFoundResponse
+
+notFoundResponse :: Response
+notFoundResponse = htmlErrorResponse Http.notFound404 [] ""
+
+unauthorizedBuilder :: ResponseBuilder
+unauthorizedBuilder =
+  htmlErrorBuilder
     Http.unauthorized401
     [("WWW-Authenticate", "Basic realm=\"\"")]
-
-badRequestResponse :: T.Text -> Response
-badRequestResponse = stubErrorResponseWithReason Http.badRequest400 []
+    ""
 
 uncaughtExceptionResponseForDebug :: SomeException -> Response
 uncaughtExceptionResponseForDebug e =
-  stubErrorResponseWithReason Http.internalServerError500 [] $
+  htmlErrorResponse Http.internalServerError500 [] $
   "<pre>" <> showAsText e <> "</pre>"
 
 methodNotAllowedResponse :: [B.ByteString] -> Response
 methodNotAllowedResponse knownMethods =
-  stubErrorResponse Http.methodNotAllowed405 [makeAllowHeader knownMethods]
+  htmlErrorResponse Http.methodNotAllowed405 [makeAllowHeader knownMethods] ""
   where
     makeAllowHeader methods = ("Allow", B.intercalate ", " methods)
 
-stubErrorResponse :: Http.Status -> [Http.Header] -> Response
-stubErrorResponse status additionalHeaders =
-  stubErrorResponseWithReason status additionalHeaders ""
+-- An intermediate type for making a request, free from external
+-- dependencies
+type ResponseBuilder = RepBuilderHandle -> Response
 
-stubErrorResponseWithReason ::
-     Http.Status -> [Http.Header] -> T.Text -> Response
-stubErrorResponseWithReason status additionalHeaders reason =
+runResponseBuilder :: RepBuilderHandle -> ResponseBuilder -> Response
+runResponseBuilder = flip ($)
+
+htmlErrorBuilder :: Http.Status -> [Http.Header] -> T.Text -> ResponseBuilder
+htmlErrorBuilder status headers text =
+  const $ htmlErrorResponse status headers text
+
+htmlErrorResponse :: Http.Status -> [Http.Header] -> T.Text -> Response
+htmlErrorResponse status additionalHeaders reason =
   responseWithBuilder
     status
     ((Http.hContentType, "text/html") : additionalHeaders)
@@ -114,3 +132,23 @@ stubErrorResponseWithReason status additionalHeaders reason =
         , BB.byteString $ T.encodeUtf8 reason
         , "</p></body></html>\n"
         ]
+
+errorEntityBuilder :: Http.Status -> [Http.Header] -> T.Text -> ResponseBuilder
+errorEntityBuilder status headers reason repBuilderHandle =
+  representationResponse status headers $
+  runRepBuilder repBuilderHandle $ errorRepWithReason reason
+
+errorRepWithReason :: T.Text -> RepBuilder ErrorRep
+errorRepWithReason errReason = pure ErrorRep {errReason}
+
+newtype ErrorRep =
+  ErrorRep
+    { errReason :: T.Text
+    }
+
+$(A.deriveToJSON
+    A.defaultOptions
+      { A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "err"
+      , A.omitNothingFields = True
+      }
+    ''ErrorRep)
