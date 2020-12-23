@@ -30,13 +30,13 @@ presentWebException :: RepBuilderHandle -> WebException -> Response
 presentWebException h e =
   runResponseBuilder h $
   case e of
-    BadRequestException reason -> badRequestBuilder reason
-    IncorrectParameterException reason -> badRequestBuilder reason
+    BadRequestException reason -> badRequest reason
+    IncorrectParameterException reason -> badRequest reason
     RelatedEntitiesNotFoundException ids ->
-      badRequestBuilder $
+      badRequest $
       "The following entity IDs cannot be found: " <>
       (T.intercalate ", " . map showAsText) ids
-    ResourceNotFoundException -> notFoundBuilder
+    ResourceNotFoundException -> notFound
     UnsupportedMediaTypeException supportedTypes ->
       errorEntityBuilder Http.unsupportedMediaType415 [] $
       "Encountered an unsupported media type. Supported media types are: " <>
@@ -45,24 +45,25 @@ presentWebException h e =
       errorEntityBuilder Http.requestEntityTooLarge413 [] $
       "The request body length must not exceed " <>
       showAsText maxPayloadSize <> " bytes"
-    MalformedAuthDataException _ -> notFoundBuilder
+    MalformedAuthDataException _ -> notFound
 
 presentCoreException :: RepBuilderHandle -> CoreException -> Response
 presentCoreException h e =
   runResponseBuilder h $
   case e of
-    QueryException reason -> badRequestBuilder reason
-    BadCredentialsException _ -> unauthorizedBuilder "Incorrect credentials"
+    QueryException reason -> badRequest reason
+    BadCredentialsException _ -> unauthorized "Incorrect credentials"
     AuthenticationRequiredException -> authenticationRequired
-    NoPermissionException perm _
-      | AdminPermission <- perm -> notFoundBuilder
-      | AuthorshipPermission _ <- perm ->
-        unauthorizedBuilder
-          "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
-      | AdminOrSpecificUserPermission _ <- perm -> authenticationRequired
-    RequestedEntityNotFoundException _ -> notFoundBuilder
+    NoPermissionException perm _ ->
+      case perm of
+        AdminPermission -> notFound
+        AuthorshipPermission _ ->
+          unauthorized
+            "Operation is only allowed to a specific author that you do not own. Forgot to authorize?"
+        AdminOrSpecificUserPermission _ -> authenticationRequired
+    RequestedEntityNotFoundException _ -> notFound
     DependentEntitiesNotFoundException ids ->
-      badRequestBuilder $
+      badRequest $
       "The following entity IDs cannot be found: " <>
       (T.intercalate ", " . map showAsText) ids
     DisallowedImageContentTypeException badContentType allowedContentTypes ->
@@ -73,20 +74,20 @@ presentCoreException h e =
          badContentType <>
          ". Supported content types: " <> T.intercalate ", " allowedContentTypes)
 
-badRequestBuilder :: T.Text -> ResponseBuilder
-badRequestBuilder = errorEntityBuilder Http.badRequest400 []
+badRequest :: T.Text -> ResponseBuilder
+badRequest = errorEntityBuilder Http.badRequest400 []
 
-notFoundBuilder :: ResponseBuilder
-notFoundBuilder = const notFoundResponse
+notFound :: ResponseBuilder
+notFound = const notFoundResponse
 
 notFoundResponse :: Response
 notFoundResponse = htmlErrorResponse Http.notFound404 [] ""
 
 authenticationRequired :: ResponseBuilder
-authenticationRequired = unauthorizedBuilder "Authentication required"
+authenticationRequired = unauthorized "Authentication required"
 
-unauthorizedBuilder :: T.Text -> ResponseBuilder
-unauthorizedBuilder =
+unauthorized :: T.Text -> ResponseBuilder
+unauthorized =
   errorEntityBuilder
     Http.unauthorized401
     [("WWW-Authenticate", "Basic realm=\"\"")]
