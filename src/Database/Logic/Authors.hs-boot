@@ -5,4 +5,4 @@ import Core.Pagination
 import Core.User
 import Database.Service.Primitives
 
-selectAuthorsByUserId :: UserId -> Maybe PageSpec -> Transaction [AuthorId]
+getAuthorsByUserId :: UserId -> Maybe PageSpec -> Transaction [AuthorId]

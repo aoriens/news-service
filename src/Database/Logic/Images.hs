@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Database.Logic.Images
-  ( selectImage
+  ( getImage
   , imageExists
   , createImage
   , deleteImageIfNotReferenced
@@ -15,8 +15,8 @@ import qualified Data.Vector.Unboxed
 import Database.Service.Primitives
 import qualified Hasql.TH as TH
 
-selectImage :: ImageId -> Transaction (Maybe Image)
-selectImage =
+getImage :: ImageId -> Transaction (Maybe Image)
+getImage =
   runStatement $
   dimap
     getImageId
@@ -41,7 +41,7 @@ imageExists =
 createImage :: Image -> Transaction ImageId
 createImage image = do
   createMimeTypeIfNotFound (imageContentType image)
-  createImageSt image
+  insertImageRow image
 
 createMimeTypeIfNotFound :: T.Text -> Transaction ()
 createMimeTypeIfNotFound =
@@ -50,8 +50,8 @@ createMimeTypeIfNotFound =
       insert into mime_types (value) values ($1 :: varchar) on conflict do nothing
     |]
 
-createImageSt :: Image -> Transaction ImageId
-createImageSt =
+insertImageRow :: Image -> Transaction ImageId
+insertImageRow =
   runStatement $
   dimap
     (\Image {..} -> (imageData, imageContentType))

@@ -3,12 +3,12 @@
 
 module Database.Logic.Authors
   ( createAuthor
-  , selectAuthors
-  , selectAuthorById
+  , getAuthors
+  , getAuthor
   , authorExists
   , updateAuthor
-  , selectAuthorsByUserId
-  , selectAuthorIdByUserIdIfExactlyOne
+  , getAuthorsByUserId
+  , getAuthorIdByUserIdIfExactlyOne
   , deleteAuthor
   , authorColumns
   , deletableAuthorColumns
@@ -42,7 +42,7 @@ createAuthor uid description = do
   case optUser of
     Nothing -> pure $ Left ICreateAuthor.UnknownUserId
     Just user -> do
-      aid <- insertAuthor uid description
+      aid <- createAuthorRow uid description
       pure $
         Right
           Author
@@ -51,8 +51,8 @@ createAuthor uid description = do
             , authorDescription = description
             }
 
-insertAuthor :: UserId -> T.Text -> Transaction AuthorId
-insertAuthor =
+createAuthorRow :: UserId -> T.Text -> Transaction AuthorId
+createAuthorRow =
   curry . runStatement $
   dimap
     (first getUserId)
@@ -64,8 +64,8 @@ insertAuthor =
     ) returning author_id :: integer
     |]
 
-selectAuthors :: PageSpec -> Transaction [Author]
-selectAuthors =
+getAuthors :: PageSpec -> Transaction [Author]
+getAuthors =
   runStatement $
   statementWithColumns
     "select $COLUMNS from authors join users using (user_id) limit $1 offset $2"
@@ -74,8 +74,8 @@ selectAuthors =
     (fmap toList . D.rowVector)
     True
 
-selectAuthorById :: AuthorId -> Transaction (Maybe Author)
-selectAuthorById =
+getAuthor :: AuthorId -> Transaction (Maybe Author)
+getAuthor =
   runStatement $
   statementWithColumns
     "select $COLUMNS from authors join users using (user_id) where author_id = $1"
@@ -131,8 +131,8 @@ deletableAuthorColumns = do
 authorsTable :: TableName
 authorsTable = "authors"
 
-selectAuthorsByUserId :: UserId -> Maybe PageSpec -> Transaction [AuthorId]
-selectAuthorsByUserId =
+getAuthorsByUserId :: UserId -> Maybe PageSpec -> Transaction [AuthorId]
+getAuthorsByUserId =
   curry . runStatement $
   dimap
     (\(uid, page) ->
@@ -147,9 +147,9 @@ selectAuthorsByUserId =
        limit $2 :: integer? offset $3 :: integer?
     |]
 
-selectAuthorIdByUserIdIfExactlyOne :: UserId -> Transaction (Maybe AuthorId)
-selectAuthorIdByUserIdIfExactlyOne uid = do
-  authorIds <- selectAuthorsByUserId uid upTo2
+getAuthorIdByUserIdIfExactlyOne :: UserId -> Transaction (Maybe AuthorId)
+getAuthorIdByUserIdIfExactlyOne uid = do
+  authorIds <- getAuthorsByUserId uid upTo2
   pure $
     case authorIds of
       [aid] -> Just aid

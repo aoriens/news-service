@@ -4,8 +4,8 @@
 module Database.Logic.Users
   ( createUser
   , getExistingUser
-  , selectUsers
-  , selectUserAuthData
+  , getUsers
+  , getUserAuthData
   , deleteUser
   , userColumns
   , optUserColumns
@@ -37,11 +37,11 @@ createUser cmd@I.CreateUserCommand {..} = do
     case cuAvatar of
       Just image -> Just <$> createImage image
       Nothing -> pure Nothing
-  curUserId <- insertUser curAvatarId cmd
+  curUserId <- createUserRow curAvatarId cmd
   pure I.CreateUserResult {curUserId, curAvatarId}
 
-insertUser :: Maybe ImageId -> I.CreateUserCommand -> Transaction UserId
-insertUser =
+createUserRow :: Maybe ImageId -> I.CreateUserCommand -> Transaction UserId
+createUserRow =
   curry . runStatement $
   dimap
     (\(optImageId, I.CreateUserCommand {..}) ->
@@ -79,8 +79,8 @@ getExistingUser =
     sql = "select $COLUMNS from users where user_id = $1 and not is_deleted"
     encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
-selectUsers :: PageSpec -> Transaction (Vector User)
-selectUsers =
+getUsers :: PageSpec -> Transaction (Vector User)
+getUsers =
   runStatement $
   statementWithColumns
     "select $COLUMNS from users where not is_deleted limit $1 offset $2"
@@ -132,13 +132,13 @@ optUserColumns = do
 usersTable :: TableName
 usersTable = "users"
 
-selectUserAuthData :: UserId -> Transaction (Maybe UserAuthData)
-selectUserAuthData uid = do
+getUserAuthData :: UserId -> Transaction (Maybe UserAuthData)
+getUserAuthData uid = do
   hashAndIsAdmin <- getUserHashAndIsAdmin uid
   case hashAndIsAdmin of
     Nothing -> pure Nothing
     Just (authDataSecretTokenHash, authDataIsAdmin) -> do
-      authDataAuthors <- selectAuthorsByUserId uid Nothing
+      authDataAuthors <- getAuthorsByUserId uid Nothing
       pure $ Just UserAuthData {..}
 
 getUserHashAndIsAdmin :: UserId -> Transaction (Maybe (SecretTokenHash, Bool))

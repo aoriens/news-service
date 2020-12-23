@@ -4,9 +4,9 @@
 
 module Database.Logic.Categories
   ( createCategory
-  , selectCategory
+  , getCategory
   , categoryExists
-  , selectCategories
+  , getCategories
   , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
   , deleteCategoryAndDescendants
   , updateCategory
@@ -47,7 +47,7 @@ createCategory ::
   -> Transaction (Either CreateCategory.CreateCategoryFailure Category)
 createCategory Nothing names = Right <$> createCategoriesInRoot names
 createCategory (Just parentId) names = do
-  optParentCat <- selectCategory parentId
+  optParentCat <- getCategory parentId
   case optParentCat of
     Just parentCat ->
       Right <$> createCategoriesInParent parentCat (toList names)
@@ -79,8 +79,8 @@ insertCategorySt =
       ) returning category_id :: integer
     |]
 
-selectCategory :: CategoryId -> Transaction (Maybe Category)
-selectCategory =
+getCategory :: CategoryId -> Transaction (Maybe Category)
+getCategory =
   fmap (listToMaybe . categoriesFromRows . toList) . runStatement statement
   where
     statement =
@@ -103,8 +103,8 @@ selectCategory =
       |]
     encoder = getCategoryId >$< E.param (E.nonNullable E.int4)
 
-selectCategories :: PageSpec -> Transaction [Category]
-selectCategories = fmap (categoriesFromRows . toList) . runStatement statement
+getCategories :: PageSpec -> Transaction [Category]
+getCategories = fmap (categoriesFromRows . toList) . runStatement statement
   where
     statement =
       statementWithColumns sql encoder categoryRowColumns D.rowVector True
@@ -214,7 +214,7 @@ updateCategory r@UpdateCategory.Request {..} =
       (`unless` throwE UpdateCategory.UCUnknownNewParentId)
     lift (uncheckedUpdateCategory r) >>=
       (`unless` throwE UpdateCategory.UCUnknownCategoryId)
-    lift (selectCategory rCategoryId) >>= \case
+    lift (getCategory rCategoryId) >>= \case
       Nothing -> throwE UpdateCategory.UCUnknownCategoryId
       Just cat -> pure cat
 

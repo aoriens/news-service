@@ -47,7 +47,7 @@ createComment text optUserId newsId' createdAt =
       case optUserId of
         Nothing -> pure AnonymousCommentAuthor
         Just userId -> UserCommentAuthor <$> loadUserIdOrFail userId
-    commentId <- lift $ insertComment text optUserId newsId' createdAt
+    commentId <- lift $ createCommentRow text optUserId newsId' createdAt
     pure
       Comment
         { commentText = text
@@ -65,9 +65,9 @@ createComment text optUserId newsId' createdAt =
       lift (getExistingUser userId') >>=
       fromMaybeM (throwE $ ICreateComment.GUnknownEntityId $ toEntityId userId')
 
-insertComment ::
+createCommentRow ::
      T.Text -> Maybe UserId -> NewsId -> UTCTime -> Transaction CommentId
-insertComment text optUserId newsId' createdAt = runStatement statement args
+createCommentRow text optUserId newsId' createdAt = runStatement statement args
   where
     args = (getNewsId newsId', getUserId <$> optUserId, text, createdAt)
     statement =

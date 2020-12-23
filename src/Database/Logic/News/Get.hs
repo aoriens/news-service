@@ -53,17 +53,17 @@ getNewsList ::
   -> PageSpec
   -> Transaction [News]
 getNewsList filter' sortOptions =
-  mapM loadNewsWithRow <=< selectNewsRows filter' sortOptions
+  mapM loadNewsWithRow <=< getNewsRows filter' sortOptions
 
 getNews :: NewsId -> Transaction (Maybe News)
-getNews = mapM loadNewsWithRow <=< selectNewsRow
+getNews = mapM loadNewsWithRow <=< getNewsRow
 
-selectNewsRows ::
+getNewsRows ::
      IListNews.GatewayFilter
   -> IListNews.SortOptions
   -> PageSpec
   -> Transaction [NewsRow]
-selectNewsRows filter' sortOptions pageSpec =
+getNewsRows filter' sortOptions pageSpec =
   runStatementWithColumns sql newsRowColumns (fmap toList . D.rowVector) True
   where
     sql =
@@ -123,8 +123,8 @@ orderByClauseForListingNews IListNews.SortOptions {..} =
         IListNews.SortKeyNumPhotos -> ["num_photos"]
         IListNews.SortKeyCategoryName -> ["category_full_names.full_name"]
 
-selectNewsRow :: NewsId -> Transaction (Maybe NewsRow)
-selectNewsRow =
+getNewsRow :: NewsId -> Transaction (Maybe NewsRow)
+getNewsRow =
   runStatement $
   statementWithColumns
     sql
@@ -317,7 +317,7 @@ getExistingCategoryById :: CategoryId -> Transaction Category
 getExistingCategoryById catId =
   databaseUnsafeFromJust
     ("Suddenly not found: category_id=" <> showAsText catId) =<<
-  selectCategory catId
+  getCategory catId
 
 getTagsForVersion :: NewsVersionId -> Transaction (Set.HashSet Tag)
 getTagsForVersion =

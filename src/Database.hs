@@ -104,14 +104,14 @@ createAuthor h uid description =
   runTransactionRW h $ DAuthors.createAuthor uid description
 
 getAuthors :: DB.Handle -> PageSpec -> IO [Author]
-getAuthors h page = toList <$> runTransactionRO h (DAuthors.selectAuthors page)
+getAuthors h page = toList <$> runTransactionRO h (DAuthors.getAuthors page)
 
 getAuthorIdByUserIdIfExactlyOne :: DB.Handle -> UserId -> IO (Maybe AuthorId)
 getAuthorIdByUserIdIfExactlyOne h =
-  runTransactionRO h . DAuthors.selectAuthorIdByUserIdIfExactlyOne
+  runTransactionRO h . DAuthors.getAuthorIdByUserIdIfExactlyOne
 
 getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
-getAuthor h authorId' = runTransactionRO h (DAuthors.selectAuthorById authorId')
+getAuthor h authorId' = runTransactionRO h (DAuthors.getAuthor authorId')
 
 deleteAuthor :: DB.Handle -> AuthorId -> IO (Either IDeleteAuthor.Failure ())
 deleteAuthor h = runTransactionRW h . DAuthors.deleteAuthor
@@ -120,7 +120,7 @@ updateAuthor :: DB.Handle -> AuthorId -> T.Text -> IO (Maybe Author)
 updateAuthor h aid newDescription =
   runTransactionRW h $ do
     DAuthors.updateAuthor aid newDescription
-    DAuthors.selectAuthorById aid
+    DAuthors.getAuthor aid
 
 createCategory ::
      DB.Handle
@@ -131,10 +131,10 @@ createCategory h parentId =
   runTransactionRW h . DCategories.createCategory parentId
 
 getCategory :: DB.Handle -> CategoryId -> IO (Maybe Category)
-getCategory h = runTransactionRO h . DCategories.selectCategory
+getCategory h = runTransactionRO h . DCategories.getCategory
 
 getCategories :: DB.Handle -> PageSpec -> IO [Category]
-getCategories h = runTransactionRO h . DCategories.selectCategories
+getCategories h = runTransactionRO h . DCategories.getCategories
 
 deleteCategoryAndDescendants :: DB.Handle -> CategoryId -> IO ()
 deleteCategoryAndDescendants h =
@@ -177,7 +177,7 @@ getCategoryName :: DB.Handle -> CategoryId -> IO (Maybe T.Text)
 getCategoryName h = runTransactionRO h . DCategories.getCategoryName
 
 getImage :: DB.Handle -> ImageId -> IO (Maybe Image)
-getImage h = DB.runTransactionRO h . DImages.selectImage
+getImage h = DB.runTransactionRO h . DImages.getImage
 
 getNewsList ::
      DB.Handle
@@ -287,10 +287,10 @@ getUser :: DB.Handle -> UserId -> IO (Maybe User)
 getUser h = runTransactionRO h . DUsers.getExistingUser
 
 getUsers :: DB.Handle -> PageSpec -> IO [User]
-getUsers h page = toList <$> runTransactionRO h (DUsers.selectUsers page)
+getUsers h page = toList <$> runTransactionRO h (DUsers.getUsers page)
 
 getUserAuthData :: DB.Handle -> UserId -> IO (Maybe UserAuthData)
-getUserAuthData h = runTransactionRO h . DUsers.selectUserAuthData
+getUserAuthData h = runTransactionRO h . DUsers.getUserAuthData
 
 deleteUser :: DB.Handle -> UserId -> IO Bool
 deleteUser h = runTransactionRW h . DUsers.deleteUser

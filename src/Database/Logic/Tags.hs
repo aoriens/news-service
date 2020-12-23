@@ -37,11 +37,11 @@ findTagNamed =
 
 createTagNamed :: T.Text -> Transaction Tag
 createTagNamed tagName = do
-  tagId <- createTagNamedSt tagName
+  tagId <- createTagRow tagName
   pure Tag {tagName, tagId}
 
-createTagNamedSt :: T.Text -> Transaction TagId
-createTagNamedSt =
+createTagRow :: T.Text -> Transaction TagId
+createTagRow =
   runStatement $
   rmap
     TagId
