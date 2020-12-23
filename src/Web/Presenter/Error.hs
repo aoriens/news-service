@@ -52,7 +52,7 @@ presentCoreException h e =
   runResponseBuilder h $
   case e of
     QueryException reason -> badRequestBuilder reason
-    BadCredentialsException _ -> notFoundBuilder
+    BadCredentialsException _ -> unauthorizedBuilder "Incorrect credentials"
     AuthenticationRequired -> authenticationRequired
     NoPermissionException perm _
       | AdminPermission <- perm -> notFoundBuilder
