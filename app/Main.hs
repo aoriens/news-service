@@ -128,10 +128,8 @@ data Deps =
     , dPageSpecParserHandle :: PageSpecParserHandle
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
-    , dLoadJSONRequestBody' :: forall a. A.FromJSON a =>
-                                           Web.Request -> Database.Transaction a
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Web.Request -> IO a
+                                          Web.Request -> Database.Transaction a
     -- ^ @todo: obsolete, should be deleted
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
@@ -172,10 +170,6 @@ getDeps = do
             Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
         , dJSONEncode
         , dLoadJSONRequestBody =
-            RequestBodyLoader.loadJSONRequestBody
-              RequestBodyLoader.Config
-                {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
-        , dLoadJSONRequestBody' =
             liftIO .
             RequestBodyLoader.loadJSONRequestBody
               RequestBodyLoader.Config
@@ -263,7 +257,7 @@ runCreateAuthorHandler Deps {..} SessionDeps {..} =
   HCreateAuthor.run
     HCreateAuthor.Handle
       { hCreateAuthor = ICreateAuthor.run createAuthorH
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedAuthor dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticate = sdAuthenticate
@@ -300,7 +294,7 @@ runPatchAuthorHandler authorId Deps {..} SessionDeps {..} =
       { hUpdateAuthor = IUpdateAuthor.run updateAuthorH
       , hPresent =
           presentUpdatedAuthor dAppURIConfig dRepresentationBuilderHandle
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hAuthenticate = sdAuthenticate
       }
     authorId
@@ -347,7 +341,7 @@ runCreateCategoryHandler Deps {..} SessionDeps {..} =
   HCreateCategory.run
     HCreateCategory.Handle
       { hCreateCategory = ICreateCategory.run createCategoryH
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedCategory dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticate = sdAuthenticate
@@ -412,7 +406,7 @@ runUpdateCategoryHandler categoryId Deps {..} SessionDeps {..} =
   HPatchCategory.run
     HPatchCategory.Handle
       { hUpdateCategory = IUpdateCategory.run updateCategoryH
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentUpdatedCategory dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticate = sdAuthenticate
@@ -463,7 +457,7 @@ runCreateUserHandler Deps {..} SessionDeps {..} =
     HCreateUser.Handle
       { hCreateUser = ICreateUser.run createUserH
       , hPresent = presentCreatedUser dAppURIConfig dRepresentationBuilderHandle
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       }
   where
     createUserH =
@@ -535,7 +529,7 @@ runCreateTagHandler Deps {..} SessionDeps {..} =
   HCreateTag.run
     HCreateTag.Handle
       { hCreateTag = ICreateTag.run createTagH
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent = presentCreatedTag dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticate = sdAuthenticate
       }
@@ -580,7 +574,7 @@ runPatchTagHandler tagId' Deps {..} SessionDeps {..} =
       { hUpdateTag = IUpdateTag.run updateTagH
       , hAuthenticate = sdAuthenticate
       , hPresent = presentUpdatedTag dAppURIConfig dRepresentationBuilderHandle
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       }
     tagId'
   where
@@ -611,7 +605,7 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
   HCreateDraft.run
     HCreateDraft.Handle
       { hCreateDraft = ICreateDraft.run createDraftH
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
       , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
@@ -747,7 +741,7 @@ runPatchDraftHandler draftId Deps {..} SessionDeps {..} =
       , hAuthenticate = sdAuthenticate
       , hPresent =
           presentUpdatedDraft dAppURIConfig dRepresentationBuilderHandle
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
       }
     draftId
@@ -767,7 +761,7 @@ runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
       , hPresent =
           presentCreatedComment dAppURIConfig dRepresentationBuilderHandle
       , hAuthenticate = sdAuthenticate
-      , hLoadJSONRequestBody = dLoadJSONRequestBody'
+      , hLoadJSONRequestBody = dLoadJSONRequestBody
       }
     newsId
   where
