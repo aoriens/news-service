@@ -137,7 +137,6 @@ data Deps =
     , dAppURIConfig :: AppURIConfig
     , dRenderAppURI :: AppURI -> T.Text
     , dRepresentationBuilderHandle :: RepBuilderHandle
-    , dMakeAuthenticationHandle :: Web.Session -> AuthenticationHandle IO
     }
 
 main :: IO ()
@@ -187,19 +186,6 @@ getDeps = do
         , dRepresentationBuilderHandle =
             RepBuilderHandle
               {hJSONEncode = dJSONEncode, hRenderAppURI = dRenderAppURI}
-        , dMakeAuthenticationHandle =
-            \session ->
-              AuthImpl.new
-                AuthImpl.Handle
-                  { hGetUserAuthData =
-                      Database.getUserAuthData $
-                      sessionDatabaseHandle
-                        dDatabaseConnectionConfig
-                        dLoggerHandle
-                        session
-                  , hTokenMatchesHash = GSecretToken.tokenMatchesHash
-                  , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
-                  }
         })
 
 getWebAppHandle :: Deps -> IO Web.EntryPoint.Handle
@@ -860,7 +846,6 @@ transactionApplicationToIOApplication h =
 data SessionDeps =
   SessionDeps
     { sdDatabaseHandle :: Database.Handle
-    , sdAuthenticationHandle :: AuthenticationHandle IO
     , sdAuthenticate :: Maybe Credentials -> Database.Transaction AuthenticatedUser
     }
 
@@ -869,10 +854,18 @@ sessionDeps Deps {..} session =
   SessionDeps
     { sdDatabaseHandle =
         sessionDatabaseHandle dDatabaseConnectionConfig dLoggerHandle session
-    , sdAuthenticationHandle = dMakeAuthenticationHandle session
-    -- ^ @todo: obsolete, should be deleted
-    , sdAuthenticate = liftIO . authenticate (dMakeAuthenticationHandle session)
+    , sdAuthenticate = authenticate authenticationH
     }
+  where
+    authenticationH =
+      AuthImpl.new
+        AuthImpl.Handle
+          { hGetUserAuthData = Database.getUserAuthData
+          , hTokenMatchesHash = GSecretToken.tokenMatchesHash
+          , hLoggerHandle =
+              Logger.mapHandle liftIO $
+              sessionLoggerHandle session dLoggerHandle
+          }
 
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =

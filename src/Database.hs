@@ -49,7 +49,7 @@ module Database
   , DUsers.createUser
   , DUsers.getExistingUser
   , DUsers.getUsers
-  , getUserAuthData
+  , DUsers.getUserAuthData
   , DUsers.deleteUser
   -- * Comments
   , DComments.createComment
@@ -59,8 +59,6 @@ module Database
   , DComments.deleteComment
   ) where
 
-import Core.Authentication.Impl
-import Core.User
 import qualified Database.Logic.Authors as DAuthors
 import qualified Database.Logic.Categories as DCategories
 import qualified Database.Logic.Comments as DComments
@@ -70,7 +68,3 @@ import qualified Database.Logic.News.Delete as DNews
 import qualified Database.Logic.News.Get as DNews
 import qualified Database.Logic.Tags as DTags
 import qualified Database.Logic.Users as DUsers
-import Database.Service.Primitives as DB
-
-getUserAuthData :: DB.Handle -> UserId -> IO (Maybe UserAuthData)
-getUserAuthData h = runTransactionRO h . DUsers.getUserAuthData

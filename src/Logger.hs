@@ -15,6 +15,7 @@ module Logger
   , error
   , log
   , mapMessage
+  , mapHandle
   ) where
 
 import Data.Maybe
@@ -77,3 +78,8 @@ mapMessage f h =
     { hLowLevelLog =
         \level callsite text -> hLowLevelLog h level callsite (f text)
     }
+
+mapHandle :: (m1 () -> m2 ()) -> Handle m1 -> Handle m2
+mapHandle convert h1 =
+  Handle
+    {hLowLevelLog = \level callSite -> convert . hLowLevelLog h1 level callSite}
