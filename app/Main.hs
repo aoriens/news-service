@@ -58,8 +58,6 @@ import qualified Core.Pagination.Impl
 import Core.Tag
 import Core.User
 import qualified Data.Aeson as A
-import qualified Data.ByteString.Builder as BB
-import qualified Data.Text as T
 import Data.Text.Show
 import qualified Database
 import qualified Database.Service.ConnectionManager as DBConnManager
@@ -126,14 +124,11 @@ data Deps =
     , dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
     , dPageSpecParserHandle :: PageSpecParserHandle
-    , dJSONEncode :: forall a. A.ToJSON a =>
-                                 a -> BB.Builder
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Web.Request -> Database.Transaction a
     -- ^ @todo: obsolete, should be deleted
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
-    , dRenderAppURI :: AppURI -> T.Text
     , dRepresentationBuilderHandle :: RepBuilderHandle
     }
 
@@ -154,12 +149,7 @@ getDeps = do
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   dSecretTokenIOState <- GSecretToken.initIOState
   let dDatabaseConnectionConfig = Cf.cfDatabaseConfig dConfig
-      dJSONEncode a =
-        JSONEncoder.encode
-          JSONEncoder.Config {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
-          a
       dAppURIConfig = Cf.cfAppURIConfig dConfig
-      dRenderAppURI = Web.AppURI.renderAppURI dAppURIConfig
   pure
     ( loggerWorker
     , Deps
@@ -168,7 +158,6 @@ getDeps = do
         , dDatabaseConnectionConfig
         , dPageSpecParserHandle =
             Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
-        , dJSONEncode
         , dLoadJSONRequestBody =
             liftIO .
             RequestBodyLoader.loadJSONRequestBody
@@ -176,10 +165,14 @@ getDeps = do
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
         , dAppURIConfig
-        , dRenderAppURI
         , dRepresentationBuilderHandle =
             RepBuilderHandle
-              {hJSONEncode = dJSONEncode, hRenderAppURI = dRenderAppURI}
+              { hJSONEncode =
+                  JSONEncoder.encode
+                    JSONEncoder.Config
+                      {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
+              , hRenderAppURI = Web.AppURI.renderAppURI dAppURIConfig
+              }
         })
 
 getWebAppHandle :: Deps -> IO Web.EntryPoint.Handle
