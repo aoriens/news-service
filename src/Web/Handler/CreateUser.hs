@@ -31,12 +31,12 @@ run Handle {..} request respond = do
   (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)
   respond $ hPresent user credentials
 
-queryFromInUser :: InUser -> I.Query
+queryFromInUser :: InUser -> I.Request
 queryFromInUser InUser {..} =
-  I.Query
-    { qFirstName = iuFirstName
-    , qLastName = iuLastName
-    , qAvatar = imageFromRep <$> iuAvatar
+  I.Request
+    { rFirstName = iuFirstName
+    , rLastName = iuLastName
+    , rAvatar = imageFromRep <$> iuAvatar
     }
 
 data InUser =

@@ -3,8 +3,7 @@
 module Core.Interactor.CreateUser
   ( run
   , Handle(..)
-  , Query(..)
-  , ImageQuery
+  , Request(..)
   , CreateUserCommand(..)
   , CreateUserResult(..)
   ) where
@@ -26,18 +25,18 @@ data Handle m =
     }
 
 -- | Run the interactor. It can throw 'IncorrectParameterException'
-run :: MonadThrow m => Handle m -> Query -> m (User, Auth.Credentials)
-run Handle {..} Query {..} = do
+run :: MonadThrow m => Handle m -> Request -> m (User, Auth.Credentials)
+run Handle {..} Request {..} = do
   let isAdmin = False
-  mapM_ hRejectImageIfDisallowed qAvatar
+  mapM_ hRejectImageIfDisallowed rAvatar
   (token, tokenHash) <- hGenerateToken
   createdAt <- hGetCurrentTime
   result <-
     hCreateUser
       CreateUserCommand
-        { cuFirstName = qFirstName
-        , cuLastName = qLastName
-        , cuAvatar = qAvatar
+        { cuFirstName = rFirstName
+        , cuLastName = rLastName
+        , cuAvatar = rAvatar
         , cuCreatedAt = createdAt
         , cuIsAdmin = isAdmin
         , cuTokenHash = tokenHash
@@ -45,24 +44,22 @@ run Handle {..} Query {..} = do
   pure
     ( User
         { userId = curUserId result
-        , userFirstName = qFirstName
-        , userLastName = qLastName
+        , userFirstName = rFirstName
+        , userLastName = rLastName
         , userAvatarId = curAvatarId result
         , userCreatedAt = createdAt
         , userIsAdmin = isAdmin
         }
     , Auth.TokenCredentials (curUserId result) token)
 
-data Query =
-  Query
-    { qFirstName :: Maybe Text
+data Request =
+  Request
+    { rFirstName :: Maybe Text
       -- ^ The first name. This is unnecessary in case of a
       -- single-component name.
-    , qLastName :: Text
-    , qAvatar :: Maybe ImageQuery
+    , rLastName :: Text
+    , rAvatar :: Maybe Image
     }
-
-type ImageQuery = Image
 
 data CreateUserCommand =
   CreateUserCommand

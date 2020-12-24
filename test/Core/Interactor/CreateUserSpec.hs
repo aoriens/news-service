@@ -28,7 +28,7 @@ spec = do
               }
           query = stubQuery
       void $ I.run h query
-      readIORef ref `shouldReturn` I.qAvatar query
+      readIORef ref `shouldReturn` I.rAvatar query
     it "should pass first/last name to hCreateUser and in the result" $ do
       ref <- newIORef (error "Must have set the first and the last name here")
       let h =
@@ -40,9 +40,9 @@ spec = do
               }
           query = stubQuery
       (user, _) <- I.run h query
-      readIORef ref `shouldReturn` (I.qFirstName query, I.qLastName query)
+      readIORef ref `shouldReturn` (I.rFirstName query, I.rLastName query)
       (userFirstName user, userLastName user) `shouldBe`
-        (I.qFirstName query, I.qLastName query)
+        (I.rFirstName query, I.rLastName query)
     it "should pass time from hGetCurrentTime to hCreateUser and in the result" $ do
       ref <- newIORef (error "Must have written here the current time")
       let expectedTime = UTCTime (ModifiedJulianDay 1) 0
@@ -108,27 +108,27 @@ spec = do
       (user, _) <- I.run h stubQuery
       userIsAdmin user `shouldBe` False
       readIORef ref `shouldReturn` False
-    it "should pass avatar, if qAvatar == Just _, to hRejectImageIfDisallowed" $ do
+    it "should pass avatar, if rAvatar == Just _, to hRejectImageIfDisallowed" $ do
       let image = stubImage {imageContentType = "t"}
       shouldPassValue image "hRejectImageIfDisallowed" $ \pass -> do
-        let query = stubQuery {I.qAvatar = Just image}
+        let query = stubQuery {I.rAvatar = Just image}
             h = stubHandle {I.hRejectImageIfDisallowed = pass}
         void $ I.run h query
     it "should not call hRejectImageIfDisallowed if no avatar passed" $ do
-      let query = stubQuery {I.qAvatar = Nothing}
+      let query = stubQuery {I.rAvatar = Nothing}
           h =
             stubHandle
               {I.hRejectImageIfDisallowed = \_ -> error "Must not invoke"}
       void $ I.run h query
     it "should throw exception from hRejectImageIfDisallowed" $ do
-      let query = stubQuery {I.qAvatar = Just stubImage}
+      let query = stubQuery {I.rAvatar = Just stubImage}
           expectedError = "q"
           h =
             stubHandle {I.hRejectImageIfDisallowed = \_ -> error expectedError}
       I.run h query `shouldThrow` errorCall expectedError
     it
       "should not invoke hCreateUser if hRejectImageIfDisallowed threw an exception" $ do
-      let query = stubQuery {I.qAvatar = Just stubImage}
+      let query = stubQuery {I.rAvatar = Just stubImage}
           expectedError = "q"
           h =
             stubHandle
@@ -162,6 +162,6 @@ stubCreateUserResult =
 stubImage :: Image
 stubImage = Image {imageContentType = "", imageData = ""}
 
-stubQuery :: I.Query
+stubQuery :: I.Request
 stubQuery =
-  I.Query {qFirstName = Just "John", qLastName = "Doe", qAvatar = Nothing}
+  I.Request {rFirstName = Just "John", rLastName = "Doe", rAvatar = Nothing}
