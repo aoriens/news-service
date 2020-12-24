@@ -3,20 +3,21 @@ module Web.Handler.GetUsers
   , Handle(..)
   ) where
 
-import qualified Core.Interactor.GetUsers as I
+import Control.Monad.Catch
+import Core.Pagination
 import Core.User
 import Web.Application
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
 
-data Handle =
+data Handle m =
   Handle
-    { hGetUsersHandle :: I.Handle IO
+    { hGetUsers :: PageSpecQuery -> m [User]
     , hPresent :: [User] -> Response
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
-  users <- I.run hGetUsersHandle pageQuery
+  users <- hGetUsers pageQuery
   respond $ hPresent users

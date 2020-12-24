@@ -3,27 +3,25 @@ module Web.Handler.GetAuthor
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Author
-import qualified Core.Interactor.GetAuthor as I
 import Data.Maybe.Util
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hGetAuthorHandle :: I.Handle IO
+    { hGetAuthor :: AuthenticatedUser -> AuthorId -> m (Maybe Author)
     , hPresent :: Author -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> AuthorId -> Application
+run :: MonadThrow m => Handle m -> AuthorId -> GenericApplication m
 run Handle {..} authorId' request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   author <-
-    fromMaybeM (throwIO ResourceNotFoundException) =<<
-    I.run hGetAuthorHandle authUser authorId'
+    fromMaybeM (throwM ResourceNotFoundException) =<<
+    hGetAuthor authUser authorId'
   respond $ hPresent author

@@ -6,7 +6,7 @@ module Web.Handler.CreateCategory
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Category
 import qualified Core.Interactor.CreateCategory as ICreateCategory
@@ -19,29 +19,28 @@ import Data.Maybe
 import Data.Maybe.Util
 import qualified Data.Text as T
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hCreateCategory :: AuthenticatedUser -> Maybe CategoryId -> NonEmpty T.Text -> IO (Either ICreateCategory.Failure Category)
+    { hCreateCategory :: AuthenticatedUser -> Maybe CategoryId -> NonEmpty T.Text -> m (Either ICreateCategory.Failure Category)
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     , hPresent :: Category -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   InCategory {inNames, inParentId} <- hLoadJSONRequestBody request
   names <- getNames inNames
   hCreateCategory authUser (CategoryId <$> inParentId) names >>=
-    either (throwIO . exceptionFromFailure) (respond . hPresent)
+    either (throwM . exceptionFromFailure) (respond . hPresent)
 
-getNames :: [T.Text] -> IO (NonEmpty T.Text)
-getNames = fromMaybeM (throwIO exception) . nonEmpty
+getNames :: MonadThrow m => [T.Text] -> m (NonEmpty T.Text)
+getNames = fromMaybeM (throwM exception) . nonEmpty
   where
     exception = IncorrectParameterException "'names' array must not be empty"
 

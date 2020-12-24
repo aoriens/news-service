@@ -3,22 +3,19 @@ module Web.Handler.GetNews
   , Handle(..)
   ) where
 
-import Control.Exception
-import qualified Core.Interactor.GetNews as I
+import Control.Monad.Catch
 import Core.News
 import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hGetNewsHandle :: I.Handle IO
+    { hGetNews :: NewsId -> m (Maybe News)
     , hPresent :: News -> Response
     }
 
-run :: Handle -> NewsId -> Application
+run :: MonadThrow m => Handle m -> NewsId -> GenericApplication m
 run Handle {..} newsId _ respond = do
-  news <-
-    fromMaybeM (throwIO ResourceNotFoundException) =<<
-    I.run hGetNewsHandle newsId
+  news <- fromMaybeM (throwM ResourceNotFoundException) =<< hGetNews newsId
   respond $ hPresent news

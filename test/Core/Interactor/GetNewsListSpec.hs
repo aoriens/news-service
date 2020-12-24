@@ -33,7 +33,7 @@ spec =
                 }
             ]
           h = stubHandle {hGetNews = \_ _ _ -> pure expectedNews}
-      results <- I.getNews h emptyFilter defaultSortOptions noPageQuery
+      results <- I.run h emptyFilter defaultSortOptions noPageQuery
       results `shouldBe` expectedNews
     itShouldWorkWithPageSpecParserCorrectly $ \hPageSpecParserHandle pageSpecQuery onSuccess -> do
       let h =
@@ -41,7 +41,7 @@ spec =
               { hGetNews = \_ _ pageQuery -> onSuccess pageQuery >> pure []
               , hPageSpecParserHandle
               }
-      void $ I.getNews h emptyFilter defaultSortOptions pageSpecQuery
+      void $ I.run h emptyFilter defaultSortOptions pageSpecQuery
     it "should pass Filter data to hGetNews" $ do
       ref <- newIORef []
       let newsFilter =
@@ -66,7 +66,7 @@ spec =
               }
           h =
             stubHandle {hGetNews = \f _ _ -> modifyIORef' ref (f :) >> pure []}
-      _ <- I.getNews h newsFilter defaultSortOptions noPageQuery
+      _ <- I.run h newsFilter defaultSortOptions noPageQuery
       passedFilters <- readIORef ref
       fmap gfDateRanges passedFilters `shouldBe` [I.fDateRanges newsFilter]
       fmap (gfAuthorIds . gfAuthorFilter) passedFilters `shouldBe`
@@ -124,7 +124,7 @@ spec =
               }
           h =
             stubHandle {hGetNews = \f _ _ -> modifyIORef' ref (f :) >> pure []}
-      _ <- I.getNews h newsFilter defaultSortOptions noPageQuery
+      _ <- I.run h newsFilter defaultSortOptions noPageQuery
       passedFilters <- readIORef ref
       fmap (gfAuthorNameSubstrings . gfAuthorFilter) passedFilters `shouldBe`
         [Just expectedAuthorNameSubstrings]
@@ -162,7 +162,7 @@ spec =
               }
           h =
             stubHandle {hGetNews = \f _ _ -> modifyIORef' ref (f :) >> pure []}
-      _ <- I.getNews h newsFilter defaultSortOptions noPageQuery
+      _ <- I.run h newsFilter defaultSortOptions noPageQuery
       passedFilters <- readIORef ref
       fmap (gfAuthorNameSubstrings . gfAuthorFilter) passedFilters `shouldBe`
         [Nothing]
@@ -184,7 +184,7 @@ spec =
           h =
             stubHandle
               {hGetNews = \_ opts _ -> modifyIORef' ref (opts :) >> pure []}
-      _ <- I.getNews h I.emptyFilter sortOptions noPageQuery
+      _ <- I.run h I.emptyFilter sortOptions noPageQuery
       readIORef ref `shouldReturn` [sortOptions]
 
 noPageQuery :: PageSpecQuery

@@ -3,22 +3,20 @@ module Web.Handler.GetCategory
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Category
-import qualified Core.Interactor.GetCategory as IGetCategory
 import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hGetCategoryHandle :: IGetCategory.Handle IO
+    { hGetCategory :: CategoryId -> m (Maybe Category)
     , hPresent :: Category -> Response
     }
 
-run :: Handle -> CategoryId -> Application
+run :: MonadThrow m => Handle m -> CategoryId -> GenericApplication m
 run Handle {..} catId _ respond = do
   category <-
-    fromMaybeM (throwIO ResourceNotFoundException) =<<
-    IGetCategory.run hGetCategoryHandle catId
+    fromMaybeM (throwM ResourceNotFoundException) =<< hGetCategory catId
   respond $ hPresent category

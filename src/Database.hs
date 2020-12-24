@@ -1,29 +1,29 @@
 -- | High-level data source interface for using in the business logic.
 module Database
   -- * Authors
-  ( createAuthor
-  , getAuthors
+  ( DAuthors.createAuthor
+  , DAuthors.getAuthors
   , getAuthorIdByUserIdIfExactlyOne
-  , getAuthor
-  , deleteAuthor
-  , updateAuthor
+  , DAuthors.getAuthor
+  , DAuthors.deleteAuthor
+  , DAuthors.updateAuthor
   -- * Categories
-  , createCategory
-  , getCategory
-  , getCategories
+  , DCategories.createCategory
+  , DCategories.getCategory
+  , DCategories.getCategories
   , DCategories.getCategoryIdBySiblingAndName
   , DCategories.getCategoryIdByParentAndName
-  , categoryIdWithParentAndNameExists
+  , DCategories.categoryIdWithParentAndNameExists
   , DCategories.categoryIsDescendantOf
   , DCategories.getCategoryName
-  , deleteCategoryAndDescendants
-  , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
+  , DCategories.deleteCategoryAndDescendants
+  , DCategories.setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
   , DCategories.updateCategory
   -- * Images
   , DImages.getImage
   -- * News
-  , getNewsList
-  , getNews
+  , DNews.getNewsList
+  , DNews.getNews
   , getDraftAuthor
   , getDraftAuthorAndNewsIdItWasCreatedFrom
   , getDraftsOfAuthor
@@ -37,7 +37,7 @@ module Database
   , createDraft
   , copyDraftFromNews
   , deleteDraftAndItsContent
-  , deleteDraftsOfAuthor
+  , DNews.deleteDraftsOfAuthor
   -- * Tags
   , findTagNamed
   , getTag
@@ -46,11 +46,11 @@ module Database
   , setTagName
   , createTagNamed
   -- * Users
-  , createUser
-  , getUser
-  , getUsers
+  , DUsers.createUser
+  , DUsers.getExistingUser
+  , DUsers.getUsers
   , getUserAuthData
-  , deleteUser
+  , DUsers.deleteUser
   -- * Comments
   , createComment
   , getComment
@@ -61,17 +61,11 @@ module Database
 
 import Core.Authentication.Impl
 import Core.Author
-import Core.Category
 import Core.Comment
 import Core.Deletable
-import qualified Core.Interactor.CreateAuthor as ICreateAuthor
-import qualified Core.Interactor.CreateCategory as ICreateCategory
 import qualified Core.Interactor.CreateComment as ICreateComment
 import qualified Core.Interactor.CreateDraft as ICreateDraft
-import qualified Core.Interactor.CreateUser as ICreateUser
-import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
-import qualified Core.Interactor.GetNewsList as IListNews
 import qualified Core.Interactor.PublishDraft as IPublishDraft
 import qualified Core.Interactor.UpdateDraft as IUpdateDraft
 import qualified Core.Interactor.UpdateTag as IUpdateTag
@@ -79,9 +73,6 @@ import Core.News
 import Core.Pagination
 import Core.Tag
 import Core.User
-import Data.Foldable
-import Data.List.NonEmpty (NonEmpty)
-import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -96,73 +87,9 @@ import qualified Database.Logic.Tags as DTags
 import qualified Database.Logic.Users as DUsers
 import Database.Service.Primitives as DB
 
-createAuthor ::
-     DB.Handle -> UserId -> T.Text -> IO (Either ICreateAuthor.Failure Author)
-createAuthor h uid description =
-  runTransactionRW h $ DAuthors.createAuthor uid description
-
-getAuthors :: DB.Handle -> PageSpec -> IO [Author]
-getAuthors h page = toList <$> runTransactionRO h (DAuthors.getAuthors page)
-
 getAuthorIdByUserIdIfExactlyOne :: DB.Handle -> UserId -> IO (Maybe AuthorId)
 getAuthorIdByUserIdIfExactlyOne h =
   runTransactionRO h . DAuthors.getAuthorIdByUserIdIfExactlyOne
-
-getAuthor :: DB.Handle -> AuthorId -> IO (Maybe Author)
-getAuthor h authorId' = runTransactionRO h (DAuthors.getAuthor authorId')
-
-deleteAuthor :: DB.Handle -> AuthorId -> IO (Either IDeleteAuthor.Failure ())
-deleteAuthor h = runTransactionRW h . DAuthors.deleteAuthor
-
-updateAuthor :: DB.Handle -> AuthorId -> T.Text -> IO (Maybe Author)
-updateAuthor h aid newDescription =
-  runTransactionRW h $ do
-    DAuthors.updateAuthor aid newDescription
-    DAuthors.getAuthor aid
-
-createCategory ::
-     DB.Handle
-  -> Maybe CategoryId
-  -> NonEmpty Text
-  -> IO (Either ICreateCategory.CreateCategoryFailure Category)
-createCategory h parentId =
-  runTransactionRW h . DCategories.createCategory parentId
-
-getCategory :: DB.Handle -> CategoryId -> IO (Maybe Category)
-getCategory h = runTransactionRO h . DCategories.getCategory
-
-getCategories :: DB.Handle -> PageSpec -> IO [Category]
-getCategories h = runTransactionRO h . DCategories.getCategories
-
-deleteCategoryAndDescendants :: DB.Handle -> CategoryId -> IO ()
-deleteCategoryAndDescendants h =
-  runTransactionRW h . DCategories.deleteCategoryAndDescendants
-
-setCategoryIdToNewsVersionsInCategoryAndDescendantCategories ::
-     DB.Handle -> Maybe CategoryId -> CategoryId -> IO ()
-setCategoryIdToNewsVersionsInCategoryAndDescendantCategories h newCatId oldCatId =
-  runTransactionRW h $
-  DCategories.setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
-    newCatId
-    oldCatId
-
-categoryIdWithParentAndNameExists ::
-     DB.Handle -> Maybe CategoryId -> T.Text -> IO Bool
-categoryIdWithParentAndNameExists h parentId name =
-  isJust <$>
-  DB.runTransactionRO h (DCategories.getCategoryIdByParentAndName parentId name)
-
-getNewsList ::
-     DB.Handle
-  -> IListNews.GatewayFilter
-  -> IListNews.SortOptions
-  -> PageSpec
-  -> IO [News]
-getNewsList h nf sortOptions =
-  DB.runTransactionRO h . DNews.getNewsList nf sortOptions
-
-getNews :: DB.Handle -> NewsId -> IO (Maybe News)
-getNews h = DB.runTransactionRO h . DNews.getNews
 
 createDraft ::
      DB.Handle
@@ -211,9 +138,6 @@ deleteDraftAndItsContent :: DB.Handle -> DraftId -> IO ()
 deleteDraftAndItsContent h =
   DB.runTransactionRW h . DNews.deleteDraftAndItsContent
 
-deleteDraftsOfAuthor :: DB.Handle -> AuthorId -> IO ()
-deleteDraftsOfAuthor h = DB.runTransactionRW h . DNews.deleteDraftsOfAuthor
-
 makeDraftIntoNews ::
      DB.Handle
   -> DraftId
@@ -250,23 +174,8 @@ setTagName ::
      DB.Handle -> TagId -> Text -> IO (Either IUpdateTag.SetTagNameFailure ())
 setTagName h tagId newName = runTransactionRW h $ DTags.setTagName tagId newName
 
-createUser ::
-     DB.Handle
-  -> ICreateUser.CreateUserCommand
-  -> IO ICreateUser.CreateUserResult
-createUser h = runTransactionRW h . DUsers.createUser
-
-getUser :: DB.Handle -> UserId -> IO (Maybe User)
-getUser h = runTransactionRO h . DUsers.getExistingUser
-
-getUsers :: DB.Handle -> PageSpec -> IO [User]
-getUsers h page = toList <$> runTransactionRO h (DUsers.getUsers page)
-
 getUserAuthData :: DB.Handle -> UserId -> IO (Maybe UserAuthData)
 getUserAuthData h = runTransactionRO h . DUsers.getUserAuthData
-
-deleteUser :: DB.Handle -> UserId -> IO Bool
-deleteUser h = runTransactionRW h . DUsers.deleteUser
 
 createComment ::
      DB.Handle

@@ -1,5 +1,5 @@
 module Core.Interactor.GetNewsList
-  ( getNews
+  ( run
   , Handle(..)
   , Filter(..)
   , NewsDateRange(..)
@@ -25,14 +25,14 @@ import qualified Data.List.NonEmpty as N
 import qualified Data.Text as T
 import Data.Time
 
-getNews ::
+run ::
      MonadThrow m
   => Handle m
   -> Filter
   -> SortOptions
   -> PageSpecQuery
   -> m [News]
-getNews Handle {..} newsFilter sortOptions pageQuery = do
+run Handle {..} newsFilter sortOptions pageQuery = do
   pageSpec <- parsePageSpecM hPageSpecParserHandle pageQuery
   hGetNews (gatewayFilterFromFilter newsFilter) sortOptions pageSpec
 

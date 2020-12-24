@@ -3,25 +3,24 @@ module Web.Handler.DeleteCategory
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Category
 import qualified Core.Interactor.DeleteCategory as I
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hDeleteCategoryHandle :: I.Handle IO
+    { hDeleteCategory :: AuthenticatedUser -> CategoryId -> m (Either I.Failure ())
     , hPresent :: Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> CategoryId -> Application
+run :: MonadThrow m => Handle m -> CategoryId -> GenericApplication m
 run Handle {..} catId request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
-  I.run hDeleteCategoryHandle authUser catId >>= \case
-    Left I.UnknownCategoryId -> throwIO ResourceNotFoundException
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
+  hDeleteCategory authUser catId >>= \case
+    Left I.UnknownCategoryId -> throwM ResourceNotFoundException
     Right () -> respond hPresent

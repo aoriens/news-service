@@ -3,25 +3,25 @@ module Web.Handler.GetAuthors
   , Handle(..)
   ) where
 
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Author
-import qualified Core.Interactor.GetAuthors as I
+import Core.Pagination
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
 
-data Handle =
+data Handle m =
   Handle
-    { hGetAuthorsHandle :: I.Handle IO
+    { hGetAuthors :: AuthenticatedUser -> PageSpecQuery -> m [Author]
     , hPresent :: [Author] -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
-  authors <- I.run hGetAuthorsHandle authUser pageQuery
+  authors <- hGetAuthors authUser pageQuery
   respond $ hPresent authors

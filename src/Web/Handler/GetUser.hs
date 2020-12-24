@@ -3,22 +3,19 @@ module Web.Handler.GetUser
   , Handle(..)
   ) where
 
-import Control.Exception
-import qualified Core.Interactor.GetUser as I
+import Control.Monad.Catch
 import Core.User
 import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hGetUserHandle :: I.Handle IO
+    { hGetUser :: UserId -> m (Maybe User)
     , hPresent :: User -> Response
     }
 
-run :: Handle -> UserId -> Application
+run :: MonadThrow m => Handle m -> UserId -> GenericApplication m
 run Handle {..} userId _ respond = do
-  user <-
-    fromMaybeM (throwIO ResourceNotFoundException) =<<
-    I.run hGetUserHandle userId
+  user <- fromMaybeM (throwM ResourceNotFoundException) =<< hGetUser userId
   respond $ hPresent user

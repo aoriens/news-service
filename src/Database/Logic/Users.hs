@@ -19,9 +19,9 @@ import qualified Core.Interactor.CreateUser as I
 import Core.Pagination
 import Core.User
 import Data.Bifunctor
+import Data.Foldable
 import Data.Functor.Contravariant
 import Data.Profunctor
-import Data.Vector (Vector)
 import {-# SOURCE #-} Database.Logic.Authors
 import Database.Logic.Images
 import Database.Logic.Pagination
@@ -79,14 +79,14 @@ getExistingUser =
     sql = "select $COLUMNS from users where user_id = $1 and not is_deleted"
     encoder = getUserId >$< (E.param . E.nonNullable) E.int4
 
-getUsers :: PageSpec -> Transaction (Vector User)
+getUsers :: PageSpec -> Transaction [User]
 getUsers =
   runStatement $
   statementWithColumns
     "select $COLUMNS from users where not is_deleted limit $1 offset $2"
     pageToLimitOffsetEncoder
     existingUserColumns
-    D.rowVector
+    (fmap toList . D.rowVector)
     True
 
 existingUserColumns :: Columns User

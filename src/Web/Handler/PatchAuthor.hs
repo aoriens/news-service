@@ -6,32 +6,31 @@ module Web.Handler.PatchAuthor
   , Handle(..)
   ) where
 
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Author
-import qualified Core.Interactor.UpdateAuthor as I
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
 import Data.List
 import Data.Maybe
 import qualified Data.Text as T
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 
-data Handle =
+data Handle m =
   Handle
-    { hUpdateAuthorHandle :: I.Handle IO
+    { hUpdateAuthor :: AuthenticatedUser -> AuthorId -> T.Text -> m Author
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     , hPresent :: Author -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> AuthorId -> Application
+run :: MonadThrow m => Handle m -> AuthorId -> GenericApplication m
 run Handle {..} authorId' request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   InAuthor {inDescription} <- hLoadJSONRequestBody request
-  newAuthor <- I.run hUpdateAuthorHandle authUser authorId' inDescription
+  newAuthor <- hUpdateAuthor authUser authorId' inDescription
   respond $ hPresent newAuthor
 
 newtype InAuthor =

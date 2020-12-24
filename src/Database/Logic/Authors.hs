@@ -95,8 +95,13 @@ authorExists =
        ) :: bool
     |]
 
-updateAuthor :: AuthorId -> T.Text -> Transaction ()
-updateAuthor =
+updateAuthor :: AuthorId -> T.Text -> Transaction (Maybe Author)
+updateAuthor authorId newDescription = do
+  updateAuthorRow authorId newDescription
+  getAuthor authorId
+
+updateAuthorRow :: AuthorId -> T.Text -> Transaction ()
+updateAuthorRow =
   curry . runStatement $
   lmap
     (swap . first getAuthorId)

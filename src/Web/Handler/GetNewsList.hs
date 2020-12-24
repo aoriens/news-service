@@ -7,14 +7,13 @@ module Web.Handler.GetNewsList
   ) where
 
 import Control.Applicative
+import Control.Monad.Catch
 import Core.Author
 import Core.Category
 import qualified Core.Interactor.GetNewsList as I
 import Core.News
 import Core.Pagination
 import Core.Tag
-import qualified Data.Aeson as A
-import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashSet as Set
 import Data.Hashable
@@ -25,19 +24,17 @@ import Web.Application
 import qualified Web.QueryParameter as QueryParameter
 import Web.QueryParameter.PageQuery
 
-data Handle =
+data Handle m =
   Handle
-    { hGetNewsHandle :: I.Handle IO
-    , hJSONEncode :: forall a. A.ToJSON a =>
-                                 a -> BB.Builder
+    { hGetNews :: I.Filter -> I.SortOptions -> PageSpecQuery -> m [News]
     , hPresent :: [News] -> Response
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
   (pageQuery, newsFilter, sortOptions) <-
     QueryParameter.parseQueryM (requestQueryString request) parseParams
-  news <- I.getNews hGetNewsHandle newsFilter sortOptions pageQuery
+  news <- hGetNews newsFilter sortOptions pageQuery
   respond $ hPresent news
 
 parseParams :: QueryParameter.Parser (PageSpecQuery, I.Filter, I.SortOptions)

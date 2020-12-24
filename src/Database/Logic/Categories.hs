@@ -12,6 +12,7 @@ module Database.Logic.Categories
   , updateCategory
   , getCategoryIdBySiblingAndName
   , getCategoryIdByParentAndName
+  , categoryIdWithParentAndNameExists
   , categoryIsDescendantOf
   , getCategoryName
   ) where
@@ -275,6 +276,11 @@ getCategoryIdByParentAndName =
       where parent_id is not distinct from $1 :: integer? and name = $2 :: varchar
       limit 1
     |]
+
+categoryIdWithParentAndNameExists ::
+     Maybe CategoryId -> T.Text -> Transaction Bool
+categoryIdWithParentAndNameExists parentId name =
+  isJust <$> getCategoryIdByParentAndName parentId name
 
 -- | Determines whether the first category is a descendant of the second.
 categoryIsDescendantOf :: CategoryId -> CategoryId -> Transaction Bool

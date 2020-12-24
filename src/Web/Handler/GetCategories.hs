@@ -3,20 +3,21 @@ module Web.Handler.GetCategories
   , Handle(..)
   ) where
 
+import Control.Monad.Catch
 import Core.Category
-import qualified Core.Interactor.GetCategories as IGetCategories
+import Core.Pagination
 import Web.Application
 import Web.QueryParameter
 import Web.QueryParameter.PageQuery
 
-data Handle =
+data Handle m =
   Handle
-    { hGetCategoriesHandle :: IGetCategories.Handle IO
+    { hGetCategories :: PageSpecQuery -> m [Category]
     , hPresent :: [Category] -> Response
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
   pageSpecQuery <- parseQueryM (requestQueryString request) parsePageQuery
-  categories <- IGetCategories.run hGetCategoriesHandle pageSpecQuery
+  categories <- hGetCategories pageSpecQuery
   respond $ hPresent categories

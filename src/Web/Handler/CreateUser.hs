@@ -17,36 +17,36 @@ import Data.Text (Text)
 import Web.Application
 import Web.Representation.Image
 
-data Handle =
+data Handle m =
   Handle
-    { hCreateUserHandle :: I.Handle IO
+    { hCreateUser :: I.Request -> m (User, Credentials)
     , hPresent :: User -> Credentials -> Response
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     }
 
-run :: Handle -> Application
+run :: Monad m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
   userEntity <- hLoadJSONRequestBody request
-  (user, credentials) <- I.run hCreateUserHandle (queryFromInUser userEntity)
+  (user, credentials) <- hCreateUser (createUserRequestFromInUser userEntity)
   respond $ hPresent user credentials
 
-queryFromInUser :: InUser -> I.Request
-queryFromInUser InUser {..} =
+createUserRequestFromInUser :: InUser -> I.Request
+createUserRequestFromInUser InUser {..} =
   I.Request
-    { rFirstName = iuFirstName
-    , rLastName = iuLastName
-    , rAvatar = imageFromRep <$> iuAvatar
+    { rFirstName = inFirstName
+    , rLastName = inLastName
+    , rAvatar = imageFromRep <$> inAvatar
     }
 
 data InUser =
   InUser
-    { iuFirstName :: Maybe Text
-    , iuLastName :: Text
-    , iuAvatar :: Maybe ImageRep
+    { inFirstName :: Maybe Text
+    , inLastName :: Text
+    , inAvatar :: Maybe ImageRep
     }
 
 $(A.deriveFromJSON
     A.defaultOptions
-      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "iu"}
+      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "in"}
     ''InUser)

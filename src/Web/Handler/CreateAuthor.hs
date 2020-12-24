@@ -6,7 +6,7 @@ module Web.Handler.CreateAuthor
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Author
 import qualified Core.Interactor.CreateAuthor as I
@@ -18,43 +18,38 @@ import Data.List
 import Data.Maybe
 import qualified Data.Text as T
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hCreateAuthorHandle :: I.Handle IO
+    { hCreateAuthor :: AuthenticatedUser -> UserId -> T.Text -> m (Either I.Failure Author)
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     , hPresent :: Author -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   inAuthor <- hLoadJSONRequestBody request
   result <-
-    I.run
-      hCreateAuthorHandle
-      authUser
-      (UserId $ iaUserId inAuthor)
-      (iaDescription inAuthor)
+    hCreateAuthor authUser (UserId $ inUserId inAuthor) (inDescription inAuthor)
   author <-
     case result of
       Left I.UnknownUserId ->
-        throwIO $ IncorrectParameterException "Unknown UserId"
+        throwM $ IncorrectParameterException "Unknown UserId"
       Right a -> pure a
   respond $ hPresent author
 
 data InAuthor =
   InAuthor
-    { iaUserId :: Int32
-    , iaDescription :: T.Text
+    { inUserId :: Int32
+    , inDescription :: T.Text
     }
 
 $(A.deriveFromJSON
     A.defaultOptions
-      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "ia"}
+      {A.fieldLabelModifier = A.camelTo2 '_' . fromJust . stripPrefix "in"}
     ''InAuthor)
