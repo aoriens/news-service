@@ -23,26 +23,25 @@ import Data.Maybe
 import qualified Data.Text as T
 import Web.AppURI
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Representation.Image
 
-data Handle =
+data Handle m =
   Handle
-    { hCreateDraftHandle :: I.Handle IO
+    { hCreateDraft :: AuthenticatedUser -> I.CreateDraftRequest -> m Draft
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     , hPresent :: Draft -> Response
     , hParseAppURI :: T.Text -> Maybe AppURI
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run h@Handle {..} request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   inDraft <- hLoadJSONRequestBody request
   createDraftRequest <- makeCreateDraftRequest h inDraft
-  version <- I.run hCreateDraftHandle authUser createDraftRequest
+  version <- hCreateDraft authUser createDraftRequest
   respond $ hPresent version
 
 data InDraft =
@@ -57,7 +56,7 @@ data InDraft =
     }
 
 makeCreateDraftRequest ::
-     MonadThrow m => Handle -> InDraft -> m I.CreateDraftRequest
+     MonadThrow m => Handle m -> InDraft -> m I.CreateDraftRequest
 makeCreateDraftRequest h InDraft {..} = do
   cdMainPhoto <- mapM (parseImage h) inPhoto
   cdAdditionalPhotos <- mapM (parseImage h) $ fromMaybe [] inPhotos
@@ -73,7 +72,10 @@ makeCreateDraftRequest h InDraft {..} = do
       }
 
 parseImage ::
-     MonadThrow m => Handle -> ExistingOrNewImageRep -> m (Either ImageId Image)
+     MonadThrow m
+  => Handle m
+  -> ExistingOrNewImageRep
+  -> m (Either ImageId Image)
 parseImage h = parseExistingOrNewImage (hParseAppURI h)
 
 $(A.deriveFromJSON

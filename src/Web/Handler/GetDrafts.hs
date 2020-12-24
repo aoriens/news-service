@@ -3,28 +3,30 @@ module Web.Handler.GetDrafts
   , Handle(..)
   ) where
 
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Author
-import qualified Core.Interactor.GetDrafts as I
 import Core.News
+import Core.Pagination
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
 
-data Handle =
+data Handle m =
   Handle
-    { hGetDraftsHandle :: I.Handle IO
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    { hGetDrafts :: AuthenticatedUser -> Maybe AuthorId -> PageSpecQuery -> m [Draft]
+    -- ^ When Maybe AuthorId is Nothing, all authors related to the
+    -- user are implied
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     , hPresent :: [Draft] -> Response
     }
 
 -- | When 'Nothing' passed as 'Maybe AuthorId', all authors of the
 -- authenticated user will be considered.
-run :: Handle -> Maybe AuthorId -> Application
+run :: MonadThrow m => Handle m -> Maybe AuthorId -> GenericApplication m
 run Handle {..} optAuthorId request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
-  drafts <- I.run hGetDraftsHandle authUser optAuthorId pageQuery
+  drafts <- hGetDrafts authUser optAuthorId pageQuery
   respond $ hPresent drafts

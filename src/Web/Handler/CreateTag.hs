@@ -6,6 +6,7 @@ module Web.Handler.CreateTag
   , Handle(..)
   ) where
 
+import Control.Monad.Catch
 import Core.Authentication
 import qualified Core.Interactor.CreateTag as ICreateTag
 import qualified Data.Aeson as A
@@ -14,23 +15,22 @@ import Data.List
 import Data.Maybe
 import qualified Data.Text as T
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 
-data Handle =
+data Handle m =
   Handle
-    { hCreateTagHandle :: ICreateTag.Handle IO
+    { hCreateTag :: AuthenticatedUser -> T.Text -> m ICreateTag.Result
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     , hPresent :: ICreateTag.Result -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   InTag {inName} <- hLoadJSONRequestBody request
-  result <- ICreateTag.run hCreateTagHandle authUser inName
+  result <- hCreateTag authUser inName
   respond $ hPresent result
 
 newtype InTag =

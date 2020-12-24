@@ -6,9 +6,9 @@ module Web.Handler.CreateComment
   , Handle(..)
   ) where
 
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Comment
-import qualified Core.Interactor.CreateComment as I
 import Core.News
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as A
@@ -16,23 +16,22 @@ import Data.List
 import Data.Maybe
 import qualified Data.Text as T
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 
-data Handle =
+data Handle m =
   Handle
     { hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
-    , hAuthenticationHandle :: AuthenticationHandle IO
-    , hCreateCommentHandle :: I.Handle IO
+                                          Request -> m a
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
+    , hCreateComment :: AuthenticatedUser -> T.Text -> NewsId -> m Comment
     , hPresent :: Comment -> Response
     }
 
-run :: Handle -> NewsId -> Application
-run Handle {..} newsId' request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+run :: MonadThrow m => Handle m -> NewsId -> GenericApplication m
+run Handle {..} newsId request respond = do
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   InComment {inText} <- hLoadJSONRequestBody request
-  resultingComment <- I.run hCreateCommentHandle authUser inText newsId'
+  resultingComment <- hCreateComment authUser inText newsId
   respond $ hPresent resultingComment
 
 newtype InComment =

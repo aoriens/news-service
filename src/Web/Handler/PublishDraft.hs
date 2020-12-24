@@ -3,25 +3,24 @@ module Web.Handler.PublishDraft
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import qualified Core.Interactor.PublishDraft as I
 import Core.News
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hPublishDraftHandle :: I.Handle IO
+    { hPublishDraft :: AuthenticatedUser -> DraftId -> m (Either I.Failure I.Success)
     , hPresent :: I.Success -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> DraftId -> Application
+run :: MonadThrow m => Handle m -> DraftId -> GenericApplication m
 run Handle {..} vId request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
-  I.run hPublishDraftHandle authUser vId >>= \case
-    Left I.UnknownDraftId -> throwIO ResourceNotFoundException
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
+  hPublishDraft authUser vId >>= \case
+    Left I.UnknownDraftId -> throwM ResourceNotFoundException
     Right success -> respond $ hPresent success

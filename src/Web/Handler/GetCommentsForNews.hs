@@ -3,22 +3,23 @@ module Web.Handler.GetCommentsForNews
   , Handle(..)
   ) where
 
+import Control.Monad.Catch
 import Core.Comment
-import qualified Core.Interactor.GetCommentsForNews as I
 import Core.News
+import Core.Pagination
 import Web.Application
 import qualified Web.QueryParameter as QueryParameter
 import Web.QueryParameter.PageQuery
 
-data Handle =
+data Handle m =
   Handle
-    { hGetCommentsForNewsHandle :: I.Handle IO
+    { hGetCommentsForNews :: NewsId -> PageSpecQuery -> m [Comment]
     , hPresent :: [Comment] -> Response
     }
 
-run :: Handle -> NewsId -> Application
+run :: MonadThrow m => Handle m -> NewsId -> GenericApplication m
 run Handle {..} newsId request respond = do
   pageSpecQuery <-
     QueryParameter.parseQueryM (requestQueryString request) parsePageQuery
-  comments <- I.run hGetCommentsForNewsHandle newsId pageSpecQuery
+  comments <- hGetCommentsForNews newsId pageSpecQuery
   respond $ hPresent comments

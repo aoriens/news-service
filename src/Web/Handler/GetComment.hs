@@ -3,22 +3,20 @@ module Web.Handler.GetComment
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Comment
-import qualified Core.Interactor.GetComment as IGetComment
 import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hGetCommentHandle :: IGetComment.Handle IO
+    { hGetComment :: CommentId -> m (Maybe Comment)
     , hPresent :: Comment -> Response
     }
 
-run :: Handle -> CommentId -> Application
+run :: MonadThrow m => Handle m -> CommentId -> GenericApplication m
 run Handle {..} commentId _ respond = do
   comment <-
-    fromMaybeM (throwIO ResourceNotFoundException) =<<
-    IGetComment.run hGetCommentHandle commentId
+    fromMaybeM (throwM ResourceNotFoundException) =<< hGetComment commentId
   respond $ hPresent comment

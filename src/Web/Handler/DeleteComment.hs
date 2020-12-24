@@ -3,25 +3,25 @@ module Web.Handler.DeleteComment
   , Handle(..)
   ) where
 
-import Control.Exception
 import Control.Monad
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Comment
 import Web.Application
 import qualified Web.Credentials
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hDeleteComment :: AuthenticatedUser -> CommentId -> IO Bool
-    , hAuthenticate :: Maybe Credentials -> IO AuthenticatedUser
+    { hDeleteComment :: AuthenticatedUser -> CommentId -> m Bool
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     , hPresent :: Response
     }
 
-run :: Handle -> CommentId -> Application
+run :: MonadThrow m => Handle m -> CommentId -> GenericApplication m
 run Handle {..} commentId request respond = do
   authUser <-
     hAuthenticate =<< Web.Credentials.getCredentialsFromRequest request
   isOk <- hDeleteComment authUser commentId
-  unless isOk $ throwIO ResourceNotFoundException
+  unless isOk $ throwM ResourceNotFoundException
   respond hPresent

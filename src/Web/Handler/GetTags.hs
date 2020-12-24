@@ -3,20 +3,21 @@ module Web.Handler.GetTags
   , Handle(..)
   ) where
 
-import qualified Core.Interactor.GetTags as IGetTags
+import Control.Monad.Catch
+import Core.Pagination
 import Core.Tag
 import Web.Application
 import qualified Web.QueryParameter as QP
 import qualified Web.QueryParameter.PageQuery as QP
 
-data Handle =
+data Handle m =
   Handle
-    { hGetTagsHandle :: IGetTags.Handle IO
+    { hGetTags :: PageSpecQuery -> m [Tag]
     , hPresent :: [Tag] -> Response
     }
 
-run :: Handle -> Application
+run :: MonadThrow m => Handle m -> GenericApplication m
 run Handle {..} request respond = do
   pageQuery <- QP.parseQueryM (requestQueryString request) QP.parsePageQuery
-  tags <- IGetTags.run hGetTagsHandle pageQuery
+  tags <- hGetTags pageQuery
   respond $ hPresent tags

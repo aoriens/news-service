@@ -3,7 +3,7 @@ module Web.Handler.CreateDraftFromNews
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import qualified Core.Interactor.CreateDraftFromNews as I
 import Core.News
@@ -11,16 +11,16 @@ import Web.Application
 import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hCreateDraftFromNews :: AuthenticatedUser -> NewsId -> IO (Either I.Failure Draft)
+    { hCreateDraftFromNews :: AuthenticatedUser -> NewsId -> m (Either I.Failure Draft)
     , hPresent :: Draft -> Response
-    , hAuthenticate :: Maybe Credentials -> IO AuthenticatedUser
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> NewsId -> Application
+run :: MonadThrow m => Handle m -> NewsId -> GenericApplication m
 run Handle {..} newsId request respond = do
   authUser <- hAuthenticate =<< getCredentialsFromRequest request
   hCreateDraftFromNews authUser newsId >>= \case
     Right version -> respond $ hPresent version
-    Left I.UnknownNewsId -> throwIO ResourceNotFoundException
+    Left I.UnknownNewsId -> throwM ResourceNotFoundException

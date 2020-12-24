@@ -5,7 +5,7 @@ module Web.Handler.PatchDraft
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Category
 import Core.EntityId
@@ -24,17 +24,17 @@ import Web.Credentials hiding (Credentials)
 import Web.Exception
 import Web.Representation.Image
 
-data Handle =
+data Handle m =
   Handle
-    { hUpdateDraft :: AuthenticatedUser -> DraftId -> I.UpdateDraftRequest -> IO (Either I.Failure Draft)
+    { hUpdateDraft :: AuthenticatedUser -> DraftId -> I.UpdateDraftRequest -> m (Either I.Failure Draft)
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     , hPresent :: Draft -> Response
     , hParseAppURI :: T.Text -> Maybe AppURI
-    , hAuthenticate :: Maybe Credentials -> IO AuthenticatedUser
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> DraftId -> Application
+run :: MonadThrow m => Handle m -> DraftId -> GenericApplication m
 run h@Handle {..} draftId request respond = do
   authUser <- hAuthenticate =<< getCredentialsFromRequest request
   body <- hLoadJSONRequestBody request
@@ -42,9 +42,9 @@ run h@Handle {..} draftId request respond = do
   hUpdateDraft authUser draftId updateDraftRequest >>= \case
     Right draft -> respond $ hPresent draft
     Left (I.UnknownEntityId [DraftEntityId _]) ->
-      throwIO ResourceNotFoundException
+      throwM ResourceNotFoundException
     Left (I.UnknownEntityId ids) ->
-      throwIO $ RelatedEntitiesNotFoundException ids
+      throwM $ RelatedEntitiesNotFoundException ids
 
 data RequestBody =
   RequestBody
@@ -67,7 +67,8 @@ instance A.FromJSON RequestBody where
       rbTagIds <- o .:! "tag_ids"
       pure RequestBody {..}
 
-makeUpdateDraftRequest :: Handle -> RequestBody -> IO I.UpdateDraftRequest
+makeUpdateDraftRequest ::
+     MonadThrow m => Handle m -> RequestBody -> m I.UpdateDraftRequest
 makeUpdateDraftRequest h RequestBody {..} = do
   udrMainPhoto <- mapM (mapM (parseImage h)) rbPhoto
   udrAdditionalPhotos <- mapM (mapM (parseImage h)) rbPhotos
@@ -81,5 +82,9 @@ makeUpdateDraftRequest h RequestBody {..} = do
       , udrTags = Set.fromList . map TagId <$> rbTagIds
       }
 
-parseImage :: Handle -> ExistingOrNewImageRep -> IO (Either ImageId Image)
+parseImage ::
+     MonadThrow m
+  => Handle m
+  -> ExistingOrNewImageRep
+  -> m (Either ImageId Image)
 parseImage h = parseExistingOrNewImage $ hParseAppURI h

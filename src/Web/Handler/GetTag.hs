@@ -3,22 +3,19 @@ module Web.Handler.GetTag
   , Handle(..)
   ) where
 
-import Control.Exception
-import qualified Core.Interactor.GetTag as IGetTag
+import Control.Monad.Catch
 import Core.Tag
 import Data.Maybe.Util
 import Web.Application
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hGetTagHandle :: IGetTag.Handle IO
+    { hGetTag :: TagId -> m (Maybe Tag)
     , hPresent :: Tag -> Response
     }
 
-run :: Handle -> TagId -> Application
-run Handle {..} tagId' _ respond = do
-  tag <-
-    fromMaybeM (throwIO ResourceNotFoundException) =<<
-    IGetTag.run hGetTagHandle tagId'
+run :: MonadThrow m => Handle m -> TagId -> GenericApplication m
+run Handle {..} tagId _ respond = do
+  tag <- fromMaybeM (throwM ResourceNotFoundException) =<< hGetTag tagId
   respond $ hPresent tag

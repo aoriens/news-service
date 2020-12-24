@@ -3,27 +3,24 @@ module Web.Handler.GetDraft
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
-import qualified Core.Interactor.GetDraft as I
 import Core.News
 import Data.Maybe.Util
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hGetDraftHandle :: I.Handle IO
+    { hGetDraft :: AuthenticatedUser -> DraftId -> m (Maybe Draft)
     , hPresent :: Draft -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> DraftId -> Application
+run :: MonadThrow m => Handle m -> DraftId -> GenericApplication m
 run Handle {..} draftId request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   draft <-
-    fromMaybeM (throwIO ResourceNotFoundException) =<<
-    I.run hGetDraftHandle authUser draftId
+    fromMaybeM (throwM ResourceNotFoundException) =<< hGetDraft authUser draftId
   respond $ hPresent draft
