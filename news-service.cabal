@@ -24,7 +24,7 @@ library
     , Core.Authentication
     , Core.Authentication.Impl
     , Core.Author
-    , Core.AuthorizationNG
+    , Core.Authorization
     , Core.Category
     , Core.Comment
     , Core.Deletable

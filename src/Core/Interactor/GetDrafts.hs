@@ -5,7 +5,7 @@ module Core.Interactor.GetDrafts
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Exception
 import Core.News
 import Core.Pagination

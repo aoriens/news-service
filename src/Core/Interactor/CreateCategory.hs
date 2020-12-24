@@ -6,7 +6,7 @@ module Core.Interactor.CreateCategory
   ) where
 
 import Control.Monad.Catch
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Category
 import Data.Bifunctor
 import Data.List.NonEmpty as NonEmpty

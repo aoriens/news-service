@@ -5,7 +5,7 @@ module Core.Interactor.UpdateAuthor
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.EntityId
 import Core.Exception
 import qualified Data.Text as T

@@ -10,7 +10,7 @@ module Core.Interactor.CreateDraft
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Category
 import Core.EntityId
 import Core.Exception

@@ -10,7 +10,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Category
 import Data.Maybe.Util
 import qualified Data.Text as T

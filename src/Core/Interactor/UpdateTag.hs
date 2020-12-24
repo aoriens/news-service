@@ -6,7 +6,7 @@ module Core.Interactor.UpdateTag
   ) where
 
 import Control.Monad.Catch
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Tag
 import qualified Data.Text as T
 

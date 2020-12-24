@@ -4,7 +4,7 @@ module Core.Interactor.DeleteComment
   ) where
 
 import Control.Monad.Catch
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Comment
 import Core.User
 

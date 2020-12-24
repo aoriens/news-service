@@ -6,7 +6,7 @@ module Core.Interactor.DeleteAuthor
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 
 data Handle m =
   Handle

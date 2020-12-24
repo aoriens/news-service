@@ -6,7 +6,7 @@ module Core.Interactor.CreateAuthor
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.User
 import qualified Data.Text as T
 

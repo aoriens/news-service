@@ -6,7 +6,7 @@ module Core.Interactor.GetDraft
 import Control.Monad.Catch
 import Control.Monad.Trans.Maybe
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Deletable
 import Core.News
 

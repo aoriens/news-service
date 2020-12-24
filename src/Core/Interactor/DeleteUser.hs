@@ -4,7 +4,7 @@ module Core.Interactor.DeleteUser
   ) where
 
 import Control.Monad.Catch
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.User
 
 newtype Handle m =

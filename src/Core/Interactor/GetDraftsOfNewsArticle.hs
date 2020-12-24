@@ -5,7 +5,7 @@ module Core.Interactor.GetDraftsOfNewsArticle
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Deletable
 import Core.News
 import Core.Pagination

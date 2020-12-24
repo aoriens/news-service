@@ -4,7 +4,7 @@ module Core.Interactor.DeleteTag
   ) where
 
 import Control.Monad.Catch
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Tag
 
 newtype Handle m =

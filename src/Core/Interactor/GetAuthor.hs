@@ -5,7 +5,7 @@ module Core.Interactor.GetAuthor
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 
 newtype Handle m =
   Handle

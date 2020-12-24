@@ -6,7 +6,7 @@ module Core.Interactor.CreateTag
 
 import Control.Monad
 import Control.Monad.Catch
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Exception
 import Core.Tag
 import qualified Data.Text as T

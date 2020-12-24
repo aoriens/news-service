@@ -6,7 +6,7 @@ module Core.Interactor.DeleteDraft
 
 import Control.Monad.Catch
 import Core.Author
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Deletable
 import Core.News
 

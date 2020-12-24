@@ -1,4 +1,4 @@
-module Core.AuthorizationNG
+module Core.Authorization
   ( authorize
   , authUserShouldBeAdmin
   , authUserShouldBeAuthor

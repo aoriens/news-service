@@ -5,7 +5,7 @@ module Core.Interactor.DeleteCategory
   ) where
 
 import Control.Monad.Catch
-import Core.AuthorizationNG
+import Core.Authorization
 import Core.Category
 
 data Handle m =
