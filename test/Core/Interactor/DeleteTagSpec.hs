@@ -3,9 +3,9 @@ module Core.Interactor.DeleteTagSpec
   ) where
 
 import Core.Authentication.Test
-import Core.Authorization
 import Core.Exception
 import Core.Interactor.DeleteTag
+import Core.Permission
 import Core.Tag
 import qualified Data.HashSet as Set
 import Data.IORef

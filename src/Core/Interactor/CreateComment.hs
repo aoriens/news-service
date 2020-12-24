@@ -5,7 +5,7 @@ module Core.Interactor.CreateComment
   ) where
 
 import Control.Monad.Catch
-import Core.Authorization
+import Core.Authentication
 import Core.Comment
 import Core.EntityId
 import Core.Exception

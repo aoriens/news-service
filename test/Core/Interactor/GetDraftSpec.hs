@@ -2,9 +2,9 @@ module Core.Interactor.GetDraftSpec
   ( spec
   ) where
 
+import Core.Authentication
 import Core.Authentication.Test
 import Core.Author
-import Core.Authorization
 import Core.Deletable
 import Core.Exception
 import Core.Interactor.GetDraft

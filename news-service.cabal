@@ -24,9 +24,7 @@ library
     , Core.Authentication
     , Core.Authentication.Impl
     , Core.Author
-    , Core.Authorization
     , Core.AuthorizationNG
-    , Core.Authorization.Impl
     , Core.Category
     , Core.Comment
     , Core.Deletable
@@ -233,8 +231,6 @@ test-suite news-service-test
   other-modules:
       Core.Authentication.ImplSpec
     , Core.Authentication.Test
-    , Core.Authorization.ImplSpec
-    , Core.Authorization.Test
     , Core.ImageValidatorSpec
     , Core.Interactor.CreateAuthorSpec
     , Core.Interactor.CreateCategorySpec
