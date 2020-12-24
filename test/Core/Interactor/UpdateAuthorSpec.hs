@@ -2,11 +2,8 @@ module Core.Interactor.UpdateAuthorSpec
   ( spec
   ) where
 
-import Control.Monad
 import Core.Authentication.Test
 import Core.Author
-import Core.Authorization
-import Core.Authorization.Test
 import Core.Exception
 import Core.Interactor.UpdateAuthor
 import Core.Stubs
@@ -18,51 +15,45 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
-      let aid = AuthorId 1
-          description = ""
-          h =
-            stubHandle
+    it
+      "should throw NoPermissionException and do not update the author if the user is not an admin" $ do
+      hasUpdatedAuthor <- newIORef False
+      let h =
+            Handle
               { hUpdateAuthor =
                   \_ _ -> do
-                    onSuccess
-                    pure $ Just stubAuthor
-              , hAuthorizationHandle = authorizationHandle
+                    writeIORef hasUpdatedAuthor True
+                    pure Nothing
               }
-      void $ run h authUser aid description
+      run h someNonAdminUser (AuthorId 0) "" `shouldThrow`
+        isNoPermissionException
+      readIORef hasUpdatedAuthor `shouldReturn` False
     it
       "should pass authorId and description data to the gateway in a normal case" $ do
       authorIdAndDescription <- newIORef Nothing
       let expectedAuthorId = AuthorId 6
           expectedDescription = "q"
           h =
-            stubHandle
+            Handle
               { hUpdateAuthor =
                   \aid desc -> do
                     writeIORef authorIdAndDescription $ Just (aid, desc)
                     pure $ Just stubAuthor
               }
-      _ <- run h someAuthUser expectedAuthorId expectedDescription
+      _ <- run h someAdminUser expectedAuthorId expectedDescription
       readIORef authorIdAndDescription `shouldReturn`
         Just (expectedAuthorId, expectedDescription)
     it "should return author returned from the gateway if updated successfully" $ do
       let aid = AuthorId 1
           description = "q"
           expectedAuthor = stubAuthor
-          h = stubHandle {hUpdateAuthor = \_ _ -> pure $ Just expectedAuthor}
-      r <- run h someAuthUser aid description
+          h = Handle {hUpdateAuthor = \_ _ -> pure $ Just expectedAuthor}
+      r <- run h someAdminUser aid description
       r `shouldBe` expectedAuthor
     it
       "should throw RequestedEntityNotFoundException if the gateway returned Nothing" $ do
       let aid = AuthorId 1
           description = "q"
-          h = stubHandle {hUpdateAuthor = \_ _ -> pure Nothing}
-      run h someAuthUser aid description `shouldThrow`
+          h = Handle {hUpdateAuthor = \_ _ -> pure Nothing}
+      run h someAdminUser aid description `shouldThrow`
         isRequestedEntityNotFoundException
-
-stubHandle :: Handle IO
-stubHandle =
-  Handle
-    { hUpdateAuthor = \_ _ -> pure $ Just stubAuthor {authorId = AuthorId 99993}
-    , hAuthorizationHandle = noOpAuthorizationHandle
-    }

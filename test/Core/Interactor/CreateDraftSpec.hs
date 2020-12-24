@@ -3,12 +3,9 @@ module Core.Interactor.CreateDraftSpec
   ) where
 
 import Control.Exception
-import Core.Authentication.Test
+import Core.Authentication
 import Core.Author
-import Core.Authorization
-import Core.Authorization.Test
 import Core.Category
-import Core.Deletable
 import Core.EntityId
 import Core.Exception
 import Core.Image
@@ -26,29 +23,21 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    let creatorId = AuthorId 6
-    itShouldAuthorizeBeforeOperation (AuthorshipPermission $ Existing creatorId) $ \authUser authorizationHandle onSuccess -> do
-      let h =
-            stubHandle
-              { hCreateDraft = \_ -> onSuccess >> pure (Right stubDraft)
-              , hAuthorizationHandle = authorizationHandle
-              }
-          request = stubRequest {cdAuthorId = Just creatorId}
-      _ <- run h authUser request
-      pure ()
-    it "should pass author id from request in the AuthorshipPermission" $ do
-      let aid = AuthorId 2
-          expectedPermission = AuthorshipPermission $ Existing aid
+    it
+      "should throw NoPermissionException and should not create a draft if authorId is specified and the user does not own it" $ do
+      hasCreatedDraft <- newIORef False
+      let unownedAuthorId = AuthorId 1
+          ownedAuthorId = AuthorId 2
+          request = stubRequest {cdAuthorId = Just unownedAuthorId}
+          authUser = IdentifiedUser (UserId 3) False [ownedAuthorId]
           h =
             stubHandle
-              { hCreateDraft = \_ -> pure $ Right stubDraft
-              , hAuthorizationHandle =
-                  AuthorizationHandle
-                    {hHasPermission = \perm _ -> perm == expectedPermission}
+              { hCreateDraft =
+                  \_ ->
+                    writeIORef hasCreatedDraft True >> pure (Right stubDraft)
               }
-          request = stubRequest {cdAuthorId = Just aid}
-      _ <- run h someAuthUser request
-      pure ()
+      run h authUser request `shouldThrow` isNoPermissionException
+      readIORef hasCreatedDraft `shouldReturn` False
     it
       "should pass title, text, author id, category id, main photo, other photos, and tag ids to the gateway" $ do
       acceptedCommandRef <- newIORef Nothing
@@ -56,7 +45,7 @@ spec
             CreateDraftRequest
               { cdTitle = "title"
               , cdText = "text"
-              , cdAuthorId = Just $ AuthorId 1
+              , cdAuthorId = Just authorId
               , cdCategoryId = Just $ CategoryId 1
               , cdMainPhoto = Just . Left $ ImageId 1
               , cdAdditionalPhotos =
@@ -76,7 +65,9 @@ spec
                     writeIORef acceptedCommandRef (Just cmd)
                     pure $ Right stubDraft
               }
-      _ <- run h someAuthUser request
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      _ <- run h authUser request
       acceptedCommand <- readIORef acceptedCommandRef
       cdcTitle <$> acceptedCommand `shouldBe` Just (cdTitle request)
       cdcText <$> acceptedCommand `shouldBe` Just (cdText request)
@@ -87,32 +78,41 @@ spec
         acceptedCommand `shouldBe` Just (cdAdditionalPhotos request)
       cdcTagIds <$> acceptedCommand `shouldBe` Just (cdTagIds request)
     it "should pass NewsVersion got from hCreateDraft" $ do
-      let request = stubRequest
+      let request = stubRequest {cdAuthorId = Just authorId}
           expectedDraft = stubDraft {draftId = DraftId 2}
           h = stubHandle {hCreateDraft = \_ -> pure $ Right expectedDraft}
-      version <- run h someAuthUser request
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      version <- run h authUser request
       version `shouldBe` expectedDraft
     it
       "should throw DependentEntitiesNotFoundException if hCreateDraft returned CDUnknownEntityId" $ do
-      let request = stubRequest
+      let request = stubRequest {cdAuthorId = Just authorId}
           ids = [toEntityId $ UserId 1]
           h =
             stubHandle
               {hCreateDraft = \_ -> pure . Left $ CDUnknownEntityId ids}
-      result <- try $ run h someAuthUser request
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      result <- try $ run h authUser request
       result `shouldBe` Left (DependentEntitiesNotFoundException ids)
     it "should pass main photo to hRejectImageIfDisallowed if it's Right Image" $ do
       passedPhotosRef <- newIORef []
       let photo = stubImage {imageData = "q"}
           request =
             stubRequest
-              {cdMainPhoto = Just $ Right photo, cdAdditionalPhotos = []}
+              { cdMainPhoto = Just $ Right photo
+              , cdAdditionalPhotos = []
+              , cdAuthorId = Just authorId
+              }
           h =
             stubHandle
               { hRejectImageIfDisallowed =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
-      _ <- run h someAuthUser request
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      _ <- run h authUser request
       readIORef passedPhotosRef `shouldReturn` [photo]
     it
       "should pass all additional photos that are Right Image to hRejectImageIfDisallowed" $ do
@@ -121,13 +121,19 @@ spec
             [stubImage {imageData = "1"}, stubImage {imageData = "2"}]
           photos = map Right rightImages ++ [Left $ ImageId 3]
           request =
-            stubRequest {cdMainPhoto = Nothing, cdAdditionalPhotos = photos}
+            stubRequest
+              { cdMainPhoto = Nothing
+              , cdAdditionalPhotos = photos
+              , cdAuthorId = Just authorId
+              }
           h =
             stubHandle
               { hRejectImageIfDisallowed =
                   \img -> modifyIORef' passedPhotosRef (img :)
               }
-      _ <- run h someAuthUser request
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      _ <- run h authUser request
       passedPhotos <- readIORef passedPhotosRef
       passedPhotos `shouldMatchList` rightImages
     it
@@ -136,42 +142,54 @@ spec
             stubRequest
               { cdMainPhoto = Just . Left $ ImageId 1
               , cdAdditionalPhotos = [Left $ ImageId 2]
+              , cdAuthorId = Just authorId
               }
           h =
             stubHandle
               { hRejectImageIfDisallowed =
                   \img -> error $ "Must not invoke with parameter " ++ show img
               }
-      _ <- run h someAuthUser request
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      _ <- run h authUser request
       pure ()
     it
       "should not invoke hCreateDraft if hRejectImageIfDisallowed threw an exception on main photo" $ do
       let expectedError = "expected"
-          request = stubRequest {cdMainPhoto = Just $ Right stubImage}
+          request =
+            stubRequest
+              {cdMainPhoto = Just $ Right stubImage, cdAuthorId = Just authorId}
           h =
             stubHandle
               { hRejectImageIfDisallowed = \_ -> error expectedError
               , hCreateDraft = \_ -> error "Must not invoke"
               }
-      run h someAuthUser request `shouldThrow` errorCall expectedError
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      run h authUser request `shouldThrow` errorCall expectedError
     it
       "should not invoke hCreateDraft if hRejectImageIfDisallowed threw an exception on an additional photo" $ do
       let expectedError = "expected"
           request =
             stubRequest
-              {cdMainPhoto = Nothing, cdAdditionalPhotos = [Right stubImage]}
+              { cdMainPhoto = Nothing
+              , cdAdditionalPhotos = [Right stubImage]
+              , cdAuthorId = Just authorId
+              }
           h =
             stubHandle
               { hRejectImageIfDisallowed = \_ -> error expectedError
               , hCreateDraft = \_ -> error "Must not invoke"
               }
-      run h someAuthUser request `shouldThrow` errorCall expectedError
+          authUser = IdentifiedUser (UserId 0) False [authorId]
+          authorId = AuthorId 1
+      run h authUser request `shouldThrow` errorCall expectedError
     it
       "should pass authorId to hCreateDraft from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
       passedAuthorsId <- newIORef []
       let request = stubRequest {cdAuthorId = Nothing}
           expectedAuthorId = AuthorId 1
-          authUser = IdentifiedUser (UserId 1) False []
+          authUser = IdentifiedUser (UserId 1) False [expectedAuthorId]
           h =
             stubHandle
               { hGetAuthorIdByUserIdIfExactlyOne =
@@ -184,46 +202,21 @@ spec
       _ <- run h authUser request
       readIORef passedAuthorsId `shouldReturn` [expectedAuthorId]
     it
-      "should pass authorId to authorization from hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
-      let request = stubRequest {cdAuthorId = Nothing}
-          expectedAuthorId = AuthorId 1
-          authUser = IdentifiedUser (UserId 1) False []
-          h =
-            stubHandle
-              { hGetAuthorIdByUserIdIfExactlyOne =
-                  \_ -> pure $ Just expectedAuthorId
-              , hAuthorizationHandle =
-                  AuthorizationHandle $ \perm _ ->
-                    perm == AuthorshipPermission (Existing expectedAuthorId)
-              }
-      _ <- run h authUser request
-      pure ()
-    it
       "should pass UserId from AuthenticatedUser from authenticate to hGetAuthorIdByUserIdIfExactlyOne if CreateDraftRequest has no authorId" $ do
       passedUserIds <- newIORef []
       let request = stubRequest {cdAuthorId = Nothing}
           expectedUserId = UserId 1
-          authUser = IdentifiedUser expectedUserId False []
+          authUser = IdentifiedUser expectedUserId False [authorId]
+          authorId = AuthorId 2
           h =
             stubHandle
               { hGetAuthorIdByUserIdIfExactlyOne =
                   \userId' -> do
                     modifyIORef' passedUserIds (userId' :)
-                    pure $ Just $ AuthorId 2
+                    pure $ Just authorId
               }
       _ <- run h authUser request
       readIORef passedUserIds `shouldReturn` [expectedUserId]
-    it
-      "should not invoke hGetAuthorsOfUser if author is specified in CreateDraftRequest" $ do
-      invoked <- newIORef False
-      let request = stubRequest {cdAuthorId = Just $ AuthorId 1}
-          h =
-            stubHandle
-              { hGetAuthorIdByUserIdIfExactlyOne =
-                  \_ -> modifyIORef' invoked succ >> pure Nothing
-              }
-      _ <- run h someAuthUser request
-      readIORef invoked `shouldReturn` False
     it
       "should throw IncorrectParameterException if CreateDraftRequest has no author and hGetAuthorIdByUserIdIfExactlyOne returns Nothing" $ do
       let request = stubRequest {cdAuthorId = Nothing}
@@ -258,7 +251,6 @@ stubHandle =
   Handle
     { hCreateDraft = \_ -> pure $ Right stubDraft
     , hGetAuthorIdByUserIdIfExactlyOne = \_ -> pure Nothing
-    , hAuthorizationHandle = noOpAuthorizationHandle
     , hRejectImageIfDisallowed = \_ -> pure ()
     }
 

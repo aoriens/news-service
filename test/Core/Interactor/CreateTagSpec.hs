@@ -4,8 +4,6 @@ module Core.Interactor.CreateTagSpec
 
 import Control.Monad
 import Core.Authentication.Test
-import Core.Authorization
-import Core.Authorization.Test
 import Core.Exception
 import Core.Interactor.CreateTag
 import Core.Tag
@@ -18,22 +16,16 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
-      let name = "a"
-          h =
+    it
+      "should throw NoPermissionException and should not create a tag if the user is not an admin" $ do
+      hasCreatedTag <- newIORef False
+      let h =
             stubHandle
-              { hCreateTagNamed = \_ -> onSuccess >> pure stubTag
-              , hFindTagNamed = \_ -> onSuccess >> pure Nothing
-              , hAuthorizationHandle = authorizationHandle
+              { hCreateTagNamed =
+                  \_ -> writeIORef hasCreatedTag True >> pure stubTag
               }
-      void $ run h authUser name
-    it "should pass the name to hFindTagNamed in a normal case" $ do
-      let expectedName = "a"
-      shouldPassValue expectedName "hFindTagNamed" $ \onSuccess -> do
-        let h =
-              stubHandle
-                {hFindTagNamed = \name -> onSuccess name >> pure Nothing}
-        void $ run h someAuthUser expectedName
+      run h someNonAdminUser "" `shouldThrow` isNoPermissionException
+      readIORef hasCreatedTag `shouldReturn` False
     it
       "should pass the name to hCreateTagNamed if hFindTagNamed returned Nothing" $ do
       let expectedName = "a"
@@ -43,7 +35,7 @@ spec
                 { hFindTagNamed = \_ -> pure Nothing
                 , hCreateTagNamed = \name -> onSuccess name >> pure stubTag
                 }
-        void $ run h someAuthUser expectedName
+        void $ run h someAdminUser expectedName
     it "should not invoke hCreateTagNamed if hFindTagNamed returned Just _" $ do
       createTagIsInvoked <- newIORef False
       let name = "a"
@@ -53,7 +45,7 @@ spec
               , hCreateTagNamed =
                   \_ -> writeIORef createTagIsInvoked True >> pure stubTag
               }
-      _ <- run h someAuthUser name
+      _ <- run h someAdminUser name
       readIORef createTagIsInvoked `shouldReturn` False
     it
       "should return ExistingTagFound with the tag returned from the gateway if such a tag found" $ do
@@ -61,7 +53,7 @@ spec
           tag = stubTag {tagName = "pascal"}
           expectedResult = ExistingTagFound tag
           h = stubHandle {hFindTagNamed = \_ -> pure $ Just tag}
-      r <- run h someAuthUser name
+      r <- run h someAdminUser name
       r `shouldBe` expectedResult
     it
       "should return TagCreated with the tag returned from the gateway if no existing tag found" $ do
@@ -73,12 +65,12 @@ spec
               { hFindTagNamed = \_ -> pure Nothing
               , hCreateTagNamed = \_ -> pure tag
               }
-      r <- run h someAuthUser name
+      r <- run h someAdminUser name
       r `shouldBe` expectedResult
     it "should throw CoreException if the tag name is empty" $ do
       let name = ""
           h = stubHandle
-      run h someAuthUser name `shouldThrow` isIncorrectParameterException
+      run h someAdminUser name `shouldThrow` isIncorrectParameterException
 
 stubTag :: Tag
 stubTag = Tag {tagName = "q", tagId = TagId 1}
@@ -86,7 +78,4 @@ stubTag = Tag {tagName = "q", tagId = TagId 1}
 stubHandle :: Handle IO
 stubHandle =
   Handle
-    { hCreateTagNamed = \_ -> pure stubTag
-    , hFindTagNamed = \_ -> pure Nothing
-    , hAuthorizationHandle = noOpAuthorizationHandle
-    }
+    {hCreateTagNamed = \_ -> pure stubTag, hFindTagNamed = \_ -> pure Nothing}

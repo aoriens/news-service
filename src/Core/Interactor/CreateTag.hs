@@ -6,7 +6,7 @@ module Core.Interactor.CreateTag
 
 import Control.Monad
 import Control.Monad.Catch
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.Exception
 import Core.Tag
 import qualified Data.Text as T
@@ -15,7 +15,6 @@ data Handle m =
   Handle
     { hCreateTagNamed :: T.Text -> m Tag
     , hFindTagNamed :: T.Text -> m (Maybe Tag)
-    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 data Result
@@ -25,7 +24,7 @@ data Result
 
 run :: MonadThrow m => Handle m -> AuthenticatedUser -> T.Text -> m Result
 run Handle {..} authUser newTagName = do
-  requirePermission hAuthorizationHandle AdminPermission authUser "create a tag"
+  authorize "create a tag" $ authUserShouldBeAdmin authUser
   when (T.null newTagName) $
     throwM (IncorrectParameterException "The tag name must not be empty")
   optExistingTag <- hFindTagNamed newTagName

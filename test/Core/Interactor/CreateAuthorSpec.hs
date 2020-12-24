@@ -2,10 +2,8 @@ module Core.Interactor.CreateAuthorSpec
   ( spec
   ) where
 
-import Control.Monad
 import Core.Authentication.Test
-import Core.Authorization
-import Core.Authorization.Test
+import Core.Exception
 import Core.Interactor.CreateAuthor
 import Core.Stubs
 import Core.User
@@ -17,47 +15,43 @@ spec
   {- HLINT ignore spec "Reduce duplication" -}
  =
   describe "run" $ do
-    itShouldAuthorizeBeforeOperation AdminPermission $ \authUser authorizationHandle onSuccess -> do
-      let uid = UserId 1
-          description = ""
-          h =
-            stubHandle
-              { hCreateAuthor = \_ _ -> onSuccess >> pure (Right stubAuthor)
-              , hAuthorizationHandle = authorizationHandle
+    it
+      "should throw NoPermissionException and should not invoke the gateway if the user is not an admin" $ do
+      hasCreatedUser <- newIORef False
+      let h =
+            Handle
+              { hCreateAuthor =
+                  \_ _ ->
+                    writeIORef hasCreatedUser True >> pure (Right stubAuthor)
               }
-      void $ run h authUser uid description
-    it "should pass userId and description data to the gateway in a normal case" $ do
+      run h someNonAdminUser (UserId 0) "" `shouldThrow` isNoPermissionException
+      readIORef hasCreatedUser `shouldReturn` False
+    it
+      "should pass userId and description data to the gateway if the user is admin" $ do
       userIdAndDescription <- newIORef Nothing
       let expectedUid = UserId 1
           expectedDescription = "q"
           h =
-            stubHandle
+            Handle
               { hCreateAuthor =
                   \uid desc -> do
                     writeIORef userIdAndDescription $ Just (uid, desc)
                     pure $ Right stubAuthor
               }
-      _ <- run h someAuthUser expectedUid expectedDescription
+      _ <- run h someAdminUser expectedUid expectedDescription
       readIORef userIdAndDescription `shouldReturn`
         Just (expectedUid, expectedDescription)
     it "should return author returned from the gateway if created successfully" $ do
       let uid = UserId 1
           description = "q"
           expectedResult = Right stubAuthor
-          h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
-      r <- run h someAuthUser uid description
+          h = Handle {hCreateAuthor = \_ _ -> pure expectedResult}
+      r <- run h someAdminUser uid description
       r `shouldBe` expectedResult
     it "should return failure returned from the gateway if any" $ do
       let uid = UserId 1
           description = "q"
           expectedResult = Left UnknownUserId
-          h = stubHandle {hCreateAuthor = \_ _ -> pure expectedResult}
-      r <- run h someAuthUser uid description
+          h = Handle {hCreateAuthor = \_ _ -> pure expectedResult}
+      r <- run h someAdminUser uid description
       r `shouldBe` expectedResult
-
-stubHandle :: Handle IO
-stubHandle =
-  Handle
-    { hCreateAuthor = \_ _ -> pure (Right stubAuthor)
-    , hAuthorizationHandle = noOpAuthorizationHandle
-    }

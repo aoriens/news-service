@@ -5,13 +5,12 @@ module Core.Interactor.GetAuthors
 
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.Pagination
 
 data Handle m =
   Handle
     { hGetAuthors :: PageSpec -> m [Author]
-    , hAuthorizationHandle :: AuthorizationHandle
     , hPageSpecParserHandle :: PageSpecParserHandle
     }
 
@@ -22,6 +21,6 @@ run ::
   -> PageSpecQuery
   -> m [Author]
 run Handle {..} authUser pageQuery = do
-  requirePermission hAuthorizationHandle AdminPermission authUser "get authors"
+  authorize "get authors" $ authUserShouldBeAdmin authUser
   page <- parsePageSpecM hPageSpecParserHandle pageQuery
   hGetAuthors page

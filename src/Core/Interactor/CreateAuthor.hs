@@ -6,14 +6,13 @@ module Core.Interactor.CreateAuthor
 
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.User
 import qualified Data.Text as T
 
-data Handle m =
+newtype Handle m =
   Handle
     { hCreateAuthor :: UserId -> T.Text -> m (Either Failure Author)
-    , hAuthorizationHandle :: AuthorizationHandle
     }
 
 run ::
@@ -24,11 +23,7 @@ run ::
   -> T.Text
   -> m (Either Failure Author)
 run Handle {..} authUser uid description = do
-  requirePermission
-    hAuthorizationHandle
-    AdminPermission
-    authUser
-    "create an author"
+  authorize "create an author" $ authUserShouldBeAdmin authUser
   hCreateAuthor uid description
 
 data Failure =

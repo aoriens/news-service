@@ -5,8 +5,7 @@ module Core.Interactor.GetDrafts
 
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
-import Core.Deletable
+import Core.AuthorizationNG
 import Core.Exception
 import Core.News
 import Core.Pagination
@@ -17,7 +16,6 @@ data Handle m =
   Handle
     { hGetDraftsOfAuthor :: AuthorId -> PageSpec -> m [Draft]
     , hGetDraftsOfUser :: UserId -> PageSpec -> m [Draft]
-    , hAuthorizationHandle :: AuthorizationHandle
     , hPageSpecParserHandle :: PageSpecParserHandle
     }
 
@@ -36,9 +34,5 @@ run Handle {..} authUser optAuthorId pageQuery = do
   case optAuthorId of
     Nothing -> hGetDraftsOfUser userId pageSpec
     Just authorId -> do
-      requirePermission
-        hAuthorizationHandle
-        (AuthorshipPermission $ Existing authorId)
-        authUser
-        "get drafts"
+      authorize "get drafts" $ authUser `authUserShouldBeAuthor` authorId
       hGetDraftsOfAuthor authorId pageSpec

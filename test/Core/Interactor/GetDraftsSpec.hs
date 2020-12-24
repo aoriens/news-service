@@ -7,9 +7,6 @@ import Control.Monad
 import Core.Authentication
 import Core.Authentication.Test
 import Core.Author
-import Core.Authorization
-import Core.Authorization.Test
-import Core.Deletable
 import Core.Exception
 import Core.Interactor.GetDrafts
 import Core.News
@@ -45,7 +42,9 @@ spec =
                 , hGetDraftsOfAuthor =
                     \_ pageSpec -> onSuccess pageSpec >> pure []
                 }
-        void $ run h someIdentifiedAuthUser (Just $ AuthorId 1) pageSpecQuery
+            authUser = IdentifiedUser (UserId 0) False [authorId]
+            authorId = AuthorId 1
+        void $ run h authUser (Just authorId) pageSpecQuery
     it
       "should invoke hGetDraftsOfUser once and should not invoke hGetDraftsOfAuthor if no author is passed" $ do
       ref <- newIORef []
@@ -91,33 +90,22 @@ spec =
           h = defaultHandle {hGetDraftsOfUser = \_ _ -> pure expectedDrafts}
       r <- run h someIdentifiedAuthUser author noPageQuery
       r `shouldBe` expectedDrafts
-    it
-      "should invoke hGetDraftsOfAuthor once and should not invoke hGetDraftsOfUser if an author is passed" $ do
-      ref <- newIORef []
-      let author = Just $ AuthorId 1
-          h =
-            defaultHandle
-              { hGetDraftsOfUser =
-                  \_ _ -> modifyIORef ref ("by user" :) >> pure []
-              , hGetDraftsOfAuthor =
-                  \_ _ -> modifyIORef ref ("by author" :) >> pure []
-              }
-      _ <- run h someIdentifiedAuthUser author noPageQuery
-      readIORef ref `shouldReturn` ["by author" :: String]
     it "should pass authorId to hGetDraftsOfUser if not Nothing" $ do
       ref <- newIORef Nothing
       let expectedAuthorId = AuthorId 1
+          authUser = IdentifiedUser (UserId 0) False [expectedAuthorId]
           h =
             defaultHandle
               { hGetDraftsOfAuthor =
                   \authorId _ -> writeIORef ref (Just authorId) >> pure []
               }
-      _ <- run h someIdentifiedAuthUser (Just expectedAuthorId) noPageQuery
+      _ <- run h authUser (Just expectedAuthorId) noPageQuery
       readIORef ref `shouldReturn` Just expectedAuthorId
     it "should pass pageSpec to hGetDraftsOfAuthor if an author is passed" $ do
       ref <- newIORef Nothing
       let expectedPageSpec = PageSpec (PageOffset 1) (PageLimit 2)
-          author = Just $ AuthorId 1
+          authorId = AuthorId 1
+          authUser = IdentifiedUser (UserId 0) False [authorId]
           h =
             defaultHandle
               { hGetDraftsOfAuthor =
@@ -125,24 +113,23 @@ spec =
               , hPageSpecParserHandle =
                   PageSpecParserHandle $ const $ Right expectedPageSpec
               }
-      _ <- run h someIdentifiedAuthUser author noPageQuery
+      _ <- run h authUser (Just authorId) noPageQuery
       readIORef ref `shouldReturn` Just expectedPageSpec
     it "should return result of hGetDraftsOfAuthor if an author is passed" $ do
       let expectedDrafts = [stubDraft {draftId = DraftId 1}]
-          author = Just $ AuthorId 1
+          authorId = AuthorId 1
+          authUser = IdentifiedUser (UserId 0) False [authorId]
           h = defaultHandle {hGetDraftsOfAuthor = \_ _ -> pure expectedDrafts}
-      r <- run h someIdentifiedAuthUser author noPageQuery
+      r <- run h authUser (Just authorId) noPageQuery
       r `shouldBe` expectedDrafts
-    describe "authorization if a user is passed" $ do
-      let passedAuthorId = AuthorId 1
-          expectedPermission = AuthorshipPermission $ Existing passedAuthorId
-      itShouldAuthorizeBeforeOperation expectedPermission $ \authUser hAuthorizationHandle onSuccess -> do
-        let h =
-              defaultHandle
-                { hGetDraftsOfAuthor = \_ _ -> onSuccess >> pure []
-                , hAuthorizationHandle
-                }
-        void $ run h authUser (Just passedAuthorId) noPageQuery
+    it
+      "should throw NoPermissionException if the authorId is passed which does not relate to the user" $ do
+      let ownedAuthorId = AuthorId 1
+          unownedAuthorId = AuthorId 2
+          authUser = IdentifiedUser (UserId 0) False [ownedAuthorId]
+          h = defaultHandle
+      run h authUser (Just unownedAuthorId) noPageQuery `shouldThrow`
+        isNoPermissionException
 
 defaultHandle :: Handle IO
 defaultHandle =
@@ -150,7 +137,6 @@ defaultHandle =
     { hGetDraftsOfUser = \_ _ -> pure []
     , hGetDraftsOfAuthor = \_ _ -> pure []
     , hPageSpecParserHandle = PageSpecParserHandle . const $ Right defaultPage
-    , hAuthorizationHandle = noOpAuthorizationHandle
     }
 
 noPageQuery :: PageSpecQuery

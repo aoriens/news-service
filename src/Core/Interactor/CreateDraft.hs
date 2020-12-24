@@ -10,9 +10,8 @@ module Core.Interactor.CreateDraft
 
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.Category
-import Core.Deletable
 import Core.EntityId
 import Core.Exception
 import Core.Image
@@ -25,8 +24,7 @@ import qualified Data.Text as T
 
 data Handle m =
   Handle
-    { hAuthorizationHandle :: AuthorizationHandle
-    , hGetAuthorIdByUserIdIfExactlyOne :: UserId -> m (Maybe AuthorId)
+    { hGetAuthorIdByUserIdIfExactlyOne :: UserId -> m (Maybe AuthorId)
     , hCreateDraft :: CreateDraftCommand -> m (Either CreateDraftFailure Draft)
     , hRejectImageIfDisallowed :: MonadThrow m =>
                                     Image -> m ()
@@ -39,14 +37,10 @@ run ::
   -> CreateDraftRequest
   -> m Draft
 run h@Handle {..} authUser request = do
-  authorId' <- inferAuthorIdFromRequestOrUser h authUser request
-  requirePermission
-    hAuthorizationHandle
-    (AuthorshipPermission $ Existing authorId')
-    authUser
-    actionName
+  authorId <- inferAuthorIdFromRequestOrUser h authUser request
+  authorize actionName $ authUser `authUserShouldBeAuthor` authorId
   rejectRequestIfInvalid h request
-  hCreateDraft (makeCommand request authorId') >>=
+  hCreateDraft (makeCommand request authorId) >>=
     either (throwM . exceptionFromGatewayFailure) pure
 
 inferAuthorIdFromRequestOrUser ::

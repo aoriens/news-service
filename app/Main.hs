@@ -13,7 +13,6 @@ import Control.Monad.IO.Class
 import Core.Authentication
 import Core.Authentication.Impl as AuthImpl
 import Core.Author
-import qualified Core.Authorization.Impl
 import Core.Category
 import Core.Comment
 import Core.Image
@@ -256,11 +255,7 @@ runCreateAuthorHandler Deps {..} SessionDeps {..} =
       , hAuthenticate = sdAuthenticate
       }
   where
-    interactorH =
-      ICreateAuthor.Handle
-        { hAuthorizationHandle = Core.Authorization.Impl.new
-        , hCreateAuthor = Database.createAuthor
-        }
+    interactorH = ICreateAuthor.Handle {hCreateAuthor = Database.createAuthor}
 
 runGetAuthorsHandler :: Deps -> SessionDeps -> Web.Application
 runGetAuthorsHandler Deps {..} SessionDeps {..} =
@@ -274,8 +269,7 @@ runGetAuthorsHandler Deps {..} SessionDeps {..} =
   where
     interactorH =
       IGetAuthors.Handle
-        { hAuthorizationHandle = Core.Authorization.Impl.new
-        , hGetAuthors = Database.getAuthors
+        { hGetAuthors = Database.getAuthors
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
@@ -292,11 +286,7 @@ runPatchAuthorHandler authorId Deps {..} SessionDeps {..} =
       }
     authorId
   where
-    interactorH =
-      IUpdateAuthor.Handle
-        { hAuthorizationHandle = Core.Authorization.Impl.new
-        , hUpdateAuthor = Database.updateAuthor
-        }
+    interactorH = IUpdateAuthor.Handle {hUpdateAuthor = Database.updateAuthor}
 
 runGetAuthorHandler :: AuthorId -> Deps -> SessionDeps -> Web.Application
 runGetAuthorHandler authorId Deps {..} SessionDeps {..} =
@@ -529,8 +519,7 @@ runCreateTagHandler Deps {..} SessionDeps {..} =
   where
     interactorH =
       ICreateTag.Handle
-        { hAuthorizationHandle = Core.Authorization.Impl.new
-        , hCreateTagNamed = Database.createTagNamed
+        { hCreateTagNamed = Database.createTagNamed
         , hFindTagNamed = Database.findTagNamed
         }
 
@@ -607,8 +596,7 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
   where
     interactorH =
       ICreateDraft.Handle
-        { hAuthorizationHandle = Core.Authorization.Impl.new
-        , hGetAuthorIdByUserIdIfExactlyOne =
+        { hGetAuthorIdByUserIdIfExactlyOne =
             Database.getAuthorIdByUserIdIfExactlyOne
         , hCreateDraft = Database.createDraft
         , hRejectImageIfDisallowed =
@@ -691,7 +679,6 @@ runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
       IGetDrafts.Handle
         { hGetDraftsOfAuthor = Database.getDraftsOfAuthor
         , hGetDraftsOfUser = Database.getDraftsOfUser
-        , hAuthorizationHandle = Core.Authorization.Impl.new
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 

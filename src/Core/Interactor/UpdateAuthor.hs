@@ -5,15 +5,14 @@ module Core.Interactor.UpdateAuthor
 
 import Control.Monad.Catch
 import Core.Author
-import Core.Authorization
+import Core.AuthorizationNG
 import Core.EntityId
 import Core.Exception
 import qualified Data.Text as T
 
-data Handle m =
+newtype Handle m =
   Handle
-    { hAuthorizationHandle :: AuthorizationHandle
-    , hUpdateAuthor :: AuthorId -> T.Text -> m (Maybe Author)
+    { hUpdateAuthor :: AuthorId -> T.Text -> m (Maybe Author)
     }
 
 run ::
@@ -24,11 +23,7 @@ run ::
   -> T.Text
   -> m Author
 run Handle {..} authUser aid newDescription = do
-  requirePermission
-    hAuthorizationHandle
-    AdminPermission
-    authUser
-    "update author"
+  authorize "update author" $ authUserShouldBeAdmin authUser
   optAuthor' <- hUpdateAuthor aid newDescription
   case optAuthor' of
     Just author' -> pure author'
