@@ -11,14 +11,14 @@ module Database
   , createCategory
   , getCategory
   , getCategories
-  , getCategoryIdBySiblingAndName
-  , getCategoryIdByParentAndName
+  , DCategories.getCategoryIdBySiblingAndName
+  , DCategories.getCategoryIdByParentAndName
   , categoryIdWithParentAndNameExists
-  , categoryIsDescendantOf
-  , getCategoryName
+  , DCategories.categoryIsDescendantOf
+  , DCategories.getCategoryName
   , deleteCategoryAndDescendants
   , setCategoryIdToNewsVersionsInCategoryAndDescendantCategories
-  , updateCategory
+  , DCategories.updateCategory
   -- * Images
   , DImages.getImage
   -- * News
@@ -73,7 +73,6 @@ import qualified Core.Interactor.DeleteAuthor as IDeleteAuthor
 import qualified Core.Interactor.GetCommentsForNews as IGetCommentsForNews
 import qualified Core.Interactor.GetNewsList as IListNews
 import qualified Core.Interactor.PublishDraft as IPublishDraft
-import qualified Core.Interactor.UpdateCategory as IUpdateCategory
 import qualified Core.Interactor.UpdateDraft as IUpdateDraft
 import qualified Core.Interactor.UpdateTag as IUpdateTag
 import Core.News
@@ -147,33 +146,11 @@ setCategoryIdToNewsVersionsInCategoryAndDescendantCategories h newCatId oldCatId
     newCatId
     oldCatId
 
-updateCategory ::
-     DB.Handle
-  -> IUpdateCategory.Request
-  -> IO (Either IUpdateCategory.UpdateCategoryFailure Category)
-updateCategory h = runTransactionRW h . DCategories.updateCategory
-
-getCategoryIdBySiblingAndName ::
-     DB.Handle -> CategoryId -> T.Text -> IO (Maybe CategoryId)
-getCategoryIdBySiblingAndName h catId name =
-  runTransactionRO h $ DCategories.getCategoryIdBySiblingAndName catId name
-
-getCategoryIdByParentAndName ::
-     DB.Handle -> Maybe CategoryId -> T.Text -> IO (Maybe CategoryId)
-getCategoryIdByParentAndName h catId name =
-  runTransactionRO h $ DCategories.getCategoryIdByParentAndName catId name
-
 categoryIdWithParentAndNameExists ::
      DB.Handle -> Maybe CategoryId -> T.Text -> IO Bool
 categoryIdWithParentAndNameExists h parentId name =
-  isJust <$> getCategoryIdByParentAndName h parentId name
-
-categoryIsDescendantOf :: DB.Handle -> CategoryId -> CategoryId -> IO Bool
-categoryIsDescendantOf h desc anc =
-  runTransactionRO h $ DCategories.categoryIsDescendantOf desc anc
-
-getCategoryName :: DB.Handle -> CategoryId -> IO (Maybe T.Text)
-getCategoryName h = runTransactionRO h . DCategories.getCategoryName
+  isJust <$>
+  DB.runTransactionRO h (DCategories.getCategoryIdByParentAndName parentId name)
 
 getNewsList ::
      DB.Handle

@@ -5,7 +5,7 @@ module Web.Handler.PatchCategory
   , Handle(..)
   ) where
 
-import Control.Exception
+import Control.Monad.Catch
 import Core.Authentication
 import Core.Category
 import qualified Core.Interactor.UpdateCategory as IUpdateCategory
@@ -13,26 +13,25 @@ import qualified Data.Aeson as A
 import Data.Aeson ((.:!))
 import qualified Data.Text as T
 import Web.Application
-import Web.Credentials
+import Web.Credentials hiding (Credentials)
 import Web.Exception
 
-data Handle =
+data Handle m =
   Handle
-    { hUpdateCategory :: AuthenticatedUser -> IUpdateCategory.Request -> IO (Either IUpdateCategory.Failure Category)
+    { hUpdateCategory :: AuthenticatedUser -> IUpdateCategory.Request -> m (Either IUpdateCategory.Failure Category)
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Request -> IO a
+                                          Request -> m a
     , hPresent :: Category -> Response
-    , hAuthenticationHandle :: AuthenticationHandle IO
+    , hAuthenticate :: Maybe Credentials -> m AuthenticatedUser
     }
 
-run :: Handle -> CategoryId -> Application
+run :: MonadThrow m => Handle m -> CategoryId -> GenericApplication m
 run Handle {..} catId request respond = do
-  authUser <-
-    authenticate hAuthenticationHandle =<< getCredentialsFromRequest request
+  authUser <- hAuthenticate =<< getCredentialsFromRequest request
   body <- hLoadJSONRequestBody request
   hUpdateCategory authUser (updateCategoryRequestFromBody catId body) >>= \case
     Right cat -> respond $ hPresent cat
-    Left failure -> throwIO $ exceptionFromFailure failure
+    Left failure -> throwM $ exceptionFromFailure failure
 
 updateCategoryRequestFromBody ::
      CategoryId -> RequestBody -> IUpdateCategory.Request

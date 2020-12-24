@@ -128,8 +128,11 @@ data Deps =
     , dPageSpecParserHandle :: PageSpecParserHandle
     , dJSONEncode :: forall a. A.ToJSON a =>
                                  a -> BB.Builder
+    , dLoadJSONRequestBody' :: forall a. A.FromJSON a =>
+                                           Web.Request -> Database.Transaction a
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Web.Request -> IO a
+    -- ^ @todo: obsolete, should be deleted
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
     , dRenderAppURI :: AppURI -> T.Text
@@ -170,6 +173,11 @@ getDeps = do
             Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
         , dJSONEncode
         , dLoadJSONRequestBody =
+            RequestBodyLoader.loadJSONRequestBody
+              RequestBodyLoader.Config
+                {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
+        , dLoadJSONRequestBody' =
+            liftIO .
             RequestBodyLoader.loadJSONRequestBody
               RequestBodyLoader.Config
                 {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
@@ -394,26 +402,26 @@ runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
 
 runUpdateCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
 runUpdateCategoryHandler categoryId Deps {..} SessionDeps {..} =
+  transactionApplicationToIOApplication sdDatabaseHandle $
   HPatchCategory.run
     HPatchCategory.Handle
-      { hUpdateCategory =
-          IUpdateCategory.run
-            IUpdateCategory.Handle
-              { hUpdateCategory = Database.updateCategory sdDatabaseHandle
-              , hGetCategoryIdBySiblingAndName =
-                  Database.getCategoryIdBySiblingAndName sdDatabaseHandle
-              , hGetCategoryIdByParentAndName =
-                  Database.getCategoryIdByParentAndName sdDatabaseHandle
-              , hCategoryIsDescendantOf =
-                  Database.categoryIsDescendantOf sdDatabaseHandle
-              , hGetCategoryName = Database.getCategoryName sdDatabaseHandle
-              }
-      , hLoadJSONRequestBody = dLoadJSONRequestBody
+      { hUpdateCategory = IUpdateCategory.run updateCategoryH
+      , hLoadJSONRequestBody = dLoadJSONRequestBody'
       , hPresent =
           presentUpdatedCategory dAppURIConfig dRepresentationBuilderHandle
-      , hAuthenticationHandle = sdAuthenticationHandle
+      , hAuthenticate = sdAuthenticate
       }
     categoryId
+  where
+    updateCategoryH =
+      IUpdateCategory.Handle
+        { hUpdateCategory = Database.updateCategory
+        , hGetCategoryIdBySiblingAndName =
+            Database.getCategoryIdBySiblingAndName
+        , hGetCategoryIdByParentAndName = Database.getCategoryIdByParentAndName
+        , hCategoryIsDescendantOf = Database.categoryIsDescendantOf
+        , hGetCategoryName = Database.getCategoryName
+        }
 
 runGetNewsListHandler :: Deps -> SessionDeps -> Web.Application
 runGetNewsListHandler Deps {..} SessionDeps {..} =
@@ -786,6 +794,7 @@ data SessionDeps =
   SessionDeps
     { sdDatabaseHandle :: Database.Handle
     , sdAuthenticationHandle :: AuthenticationHandle IO
+    , sdAuthenticate :: Maybe Credentials -> Database.Transaction AuthenticatedUser
     }
 
 sessionDeps :: Deps -> Web.Session -> SessionDeps
@@ -794,6 +803,8 @@ sessionDeps Deps {..} session =
     { sdDatabaseHandle =
         sessionDatabaseHandle dDatabaseConnectionConfig dLoggerHandle session
     , sdAuthenticationHandle = dMakeAuthenticationHandle session
+    -- ^ @todo: obsolete, should be deleted
+    , sdAuthenticate = liftIO . authenticate (dMakeAuthenticationHandle session)
     }
 
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
