@@ -3,7 +3,7 @@
 -- | The module can create and configure 'Web.RouterConfiguration.Handle'.
 module RouterConfigurationHandle
   ( createWith
-  , Deps(..)
+  , Handle(..)
   ) where
 
 import qualified Config as Cf
@@ -102,6 +102,21 @@ import Web.RepresentationBuilder
 import qualified Web.RouterConfiguration
 
 -- | External dependencies we need to have passed in.
+data Handle =
+  Handle
+    { hDatabaseConnectionConfig :: DBConnManager.Config
+    , hConfig :: Cf.Config
+    , hLoggerHandle :: Logger.Handle IO
+    , hPageSpecParserHandle :: PageSpecParserHandle
+    , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
+                                          Web.Request -> Database.Transaction a
+    , hSecretTokenIOState :: GSecretToken.IOState
+    , hAppURIConfig :: AppURIConfig
+    , hRepresentationBuilderHandle :: RepBuilderHandle
+    }
+
+-- File-local type containing well-known dependencies to be passed to
+-- every handler
 data Deps =
   Deps
     { dDatabaseConnectionConfig :: DBConnManager.Config
@@ -118,12 +133,13 @@ data Deps =
 type HandlerProducer
    = Deps -> SessionDeps -> Web.GenericApplication Database.Transaction
 
-createWith :: Deps -> Web.RouterConfiguration.Handle Web.ApplicationWithSession
-createWith deps = produceHandler <$> handlerProducers
+createWith :: Handle -> Web.RouterConfiguration.Handle Web.ApplicationWithSession
+createWith h = produceHandler <$> handlerProducers
   where
     produceHandler :: HandlerProducer -> Web.ApplicationWithSession
     produceHandler handler session =
-      let sessionDeps = sessionDepsWithDeps deps session
+      let deps = depsWithHandle h
+          sessionDeps = sessionDepsWithDeps deps session
        in transactionApplicationToIOApplication (sdDatabaseHandle sessionDeps) $
           handler deps sessionDeps
     handlerProducers :: Web.RouterConfiguration.Handle HandlerProducer
@@ -165,6 +181,19 @@ createWith deps = produceHandler <$> handlerProducers
         , hRunGetDraftsOfNewsArticleHandler = runGetDraftsOfNewsArticleHandler
         , hRunCreateDraftFromNewsHandler = runCreateDraftFromNewsHandler
         }
+
+depsWithHandle :: Handle -> Deps
+depsWithHandle Handle {..} =
+  Deps
+    { dDatabaseConnectionConfig = hDatabaseConnectionConfig
+    , dConfig = hConfig
+    , dLoggerHandle = hLoggerHandle
+    , dPageSpecParserHandle = hPageSpecParserHandle
+    , dLoadJSONRequestBody = hLoadJSONRequestBody
+    , dSecretTokenIOState = hSecretTokenIOState
+    , dAppURIConfig = hAppURIConfig
+    , dRepresentationBuilderHandle = hRepresentationBuilderHandle
+    }
 
 runCreateAuthorHandler :: HandlerProducer
 runCreateAuthorHandler Deps {..} SessionDeps {..} =

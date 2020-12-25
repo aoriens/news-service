@@ -99,9 +99,7 @@ getWebEntryPointHandle Deps {..} = do
     Web.EntryPoint.Handle
       { hState
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
-      , hRouterConfigurationHandle =
-          RouterConfigurationHandle.createWith
-            RouterConfigurationHandle.Deps {..}
+      , hRouterConfigurationHandle = routerConfigurationH
       , hShowInternalExceptionInfoInResponses =
           Cf.cfShowInternalErrorInfoInResponse dConfig
       , hPresentCoreException =
@@ -111,6 +109,19 @@ getWebEntryPointHandle Deps {..} = do
       , hMethodNotAllowedResponse = methodNotAllowedResponse
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
+  where
+    routerConfigurationH =
+      RouterConfigurationHandle.createWith
+        RouterConfigurationHandle.Handle
+          { hDatabaseConnectionConfig = dDatabaseConnectionConfig
+          , hConfig = dConfig
+          , hLoggerHandle = dLoggerHandle
+          , hPageSpecParserHandle = dPageSpecParserHandle
+          , hLoadJSONRequestBody = dLoadJSONRequestBody
+          , hSecretTokenIOState = dSecretTokenIOState
+          , hAppURIConfig = dAppURIConfig
+          , hRepresentationBuilderHandle = dRepresentationBuilderHandle
+          }
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
