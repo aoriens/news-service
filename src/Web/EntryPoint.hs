@@ -23,11 +23,12 @@ import Web.Application
 import Web.Application.Internal.SessionId
 import Web.Exception
 import qualified Web.Router as R
+import qualified Web.RouterConfiguration as RouterConfiguration
 
 data Handle =
   Handle
     { hLogger :: Session -> Logger.Handle IO
-    , hRouter :: R.Router ApplicationWithSession
+    , hRouterConfigurationHandle :: RouterConfiguration.Handle ApplicationWithSession
     , hState :: State
     , hShowInternalExceptionInfoInResponses :: Bool
     , hPresentCoreException :: CoreException -> Response
@@ -126,7 +127,7 @@ isAsyncException e
 
 routerApplication :: Handle -> ApplicationWithSession
 routerApplication Handle {..} session request respond =
-  case R.route hRouter request of
+  case R.route router request of
     R.HandlerResult handler -> handler session request respond
     R.ResourceNotFoundResult -> do
       Logger.error
@@ -135,3 +136,5 @@ routerApplication Handle {..} session request respond =
       respond hNotFoundResponse
     R.MethodNotSupportedResult knownMethods ->
       respond $ hMethodNotAllowedResponse knownMethods
+  where
+    router = RouterConfiguration.router hRouterConfigurationHandle

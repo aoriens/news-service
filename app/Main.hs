@@ -111,7 +111,7 @@ import Web.Presenter
 import Web.Presenter.Error
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
-import qualified Web.Router as R
+import qualified Web.RouterConfiguration
 
 -- Some common module dependencies. Its purpose is to be passed to
 -- functions **in this module**, keeping extensibility in the number
@@ -125,7 +125,6 @@ data Deps =
     , dPageSpecParserHandle :: PageSpecParserHandle
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Web.Request -> Database.Transaction a
-    -- ^ @todo: obsolete, should be deleted
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
     , dRepresentationBuilderHandle :: RepBuilderHandle
@@ -134,7 +133,7 @@ data Deps =
 main :: IO ()
 main = do
   (loggerWorker, deps@Deps {..}) <- getDeps
-  webHandle <- getWebAppHandle deps
+  webHandle <- getWebEntryPointHandle deps
   race_ loggerWorker $ do
     Logger.info dLoggerHandle "Starting Warp"
     Warp.runSettings
@@ -174,14 +173,14 @@ getDeps = do
               }
         })
 
-getWebAppHandle :: Deps -> IO Web.EntryPoint.Handle
-getWebAppHandle deps@Deps {..} = do
+getWebEntryPointHandle :: Deps -> IO Web.EntryPoint.Handle
+getWebEntryPointHandle deps@Deps {..} = do
   hState <- Web.EntryPoint.makeState
   pure
     Web.EntryPoint.Handle
       { hState
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
-      , hRouter = router deps
+      , hRouterConfigurationHandle = routerConfigurationHandle deps
       , hShowInternalExceptionInfoInResponses =
           Cf.cfShowInternalErrorInfoInResponse dConfig
       , hPresentCoreException =
@@ -192,56 +191,49 @@ getWebAppHandle deps@Deps {..} = do
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
 
-router :: Deps -> R.Router (Web.Session -> Web.Application)
-router deps =
-  fmap (\h -> h deps . sessionDeps deps) $
-  R.new $ \case
-    ImageURI imageId -> [R.get $ runGetImageHandler imageId]
-    UsersURI -> [R.get runGetUsersHandler, R.post runCreateUserHandler]
-    UserURI userId ->
-      [R.get $ runGetUserHandler userId, R.delete $ runDeleteUserHandler userId]
-    AuthorsURI -> [R.get runGetAuthorsHandler, R.post runCreateAuthorHandler]
-    AuthorURI authorId ->
-      [ R.get $ runGetAuthorHandler authorId
-      , R.delete $ runDeleteAuthorHandler authorId
-      , R.patch $ runPatchAuthorHandler authorId
-      ]
-    CategoriesURI ->
-      [R.get runGetCategoriesHandler, R.post runCreateCategoryHandler]
-    CategoryURI categoryId ->
-      [ R.get $ runGetCategoryHandler categoryId
-      , R.delete $ runDeleteCategoryHandler categoryId
-      , R.patch $ runUpdateCategoryHandler categoryId
-      ]
-    NewsListURI -> [R.get runGetNewsListHandler]
-    NewsItemURI newsId -> [R.get $ runGetNewsHandler newsId]
-    TagsURI -> [R.get runGetTagsHandler, R.post runCreateTagHandler]
-    TagURI tagId ->
-      [ R.get $ runGetTagHandler tagId
-      , R.delete $ runDeleteTagHandler tagId
-      , R.patch $ runPatchTagHandler tagId
-      ]
-    DraftsURI ->
-      [R.get $ runGetDraftsHandler Nothing, R.post runCreateDraftHandler]
-    AuthorDraftsURI authorId -> [R.get $ runGetDraftsHandler (Just authorId)]
-    DraftURI draftId ->
-      [ R.get $ runGetDraftHandler draftId
-      , R.delete $ runDeleteDraftHandler draftId
-      , R.patch $ runPatchDraftHandler draftId
-      ]
-    PublishDraftURI draftId -> [R.post $ runPublishDraftHandler draftId]
-    CommentsForNewsURI newsId ->
-      [ R.get $ runGetCommentsForNewsHandler newsId
-      , R.post $ runCreateCommentHandler newsId
-      ]
-    CommentURI commentId ->
-      [ R.get $ runGetCommentHandler commentId
-      , R.delete $ runDeleteCommentHandler commentId
-      ]
-    NewsItemDraftsURI newsId ->
-      [ R.get $ runGetDraftsOfNewsArticleHandler newsId
-      , R.post $ runCreateDraftFromNewsHandler newsId
-      ]
+routerConfigurationHandle ::
+     Deps -> Web.RouterConfiguration.Handle Web.ApplicationWithSession
+routerConfigurationHandle deps =
+  injectDependencies <$>
+  Web.RouterConfiguration.Handle
+    { hRunGetImageHandler = runGetImageHandler
+    , hRunGetUsersHandler = runGetUsersHandler
+    , hRunCreateUserHandler = runCreateUserHandler
+    , hRunGetUserHandler = runGetUserHandler
+    , hRunDeleteUserHandler = runDeleteUserHandler
+    , hRunGetAuthorsHandler = runGetAuthorsHandler
+    , hRunCreateAuthorHandler = runCreateAuthorHandler
+    , hRunGetAuthorHandler = runGetAuthorHandler
+    , hRunDeleteAuthorHandler = runDeleteAuthorHandler
+    , hRunPatchAuthorHandler = runPatchAuthorHandler
+    , hRunGetCategoriesHandler = runGetCategoriesHandler
+    , hRunCreateCategoryHandler = runCreateCategoryHandler
+    , hRunGetCategoryHandler = runGetCategoryHandler
+    , hRunDeleteCategoryHandler = runDeleteCategoryHandler
+    , hRunUpdateCategoryHandler = runUpdateCategoryHandler
+    , hRunGetNewsListHandler = runGetNewsListHandler
+    , hRunGetNewsHandler = runGetNewsHandler
+    , hRunGetTagsHandler = runGetTagsHandler
+    , hRunCreateTagHandler = runCreateTagHandler
+    , hRunGetTagHandler = runGetTagHandler
+    , hRunDeleteTagHandler = runDeleteTagHandler
+    , hRunPatchTagHandler = runPatchTagHandler
+    , hRunGetDraftsHandler = runGetDraftsHandler Nothing
+    , hRunCreateDraftHandler = runCreateDraftHandler
+    , hRunGetAuthorDraftsHandler = runGetDraftsHandler . Just
+    , hRunGetDraftHandler = runGetDraftHandler
+    , hRunDeleteDraftHandler = runDeleteDraftHandler
+    , hRunPatchDraftHandler = runPatchDraftHandler
+    , hRunPublishDraftHandler = runPublishDraftHandler
+    , hRunGetCommentsForNewsHandler = runGetCommentsForNewsHandler
+    , hRunCreateCommentHandler = runCreateCommentHandler
+    , hRunGetCommentHandler = runGetCommentHandler
+    , hRunDeleteCommentHandler = runDeleteCommentHandler
+    , hRunGetDraftsOfNewsArticleHandler = runGetDraftsOfNewsArticleHandler
+    , hRunCreateDraftFromNewsHandler = runCreateDraftFromNewsHandler
+    }
+  where
+    injectDependencies handler = handler deps . sessionDepsWithDeps deps
 
 runCreateAuthorHandler :: Deps -> SessionDeps -> Web.Application
 runCreateAuthorHandler Deps {..} SessionDeps {..} =
@@ -823,8 +815,8 @@ data SessionDeps =
     , sdAuthenticate :: Maybe Credentials -> Database.Transaction AuthenticatedUser
     }
 
-sessionDeps :: Deps -> Web.Session -> SessionDeps
-sessionDeps Deps {..} session =
+sessionDepsWithDeps :: Deps -> Web.Session -> SessionDeps
+sessionDepsWithDeps Deps {..} session =
   SessionDeps
     { sdDatabaseHandle =
         sessionDatabaseHandle dDatabaseConnectionConfig dLoggerHandle session

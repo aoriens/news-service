@@ -166,6 +166,7 @@ library
     , Web.RequestBodyLoader
     , Web.Response
     , Web.Router
+    , Web.RouterConfiguration
   hs-source-dirs:
       src
   build-depends:
