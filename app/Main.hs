@@ -191,53 +191,60 @@ getWebEntryPointHandle deps@Deps {..} = do
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
 
+type HandlerProducer
+   = Deps -> SessionDeps -> Web.GenericApplication Database.Transaction
+
 routerConfigurationHandle ::
      Deps -> Web.RouterConfiguration.Handle Web.ApplicationWithSession
-routerConfigurationHandle deps =
-  injectDependencies <$>
-  Web.RouterConfiguration.Handle
-    { hRunGetImageHandler = runGetImageHandler
-    , hRunGetUsersHandler = runGetUsersHandler
-    , hRunCreateUserHandler = runCreateUserHandler
-    , hRunGetUserHandler = runGetUserHandler
-    , hRunDeleteUserHandler = runDeleteUserHandler
-    , hRunGetAuthorsHandler = runGetAuthorsHandler
-    , hRunCreateAuthorHandler = runCreateAuthorHandler
-    , hRunGetAuthorHandler = runGetAuthorHandler
-    , hRunDeleteAuthorHandler = runDeleteAuthorHandler
-    , hRunPatchAuthorHandler = runPatchAuthorHandler
-    , hRunGetCategoriesHandler = runGetCategoriesHandler
-    , hRunCreateCategoryHandler = runCreateCategoryHandler
-    , hRunGetCategoryHandler = runGetCategoryHandler
-    , hRunDeleteCategoryHandler = runDeleteCategoryHandler
-    , hRunUpdateCategoryHandler = runUpdateCategoryHandler
-    , hRunGetNewsListHandler = runGetNewsListHandler
-    , hRunGetNewsHandler = runGetNewsHandler
-    , hRunGetTagsHandler = runGetTagsHandler
-    , hRunCreateTagHandler = runCreateTagHandler
-    , hRunGetTagHandler = runGetTagHandler
-    , hRunDeleteTagHandler = runDeleteTagHandler
-    , hRunPatchTagHandler = runPatchTagHandler
-    , hRunGetDraftsHandler = runGetDraftsHandler Nothing
-    , hRunCreateDraftHandler = runCreateDraftHandler
-    , hRunGetAuthorDraftsHandler = runGetDraftsHandler . Just
-    , hRunGetDraftHandler = runGetDraftHandler
-    , hRunDeleteDraftHandler = runDeleteDraftHandler
-    , hRunPatchDraftHandler = runPatchDraftHandler
-    , hRunPublishDraftHandler = runPublishDraftHandler
-    , hRunGetCommentsForNewsHandler = runGetCommentsForNewsHandler
-    , hRunCreateCommentHandler = runCreateCommentHandler
-    , hRunGetCommentHandler = runGetCommentHandler
-    , hRunDeleteCommentHandler = runDeleteCommentHandler
-    , hRunGetDraftsOfNewsArticleHandler = runGetDraftsOfNewsArticleHandler
-    , hRunCreateDraftFromNewsHandler = runCreateDraftFromNewsHandler
-    }
+routerConfigurationHandle deps = produceHandler <$> handlerProducers
   where
-    injectDependencies handler = handler deps . sessionDepsWithDeps deps
+    produceHandler :: HandlerProducer -> Web.ApplicationWithSession
+    produceHandler handler session =
+      let sessionDeps = sessionDepsWithDeps deps session
+       in transactionApplicationToIOApplication (sdDatabaseHandle sessionDeps) $
+          handler deps sessionDeps
+    handlerProducers :: Web.RouterConfiguration.Handle HandlerProducer
+    handlerProducers =
+      Web.RouterConfiguration.Handle
+        { hRunGetImageHandler = runGetImageHandler
+        , hRunGetUsersHandler = runGetUsersHandler
+        , hRunCreateUserHandler = runCreateUserHandler
+        , hRunGetUserHandler = runGetUserHandler
+        , hRunDeleteUserHandler = runDeleteUserHandler
+        , hRunGetAuthorsHandler = runGetAuthorsHandler
+        , hRunCreateAuthorHandler = runCreateAuthorHandler
+        , hRunGetAuthorHandler = runGetAuthorHandler
+        , hRunDeleteAuthorHandler = runDeleteAuthorHandler
+        , hRunPatchAuthorHandler = runPatchAuthorHandler
+        , hRunGetCategoriesHandler = runGetCategoriesHandler
+        , hRunCreateCategoryHandler = runCreateCategoryHandler
+        , hRunGetCategoryHandler = runGetCategoryHandler
+        , hRunDeleteCategoryHandler = runDeleteCategoryHandler
+        , hRunUpdateCategoryHandler = runUpdateCategoryHandler
+        , hRunGetNewsListHandler = runGetNewsListHandler
+        , hRunGetNewsHandler = runGetNewsHandler
+        , hRunGetTagsHandler = runGetTagsHandler
+        , hRunCreateTagHandler = runCreateTagHandler
+        , hRunGetTagHandler = runGetTagHandler
+        , hRunDeleteTagHandler = runDeleteTagHandler
+        , hRunPatchTagHandler = runPatchTagHandler
+        , hRunGetDraftsHandler = runGetDraftsHandler Nothing
+        , hRunCreateDraftHandler = runCreateDraftHandler
+        , hRunGetAuthorDraftsHandler = runGetDraftsHandler . Just
+        , hRunGetDraftHandler = runGetDraftHandler
+        , hRunDeleteDraftHandler = runDeleteDraftHandler
+        , hRunPatchDraftHandler = runPatchDraftHandler
+        , hRunPublishDraftHandler = runPublishDraftHandler
+        , hRunGetCommentsForNewsHandler = runGetCommentsForNewsHandler
+        , hRunCreateCommentHandler = runCreateCommentHandler
+        , hRunGetCommentHandler = runGetCommentHandler
+        , hRunDeleteCommentHandler = runDeleteCommentHandler
+        , hRunGetDraftsOfNewsArticleHandler = runGetDraftsOfNewsArticleHandler
+        , hRunCreateDraftFromNewsHandler = runCreateDraftFromNewsHandler
+        }
 
-runCreateAuthorHandler :: Deps -> SessionDeps -> Web.Application
+runCreateAuthorHandler :: HandlerProducer
 runCreateAuthorHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HCreateAuthor.run
     HCreateAuthor.Handle
       { hCreateAuthor = ICreateAuthor.run interactorH
@@ -249,9 +256,8 @@ runCreateAuthorHandler Deps {..} SessionDeps {..} =
   where
     interactorH = ICreateAuthor.Handle {hCreateAuthor = Database.createAuthor}
 
-runGetAuthorsHandler :: Deps -> SessionDeps -> Web.Application
+runGetAuthorsHandler :: HandlerProducer
 runGetAuthorsHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetAuthors.run
     HGetAuthors.Handle
       { hGetAuthors = IGetAuthors.run interactorH
@@ -265,9 +271,8 @@ runGetAuthorsHandler Deps {..} SessionDeps {..} =
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
-runPatchAuthorHandler :: AuthorId -> Deps -> SessionDeps -> Web.Application
+runPatchAuthorHandler :: AuthorId -> HandlerProducer
 runPatchAuthorHandler authorId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HPatchAuthor.run
     HPatchAuthor.Handle
       { hUpdateAuthor = IUpdateAuthor.run interactorH
@@ -280,9 +285,8 @@ runPatchAuthorHandler authorId Deps {..} SessionDeps {..} =
   where
     interactorH = IUpdateAuthor.Handle {hUpdateAuthor = Database.updateAuthor}
 
-runGetAuthorHandler :: AuthorId -> Deps -> SessionDeps -> Web.Application
+runGetAuthorHandler :: AuthorId -> HandlerProducer
 runGetAuthorHandler authorId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetAuthor.run
     HGetAuthor.Handle
       { hGetAuthor = IGetAuthor.run interactorH
@@ -293,9 +297,8 @@ runGetAuthorHandler authorId Deps {..} SessionDeps {..} =
   where
     interactorH = IGetAuthor.Handle {hGetAuthor = Database.getAuthor}
 
-runDeleteAuthorHandler :: AuthorId -> Deps -> SessionDeps -> Web.Application
+runDeleteAuthorHandler :: AuthorId -> HandlerProducer
 runDeleteAuthorHandler authorId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HDeleteAuthor.run
     HDeleteAuthor.Handle
       { hDeleteAuthor = IDeleteAuthor.run interactorH
@@ -310,9 +313,8 @@ runDeleteAuthorHandler authorId Deps {..} SessionDeps {..} =
         , hDeleteDraftsOfAuthor = Database.deleteDraftsOfAuthor
         }
 
-runCreateCategoryHandler :: Deps -> SessionDeps -> Web.Application
+runCreateCategoryHandler :: HandlerProducer
 runCreateCategoryHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HCreateCategory.run
     HCreateCategory.Handle
       { hCreateCategory = ICreateCategory.run interactorH
@@ -329,9 +331,8 @@ runCreateCategoryHandler Deps {..} SessionDeps {..} =
             Database.categoryIdWithParentAndNameExists
         }
 
-runGetCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
+runGetCategoryHandler :: CategoryId -> HandlerProducer
 runGetCategoryHandler categoryId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetCategory.run
     HGetCategory.Handle
       { hGetCategory = IGetCategory.run interactorH
@@ -341,9 +342,8 @@ runGetCategoryHandler categoryId Deps {..} SessionDeps {..} =
   where
     interactorH = IGetCategory.Handle {hGetCategory = Database.getCategory}
 
-runGetCategoriesHandler :: Deps -> SessionDeps -> Web.Application
+runGetCategoriesHandler :: HandlerProducer
 runGetCategoriesHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetCategories.run
     HGetCategories.Handle
       { hGetCategories = IGetCategories.run interactorH
@@ -356,9 +356,8 @@ runGetCategoriesHandler Deps {..} SessionDeps {..} =
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
-runDeleteCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
+runDeleteCategoryHandler :: CategoryId -> HandlerProducer
 runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HDeleteCategory.run
     HDeleteCategory.Handle
       { hDeleteCategory = IDeleteCategory.run interactorH
@@ -375,9 +374,8 @@ runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
         , hDeleteCategoryAndDescendants = Database.deleteCategoryAndDescendants
         }
 
-runUpdateCategoryHandler :: CategoryId -> Deps -> SessionDeps -> Web.Application
+runUpdateCategoryHandler :: CategoryId -> HandlerProducer
 runUpdateCategoryHandler categoryId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HPatchCategory.run
     HPatchCategory.Handle
       { hUpdateCategory = IUpdateCategory.run interactorH
@@ -398,9 +396,8 @@ runUpdateCategoryHandler categoryId Deps {..} SessionDeps {..} =
         , hGetCategoryName = Database.getCategoryName
         }
 
-runGetNewsListHandler :: Deps -> SessionDeps -> Web.Application
+runGetNewsListHandler :: HandlerProducer
 runGetNewsListHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetNewsList.run
     HGetNewsList.Handle
       { hGetNews = IGetNewsList.run interactorH
@@ -413,9 +410,8 @@ runGetNewsListHandler Deps {..} SessionDeps {..} =
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
-runGetNewsHandler :: NewsId -> Deps -> SessionDeps -> Web.Application
+runGetNewsHandler :: NewsId -> HandlerProducer
 runGetNewsHandler newsId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetNews.run
     HGetNews.Handle
       { hGetNews = IGetNews.run interactorH
@@ -425,9 +421,8 @@ runGetNewsHandler newsId Deps {..} SessionDeps {..} =
   where
     interactorH = IGetNews.Handle {hGetNews = Database.getNews}
 
-runCreateUserHandler :: Deps -> SessionDeps -> Web.Application
+runCreateUserHandler :: HandlerProducer
 runCreateUserHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HCreateUser.run
     HCreateUser.Handle
       { hCreateUser = ICreateUser.run interactorH
@@ -448,9 +443,8 @@ runCreateUserHandler Deps {..} SessionDeps {..} =
     secretTokenConfig =
       GSecretToken.Config {cfTokenLength = Cf.cfSecretTokenLength dConfig}
 
-runGetImageHandler :: ImageId -> Deps -> SessionDeps -> Web.Application
+runGetImageHandler :: ImageId -> HandlerProducer
 runGetImageHandler imageId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetImage.run
     HGetImage.Handle
       { hGetImage = IGetImage.run $ IGetImage.Handle Database.getImage
@@ -458,9 +452,8 @@ runGetImageHandler imageId Deps {..} SessionDeps {..} =
       }
     imageId
 
-runGetUserHandler :: UserId -> Deps -> SessionDeps -> Web.Application
+runGetUserHandler :: UserId -> HandlerProducer
 runGetUserHandler userId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetUser.run
     HGetUser.Handle
       { hGetUser = IGetUser.run interactorH
@@ -470,9 +463,8 @@ runGetUserHandler userId Deps {..} SessionDeps {..} =
   where
     interactorH = IGetUser.Handle Database.getExistingUser
 
-runDeleteUserHandler :: UserId -> Deps -> SessionDeps -> Web.Application
+runDeleteUserHandler :: UserId -> HandlerProducer
 runDeleteUserHandler userId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HDeleteUser.run
     HDeleteUser.Handle
       { hDeleteUser = IDeleteUser.run interactorH
@@ -483,9 +475,8 @@ runDeleteUserHandler userId Deps {..} SessionDeps {..} =
   where
     interactorH = IDeleteUser.Handle Database.deleteUser
 
-runGetUsersHandler :: Deps -> SessionDeps -> Web.Application
+runGetUsersHandler :: HandlerProducer
 runGetUsersHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetUsers.run
     HGetUsers.Handle
       { hGetUsers = IGetUsers.run interactorH
@@ -498,9 +489,8 @@ runGetUsersHandler Deps {..} SessionDeps {..} =
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
-runCreateTagHandler :: Deps -> SessionDeps -> Web.Application
+runCreateTagHandler :: HandlerProducer
 runCreateTagHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HCreateTag.run
     HCreateTag.Handle
       { hCreateTag = ICreateTag.run interactorH
@@ -515,9 +505,8 @@ runCreateTagHandler Deps {..} SessionDeps {..} =
         , hFindTagNamed = Database.findTagNamed
         }
 
-runGetTagHandler :: TagId -> Deps -> SessionDeps -> Web.Application
+runGetTagHandler :: TagId -> HandlerProducer
 runGetTagHandler tagId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetTag.run
     HGetTag.Handle
       { hGetTag = IGetTag.run interactorH
@@ -527,9 +516,8 @@ runGetTagHandler tagId Deps {..} SessionDeps {..} =
   where
     interactorH = IGetTag.Handle Database.getTag
 
-runDeleteTagHandler :: TagId -> Deps -> SessionDeps -> Web.Application
+runDeleteTagHandler :: TagId -> HandlerProducer
 runDeleteTagHandler tagId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HDeleteTag.run
     HDeleteTag.Handle
       { hDeleteTag = IDeleteTag.run interactorH
@@ -540,9 +528,8 @@ runDeleteTagHandler tagId Deps {..} SessionDeps {..} =
   where
     interactorH = IDeleteTag.Handle Database.deleteTag
 
-runPatchTagHandler :: TagId -> Deps -> SessionDeps -> Web.Application
+runPatchTagHandler :: TagId -> HandlerProducer
 runPatchTagHandler tagId' Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HPatchTag.run
     HPatchTag.Handle
       { hUpdateTag = IUpdateTag.run interactorH
@@ -558,9 +545,8 @@ runPatchTagHandler tagId' Deps {..} SessionDeps {..} =
         , hSetTagName = Database.setTagName
         }
 
-runGetTagsHandler :: Deps -> SessionDeps -> Web.Application
+runGetTagsHandler :: HandlerProducer
 runGetTagsHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetTags.run
     HGetTags.Handle
       { hGetTags = IGetTags.run interactorH
@@ -573,9 +559,8 @@ runGetTagsHandler Deps {..} SessionDeps {..} =
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
-runCreateDraftHandler :: Deps -> SessionDeps -> Web.Application
+runCreateDraftHandler :: HandlerProducer
 runCreateDraftHandler Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HCreateDraft.run
     HCreateDraft.Handle
       { hCreateDraft = ICreateDraft.run interactorH
@@ -595,10 +580,8 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
             rejectDisallowedImage $ Cf.cfAllowedImageMimeTypes dConfig
         }
 
-runCreateDraftFromNewsHandler ::
-     NewsId -> Deps -> SessionDeps -> Web.Application
+runCreateDraftFromNewsHandler :: NewsId -> HandlerProducer
 runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HCreateDraftFromNews.run
     HCreateDraftFromNews.Handle
       { hCreateDraftFromNews = ICreateDraftFromNews.run interactorH
@@ -614,10 +597,8 @@ runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
         , hCopyDraftFromNews = Database.copyDraftFromNews
         }
 
-runGetDraftsOfNewsArticleHandler ::
-     NewsId -> Deps -> SessionDeps -> Web.Application
+runGetDraftsOfNewsArticleHandler :: NewsId -> HandlerProducer
 runGetDraftsOfNewsArticleHandler newsId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetDraftsOfNewsArticle.run
     HGetDraftsOfNewsArticle.Handle
       { hGetDraftsOfNewsArticle = IGetDraftsOfNewsArticle.run interactorH
@@ -633,9 +614,8 @@ runGetDraftsOfNewsArticleHandler newsId Deps {..} SessionDeps {..} =
         , hGetDraftsCreatedFromNewsId = Database.getDraftsCreatedFromNewsId
         }
 
-runPublishDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runPublishDraftHandler :: DraftId -> HandlerProducer
 runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HPublishDraft.run
     HPublishDraft.Handle
       { hPublishDraft = IPublishDraft.run interactorH
@@ -656,9 +636,8 @@ runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
         , hOverwriteNewsWithDraft = Database.overwriteNewsWithDraft
         }
 
-runGetDraftsHandler :: Maybe AuthorId -> Deps -> SessionDeps -> Web.Application
+runGetDraftsHandler :: Maybe AuthorId -> HandlerProducer
 runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetDrafts.run
     HGetDrafts.Handle
       { hGetDrafts = IGetDrafts.run interactorH
@@ -674,9 +653,8 @@ runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
 
-runGetDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runGetDraftHandler :: DraftId -> HandlerProducer
 runGetDraftHandler draftId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetDraft.run
     HGetDraft.Handle
       { hGetDraft = IGetDraft.run interactorH
@@ -687,9 +665,8 @@ runGetDraftHandler draftId Deps {..} SessionDeps {..} =
   where
     interactorH = IGetDraft.Handle Database.getDraft
 
-runDeleteDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runDeleteDraftHandler :: DraftId -> HandlerProducer
 runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HDeleteDraft.run
     HDeleteDraft.Handle
       { hDeleteDraft = IDeleteDraft.run interactorH
@@ -704,9 +681,8 @@ runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =
         , hDeleteDraftAndItsContent = Database.deleteDraftAndItsContent
         }
 
-runPatchDraftHandler :: DraftId -> Deps -> SessionDeps -> Web.Application
+runPatchDraftHandler :: DraftId -> HandlerProducer
 runPatchDraftHandler draftId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HPatchDraft.run
     HPatchDraft.Handle
       { hUpdateDraft = IUpdateDraft.run interactorH
@@ -724,9 +700,8 @@ runPatchDraftHandler draftId Deps {..} SessionDeps {..} =
         , hUpdateDraft = Database.updateDraft
         }
 
-runCreateCommentHandler :: NewsId -> Deps -> SessionDeps -> Web.Application
+runCreateCommentHandler :: NewsId -> HandlerProducer
 runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HCreateComment.run
     HCreateComment.Handle
       { hCreateComment = ICreateComment.run interactorH
@@ -743,9 +718,8 @@ runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
         , hGetCurrentTime = liftIO GCurrentTime.getIntegralSecondsTime
         }
 
-runGetCommentHandler :: CommentId -> Deps -> SessionDeps -> Web.Application
+runGetCommentHandler :: CommentId -> HandlerProducer
 runGetCommentHandler commentId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetComment.run
     HGetComment.Handle
       { hGetComment = IGetComment.run interactorH
@@ -755,9 +729,8 @@ runGetCommentHandler commentId Deps {..} SessionDeps {..} =
   where
     interactorH = IGetComment.Handle {hGetComment = Database.getComment}
 
-runDeleteCommentHandler :: CommentId -> Deps -> SessionDeps -> Web.Application
+runDeleteCommentHandler :: CommentId -> HandlerProducer
 runDeleteCommentHandler commentId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HDeleteComment.run
     HDeleteComment.Handle
       { hDeleteComment = IDeleteComment.run interactorH
@@ -772,9 +745,8 @@ runDeleteCommentHandler commentId Deps {..} SessionDeps {..} =
         , hGetCommentAuthor = Database.getCommentAuthor
         }
 
-runGetCommentsForNewsHandler :: NewsId -> Deps -> SessionDeps -> Web.Application
+runGetCommentsForNewsHandler :: NewsId -> HandlerProducer
 runGetCommentsForNewsHandler newsId Deps {..} SessionDeps {..} =
-  transactionApplicationToIOApplication sdDatabaseHandle $
   HGetCommentsForNews.run
     HGetCommentsForNews.Handle
       { hGetCommentsForNews = IGetCommentsForNews.run interactorH
