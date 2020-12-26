@@ -19,8 +19,8 @@ createdb news
 psql news -f db_schema.sql
 ```
 
-3. You may populate the database with test data. Beware that it will erase old
-   data.
+3. You may populate the database with a test user. Beware: **it may erase your
+   data**.
 
 ```sh
 psql news -f test_data.sql
@@ -54,12 +54,13 @@ See [API documentation](documentation/API.md).
 # Development
 
 `curl_scripts` directory contains curl scripts to test supported requests
-quickly. See [how to use the scripts](curl_scripts/README.md).
+quickly. See [how to use the scripts](curl_scripts/README.md). You may use them
+to fill the database.
 
-`test_data.sql` contains an administrator user with the least authentication
-token possible, which helps to run requests which require authentication. The
-token corresponds to the pattern of `<USERID>,`, e.g. `1,`, if you populate the
-database with the test data right after creating it.
+If you executed `test_data.sql` script, you have an administrator user with the
+least authentication token possible, which helps to run requests which require
+authentication. The token corresponds to the pattern of `<USERID>,` - usually
+`1,`.
 
 See also [code and architecture](documentation/code-and-architecture.md) to get
 to know more about the code.
