@@ -55,11 +55,9 @@ import Core.Tag
 import Core.User
 import qualified Data.Aeson as A
 import qualified Database
-import qualified Database.Service.ConnectionManager as DBConnManager
 import qualified Database.Service.Primitives as Database
 import Gateway.CurrentTime as GCurrentTime
 import qualified Gateway.SecretToken as GSecretToken
-import qualified Logger
 import Web.AppURI
 import qualified Web.Application as Web
 import qualified Web.Handler.CreateAuthor as HCreateAuthor
@@ -103,16 +101,13 @@ import qualified Web.RouterConfiguration
 -- | External dependencies we need to have passed in.
 data Deps =
   Deps
-    { dDatabaseConnectionConfig :: DBConnManager.Config
-    , dConfig :: Cf.Config
-    , dLoggerHandleWith :: Web.Session -> Logger.Handle IO
+    { dConfig :: Cf.Config
     , dPageSpecParserHandle :: PageSpecParserHandle
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Web.Request -> Database.Transaction a
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
     , dRepresentationBuilderHandle :: RepBuilderHandle
-    , dDatabaseHandle :: Database.Handle
     , dAuthenticate :: Maybe Credentials -> Database.Transaction AuthenticatedUser
     }
 

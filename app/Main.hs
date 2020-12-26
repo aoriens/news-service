@@ -129,15 +129,12 @@ transactionApplicationToIOApplication h =
 handlersDepsWith :: Deps -> Web.Session -> Handlers.Deps
 handlersDepsWith deps@Deps {..} session =
   Handlers.Deps
-    { dDatabaseConnectionConfig
-    , dConfig
-    , dLoggerHandleWith = (`sessionLoggerHandle` dLoggerHandle)
+    { dConfig
     , dPageSpecParserHandle
     , dLoadJSONRequestBody
     , dSecretTokenIOState
     , dAppURIConfig
     , dRepresentationBuilderHandle
-    , dDatabaseHandle = databaseHandleWith deps session
     , dAuthenticate =
         Core.Authentication.authenticate $ authenticationHandleWith deps session
     }
