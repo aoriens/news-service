@@ -10,15 +10,18 @@ import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import Control.Monad.IO.Class
+import qualified Core.Authentication
+import qualified Core.Authentication.Impl
 import Core.Pagination
 import qualified Core.Pagination.Impl
-import qualified CreateHandlers
 import qualified Data.Aeson as A
 import Data.Text.Show
+import qualified Database
 import qualified Database.Service.ConnectionManager as DBConnManager
 import qualified Database.Service.Primitives as Database
 import qualified FrontEnd.Wai
 import qualified Gateway.SecretToken as GSecretToken
+import qualified Handlers
 import qualified Logger
 import qualified Logger.Impl
 import qualified Network.Wai.Handler.Warp as Warp
@@ -31,6 +34,7 @@ import qualified Web.JSONEncoder as JSONEncoder
 import Web.Presenter.Error
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
+import qualified Web.RouterConfiguration
 
 -- Some common module dependencies. Its purpose is to be passed to
 -- functions **in this module**, keeping extensibility in the number
@@ -93,7 +97,7 @@ getDeps = do
         })
 
 getWebEntryPointHandle :: Deps -> IO Web.EntryPoint.Handle
-getWebEntryPointHandle Deps {..} = do
+getWebEntryPointHandle deps@Deps {..} = do
   hState <- Web.EntryPoint.makeState
   pure
     Web.EntryPoint.Handle
@@ -110,17 +114,53 @@ getWebEntryPointHandle Deps {..} = do
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
   where
-    handlers =
-      CreateHandlers.createWith
-        CreateHandlers.Handle
-          { hDatabaseConnectionConfig = dDatabaseConnectionConfig
-          , hConfig = dConfig
-          , hLoggerHandleWith = (`sessionLoggerHandle` dLoggerHandle)
-          , hPageSpecParserHandle = dPageSpecParserHandle
-          , hLoadJSONRequestBody = dLoadJSONRequestBody
-          , hSecretTokenIOState = dSecretTokenIOState
-          , hAppURIConfig = dAppURIConfig
-          , hRepresentationBuilderHandle = dRepresentationBuilderHandle
+    handlers = createWith $ handlersDepsWith deps
+
+createWith ::
+     (Web.Session -> Handlers.Deps)
+  -> Web.RouterConfiguration.Handlers Web.ApplicationWithSession
+createWith depsWith = produceHandler <$> Handlers.handlers
+  where
+    produceHandler :: Handlers.Handler -> Web.ApplicationWithSession
+    produceHandler handler session =
+      let deps = depsWith session
+       in transactionApplicationToIOApplication (Handlers.dDatabaseHandle deps) $
+          handler deps
+
+transactionApplicationToIOApplication ::
+     Database.Handle
+  -> Web.GenericApplication Database.Transaction
+  -> Web.GenericApplication IO
+transactionApplicationToIOApplication h =
+  Web.mapGenericApplication (Database.runTransactionRW h) liftIO
+
+handlersDepsWith :: Deps -> Web.Session -> Handlers.Deps
+handlersDepsWith Deps {..} session =
+  Handlers.Deps
+    { dDatabaseConnectionConfig
+    , dConfig
+    , dLoggerHandleWith = (`sessionLoggerHandle` dLoggerHandle)
+    , dPageSpecParserHandle
+    , dLoadJSONRequestBody
+    , dSecretTokenIOState
+    , dAppURIConfig
+    , dRepresentationBuilderHandle
+    , dDatabaseHandle =
+        Database.Handle
+          { hConnectionConfig = dDatabaseConnectionConfig
+          , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+          }
+    , dAuthenticate = Core.Authentication.authenticate authenticationH
+    }
+  where
+    authenticationH =
+      Core.Authentication.Impl.new
+        Core.Authentication.Impl.Handle
+          { hGetUserAuthData = Database.getUserAuthData
+          , hTokenMatchesHash = GSecretToken.tokenMatchesHash
+          , hLoggerHandle =
+              Logger.mapHandle liftIO $
+              sessionLoggerHandle session dLoggerHandle
           }
 
 -- | Creates an IO action and a logger handle. The IO action must be
