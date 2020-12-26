@@ -18,58 +18,58 @@ spec :: Spec
 spec = do
   describe "run" $ do
     it "should pass avatar to hCreateUser" $ do
-      ref <- newIORef (error "Must have set Just ImageQuery here")
+      ref <- newIORef Nothing
       let h =
             stubHandle
               { I.hCreateUser =
                   \I.CreateUserCommand {..} -> do
-                    writeIORef ref cuAvatar
+                    writeIORef ref $ Just cuAvatar
                     pure stubCreateUserResult
               }
           query = stubQuery
       void $ I.run h query
-      readIORef ref `shouldReturn` I.rAvatar query
+      readIORef ref `shouldReturn` Just (I.rAvatar query)
     it "should pass first/last name to hCreateUser and in the result" $ do
-      ref <- newIORef (error "Must have set the first and the last name here")
+      ref <- newIORef Nothing
       let h =
             stubHandle
               { I.hCreateUser =
                   \I.CreateUserCommand {..} -> do
-                    writeIORef ref (cuFirstName, cuLastName)
+                    writeIORef ref $ Just (cuFirstName, cuLastName)
                     pure stubCreateUserResult
               }
           query = stubQuery
       (user, _) <- I.run h query
-      readIORef ref `shouldReturn` (I.rFirstName query, I.rLastName query)
+      readIORef ref `shouldReturn` Just (I.rFirstName query, I.rLastName query)
       (userFirstName user, userLastName user) `shouldBe`
         (I.rFirstName query, I.rLastName query)
     it "should pass time from hGetCurrentTime to hCreateUser and in the result" $ do
-      ref <- newIORef (error "Must have written here the current time")
+      ref <- newIORef Nothing
       let expectedTime = UTCTime (ModifiedJulianDay 1) 0
           h =
             stubHandle
               { I.hCreateUser =
                   \I.CreateUserCommand {..} -> do
-                    writeIORef ref cuCreatedAt
+                    writeIORef ref $ Just cuCreatedAt
                     pure stubCreateUserResult
               , I.hGetCurrentTime = pure expectedTime
               }
       (user, _) <- I.run h stubQuery
-      readIORef ref `shouldReturn` expectedTime
+      readIORef ref `shouldReturn` Just expectedTime
       userCreatedAt user `shouldBe` expectedTime
     it "should pass the hash from hGenerateToken to hCreateUser" $ do
-      ref <- newIORef (error "Must have written a hash here")
+      ref <- newIORef Nothing
       let expectedHash = Auth.SecretTokenHash "1"
           h =
             stubHandle
               { I.hCreateUser =
                   \I.CreateUserCommand {..} -> do
-                    writeIORef ref cuTokenHash
+                    writeIORef ref $ Just cuTokenHash
                     pure stubCreateUserResult
               , I.hGenerateToken = pure (stubToken, expectedHash)
               }
       void $ I.run h stubQuery
-      readIORef ref `shouldReturn` expectedHash
+      readIORef ref `shouldReturn` Just expectedHash
     it "should return credentials with the token from hGenerateToken" $ do
       let expectedToken = Auth.SecretToken "1"
           h =
@@ -97,17 +97,17 @@ spec = do
       (user, _) <- I.run h stubQuery
       userAvatarId user `shouldBe` expectedImageId
     it "should pass isAdmin = False to hCreateUser and in the result" $ do
-      ref <- newIORef $ error "Must have been set a Bool here"
+      ref <- newIORef Nothing
       let h =
             stubHandle
               { I.hCreateUser =
                   \I.CreateUserCommand {..} -> do
-                    writeIORef ref cuIsAdmin
+                    writeIORef ref $ Just cuIsAdmin
                     pure stubCreateUserResult
               }
       (user, _) <- I.run h stubQuery
       userIsAdmin user `shouldBe` False
-      readIORef ref `shouldReturn` False
+      readIORef ref `shouldReturn` Just False
     it "should pass avatar, if rAvatar == Just _, to hRejectImageIfDisallowed" $ do
       let image = stubImage {imageContentType = "t"}
       shouldPassValue image "hRejectImageIfDisallowed" $ \pass -> do
