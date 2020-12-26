@@ -71,6 +71,6 @@ formatMessage Message {..} =
     timeString = T.pack $ formatTime defaultTimeLocale "%F %T.%3q" messageTime
     levelString = T.justifyLeft 7 ' ' $ showAsText messageLevel
     callSiteString =
-      T.justifyLeft 30 ' ' $ maybe "" formatCallSite messageCallSite
+      T.justifyLeft 40 ' ' $ maybe "" formatCallSite messageCallSite
     formatCallSite cs =
       Logger.csModule cs <> ":" <> showAsText (Logger.csStartLine cs)

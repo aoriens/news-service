@@ -13,6 +13,7 @@ import Control.Monad.IO.Class
 import qualified Core.Authentication
 import qualified Core.Authentication.Impl
 import qualified Core.Pagination.Impl
+import qualified Data.Text as T
 import Data.Text.Show
 import qualified Database
 import qualified Database.Service.Primitives as Database
@@ -98,7 +99,8 @@ getWebEntryPointHandle deps@Deps {..} = do
 
 sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
 sessionLoggerHandle Web.Session {..} =
-  Logger.mapMessage $ \text -> "SID-" <> showAsText sessionId <> " " <> text
+  Logger.mapMessage $ \text ->
+    "SID-" <> T.justifyLeft 3 ' ' (showAsText sessionId) <> " | " <> text
 
 representationBuilderHandleWith :: Config -> RepBuilderHandle
 representationBuilderHandleWith config =
