@@ -54,7 +54,6 @@ import Core.Pagination
 import Core.Tag
 import Core.User
 import qualified Data.Aeson as A
-import Data.Text.Show
 import qualified Database
 import qualified Database.Service.ConnectionManager as DBConnManager
 import qualified Database.Service.Primitives as Database
@@ -106,7 +105,7 @@ data Handle =
   Handle
     { hDatabaseConnectionConfig :: DBConnManager.Config
     , hConfig :: Cf.Config
-    , hLoggerHandle :: Logger.Handle IO
+    , hLoggerHandleWith :: Web.Session -> Logger.Handle IO
     , hPageSpecParserHandle :: PageSpecParserHandle
     , hLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Web.Request -> Database.Transaction a
@@ -121,7 +120,7 @@ data Deps =
   Deps
     { dDatabaseConnectionConfig :: DBConnManager.Config
     , dConfig :: Cf.Config
-    , dLoggerHandle :: Logger.Handle IO
+    , dLoggerHandleWith :: Web.Session -> Logger.Handle IO
     , dPageSpecParserHandle :: PageSpecParserHandle
     , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
                                           Web.Request -> Database.Transaction a
@@ -188,7 +187,7 @@ depsWithHandle Handle {..} =
   Deps
     { dDatabaseConnectionConfig = hDatabaseConnectionConfig
     , dConfig = hConfig
-    , dLoggerHandle = hLoggerHandle
+    , dLoggerHandleWith = hLoggerHandleWith
     , dPageSpecParserHandle = hPageSpecParserHandle
     , dLoadJSONRequestBody = hLoadJSONRequestBody
     , dSecretTokenIOState = hSecretTokenIOState
@@ -724,7 +723,10 @@ sessionDepsWithDeps :: Deps -> Web.Session -> SessionDeps
 sessionDepsWithDeps Deps {..} session =
   SessionDeps
     { sdDatabaseHandle =
-        sessionDatabaseHandle dDatabaseConnectionConfig dLoggerHandle session
+        Database.Handle
+          { hConnectionConfig = dDatabaseConnectionConfig
+          , hLoggerHandle = dLoggerHandleWith session
+          }
     , sdAuthenticate = authenticate authenticationH
     }
   where
@@ -733,9 +735,7 @@ sessionDepsWithDeps Deps {..} session =
         AuthImpl.Handle
           { hGetUserAuthData = Database.getUserAuthData
           , hTokenMatchesHash = GSecretToken.tokenMatchesHash
-          , hLoggerHandle =
-              Logger.mapHandle liftIO $
-              sessionLoggerHandle session dLoggerHandle
+          , hLoggerHandle = Logger.mapHandle liftIO $ dLoggerHandleWith session
           }
 
 transactionApplicationToIOApplication ::
@@ -744,15 +744,3 @@ transactionApplicationToIOApplication ::
   -> Web.GenericApplication IO
 transactionApplicationToIOApplication h =
   Web.mapGenericApplication (Database.runTransactionRW h) liftIO
-
-sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
-sessionLoggerHandle Web.Session {..} =
-  Logger.mapMessage $ \text -> "SID-" <> showAsText sessionId <> " " <> text
-
-sessionDatabaseHandle ::
-     DBConnManager.Config -> Logger.Handle IO -> Web.Session -> Database.Handle
-sessionDatabaseHandle dbConnectionConfig loggerH session =
-  Database.Handle
-    { hConnectionConfig = dbConnectionConfig
-    , hLoggerHandle = sessionLoggerHandle session loggerH
-    }
