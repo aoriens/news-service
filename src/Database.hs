@@ -1,6 +1,6 @@
 -- | High-level data source interface for using in the business logic.
 module Database
-  -- * Authors
+    -- Authors
   ( createAuthor
   , getAuthors
   , getAuthorIdByUserIdIfExactlyOne

@@ -1,5 +1,5 @@
 module Web.Presenter
-  -- * Authors
+  -- Authors
   ( presentCreatedAuthor
   , presentUpdatedAuthor
   , presentDeletedAuthor
