@@ -10,14 +10,14 @@ Run a script without parameters in order to get more usage information.
 
 Scripts can use environment variables to accept some well-known, optional
 parameters. You may run a script with the variables unset to get more info. To
-pass a variable named `V` with value `1` to a script, run it in the following
-way:
+pass a variable named `TOKEN` with value `1` to a script, run it in the
+following way:
 
     # Sets the variable for the given invocation only
-    V=1 ./some_script
+    TOKEN=1 ./some_script
 
     # Sets the variable for all subsequent invocations
-    export V=1
+    export TOKEN=1
     ./some_script
 
 The following variables may be used:
