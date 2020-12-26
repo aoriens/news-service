@@ -4,7 +4,7 @@ module Main
   ( main
   ) where
 
-import qualified Config as Cf
+import Config
 import qualified Config.IO
 import Control.Concurrent.Async
 import Control.Exception
@@ -32,17 +32,14 @@ import Web.Presenter.Error
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
 
--- Some common module dependencies. Its purpose is to be passed to
--- functions **in this module**, keeping extensibility in the number
--- of fields and avoiding to add excess parameters to 100500 function
--- signatures.
+-- Common dependencies, built using IO-actions. They are placed here,
+-- so that they could be created once and easily passed to other
+-- functions.
 data Deps =
   Deps
-    { dConfig :: Cf.Config
+    { dConfig :: Config
     , dLoggerHandle :: Logger.Handle IO
     , dSecretTokenIOState :: GSecretToken.IOState
-    , dAppURIConfig :: AppURIConfig
-    , dRepresentationBuilderHandle :: RepBuilderHandle
     }
 
 main :: IO ()
@@ -52,7 +49,7 @@ main = do
   race_ loggerWorker $ do
     Logger.info dLoggerHandle "Starting Warp"
     Warp.runSettings
-      (Cf.cfWarpSettings dConfig)
+      (cfWarpSettings dConfig)
       (FrontEnd.Wai.toWaiApplication $ Web.EntryPoint.application webHandle)
 
 getDeps :: IO (Logger.Impl.Worker, Deps)
@@ -60,28 +57,25 @@ getDeps = do
   dConfig <- loadConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   dSecretTokenIOState <- GSecretToken.initIOState
-  let dAppURIConfig = Cf.cfAppURIConfig dConfig
-  pure
-    ( loggerWorker
-    , Deps
-        { dConfig
-        , dLoggerHandle
-        , dSecretTokenIOState
-        , dAppURIConfig
-        , dRepresentationBuilderHandle =
-            RepBuilderHandle
-              { hJSONEncode =
-                  JSONEncoder.encode
-                    JSONEncoder.Config
-                      {prettyPrint = Cf.cfJSONPrettyPrint dConfig}
-              , hRenderAppURI = Web.AppURI.renderAppURI dAppURIConfig
-              }
-        })
+  pure (loggerWorker, Deps {dConfig, dLoggerHandle, dSecretTokenIOState})
 
-loadConfig :: IO Cf.Config
+-- | Creates an IO action and a logger handle. The IO action must be
+-- forked in order for logging to work.
+getLoggerHandle :: Config -> IO (Logger.Impl.Worker, Logger.Handle IO)
+getLoggerHandle Config {..} = do
+  hFileHandle <- getFileHandle cfLogFile
+  Logger.Impl.new
+    Logger.Impl.Handle {hFileHandle, hMinLevel = cfLoggerVerbosity}
+  where
+    getFileHandle (LogFilePath path) =
+      openFile path AppendMode `catchS` \e ->
+        die $ "While opening log file: " ++ displayException (e :: IOException)
+    getFileHandle LogFileStdErr = pure stderr
+
+loadConfig :: IO Config
 loadConfig = do
   inConfig <- Config.IO.getConfig
-  either die pure $ Cf.makeConfig inConfig
+  either die pure $ makeConfig inConfig
 
 getWebEntryPointHandle :: Deps -> IO Web.EntryPoint.Handle
 getWebEntryPointHandle deps@Deps {..} = do
@@ -92,20 +86,34 @@ getWebEntryPointHandle deps@Deps {..} = do
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
       , hHandlers = injectDependenciesToHandler deps <$> Handlers.handlers
       , hShowInternalExceptionInfoInResponses =
-          Cf.cfShowInternalErrorInfoInResponse dConfig
+          cfShowInternalErrorInfoInResponse dConfig
       , hPresentCoreException =
-          presentCoreException dRepresentationBuilderHandle
-      , hPresentWebException = presentWebException dRepresentationBuilderHandle
+          presentCoreException $ representationBuilderHandleWith dConfig
+      , hPresentWebException =
+          presentWebException $ representationBuilderHandleWith dConfig
       , hNotFoundResponse = notFoundResponse
       , hMethodNotAllowedResponse = methodNotAllowedResponse
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
 
+sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
+sessionLoggerHandle Web.Session {..} =
+  Logger.mapMessage $ \text -> "SID-" <> showAsText sessionId <> " " <> text
+
+representationBuilderHandleWith :: Config -> RepBuilderHandle
+representationBuilderHandleWith config =
+  RepBuilderHandle
+    { hJSONEncode =
+        JSONEncoder.encode
+          JSONEncoder.Config {prettyPrint = cfJSONPrettyPrint config}
+    , hRenderAppURI = Web.AppURI.renderAppURI $ cfAppURIConfig config
+    }
+
 injectDependenciesToHandler ::
      Deps -> Handlers.Handler -> Web.ApplicationWithSession
 injectDependenciesToHandler deps handler session =
   transactionApplicationToIOApplication (databaseHandleWith deps session) $
-  handler (handlersDepsWith deps session)
+  handler $ handlersDepsWith deps session
 
 transactionApplicationToIOApplication ::
      Database.Handle
@@ -114,29 +122,28 @@ transactionApplicationToIOApplication ::
 transactionApplicationToIOApplication h =
   Web.mapGenericApplication (Database.runTransactionRW h) liftIO
 
+databaseHandleWith :: Deps -> Web.Session -> Database.Handle
+databaseHandleWith Deps {..} session =
+  Database.Handle
+    { hConnectionConfig = cfDatabaseConfig dConfig
+    , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+    }
+
 handlersDepsWith :: Deps -> Web.Session -> Handlers.Deps
 handlersDepsWith deps@Deps {..} session =
   Handlers.Deps
     { dConfig
-    , dPageSpecParserHandle =
-        Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
+    , dPageSpecParserHandle = Core.Pagination.Impl.new $ cfMaxPageLimit dConfig
     , dLoadJSONRequestBody =
         liftIO .
         RequestBodyLoader.loadJSONRequestBody
           RequestBodyLoader.Config
-            {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
+            {cfMaxBodySize = cfMaxRequestJsonBodySize dConfig}
     , dSecretTokenIOState
-    , dAppURIConfig
-    , dRepresentationBuilderHandle
+    , dAppURIConfig = cfAppURIConfig dConfig
+    , dRepresentationBuilderHandle = representationBuilderHandleWith dConfig
     , dAuthenticate =
         Core.Authentication.authenticate $ authenticationHandleWith deps session
-    }
-
-databaseHandleWith :: Deps -> Web.Session -> Database.Handle
-databaseHandleWith Deps {..} session =
-  Database.Handle
-    { hConnectionConfig = Cf.cfDatabaseConfig dConfig
-    , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
     }
 
 authenticationHandleWith ::
@@ -151,20 +158,3 @@ authenticationHandleWith Deps {..} session =
       , hLoggerHandle =
           Logger.mapHandle liftIO $ sessionLoggerHandle session dLoggerHandle
       }
-
--- | Creates an IO action and a logger handle. The IO action must be
--- forked in order for logging to work.
-getLoggerHandle :: Cf.Config -> IO (Logger.Impl.Worker, Logger.Handle IO)
-getLoggerHandle Cf.Config {..} = do
-  hFileHandle <- getFileHandle cfLogFile
-  Logger.Impl.new
-    Logger.Impl.Handle {hFileHandle, hMinLevel = cfLoggerVerbosity}
-  where
-    getFileHandle (Cf.LogFilePath path) =
-      openFile path AppendMode `catchS` \e ->
-        die $ "While opening log file: " ++ displayException (e :: IOException)
-    getFileHandle Cf.LogFileStdErr = pure stderr
-
-sessionLoggerHandle :: Web.Session -> Logger.Handle IO -> Logger.Handle IO
-sessionLoggerHandle Web.Session {..} =
-  Logger.mapMessage $ \text -> "SID-" <> showAsText sessionId <> " " <> text
