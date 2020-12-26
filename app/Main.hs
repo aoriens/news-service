@@ -5,19 +5,16 @@ module Main
   ) where
 
 import qualified Config as Cf
-import qualified Config.IO as CIO
+import qualified Config.IO
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Exception.Sync
 import Control.Monad.IO.Class
 import qualified Core.Authentication
 import qualified Core.Authentication.Impl
-import Core.Pagination
 import qualified Core.Pagination.Impl
-import qualified Data.Aeson as A
 import Data.Text.Show
 import qualified Database
-import qualified Database.Service.ConnectionManager as DBConnManager
 import qualified Database.Service.Primitives as Database
 import qualified FrontEnd.Wai
 import qualified Gateway.SecretToken as GSecretToken
@@ -41,12 +38,8 @@ import qualified Web.RequestBodyLoader as RequestBodyLoader
 -- signatures.
 data Deps =
   Deps
-    { dDatabaseConnectionConfig :: DBConnManager.Config
-    , dConfig :: Cf.Config
+    { dConfig :: Cf.Config
     , dLoggerHandle :: Logger.Handle IO
-    , dPageSpecParserHandle :: PageSpecParserHandle
-    , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Web.Request -> Database.Transaction a
     , dSecretTokenIOState :: GSecretToken.IOState
     , dAppURIConfig :: AppURIConfig
     , dRepresentationBuilderHandle :: RepBuilderHandle
@@ -64,25 +57,15 @@ main = do
 
 getDeps :: IO (Logger.Impl.Worker, Deps)
 getDeps = do
-  inConfig <- CIO.getConfig
-  dConfig <- either die pure $ Cf.makeConfig inConfig
+  dConfig <- loadConfig
   (loggerWorker, dLoggerHandle) <- getLoggerHandle dConfig
   dSecretTokenIOState <- GSecretToken.initIOState
-  let dDatabaseConnectionConfig = Cf.cfDatabaseConfig dConfig
-      dAppURIConfig = Cf.cfAppURIConfig dConfig
+  let dAppURIConfig = Cf.cfAppURIConfig dConfig
   pure
     ( loggerWorker
     , Deps
         { dConfig
         , dLoggerHandle
-        , dDatabaseConnectionConfig
-        , dPageSpecParserHandle =
-            Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
-        , dLoadJSONRequestBody =
-            liftIO .
-            RequestBodyLoader.loadJSONRequestBody
-              RequestBodyLoader.Config
-                {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
         , dSecretTokenIOState
         , dAppURIConfig
         , dRepresentationBuilderHandle =
@@ -94,6 +77,11 @@ getDeps = do
               , hRenderAppURI = Web.AppURI.renderAppURI dAppURIConfig
               }
         })
+
+loadConfig :: IO Cf.Config
+loadConfig = do
+  inConfig <- Config.IO.getConfig
+  either die pure $ Cf.makeConfig inConfig
 
 getWebEntryPointHandle :: Deps -> IO Web.EntryPoint.Handle
 getWebEntryPointHandle deps@Deps {..} = do
@@ -130,8 +118,13 @@ handlersDepsWith :: Deps -> Web.Session -> Handlers.Deps
 handlersDepsWith deps@Deps {..} session =
   Handlers.Deps
     { dConfig
-    , dPageSpecParserHandle
-    , dLoadJSONRequestBody
+    , dPageSpecParserHandle =
+        Core.Pagination.Impl.new $ Cf.cfMaxPageLimit dConfig
+    , dLoadJSONRequestBody =
+        liftIO .
+        RequestBodyLoader.loadJSONRequestBody
+          RequestBodyLoader.Config
+            {cfMaxBodySize = Cf.cfMaxRequestJsonBodySize dConfig}
     , dSecretTokenIOState
     , dAppURIConfig
     , dRepresentationBuilderHandle
@@ -142,7 +135,7 @@ handlersDepsWith deps@Deps {..} session =
 databaseHandleWith :: Deps -> Web.Session -> Database.Handle
 databaseHandleWith Deps {..} session =
   Database.Handle
-    { hConnectionConfig = dDatabaseConnectionConfig
+    { hConnectionConfig = Cf.cfDatabaseConfig dConfig
     , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
     }
 
