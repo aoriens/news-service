@@ -115,7 +115,7 @@ getWebEntryPointHandle Deps {..} = do
         CreateHandlers.Handle
           { hDatabaseConnectionConfig = dDatabaseConnectionConfig
           , hConfig = dConfig
-          , hLoggerHandleWith =  (`sessionLoggerHandle` dLoggerHandle)
+          , hLoggerHandleWith = (`sessionLoggerHandle` dLoggerHandle)
           , hPageSpecParserHandle = dPageSpecParserHandle
           , hLoadJSONRequestBody = dLoadJSONRequestBody
           , hSecretTokenIOState = dSecretTokenIOState

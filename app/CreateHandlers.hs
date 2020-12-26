@@ -114,23 +114,7 @@ data Handle =
     , hRepresentationBuilderHandle :: RepBuilderHandle
     }
 
--- File-local type containing well-known dependencies to be passed to
--- every handler
-data Deps =
-  Deps
-    { dDatabaseConnectionConfig :: DBConnManager.Config
-    , dConfig :: Cf.Config
-    , dLoggerHandleWith :: Web.Session -> Logger.Handle IO
-    , dPageSpecParserHandle :: PageSpecParserHandle
-    , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
-                                          Web.Request -> Database.Transaction a
-    , dSecretTokenIOState :: GSecretToken.IOState
-    , dAppURIConfig :: AppURIConfig
-    , dRepresentationBuilderHandle :: RepBuilderHandle
-    }
-
-type HandlerProducer
-   = Deps -> SessionDeps -> Web.GenericApplication Database.Transaction
+type HandlerProducer = Deps -> Web.GenericApplication Database.Transaction
 
 createWith ::
      Handle -> Web.RouterConfiguration.Handlers Web.ApplicationWithSession
@@ -138,10 +122,9 @@ createWith h = produceHandler <$> handlerProducers
   where
     produceHandler :: HandlerProducer -> Web.ApplicationWithSession
     produceHandler handler session =
-      let deps = depsWithHandle h
-          sessionDeps = sessionDepsWithDeps deps session
-       in transactionApplicationToIOApplication (sdDatabaseHandle sessionDeps) $
-          handler deps sessionDeps
+      let deps = depsWith h session
+       in transactionApplicationToIOApplication (dDatabaseHandle deps) $
+          handler deps
     handlerProducers :: Web.RouterConfiguration.Handlers HandlerProducer
     handlerProducers =
       Web.RouterConfiguration.Handlers
@@ -182,8 +165,25 @@ createWith h = produceHandler <$> handlerProducers
         , hRunCreateDraftFromNewsHandler = runCreateDraftFromNewsHandler
         }
 
-depsWithHandle :: Handle -> Deps
-depsWithHandle Handle {..} =
+-- File-local type containing well-known dependencies to be passed to
+-- every handler
+data Deps =
+  Deps
+    { dDatabaseConnectionConfig :: DBConnManager.Config
+    , dConfig :: Cf.Config
+    , dLoggerHandleWith :: Web.Session -> Logger.Handle IO
+    , dPageSpecParserHandle :: PageSpecParserHandle
+    , dLoadJSONRequestBody :: forall a. A.FromJSON a =>
+                                          Web.Request -> Database.Transaction a
+    , dSecretTokenIOState :: GSecretToken.IOState
+    , dAppURIConfig :: AppURIConfig
+    , dRepresentationBuilderHandle :: RepBuilderHandle
+    , dDatabaseHandle :: Database.Handle
+    , dAuthenticate :: Maybe Credentials -> Database.Transaction AuthenticatedUser
+    }
+
+depsWith :: Handle -> Web.Session -> Deps
+depsWith Handle {..} session =
   Deps
     { dDatabaseConnectionConfig = hDatabaseConnectionConfig
     , dConfig = hConfig
@@ -193,28 +193,49 @@ depsWithHandle Handle {..} =
     , dSecretTokenIOState = hSecretTokenIOState
     , dAppURIConfig = hAppURIConfig
     , dRepresentationBuilderHandle = hRepresentationBuilderHandle
+    , dDatabaseHandle =
+        Database.Handle
+          { hConnectionConfig = hDatabaseConnectionConfig
+          , hLoggerHandle = hLoggerHandleWith session
+          }
+    , dAuthenticate = authenticate authenticationH
     }
+  where
+    authenticationH =
+      AuthImpl.new
+        AuthImpl.Handle
+          { hGetUserAuthData = Database.getUserAuthData
+          , hTokenMatchesHash = GSecretToken.tokenMatchesHash
+          , hLoggerHandle = Logger.mapHandle liftIO $ hLoggerHandleWith session
+          }
+
+transactionApplicationToIOApplication ::
+     Database.Handle
+  -> Web.GenericApplication Database.Transaction
+  -> Web.GenericApplication IO
+transactionApplicationToIOApplication h =
+  Web.mapGenericApplication (Database.runTransactionRW h) liftIO
 
 runCreateAuthorHandler :: HandlerProducer
-runCreateAuthorHandler Deps {..} SessionDeps {..} =
+runCreateAuthorHandler Deps {..} =
   HCreateAuthor.run
     HCreateAuthor.Handle
       { hCreateAuthor = ICreateAuthor.run interactorH
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedAuthor dAppURIConfig dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
   where
     interactorH = ICreateAuthor.Handle {hCreateAuthor = Database.createAuthor}
 
 runGetAuthorsHandler :: HandlerProducer
-runGetAuthorsHandler Deps {..} SessionDeps {..} =
+runGetAuthorsHandler Deps {..} =
   HGetAuthors.run
     HGetAuthors.Handle
       { hGetAuthors = IGetAuthors.run interactorH
       , hPresent = presentAuthors dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
   where
     interactorH =
@@ -224,38 +245,38 @@ runGetAuthorsHandler Deps {..} SessionDeps {..} =
         }
 
 runPatchAuthorHandler :: AuthorId -> HandlerProducer
-runPatchAuthorHandler authorId Deps {..} SessionDeps {..} =
+runPatchAuthorHandler authorId Deps {..} =
   HPatchAuthor.run
     HPatchAuthor.Handle
       { hUpdateAuthor = IUpdateAuthor.run interactorH
       , hPresent =
           presentUpdatedAuthor dAppURIConfig dRepresentationBuilderHandle
       , hLoadJSONRequestBody = dLoadJSONRequestBody
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     authorId
   where
     interactorH = IUpdateAuthor.Handle {hUpdateAuthor = Database.updateAuthor}
 
 runGetAuthorHandler :: AuthorId -> HandlerProducer
-runGetAuthorHandler authorId Deps {..} SessionDeps {..} =
+runGetAuthorHandler authorId Deps {..} =
   HGetAuthor.run
     HGetAuthor.Handle
       { hGetAuthor = IGetAuthor.run interactorH
       , hPresent = presentAuthor dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     authorId
   where
     interactorH = IGetAuthor.Handle {hGetAuthor = Database.getAuthor}
 
 runDeleteAuthorHandler :: AuthorId -> HandlerProducer
-runDeleteAuthorHandler authorId Deps {..} SessionDeps {..} =
+runDeleteAuthorHandler authorId Deps {..} =
   HDeleteAuthor.run
     HDeleteAuthor.Handle
       { hDeleteAuthor = IDeleteAuthor.run interactorH
       , hPresent = presentDeletedAuthor
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     authorId
   where
@@ -266,14 +287,14 @@ runDeleteAuthorHandler authorId Deps {..} SessionDeps {..} =
         }
 
 runCreateCategoryHandler :: HandlerProducer
-runCreateCategoryHandler Deps {..} SessionDeps {..} =
+runCreateCategoryHandler Deps {..} =
   HCreateCategory.run
     HCreateCategory.Handle
       { hCreateCategory = ICreateCategory.run interactorH
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentCreatedCategory dAppURIConfig dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
   where
     interactorH =
@@ -284,7 +305,7 @@ runCreateCategoryHandler Deps {..} SessionDeps {..} =
         }
 
 runGetCategoryHandler :: CategoryId -> HandlerProducer
-runGetCategoryHandler categoryId Deps {..} SessionDeps {..} =
+runGetCategoryHandler categoryId Deps {..} =
   HGetCategory.run
     HGetCategory.Handle
       { hGetCategory = IGetCategory.run interactorH
@@ -295,7 +316,7 @@ runGetCategoryHandler categoryId Deps {..} SessionDeps {..} =
     interactorH = IGetCategory.Handle {hGetCategory = Database.getCategory}
 
 runGetCategoriesHandler :: HandlerProducer
-runGetCategoriesHandler Deps {..} SessionDeps {..} =
+runGetCategoriesHandler Deps {..} =
   HGetCategories.run
     HGetCategories.Handle
       { hGetCategories = IGetCategories.run interactorH
@@ -309,12 +330,12 @@ runGetCategoriesHandler Deps {..} SessionDeps {..} =
         }
 
 runDeleteCategoryHandler :: CategoryId -> HandlerProducer
-runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
+runDeleteCategoryHandler categoryId Deps {..} =
   HDeleteCategory.run
     HDeleteCategory.Handle
       { hDeleteCategory = IDeleteCategory.run interactorH
       , hPresent = presentDeletedCategory
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     categoryId
   where
@@ -327,14 +348,14 @@ runDeleteCategoryHandler categoryId Deps {..} SessionDeps {..} =
         }
 
 runUpdateCategoryHandler :: CategoryId -> HandlerProducer
-runUpdateCategoryHandler categoryId Deps {..} SessionDeps {..} =
+runUpdateCategoryHandler categoryId Deps {..} =
   HPatchCategory.run
     HPatchCategory.Handle
       { hUpdateCategory = IUpdateCategory.run interactorH
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent =
           presentUpdatedCategory dAppURIConfig dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     categoryId
   where
@@ -349,7 +370,7 @@ runUpdateCategoryHandler categoryId Deps {..} SessionDeps {..} =
         }
 
 runGetNewsListHandler :: HandlerProducer
-runGetNewsListHandler Deps {..} SessionDeps {..} =
+runGetNewsListHandler Deps {..} =
   HGetNewsList.run
     HGetNewsList.Handle
       { hGetNews = IGetNewsList.run interactorH
@@ -363,7 +384,7 @@ runGetNewsListHandler Deps {..} SessionDeps {..} =
         }
 
 runGetNewsHandler :: NewsId -> HandlerProducer
-runGetNewsHandler newsId Deps {..} SessionDeps {..} =
+runGetNewsHandler newsId Deps {..} =
   HGetNews.run
     HGetNews.Handle
       { hGetNews = IGetNews.run interactorH
@@ -374,7 +395,7 @@ runGetNewsHandler newsId Deps {..} SessionDeps {..} =
     interactorH = IGetNews.Handle {hGetNews = Database.getNews}
 
 runCreateUserHandler :: HandlerProducer
-runCreateUserHandler Deps {..} SessionDeps {..} =
+runCreateUserHandler Deps {..} =
   HCreateUser.run
     HCreateUser.Handle
       { hCreateUser = ICreateUser.run interactorH
@@ -396,7 +417,7 @@ runCreateUserHandler Deps {..} SessionDeps {..} =
       GSecretToken.Config {cfTokenLength = Cf.cfSecretTokenLength dConfig}
 
 runGetImageHandler :: ImageId -> HandlerProducer
-runGetImageHandler imageId Deps {..} SessionDeps {..} =
+runGetImageHandler imageId Deps {..} =
   HGetImage.run
     HGetImage.Handle
       { hGetImage = IGetImage.run $ IGetImage.Handle Database.getImage
@@ -405,7 +426,7 @@ runGetImageHandler imageId Deps {..} SessionDeps {..} =
     imageId
 
 runGetUserHandler :: UserId -> HandlerProducer
-runGetUserHandler userId Deps {..} SessionDeps {..} =
+runGetUserHandler userId Deps {..} =
   HGetUser.run
     HGetUser.Handle
       { hGetUser = IGetUser.run interactorH
@@ -416,19 +437,19 @@ runGetUserHandler userId Deps {..} SessionDeps {..} =
     interactorH = IGetUser.Handle Database.getExistingUser
 
 runDeleteUserHandler :: UserId -> HandlerProducer
-runDeleteUserHandler userId Deps {..} SessionDeps {..} =
+runDeleteUserHandler userId Deps {..} =
   HDeleteUser.run
     HDeleteUser.Handle
       { hDeleteUser = IDeleteUser.run interactorH
       , hPresent = presentDeletedUser
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     userId
   where
     interactorH = IDeleteUser.Handle Database.deleteUser
 
 runGetUsersHandler :: HandlerProducer
-runGetUsersHandler Deps {..} SessionDeps {..} =
+runGetUsersHandler Deps {..} =
   HGetUsers.run
     HGetUsers.Handle
       { hGetUsers = IGetUsers.run interactorH
@@ -442,13 +463,13 @@ runGetUsersHandler Deps {..} SessionDeps {..} =
         }
 
 runCreateTagHandler :: HandlerProducer
-runCreateTagHandler Deps {..} SessionDeps {..} =
+runCreateTagHandler Deps {..} =
   HCreateTag.run
     HCreateTag.Handle
       { hCreateTag = ICreateTag.run interactorH
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       , hPresent = presentCreatedTag dAppURIConfig dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
   where
     interactorH =
@@ -458,7 +479,7 @@ runCreateTagHandler Deps {..} SessionDeps {..} =
         }
 
 runGetTagHandler :: TagId -> HandlerProducer
-runGetTagHandler tagId Deps {..} SessionDeps {..} =
+runGetTagHandler tagId Deps {..} =
   HGetTag.run
     HGetTag.Handle
       { hGetTag = IGetTag.run interactorH
@@ -469,11 +490,11 @@ runGetTagHandler tagId Deps {..} SessionDeps {..} =
     interactorH = IGetTag.Handle Database.getTag
 
 runDeleteTagHandler :: TagId -> HandlerProducer
-runDeleteTagHandler tagId Deps {..} SessionDeps {..} =
+runDeleteTagHandler tagId Deps {..} =
   HDeleteTag.run
     HDeleteTag.Handle
       { hDeleteTag = IDeleteTag.run interactorH
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hPresent = presentDeletedTag
       }
     tagId
@@ -481,11 +502,11 @@ runDeleteTagHandler tagId Deps {..} SessionDeps {..} =
     interactorH = IDeleteTag.Handle Database.deleteTag
 
 runPatchTagHandler :: TagId -> HandlerProducer
-runPatchTagHandler tagId' Deps {..} SessionDeps {..} =
+runPatchTagHandler tagId' Deps {..} =
   HPatchTag.run
     HPatchTag.Handle
       { hUpdateTag = IUpdateTag.run interactorH
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hPresent = presentUpdatedTag dAppURIConfig dRepresentationBuilderHandle
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       }
@@ -498,7 +519,7 @@ runPatchTagHandler tagId' Deps {..} SessionDeps {..} =
         }
 
 runGetTagsHandler :: HandlerProducer
-runGetTagsHandler Deps {..} SessionDeps {..} =
+runGetTagsHandler Deps {..} =
   HGetTags.run
     HGetTags.Handle
       { hGetTags = IGetTags.run interactorH
@@ -512,7 +533,7 @@ runGetTagsHandler Deps {..} SessionDeps {..} =
         }
 
 runCreateDraftHandler :: HandlerProducer
-runCreateDraftHandler Deps {..} SessionDeps {..} =
+runCreateDraftHandler Deps {..} =
   HCreateDraft.run
     HCreateDraft.Handle
       { hCreateDraft = ICreateDraft.run interactorH
@@ -520,7 +541,7 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
       , hPresent =
           presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
       , hParseAppURI = Web.AppURI.parseAppURI dAppURIConfig
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
   where
     interactorH =
@@ -533,13 +554,13 @@ runCreateDraftHandler Deps {..} SessionDeps {..} =
         }
 
 runCreateDraftFromNewsHandler :: NewsId -> HandlerProducer
-runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
+runCreateDraftFromNewsHandler newsId Deps {..} =
   HCreateDraftFromNews.run
     HCreateDraftFromNews.Handle
       { hCreateDraftFromNews = ICreateDraftFromNews.run interactorH
       , hPresent =
           presentCreatedDraft dAppURIConfig dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     newsId
   where
@@ -550,12 +571,12 @@ runCreateDraftFromNewsHandler newsId Deps {..} SessionDeps {..} =
         }
 
 runGetDraftsOfNewsArticleHandler :: NewsId -> HandlerProducer
-runGetDraftsOfNewsArticleHandler newsId Deps {..} SessionDeps {..} =
+runGetDraftsOfNewsArticleHandler newsId Deps {..} =
   HGetDraftsOfNewsArticle.run
     HGetDraftsOfNewsArticle.Handle
       { hGetDraftsOfNewsArticle = IGetDraftsOfNewsArticle.run interactorH
       , hPresent = presentDrafts dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hParsePageSpec = parsePageSpecM dPageSpecParserHandle
       }
     newsId
@@ -567,7 +588,7 @@ runGetDraftsOfNewsArticleHandler newsId Deps {..} SessionDeps {..} =
         }
 
 runPublishDraftHandler :: DraftId -> HandlerProducer
-runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
+runPublishDraftHandler draftId Deps {..} =
   HPublishDraft.run
     HPublishDraft.Handle
       { hPublishDraft = IPublishDraft.run interactorH
@@ -575,7 +596,7 @@ runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
           presentCreatedOrUpdatedNewsItem
             dAppURIConfig
             dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       }
     draftId
   where
@@ -589,11 +610,11 @@ runPublishDraftHandler draftId Deps {..} SessionDeps {..} =
         }
 
 runGetDraftsHandler :: Maybe AuthorId -> HandlerProducer
-runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
+runGetDraftsHandler optAuthorId Deps {..} =
   HGetDrafts.run
     HGetDrafts.Handle
       { hGetDrafts = IGetDrafts.run interactorH
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hPresent = presentDrafts dRepresentationBuilderHandle
       }
     optAuthorId
@@ -606,11 +627,11 @@ runGetDraftsHandler optAuthorId Deps {..} SessionDeps {..} =
         }
 
 runGetDraftHandler :: DraftId -> HandlerProducer
-runGetDraftHandler draftId Deps {..} SessionDeps {..} =
+runGetDraftHandler draftId Deps {..} =
   HGetDraft.run
     HGetDraft.Handle
       { hGetDraft = IGetDraft.run interactorH
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hPresent = presentDraft dRepresentationBuilderHandle
       }
     draftId
@@ -618,11 +639,11 @@ runGetDraftHandler draftId Deps {..} SessionDeps {..} =
     interactorH = IGetDraft.Handle Database.getDraft
 
 runDeleteDraftHandler :: DraftId -> HandlerProducer
-runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =
+runDeleteDraftHandler draftId Deps {..} =
   HDeleteDraft.run
     HDeleteDraft.Handle
       { hDeleteDraft = IDeleteDraft.run interactorH
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hPresent = presentDeletedDraft
       }
     draftId
@@ -634,11 +655,11 @@ runDeleteDraftHandler draftId Deps {..} SessionDeps {..} =
         }
 
 runPatchDraftHandler :: DraftId -> HandlerProducer
-runPatchDraftHandler draftId Deps {..} SessionDeps {..} =
+runPatchDraftHandler draftId Deps {..} =
   HPatchDraft.run
     HPatchDraft.Handle
       { hUpdateDraft = IUpdateDraft.run interactorH
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hPresent =
           presentUpdatedDraft dAppURIConfig dRepresentationBuilderHandle
       , hLoadJSONRequestBody = dLoadJSONRequestBody
@@ -653,13 +674,13 @@ runPatchDraftHandler draftId Deps {..} SessionDeps {..} =
         }
 
 runCreateCommentHandler :: NewsId -> HandlerProducer
-runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
+runCreateCommentHandler newsId Deps {..} =
   HCreateComment.run
     HCreateComment.Handle
       { hCreateComment = ICreateComment.run interactorH
       , hPresent =
           presentCreatedComment dAppURIConfig dRepresentationBuilderHandle
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hLoadJSONRequestBody = dLoadJSONRequestBody
       }
     newsId
@@ -671,7 +692,7 @@ runCreateCommentHandler newsId Deps {..} SessionDeps {..} =
         }
 
 runGetCommentHandler :: CommentId -> HandlerProducer
-runGetCommentHandler commentId Deps {..} SessionDeps {..} =
+runGetCommentHandler commentId Deps {..} =
   HGetComment.run
     HGetComment.Handle
       { hGetComment = IGetComment.run interactorH
@@ -682,11 +703,11 @@ runGetCommentHandler commentId Deps {..} SessionDeps {..} =
     interactorH = IGetComment.Handle {hGetComment = Database.getComment}
 
 runDeleteCommentHandler :: CommentId -> HandlerProducer
-runDeleteCommentHandler commentId Deps {..} SessionDeps {..} =
+runDeleteCommentHandler commentId Deps {..} =
   HDeleteComment.run
     HDeleteComment.Handle
       { hDeleteComment = IDeleteComment.run interactorH
-      , hAuthenticate = sdAuthenticate
+      , hAuthenticate = dAuthenticate
       , hPresent = presentDeletedComment
       }
     commentId
@@ -698,7 +719,7 @@ runDeleteCommentHandler commentId Deps {..} SessionDeps {..} =
         }
 
 runGetCommentsForNewsHandler :: NewsId -> HandlerProducer
-runGetCommentsForNewsHandler newsId Deps {..} SessionDeps {..} =
+runGetCommentsForNewsHandler newsId Deps {..} =
   HGetCommentsForNews.run
     HGetCommentsForNews.Handle
       { hGetCommentsForNews = IGetCommentsForNews.run interactorH
@@ -711,36 +732,3 @@ runGetCommentsForNewsHandler newsId Deps {..} SessionDeps {..} =
         { hGetCommentsForNews = Database.getCommentsForNews
         , hPageSpecParserHandle = dPageSpecParserHandle
         }
-
--- Commonly used dependencies dependent on Web.Session
-data SessionDeps =
-  SessionDeps
-    { sdDatabaseHandle :: Database.Handle
-    , sdAuthenticate :: Maybe Credentials -> Database.Transaction AuthenticatedUser
-    }
-
-sessionDepsWithDeps :: Deps -> Web.Session -> SessionDeps
-sessionDepsWithDeps Deps {..} session =
-  SessionDeps
-    { sdDatabaseHandle =
-        Database.Handle
-          { hConnectionConfig = dDatabaseConnectionConfig
-          , hLoggerHandle = dLoggerHandleWith session
-          }
-    , sdAuthenticate = authenticate authenticationH
-    }
-  where
-    authenticationH =
-      AuthImpl.new
-        AuthImpl.Handle
-          { hGetUserAuthData = Database.getUserAuthData
-          , hTokenMatchesHash = GSecretToken.tokenMatchesHash
-          , hLoggerHandle = Logger.mapHandle liftIO $ dLoggerHandleWith session
-          }
-
-transactionApplicationToIOApplication ::
-     Database.Handle
-  -> Web.GenericApplication Database.Transaction
-  -> Web.GenericApplication IO
-transactionApplicationToIOApplication h =
-  Web.mapGenericApplication (Database.runTransactionRW h) liftIO
