@@ -28,7 +28,7 @@ import qualified Web.RouterConfiguration as RouterConfiguration
 data Handle =
   Handle
     { hLogger :: Session -> Logger.Handle IO
-    , hRouterConfigurationHandle :: RouterConfiguration.Handle ApplicationWithSession
+    , hHandlers :: RouterConfiguration.Handlers ApplicationWithSession
     , hState :: State
     , hShowInternalExceptionInfoInResponses :: Bool
     , hPresentCoreException :: CoreException -> Response
@@ -137,4 +137,4 @@ routerApplication Handle {..} session request respond =
     R.MethodNotSupportedResult knownMethods ->
       respond $ hMethodNotAllowedResponse knownMethods
   where
-    router = RouterConfiguration.router hRouterConfigurationHandle
+    router = RouterConfiguration.router hHandlers

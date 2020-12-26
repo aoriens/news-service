@@ -2,7 +2,7 @@
 
 module Web.RouterConfiguration
   ( router
-  , Handle(..)
+  , Handlers(..)
   ) where
 
 import Core.Author
@@ -18,8 +18,8 @@ import qualified Web.Router as R
 
 type Handler = Session -> Application
 
-router :: Handle Handler -> R.Router Handler
-router Handle {..} =
+router :: Handlers Handler -> R.Router Handler
+router Handlers {..} =
   R.new $ \case
     ImageURI imageId -> [R.get $ hRunGetImageHandler imageId]
     UsersURI -> [R.get hRunGetUsersHandler, R.post hRunCreateUserHandler]
@@ -69,10 +69,10 @@ router Handle {..} =
       , R.post $ hRunCreateDraftFromNewsHandler newsId
       ]
 
--- | The handle contains external dependencies. It is made a functor
--- over the handler type to simplify handlers management.
-data Handle handler =
-  Handle
+-- | The injected web handlers. The type is made a functor over the
+-- handler type to simplify handlers management.
+data Handlers handler =
+  Handlers
     { hRunGetImageHandler :: ImageId -> handler
     , hRunGetUsersHandler :: handler
     , hRunCreateUserHandler :: handler

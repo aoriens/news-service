@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- | The module can create and configure 'Web.RouterConfiguration.Handle'.
-module RouterConfigurationHandle
+module CreateHandlers
   ( createWith
   , Handle(..)
   ) where
@@ -133,7 +133,8 @@ data Deps =
 type HandlerProducer
    = Deps -> SessionDeps -> Web.GenericApplication Database.Transaction
 
-createWith :: Handle -> Web.RouterConfiguration.Handle Web.ApplicationWithSession
+createWith ::
+     Handle -> Web.RouterConfiguration.Handlers Web.ApplicationWithSession
 createWith h = produceHandler <$> handlerProducers
   where
     produceHandler :: HandlerProducer -> Web.ApplicationWithSession
@@ -142,9 +143,9 @@ createWith h = produceHandler <$> handlerProducers
           sessionDeps = sessionDepsWithDeps deps session
        in transactionApplicationToIOApplication (sdDatabaseHandle sessionDeps) $
           handler deps sessionDeps
-    handlerProducers :: Web.RouterConfiguration.Handle HandlerProducer
+    handlerProducers :: Web.RouterConfiguration.Handlers HandlerProducer
     handlerProducers =
-      Web.RouterConfiguration.Handle
+      Web.RouterConfiguration.Handlers
         { hRunGetImageHandler = runGetImageHandler
         , hRunGetUsersHandler = runGetUsersHandler
         , hRunCreateUserHandler = runCreateUserHandler

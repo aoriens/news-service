@@ -12,6 +12,7 @@ import Control.Exception.Sync
 import Control.Monad.IO.Class
 import Core.Pagination
 import qualified Core.Pagination.Impl
+import qualified CreateHandlers
 import qualified Data.Aeson as A
 import Data.Text.Show
 import qualified Database.Service.ConnectionManager as DBConnManager
@@ -21,7 +22,6 @@ import qualified Gateway.SecretToken as GSecretToken
 import qualified Logger
 import qualified Logger.Impl
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified RouterConfigurationHandle
 import System.Exit
 import System.IO hiding (Handle)
 import Web.AppURI
@@ -99,7 +99,7 @@ getWebEntryPointHandle Deps {..} = do
     Web.EntryPoint.Handle
       { hState
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
-      , hRouterConfigurationHandle = routerConfigurationH
+      , hHandlers = handlers
       , hShowInternalExceptionInfoInResponses =
           Cf.cfShowInternalErrorInfoInResponse dConfig
       , hPresentCoreException =
@@ -110,9 +110,9 @@ getWebEntryPointHandle Deps {..} = do
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
   where
-    routerConfigurationH =
-      RouterConfigurationHandle.createWith
-        RouterConfigurationHandle.Handle
+    handlers =
+      CreateHandlers.createWith
+        CreateHandlers.Handle
           { hDatabaseConnectionConfig = dDatabaseConnectionConfig
           , hConfig = dConfig
           , hLoggerHandle = dLoggerHandle
