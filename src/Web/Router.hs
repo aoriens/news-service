@@ -39,6 +39,12 @@ execMethodsSpec :: [Method handler] -> MethodsToHandlers handler
 execMethodsSpec = foldl' f HM.empty
   where
     f table (Method m h) = HM.insertWith (\_ _ -> failure m) m h table
+    -- Instead of using 'error' it would be better to return a Left _
+    -- when constructing the router. But I can't see how it could be
+    -- possible, while the router accepts a function of AppURI.
+    -- Anyway, an error of duplicate entries cannot be handled in a
+    -- reasonable way other than crashing the application and fixing
+    -- the router configuration code.
     failure k = error $ "Duplicate entry for path " ++ show k
 
 {- |
