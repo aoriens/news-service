@@ -34,7 +34,6 @@ import qualified Web.JSONEncoder as JSONEncoder
 import Web.Presenter.Error
 import Web.RepresentationBuilder
 import qualified Web.RequestBodyLoader as RequestBodyLoader
-import qualified Web.RouterConfiguration
 
 -- Some common module dependencies. Its purpose is to be passed to
 -- functions **in this module**, keeping extensibility in the number
@@ -103,7 +102,7 @@ getWebEntryPointHandle deps@Deps {..} = do
     Web.EntryPoint.Handle
       { hState
       , hLogger = (`sessionLoggerHandle` dLoggerHandle)
-      , hHandlers = handlers
+      , hHandlers = injectDependenciesToHandler deps <$> Handlers.handlers
       , hShowInternalExceptionInfoInResponses =
           Cf.cfShowInternalErrorInfoInResponse dConfig
       , hPresentCoreException =
@@ -113,19 +112,12 @@ getWebEntryPointHandle deps@Deps {..} = do
       , hMethodNotAllowedResponse = methodNotAllowedResponse
       , hUncaughtExceptionResponseForDebug = uncaughtExceptionResponseForDebug
       }
-  where
-    handlers = createWith $ handlersDepsWith deps
 
-createWith ::
-     (Web.Session -> Handlers.Deps)
-  -> Web.RouterConfiguration.Handlers Web.ApplicationWithSession
-createWith depsWith = produceHandler <$> Handlers.handlers
-  where
-    produceHandler :: Handlers.Handler -> Web.ApplicationWithSession
-    produceHandler handler session =
-      let deps = depsWith session
-       in transactionApplicationToIOApplication (Handlers.dDatabaseHandle deps) $
-          handler deps
+injectDependenciesToHandler ::
+     Deps -> Handlers.Handler -> Web.ApplicationWithSession
+injectDependenciesToHandler deps handler session =
+  transactionApplicationToIOApplication (databaseHandleWith deps session) $
+  handler (handlersDepsWith deps session)
 
 transactionApplicationToIOApplication ::
      Database.Handle
@@ -135,7 +127,7 @@ transactionApplicationToIOApplication h =
   Web.mapGenericApplication (Database.runTransactionRW h) liftIO
 
 handlersDepsWith :: Deps -> Web.Session -> Handlers.Deps
-handlersDepsWith Deps {..} session =
+handlersDepsWith deps@Deps {..} session =
   Handlers.Deps
     { dDatabaseConnectionConfig
     , dConfig
@@ -145,23 +137,30 @@ handlersDepsWith Deps {..} session =
     , dSecretTokenIOState
     , dAppURIConfig
     , dRepresentationBuilderHandle
-    , dDatabaseHandle =
-        Database.Handle
-          { hConnectionConfig = dDatabaseConnectionConfig
-          , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
-          }
-    , dAuthenticate = Core.Authentication.authenticate authenticationH
+    , dDatabaseHandle = databaseHandleWith deps session
+    , dAuthenticate =
+        Core.Authentication.authenticate $ authenticationHandleWith deps session
     }
-  where
-    authenticationH =
-      Core.Authentication.Impl.new
-        Core.Authentication.Impl.Handle
-          { hGetUserAuthData = Database.getUserAuthData
-          , hTokenMatchesHash = GSecretToken.tokenMatchesHash
-          , hLoggerHandle =
-              Logger.mapHandle liftIO $
-              sessionLoggerHandle session dLoggerHandle
-          }
+
+databaseHandleWith :: Deps -> Web.Session -> Database.Handle
+databaseHandleWith Deps {..} session =
+  Database.Handle
+    { hConnectionConfig = dDatabaseConnectionConfig
+    , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+    }
+
+authenticationHandleWith ::
+     Deps
+  -> Web.Session
+  -> Core.Authentication.AuthenticationHandle Database.Transaction
+authenticationHandleWith Deps {..} session =
+  Core.Authentication.Impl.new
+    Core.Authentication.Impl.Handle
+      { hGetUserAuthData = Database.getUserAuthData
+      , hTokenMatchesHash = GSecretToken.tokenMatchesHash
+      , hLoggerHandle =
+          Logger.mapHandle liftIO $ sessionLoggerHandle session dLoggerHandle
+      }
 
 -- | Creates an IO action and a logger handle. The IO action must be
 -- forked in order for logging to work.
