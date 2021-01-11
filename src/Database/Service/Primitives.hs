@@ -10,9 +10,6 @@ module Database.Service.Primitives
   , Transaction
   , St.Statement(..)
   , runStatement
-  , transactionRO
-  , transactionRW
-  , runTransactionRO
   , runTransactionRW
   , DatabaseException(..)
   , S.QueryError
@@ -104,33 +101,19 @@ log level text =
     loggerH <- asks envLoggerHandle
     liftIO $ Logger.log loggerH level text
 
-transactionRW :: Transaction a -> Session a
-transactionRW = transactionWithMode ReadWrite
-
-transactionRO :: Transaction a -> Session a
-transactionRO = transactionWithMode ReadOnly
-
-data ReadWriteMode
-  = ReadOnly
-  | ReadWrite
-
 -- | Creates a session of a single, atomic transaction. Thus, several
 -- transactions can be composed into a single session.
-transactionWithMode :: ReadWriteMode -> Transaction a -> Session a
-transactionWithMode rwMode (Transaction transactionSession) =
+transactionRW :: Transaction a -> Session a
+transactionRW (Transaction transactionSession) =
   (`onException` rollback) $ do
-    startTransaction rwMode
+    startTransaction
     r <- transactionSession
     commit
     pure r
 
-startTransaction :: ReadWriteMode -> Session ()
-startTransaction rwMode = simplePreparedStatement sql
-  where
-    sql =
-      case rwMode of
-        ReadWrite -> "start transaction isolation level serializable read write"
-        ReadOnly -> "start transaction isolation level serializable read only"
+startTransaction :: Session ()
+startTransaction =
+  simplePreparedStatement "start transaction isolation level serializable"
 
 commit :: Session ()
 commit = simplePreparedStatement "commit"
@@ -146,11 +129,6 @@ simplePreparedStatement sql =
 -- It can throw 'DatabaseException'.
 runTransactionRW :: Handle -> Transaction a -> IO a
 runTransactionRW h = runSession h . transactionRW
-
--- | Creates and runs a session from a single read-only transaction.
--- It can throw 'DatabaseException'.
-runTransactionRO :: Handle -> Transaction a -> IO a
-runTransactionRO h = runSession h . transactionRO
 
 data DatabaseException
   = HasqlException S.QueryError
