@@ -16,7 +16,6 @@ import qualified Core.Pagination.Impl
 import qualified Data.Text as T
 import Data.Text.Show
 import qualified Database
-import qualified Database.Service.Primitives as Database
 import qualified FrontEnd.Wai
 import qualified Gateway.SecretToken as GSecretToken
 import qualified Handlers

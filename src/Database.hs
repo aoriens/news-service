@@ -1,7 +1,11 @@
 -- | High-level data source interface for using in the business logic.
 module Database
-    -- Authors
-  ( createAuthor
+   -- Database access
+  ( Handle(..)
+  , Transaction
+  , runTransactionRW
+   -- * Authors
+  , createAuthor
   , getAuthors
   , getAuthorIdByUserIdIfExactlyOne
   , getAuthor
@@ -68,3 +72,4 @@ import Database.Logic.News.Delete
 import Database.Logic.News.Get
 import Database.Logic.Tags
 import Database.Logic.Users
+import Database.Service.Transaction
