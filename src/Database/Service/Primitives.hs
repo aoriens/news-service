@@ -29,7 +29,7 @@ import Data.Maybe
 import Data.Maybe.Util
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
-import qualified Database.Service.ConnectionManager as CM
+import qualified Database.Service.ConnectionManager as ConnectionManager
 import qualified Hasql.Connection as C
 import qualified Hasql.Decoders as D
 import qualified Hasql.Session as S
@@ -39,7 +39,7 @@ import Prelude hiding (log)
 
 data Handle =
   Handle
-    { hConnectionConfig :: CM.Config
+    { hConnectionConfig :: ConnectionManager.Config
     , hLoggerHandle :: Logger.Handle IO
     }
 
@@ -69,7 +69,7 @@ instance MonadCatch Session where
 -- | Runs a session. It can throw 'DatabaseException'.
 runSession :: Handle -> Session a -> IO a
 runSession Handle {..} session =
-  CM.withConnection hConnectionConfig $ \envConnection ->
+  ConnectionManager.withConnection hConnectionConfig $ \envConnection ->
     let env = SessionEnv {envConnection, envLoggerHandle = hLoggerHandle}
      in runSessionWithEnv env session
 
