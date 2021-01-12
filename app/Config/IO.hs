@@ -40,6 +40,7 @@ parseConfig = do
   inDatabasePort <- fmap getExactIntegral <$> lookupOpt "postgresql.port"
   inDatabaseUser <- lookupOpt "postgresql.user"
   inDatabasePassword <- lookupOpt "postgresql.password"
+  inDatabaseMigrationsDirectoryPath <- lookupOpt "postgresql.migrations_path"
   inLoggerVerbosity <- lookupOpt "log.verbosity"
   inLogFilePath <- lookupOpt "log.path"
   inMaxPageLimit <- fmap getExactIntegral <$> lookupOpt "server.max_page_limit"

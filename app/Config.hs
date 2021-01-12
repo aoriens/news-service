@@ -28,6 +28,7 @@ data Config =
   Config
     { cfWarpSettings :: !Warp.Settings
     , cfDatabaseConfig :: !DB.Config
+    , cfMigrationsDirectoryPath :: FilePath
     , cfLoggerVerbosity :: !Logger.Level
     , cfLogFile :: !LogFile
     , cfMaxPageLimit :: !Pagination.PageLimit
@@ -56,6 +57,7 @@ data InConfig =
     , inDatabasePort :: Maybe Word16
     , inDatabaseUser :: Maybe String
     , inDatabasePassword :: Maybe String
+    , inDatabaseMigrationsDirectoryPath :: Maybe String
     , inLoggerVerbosity :: Maybe String
     , inLogFilePath :: Maybe String
     , inMaxPageLimit :: Maybe Int32
@@ -84,6 +86,8 @@ makeConfig inConfig@InConfig {..} = do
     Config
       { cfWarpSettings = warpSettings inConfig
       , cfDatabaseConfig = databaseConfig inConfig
+      , cfMigrationsDirectoryPath =
+          fromMaybe "migrations" inDatabaseMigrationsDirectoryPath
       , cfLogFile =
           case inLogFilePath of
             Just path@(_:_) -> LogFilePath path

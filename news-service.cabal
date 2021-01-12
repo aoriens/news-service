@@ -97,6 +97,7 @@ library
     , Database.Service.Exception
     , Database.Service.NativeSQLDecodable
     , Database.Service.Primitives
+    , Database.Service.SchemaVersion
     , Database.Service.SQLBuilder
     , Database.Service.SQLBuilders
     , Database.Service.Transaction
@@ -180,8 +181,10 @@ library
     , containers
     , cryptonite
     , deepseq
+    , directory
     , dlist
     , exceptions
+    , filepath
     , hashable
     , hasql
     , hasql-th
