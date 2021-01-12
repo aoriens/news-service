@@ -9,7 +9,7 @@ create table config (
 );
 
 -- The schema version is to be incremented on every schema change.
-insert into config values ('schema_version', '9');
+insert into config values ('schema_version', '25');
 
 create table mime_types (
        mime_type_id serial not null primary key,
