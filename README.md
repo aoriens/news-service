@@ -27,10 +27,10 @@ psql news -f test_data.sql
 ```
 
 4. Create a configuration file. A sample, documented configuration file is
-   available in `news-service.default.conf`. To start development quickly, you
-   can use `development.conf` file. You may accommodate it for your needs or
-   import it to your own configuration file, e.g. `config.private`. `*.private`
-   files are ignored by git, so it is safe to give such a name to a
+   available in `conf/news-service.default.conf`. To start development quickly,
+   you can use `conf/development.conf` file. You may accommodate it for your
+   needs or import it to your own configuration file, e.g. `config.private`.
+   `*.private` files are ignored by git, so it is safe to give such a name to a
    configuration file containing passwords for development:
 
 ```
