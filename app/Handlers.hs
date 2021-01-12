@@ -55,7 +55,6 @@ import Core.Tag
 import Core.User
 import qualified Data.Aeson as A
 import qualified Database
-import qualified Database.Service.Primitives as Database
 import Gateway.CurrentTime as GCurrentTime
 import qualified Gateway.SecretToken as GSecretToken
 import Web.AppURI

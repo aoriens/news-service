@@ -36,6 +36,7 @@ import Database.Logic.News.Delete
 import Database.Logic.News.Get
 import Database.Logic.News.NewsVersionId
 import Database.Logic.Tags
+import Database.Service.Exception
 import Database.Service.Primitives
 import qualified Database.Service.SQLBuilder as Sql
 import qualified Database.Service.SQLBuilders as Sql

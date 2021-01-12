@@ -40,6 +40,7 @@ import Database.Logic.News.NewsVersionId
 import Database.Logic.Pagination
 import Database.Logic.Tags
 import Database.Service.Columns
+import Database.Service.Exception
 import Database.Service.Primitives
 import qualified Database.Service.SQLBuilder as Sql
 import qualified Database.Service.SQLBuilders as Sql

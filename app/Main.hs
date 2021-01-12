@@ -16,7 +16,6 @@ import qualified Core.Pagination.Impl
 import qualified Data.Text as T
 import Data.Text.Show
 import qualified Database
-import qualified Database.Service.Primitives as Database
 import qualified FrontEnd.Wai
 import qualified Gateway.SecretToken as GSecretToken
 import qualified Handlers
@@ -46,6 +45,9 @@ data Deps =
 main :: IO ()
 main = do
   (loggerWorker, deps@Deps {..}) <- getDeps
+  Database.initialize
+    (databaseHandleWith deps Nothing)
+    (cfMigrationsDirectoryPath dConfig)
   webHandle <- getWebEntryPointHandle deps
   race_ loggerWorker $ do
     Logger.info dLoggerHandle "Starting Warp"
@@ -114,7 +116,7 @@ representationBuilderHandleWith config =
 injectDependenciesToHandler ::
      Deps -> Handlers.Handler -> Web.ApplicationWithSession
 injectDependenciesToHandler deps handler session =
-  transactionApplicationToIOApplication (databaseHandleWith deps session) $
+  transactionApplicationToIOApplication (databaseHandleWith deps $ Just session) $
   handler $ handlersDepsWith deps session
 
 transactionApplicationToIOApplication ::
@@ -124,11 +126,14 @@ transactionApplicationToIOApplication ::
 transactionApplicationToIOApplication h =
   Web.mapGenericApplication (Database.runTransactionRW h) liftIO
 
-databaseHandleWith :: Deps -> Web.Session -> Database.Handle
+databaseHandleWith :: Deps -> Maybe Web.Session -> Database.Handle
 databaseHandleWith Deps {..} session =
   Database.Handle
     { hConnectionConfig = cfDatabaseConfig dConfig
-    , hLoggerHandle = sessionLoggerHandle session dLoggerHandle
+    , hLoggerHandle =
+        case session of
+          Just s -> sessionLoggerHandle s dLoggerHandle
+          Nothing -> dLoggerHandle
     }
 
 handlersDepsWith :: Deps -> Web.Session -> Handlers.Deps

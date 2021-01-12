@@ -94,10 +94,13 @@ library
     , Database.Logic.Users
     , Database.Service.Columns
     , Database.Service.ConnectionManager
+    , Database.Service.Exception
     , Database.Service.NativeSQLDecodable
     , Database.Service.Primitives
+    , Database.Service.SchemaVersion
     , Database.Service.SQLBuilder
     , Database.Service.SQLBuilders
+    , Database.Service.Transaction
     , FrontEnd.Wai
     , Gateway.CurrentTime
     , Gateway.SecretToken
@@ -178,8 +181,10 @@ library
     , containers
     , cryptonite
     , deepseq
+    , directory
     , dlist
     , exceptions
+    , filepath
     , hashable
     , hasql
     , hasql-th
